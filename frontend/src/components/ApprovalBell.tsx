@@ -75,11 +75,11 @@ export function ApprovalBell() {
   const count = approvals.length;
 
   return (
-    <div ref={containerRef} className="fixed top-2 right-3 z-40">
+    <div ref={containerRef} className="relative">
       {/* Bell trigger */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative p-2 rounded-lg transition-colors cursor-pointer"
+        className="relative p-1.5 rounded-lg transition-colors cursor-pointer"
         title="Agent approvals"
         style={{
           color: count > 0 ? 'var(--color-text)' : 'var(--color-text-secondary)',
@@ -104,9 +104,10 @@ export function ApprovalBell() {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          className="absolute left-0 top-full mt-1 rounded-xl shadow-2xl overflow-hidden flex flex-col"
           style={{
             width: '340px',
+            maxWidth: 'calc(100vw - 24px)',
             maxHeight: '500px',
             background: 'var(--color-bg-secondary)',
             border: '1px solid var(--color-border)',

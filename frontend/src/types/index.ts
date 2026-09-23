@@ -136,6 +136,7 @@ export interface Conversation {
   updatedAt: number;
   model: string;
   messages: ChatMessage[];
+  pinned?: boolean;
 }
 
 export interface ConversationStore {

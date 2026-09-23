@@ -164,8 +164,8 @@ interface AppState {
   // Command palette
   commandPaletteOpen: boolean;
 
-  // Sidebar
-  sidebarOpen: boolean;
+  // Left nav rail — expanded shows icon+label rows, collapsed is icon-only
+  navExpanded: boolean;
 
   // System panel
   systemPanelOpen: boolean;
@@ -184,6 +184,7 @@ interface AppState {
   createConversation: (model?: string) => string;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
+  togglePinConversation: (id: string) => void;
   loadMessages: (conversationId: string | null) => void;
   addMessage: (conversationId: string, message: ChatMessage) => void;
   updateLastAssistant: (
@@ -222,8 +223,8 @@ interface AppState {
 
   // Actions: UI
   setCommandPaletteOpen: (open: boolean) => void;
-  toggleSidebar: () => void;
-  setSidebarOpen: (open: boolean) => void;
+  toggleNavExpanded: () => void;
+  setNavExpanded: (open: boolean) => void;
   toggleSystemPanel: () => void;
   setSystemPanelOpen: (open: boolean) => void;
 
@@ -285,7 +286,7 @@ export const useAppStore = create<AppState>((set, get) => {
     settings: loadSettings(),
 
     commandPaletteOpen: false,
-    sidebarOpen: true,
+    navExpanded: true,
     systemPanelOpen: true,
 
     optInEnabled: localStorage.getItem(OPTIN_KEY) === 'true',
@@ -398,6 +399,19 @@ export const useAppStore = create<AppState>((set, get) => {
         conversations: convList,
         activeId: store.activeId,
         messages: activeConv ? activeConv.messages : [],
+      });
+    },
+
+    togglePinConversation: (id: string) => {
+      const store = loadConversations();
+      const conv = store.conversations[id];
+      if (!conv) return;
+      conv.pinned = !conv.pinned;
+      saveConversations(store);
+      set({
+        conversations: Object.values(store.conversations).sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        ),
       });
     },
 
@@ -547,8 +561,8 @@ export const useAppStore = create<AppState>((set, get) => {
     // ── UI ──────────────────────────────────────────────────────────
 
     setCommandPaletteOpen: (open: boolean) => set({ commandPaletteOpen: open }),
-    toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
-    setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
+    toggleNavExpanded: () => set((s) => ({ navExpanded: !s.navExpanded })),
+    setNavExpanded: (open: boolean) => set({ navExpanded: open }),
     toggleSystemPanel: () => set((s) => ({ systemPanelOpen: !s.systemPanelOpen })),
     setSystemPanelOpen: (open: boolean) => set({ systemPanelOpen: open }),
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AudioLines } from 'lucide-react';
 import type { SpeechState } from '../../hooks/useSpeech';
 
 interface MicButtonProps {
@@ -35,7 +36,7 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
       <button
         onClick={onClick}
         disabled={isInactive}
-        className="p-2 rounded-xl transition-all shrink-0"
+        className="p-2 rounded-full transition-all shrink-0"
         style={{
           background: state === 'recording'
             ? 'var(--color-error)'
@@ -57,10 +58,7 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
             </circle>
           </svg>
         ) : (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
-            <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z" />
-          </svg>
+          <AudioLines size={16} strokeWidth={2} />
         )}
       </button>
       {showTooltip && isInactive && (

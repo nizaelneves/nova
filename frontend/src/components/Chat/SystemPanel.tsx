@@ -8,7 +8,6 @@ import {
   Cloud,
   HardDrive,
   Hash,
-  X,
   Trophy,
   ExternalLink,
 } from 'lucide-react';
@@ -36,7 +35,6 @@ const CLOUD_PRICING = [
 
 export function SystemPanel() {
   const savings = useAppStore((s) => s.savings);
-  const toggleSystemPanel = useAppStore((s) => s.toggleSystemPanel);
   const optInEnabled = useAppStore((s) => s.optInEnabled);
   const setOptInModalOpen = useAppStore((s) => s.setOptInModalOpen);
   const liveEnergy = useAppStore((s) => s.liveEnergy);
@@ -87,20 +85,12 @@ export function SystemPanel() {
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 shrink-0"
+        className="flex items-center px-4 py-3 shrink-0"
         style={{ borderBottom: '1px solid var(--color-border)' }}
       >
         <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--color-text-secondary)' }}>
           System
         </span>
-        <button
-          onClick={toggleSystemPanel}
-          className="p-1 rounded-md transition-colors cursor-pointer"
-          style={{ color: 'var(--color-text-tertiary)' }}
-          title="Close panel"
-        >
-          <X size={14} />
-        </button>
       </div>
 
       <div className="flex flex-col gap-4 p-4">

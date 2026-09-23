@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Square, Paperclip, Search } from 'lucide-react';
+import { Send, Square, Paperclip, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
@@ -11,6 +11,7 @@ import {
   resolveChatEngine,
 } from '../../lib/chat-telemetry';
 import { MicButton } from './MicButton';
+import { ModelPicker } from './ModelPicker';
 import { useSpeech } from '../../hooks/useSpeech';
 import type {
   ChatMessage,
@@ -79,7 +80,7 @@ function useResearchCorpusSync(enabled: boolean): {
   return state;
 }
 
-export function InputArea() {
+export function InputArea({ isEmpty = false }: { isEmpty?: boolean }) {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -561,97 +562,112 @@ export function InputArea() {
     }
   };
 
+  const iconBtnStyle = (active: boolean): React.CSSProperties => ({
+    color: active ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+    background: active ? 'var(--color-accent-subtle)' : 'transparent',
+  });
+
   return (
     <div className="px-4 pb-4 pt-2" style={{ maxWidth: 'var(--chat-max-width)', margin: '0 auto', width: '100%' }}>
-      <div className="mb-2 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDeepResearch(!deepResearch)}
-            disabled={streamState.isStreaming}
-            aria-pressed={deepResearch}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors cursor-pointer disabled:cursor-default disabled:opacity-50"
-            style={{
-              background: deepResearch ? 'var(--color-accent-subtle)' : 'transparent',
-              border: `1px solid ${deepResearch ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              color: deepResearch ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
-            }}
-            title={deepResearch ? 'Deep Research: on' : 'Deep Research: off'}
-          >
-            <Search size={12} />
-            Deep Research
-          </button>
-        </div>
-        {deepResearch && corpusSync.syncing && corpusSync.itemsSynced > 0 && (
-          <div
-            className="text-[11px] leading-snug"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Searching over{' '}
-            <span key={corpusSync.itemsSynced} className="sync-bump" style={{ color: 'var(--color-text-secondary)' }}>
-              {corpusSync.itemsSynced.toLocaleString()}
-            </span>{' '}
-            items — sync in progress, results will improve as more data is indexed.
-          </div>
-        )}
-      </div>
       <div
-        className="flex items-center gap-2 rounded-2xl px-4 py-3 transition-shadow"
+        className="flex flex-col gap-2.5 rounded-3xl px-4 py-3 backdrop-blur-xl transition-shadow"
         style={{
           background: 'var(--color-input-bg)',
           border: '1px solid var(--color-input-border)',
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: 'var(--shadow-md)',
         }}
       >
+        {/* Row 1: the message itself */}
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedModel ? 'Message OpenJarvis...' : 'Pick a model first (⌘K)...'}
+          placeholder={selectedModel ? '' : 'Pick a model first (⌘K)...'}
           rows={1}
-          className="flex-1 bg-transparent outline-none resize-none text-sm leading-relaxed"
+          className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed"
           style={{ color: 'var(--color-text)', maxHeight: '200px' }}
           disabled={streamState.isStreaming || modelLoading}
         />
-        {isCurrentChatStreaming ? (
-          <button
-            onClick={stopStreaming}
-            className="p-2 rounded-xl transition-colors shrink-0 cursor-pointer"
-            style={{ background: 'var(--color-error)', color: 'var(--color-on-accent)' }}
-            title="Stop generating"
-          >
-            <Square size={16} />
-          </button>
-        ) : (
-          <div className="flex items-center gap-1">
+
+        {/* Row 2: model on the left, actions on the right — never overlapping */}
+        <div className="flex items-center justify-between gap-2">
+          <ModelPicker />
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              disabled
+              title="Anexar arquivo (em breve)"
+              className="p-2 rounded-full transition-colors cursor-not-allowed opacity-40"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              <Paperclip size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeepResearch(!deepResearch)}
+              disabled={streamState.isStreaming}
+              aria-pressed={deepResearch}
+              title={deepResearch ? 'Pesquisa na web: ativada' : 'Pesquisa na web: desativada'}
+              className="p-2 rounded-full transition-colors cursor-pointer disabled:cursor-default disabled:opacity-50"
+              style={iconBtnStyle(deepResearch)}
+            >
+              <Globe size={16} />
+            </button>
             <MicButton
               state={speechState}
               onClick={handleMicClick}
               disabled={micDisabled}
               reason={micReason}
             />
-            <button
-              onClick={sendMessage}
-              disabled={streamState.isStreaming || !input.trim() || modelLoading || !selectedModel}
-              title={selectedModel ? 'Send message' : 'Pick a model first (⌘K)'}
-              className="p-2 rounded-xl transition-colors shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-default"
-              style={{
-                background: input.trim() ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                color: input.trim() ? 'white' : 'var(--color-text-tertiary)',
-              }}
-            >
-              <Send size={16} />
-            </button>
+            {isCurrentChatStreaming ? (
+              <button
+                onClick={stopStreaming}
+                className="p-2 rounded-full transition-colors shrink-0 cursor-pointer"
+                style={{ background: 'var(--color-error)', color: 'var(--color-on-accent)' }}
+                title="Stop generating"
+              >
+                <Square size={16} />
+              </button>
+            ) : (
+              <button
+                onClick={sendMessage}
+                disabled={streamState.isStreaming || !input.trim() || modelLoading || !selectedModel}
+                title={selectedModel ? 'Send message' : 'Pick a model first (⌘K)'}
+                className="p-2 rounded-full transition-colors shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                style={{
+                  background: input.trim() ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
+                  color: input.trim() ? 'var(--color-on-accent)' : 'var(--color-text-tertiary)',
+                }}
+              >
+                <Send size={16} />
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </div>
-      <div className="flex items-center justify-center mt-2 text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>
-        <span>
-          <kbd className="font-mono">Enter</kbd> to send &middot;{' '}
-          <kbd className="font-mono">Shift+Enter</kbd> for new line
-        </span>
-      </div>
+
+      {deepResearch && corpusSync.syncing && corpusSync.itemsSynced > 0 && (
+        <div
+          className="mt-2 text-[11px] leading-snug text-center"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          Searching over{' '}
+          <span key={corpusSync.itemsSynced} className="sync-bump" style={{ color: 'var(--color-text-secondary)' }}>
+            {corpusSync.itemsSynced.toLocaleString()}
+          </span>{' '}
+          items — sync in progress, results will improve as more data is indexed.
+        </div>
+      )}
+
+      {!isEmpty && (
+        <div className="flex items-center justify-center mt-2 text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>
+          <span>
+            <kbd className="font-mono">Enter</kbd> to send &middot;{' '}
+            <kbd className="font-mono">Shift+Enter</kbd> for new line
+          </span>
+        </div>
+      )}
     </div>
   );
 }
