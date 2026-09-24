@@ -32,30 +32,12 @@ def _pyproject() -> dict:
     return tomllib.loads(PYPROJECT.read_text())
 
 
-def test_openjarvis_rust_not_in_published_desktop_extra() -> None:
-    desktop = _pyproject()["project"]["optional-dependencies"]["desktop"]
-    assert not any("openjarvis-rust" in dep for dep in desktop), (
-        "openjarvis-rust must not be in the published `desktop` extra — it is "
-        "not on PyPI, so it breaks `pip install openjarvis[desktop]`."
-    )
-
-
 def test_python310_speech_extras_use_installable_onnxruntime() -> None:
     extras = _pyproject()["project"]["optional-dependencies"]
     constraint = "onnxruntime<1.24; python_version < '3.11'"
 
     assert constraint in extras["desktop"]
     assert constraint in extras["speech"]
-
-
-def test_openjarvis_rust_lives_in_uv_dependency_group() -> None:
-    group = _pyproject()["dependency-groups"]["desktop-native"]
-    assert any("openjarvis-rust" in dep for dep in group)
-
-
-def test_openjarvis_rust_has_local_uv_path_source() -> None:
-    src = _pyproject()["tool"]["uv"]["sources"]["openjarvis-rust"]
-    assert src["path"] == "rust/crates/openjarvis-python"
 
 
 def test_desktop_app_syncs_the_native_group() -> None:
@@ -86,12 +68,6 @@ def test_windows_installer_failure_does_not_exit_interactive_host() -> None:
 
     assert "throw [System.InvalidOperationException]" in write_fail
     assert "exit 1" not in write_fail
-
-
-def test_quickstart_installs_web_search_dependencies() -> None:
-    quickstart = QUICKSTART_SH.read_text()
-    assert "--extra tools-search" in quickstart
-    assert "already running on port 8000" in quickstart
 
 
 def test_claude_runner_wheel_maps_only_runtime_files() -> None:

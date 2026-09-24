@@ -16,12 +16,12 @@ class TestLoopGuard:
 
     def test_identical_calls_blocked(self):
         guard, bus = self._make_guard(max_identical_calls=2)
-        v1 = guard.check_call("calc", '{"x": 1}')
-        assert not v1.blocked
-        # Rust backend uses a HashSet — blocks on the second identical call
-        v2 = guard.check_call("calc", '{"x": 1}')
-        assert v2.blocked
-        assert "identical" in v2.reason.lower()
+        for _ in range(2):
+            assert not guard.check_call("calc", '{"x": 1}').blocked
+        # The call exceeding max_identical_calls is blocked
+        v = guard.check_call("calc", '{"x": 1}')
+        assert v.blocked
+        assert "identical" in v.reason.lower()
 
     def test_different_args_not_blocked(self):
         guard, _ = self._make_guard(max_identical_calls=2)

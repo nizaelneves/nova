@@ -1,15 +1,9 @@
-"""Tests for the git tools (status, diff, commit, log).
-
-Tests mock the Rust backend (``get_rust_module``) so that the compiled
-``openjarvis_rust`` extension is not required.  The mock simulates Rust
-behaviour: git commands run via ``subprocess`` with the same flags that the
-Rust ``git_tools.rs`` implementation uses.
-"""
+"""Tests for the git tools (status, diff, commit, log)."""
 
 from __future__ import annotations
 
 import subprocess
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from openjarvis.tools.git_tool import (
     GitCommitTool,
@@ -17,81 +11,6 @@ from openjarvis.tools.git_tool import (
     GitLogTool,
     GitStatusTool,
 )
-
-# ---------------------------------------------------------------------------
-# Helpers — mock Rust backend
-# ---------------------------------------------------------------------------
-
-
-def _run_git_like_rust(args: list[str], cwd: str | None = None) -> str:
-    """Run a git command the way the Rust ``run_git`` helper does.
-
-    Returns stdout on success.  Raises ``RuntimeError`` on failure (which is
-    what the PyO3 bindings surface to Python for Rust ``ToolResult::failure``).
-    """
-    result = subprocess.run(
-        ["git"] + args,
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-    )
-    if result.returncode != 0:
-        msg = result.stderr.strip() or f"git exited {result.returncode}"
-        raise RuntimeError(msg)
-    return result.stdout
-
-
-def _make_mock_rust(tmp_path=None):
-    """Return a mock module mimicking ``openjarvis_rust`` git tools.
-
-    The mock's ``GitStatusTool``, ``GitDiffTool``, and ``GitLogTool``
-    classes each have an ``execute`` method that shells out to git using
-    the same flags as the Rust implementation.
-    """
-    mock_mod = MagicMock()
-
-    # -- GitStatusTool --
-    status_inst = MagicMock()
-
-    def _status_execute(cwd=None):
-        return _run_git_like_rust(["status", "--short"], cwd=cwd)
-
-    status_inst.execute.side_effect = _status_execute
-    mock_mod.GitStatusTool.return_value = status_inst
-
-    # -- GitDiffTool --
-    diff_inst = MagicMock()
-
-    def _diff_execute(cwd=None):
-        return _run_git_like_rust(["diff"], cwd=cwd)
-
-    diff_inst.execute.side_effect = _diff_execute
-    mock_mod.GitDiffTool.return_value = diff_inst
-
-    # -- GitLogTool --
-    log_inst = MagicMock()
-
-    def _log_execute(cwd=None, count=None):
-        # Rust reads params["n"], but PyO3 passes "count".  The Rust side
-        # never sees "count" so the limit always defaults to 10.
-        n = 10
-        return _run_git_like_rust(["log", "--oneline", f"-{n}"], cwd=cwd)
-
-    log_inst.execute.side_effect = _log_execute
-    mock_mod.GitLogTool.return_value = log_inst
-
-    return mock_mod
-
-
-def _make_mock_rust_git_not_found():
-    """Return a mock module whose git tools raise RuntimeError (git missing)."""
-    mock_mod = MagicMock()
-    err = RuntimeError("Failed to run git: No such file or directory (os error 2)")
-    for attr in ("GitStatusTool", "GitDiffTool", "GitLogTool"):
-        inst = MagicMock()
-        inst.execute.side_effect = err
-        getattr(mock_mod, attr).return_value = inst
-    return mock_mod
 
 
 def _init_repo(path):
@@ -150,20 +69,16 @@ class TestGitStatusTool:
     def test_clean_repo(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
-        # Clean repo — Rust uses --short so no output
+        # Clean repo — porcelain output is empty
         assert result.content == "(no output)"
 
     def test_modified_file(self, tmp_path):
         _init_repo(tmp_path)
         (tmp_path / "README.md").write_text("# Modified\n")
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "README.md" in result.content
 
@@ -171,43 +86,34 @@ class TestGitStatusTool:
         _init_repo(tmp_path)
         (tmp_path / "new_file.txt").write_text("hello")
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "new_file.txt" in result.content
 
     def test_default_repo_path(self):
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute()
+        result = tool.execute()
         # Should succeed or fail depending on cwd; not a crash
         assert isinstance(result.content, str)
 
     def test_invalid_repo_path(self, tmp_path):
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
+        result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
         assert result.success is False
 
     def test_returncode_in_metadata(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert "returncode" in result.metadata
         assert result.metadata["returncode"] == 0
 
     def test_git_not_found(self):
         tool = GitStatusTool()
-        mock_mod = _make_mock_rust_git_not_found()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
+        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(repo_path=".")
         assert result.success is False
-        assert "Failed to run git" in result.content
+        assert "git binary not found" in result.content
 
     def test_to_openai_function(self):
         tool = GitStatusTool()
@@ -235,9 +141,7 @@ class TestGitDiffTool:
     def test_no_changes(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
         assert result.content == "(no output)"
 
@@ -245,9 +149,7 @@ class TestGitDiffTool:
         _init_repo(tmp_path)
         (tmp_path / "README.md").write_text("# Changed\n")
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "Changed" in result.content
 
@@ -261,13 +163,10 @@ class TestGitDiffTool:
             check=True,
         )
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            # Unstaged should be empty (Rust path)
-            result_unstaged = tool.execute(repo_path=str(tmp_path))
-            assert result_unstaged.content == "(no output)"
-            # Staged falls back to Python _run_git (not handled by Rust)
-            result_staged = tool.execute(repo_path=str(tmp_path), staged=True)
+        # Unstaged should be empty
+        result_unstaged = tool.execute(repo_path=str(tmp_path))
+        assert result_unstaged.content == "(no output)"
+        result_staged = tool.execute(repo_path=str(tmp_path), staged=True)
         assert result_staged.success is True
         assert "Staged" in result_staged.content
 
@@ -281,35 +180,26 @@ class TestGitDiffTool:
             capture_output=True,
         )
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        # path= specified → falls back to Python _run_git, but
-        # get_rust_module() is still called before the branch.
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path), path="README.md")
+        result = tool.execute(repo_path=str(tmp_path), path="README.md")
         assert result.success is True
         assert "Changed" in result.content
 
     def test_git_not_found(self):
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust_git_not_found()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
+        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(repo_path=".")
         assert result.success is False
-        assert "Failed to run git" in result.content
+        assert "git binary not found" in result.content
 
     def test_invalid_repo_path(self, tmp_path):
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
+        result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
         assert result.success is False
 
     def test_returncode_in_metadata(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitDiffTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.metadata["returncode"] == 0
 
 
@@ -453,27 +343,21 @@ class TestGitLogTool:
     def test_log_oneline(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitLogTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "Initial commit" in result.content
 
     def test_log_full_format(self, tmp_path):
-        """Rust git_log always uses --oneline; the ``oneline`` param is ignored."""
+        """``oneline=False`` returns the full log format."""
         _init_repo(tmp_path)
         tool = GitLogTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path), oneline=False)
+        result = tool.execute(repo_path=str(tmp_path), oneline=False)
         assert result.success is True
         assert "Initial commit" in result.content
-        # Rust always uses --oneline, so "Author:" is never present
-        assert "Author:" not in result.content
+        assert "Author:" in result.content
 
     def test_log_count(self, tmp_path):
-        """Rust reads param ``n`` but PyO3 passes ``count``, so the limit
-        is always the default (10).  With 6 total commits all 6 are returned."""
+        """``count`` limits the number of commits returned."""
         _init_repo(tmp_path)
         # Add more commits
         for i in range(5):
@@ -491,14 +375,10 @@ class TestGitLogTool:
                 check=True,
             )
         tool = GitLogTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path), count=3, oneline=True)
+        result = tool.execute(repo_path=str(tmp_path), count=3, oneline=True)
         assert result.success is True
-        # Rust ignores the count param (reads "n", gets "count") and
-        # defaults to 10, so all 6 commits are returned.
         lines = [line for line in result.content.strip().splitlines() if line.strip()]
-        assert len(lines) == 6
+        assert len(lines) == 3
 
     def test_default_count_is_10(self):
         tool = GitLogTool()
@@ -508,28 +388,20 @@ class TestGitLogTool:
 
     def test_git_not_found(self):
         tool = GitLogTool()
-        mock_mod = _make_mock_rust_git_not_found()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            # Rust raises → Python fallback via _run_git, which also
-            # checks shutil.which
-            with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
-                result = tool.execute(repo_path=".")
+        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
+            result = tool.execute(repo_path=".")
         assert result.success is False
         assert "not found" in result.content
 
     def test_invalid_repo_path(self, tmp_path):
         tool = GitLogTool()
-        mock_mod = _make_mock_rust()
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
+        result = tool.execute(repo_path=str(tmp_path / "nonexistent"))
         assert result.success is False
 
     def test_returncode_in_metadata(self, tmp_path):
         _init_repo(tmp_path)
         tool = GitLogTool()
-        mock_mod = _make_mock_rust(tmp_path)
-        with patch("openjarvis.tools.git_tool.get_rust_module", return_value=mock_mod):
-            result = tool.execute(repo_path=str(tmp_path))
+        result = tool.execute(repo_path=str(tmp_path))
         assert result.metadata["returncode"] == 0
 
     def test_to_openai_function(self):
@@ -540,48 +412,36 @@ class TestGitLogTool:
 
 
 # ---------------------------------------------------------------------------
-# CLI fallback when the Rust extension is missing
+# Git CLI behaviour
 # ---------------------------------------------------------------------------
 
 
-class TestCliFallbackWhenRustMissing:
-    """When ``get_rust_module`` raises ImportError (extension not built,
-    e.g. a plain pip install), the read-only git tools must fall back to
-    the git CLI instead of letting the ImportError escape ``execute()``."""
-
-    def _patch_no_rust(self):
-        return patch(
-            "openjarvis.tools.git_tool.get_rust_module",
-            side_effect=ImportError("No module named 'openjarvis_rust'"),
-        )
+class TestGitCli:
+    """The read-only git tools run the git CLI and never raise."""
 
     def test_git_status_falls_back_to_cli(self, tmp_path):
         _init_repo(tmp_path)
         (tmp_path / "new_file.txt").write_text("hello")
-        with self._patch_no_rust():
-            result = GitStatusTool().execute(repo_path=str(tmp_path))
+        result = GitStatusTool().execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "new_file.txt" in result.content
 
     def test_git_diff_falls_back_to_cli(self, tmp_path):
         _init_repo(tmp_path)
         (tmp_path / "README.md").write_text("# Modified\n")
-        with self._patch_no_rust():
-            result = GitDiffTool().execute(repo_path=str(tmp_path))
+        result = GitDiffTool().execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "README.md" in result.content
 
     def test_git_log_falls_back_to_cli(self, tmp_path):
         _init_repo(tmp_path)
-        with self._patch_no_rust():
-            result = GitLogTool().execute(repo_path=str(tmp_path))
+        result = GitLogTool().execute(repo_path=str(tmp_path))
         assert result.success is True
         assert "Initial commit" in result.content
 
     def test_fallback_failure_is_a_tool_result_not_an_exception(self, tmp_path):
-        # Even when the fallback itself fails (not a git repo), the tool
+        # When git fails (not a git repo), the tool
         # must return a failed ToolResult rather than raising.
-        with self._patch_no_rust():
-            result = GitStatusTool().execute(repo_path=str(tmp_path))
+        result = GitStatusTool().execute(repo_path=str(tmp_path))
         assert result.success is False
         assert "not a git repository" in result.content

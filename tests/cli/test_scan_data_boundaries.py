@@ -19,7 +19,6 @@ def _low_noise_config():
     OPENJARVIS_HOME; clear those so tests only see artifacts under tmp_path.
     """
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     config.telemetry.enabled = False
     config.agent.context_from_memory = False
@@ -259,53 +258,6 @@ def test_top_level_cli_registers_data_boundary_scan(monkeypatch, tmp_path):
     payload = json.loads(result.output)
     assert payload["schema_version"] == 1
     assert "summary" in payload
-
-
-def test_top_level_scan_data_boundaries_does_not_check_for_updates(
-    monkeypatch,
-    tmp_path,
-):
-    import sys
-
-    from openjarvis.cli import cli
-    from openjarvis.core.config import JarvisConfig
-
-    called = {"value": False}
-
-    def fake_check_for_updates(_subcommand):
-        called["value"] = True
-
-    monkeypatch.setattr(
-        "openjarvis.cli._version_check.check_for_updates",
-        fake_check_for_updates,
-    )
-    monkeypatch.setattr(
-        "openjarvis.cli.scan_cmd._load_data_boundary_config",
-        lambda: (JarvisConfig(), tmp_path, False, "", ""),
-    )
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["jarvis", "scan", "--data-boundaries", "--json"],
-    )
-
-    result = CliRunner().invoke(cli, ["scan", "--data-boundaries", "--json"])
-
-    assert result.exit_code == 0
-    assert called["value"] is False
-
-
-def test_update_check_skip_helper_is_precise():
-    from click import Command, Context
-
-    from openjarvis.cli import _should_skip_update_check
-
-    ctx = Context(Command("jarvis"))
-    ctx.invoked_subcommand = "scan"
-    assert _should_skip_update_check(ctx, ["scan", "--data-boundaries"])
-
-    ctx.invoked_subcommand = "ask"
-    assert not _should_skip_update_check(ctx, ["ask", "scan", "--data-boundaries"])
 
 
 def test_existing_scan_quick_text_still_works(monkeypatch):

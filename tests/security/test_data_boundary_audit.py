@@ -109,7 +109,6 @@ def _low_noise_config():
     OPENJARVIS_HOME; clear those so tests only see artifacts under tmp_path.
     """
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     config.telemetry.enabled = False
     config.agent.context_from_memory = False
@@ -163,7 +162,6 @@ def test_missing_config_does_not_report_dataclass_defaults(tmp_path, monkeypatch
 
     assert report.config_loaded is False
     assert "config-file-missing" in _ids(report)
-    assert "analytics-enabled" not in _ids(report)
     assert "traces-enabled" not in _ids(report)
 
 
@@ -225,18 +223,6 @@ def test_local_engine_vendor_model_names_are_not_cloud(tmp_path, model):
     assert "memory-context-to-cloud-risk" not in findings
     assert "frontend-credential-storage-not-inspected" not in findings
     assert findings["memory-context-injection-enabled"].status == "info"
-
-
-def test_analytics_is_info_and_does_not_assert_prompt_capture(tmp_path):
-    config = _low_noise_config()
-    config.analytics.enabled = True
-
-    report = build_data_boundary_report(config, tmp_path)
-
-    findings = {finding.id: finding for finding in report.findings}
-    finding = findings["analytics-enabled"]
-    assert finding.status == "info"
-    assert "does not assert" in finding.recommendation
 
 
 def test_traces_enabled_flags_capture_setting(tmp_path):
@@ -452,27 +438,27 @@ def test_channel_enabled_and_credentials_are_flagged(tmp_path):
 
 def test_channel_reference_fields_are_flagged(tmp_path):
     config = _low_noise_config()
-    config.channel.matrix.homeserver = "https://matrix.example.org"
+    config.channel.whatsapp.phone_number_id = "1234567890"
 
     report = build_data_boundary_report(config, tmp_path)
 
     findings = {finding.id: finding for finding in report.findings}
-    ref = findings["channel-reference-channel-matrix-homeserver"]
+    ref = findings["channel-reference-channel-whatsapp-phone-number-id"]
     assert ref.status == "info"
-    assert "Matrix homeserver" in ref.title
+    assert "WhatsApp phone number ID" in ref.title
 
 
 def test_channel_env_credential_presence_only(tmp_path, monkeypatch):
     config = _low_noise_config()
-    monkeypatch.setenv("SLACK_BOT_TOKEN", "slack-secret")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "telegram-secret")
 
     report = build_data_boundary_report(config, tmp_path)
 
     findings = {finding.id: finding for finding in report.findings}
-    finding = findings["channel-env-secret-slack_bot_token"]
+    finding = findings["channel-env-secret-telegram_bot_token"]
     assert finding.status == "info"
-    assert "SLACK_BOT_TOKEN is set" in finding.evidence
-    assert "slack-secret" not in str(report.to_dict(show_paths=True))
+    assert "TELEGRAM_BOT_TOKEN is set" in finding.evidence
+    assert "telegram-secret" not in str(report.to_dict(show_paths=True))
 
 
 def test_cloud_speech_backend_is_warn(tmp_path):
@@ -1214,10 +1200,7 @@ def test_runtime_credential_keys_are_all_covered():
 def test_runtime_credential_values_never_appear(tmp_path, monkeypatch):
     config = _low_noise_config()
     secret = "runtime-credential-secret-value-xyz"
-    # Cover both specialized and generic keys.
     monkeypatch.setenv("OPENAI_API_KEY", secret)
-    monkeypatch.setenv("ZULIP_API_KEY", secret)
-    monkeypatch.setenv("LINE_CHANNEL_SECRET", secret)
 
     report = build_data_boundary_report(config, tmp_path)
     payload = report.to_dict(show_paths=True)
@@ -1226,14 +1209,6 @@ def test_runtime_credential_values_never_appear(tmp_path, monkeypatch):
     assert secret not in blob
     findings = {finding.id: finding for finding in report.findings}
     assert "OPENAI_API_KEY is set" in findings["env-credential-openai_api_key"].evidence
-    assert (
-        "ZULIP_API_KEY is set"
-        in findings["env-credential-generic-zulip_api_key"].evidence
-    )
-    assert (
-        "LINE_CHANNEL_SECRET is set"
-        in findings["env-credential-generic-line_channel_secret"].evidence
-    )
 
 
 def _clear_cloud_api_env(monkeypatch) -> None:
@@ -1318,7 +1293,6 @@ enabled = [
     config.optimize.judge_model = ""
     config.scheduler.db_path = ""
     config.skills.index_dir = ""
-    config.analytics.enabled = False
     config.traces.enabled = False
     config.telemetry.enabled = False
     config.agent.context_from_memory = False

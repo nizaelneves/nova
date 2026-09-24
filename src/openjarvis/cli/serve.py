@@ -713,8 +713,6 @@ def serve(
         logger.info("Credentials loaded — %s", ", ".join(_cred_parts))
 
     webhook_config = {
-        "twilio_auth_token": _os.environ.get("TWILIO_AUTH_TOKEN", ""),
-        "bluebubbles_password": _os.environ.get("BLUEBUBBLES_PASSWORD", ""),
         "whatsapp_verify_token": _os.environ.get("WHATSAPP_VERIFY_TOKEN", ""),
         "whatsapp_app_secret": _os.environ.get("WHATSAPP_APP_SECRET", ""),
     }

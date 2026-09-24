@@ -2049,33 +2049,6 @@ async fn transcribe_audio(
     serde_json::from_str(&body).map_err(|e| format!("Invalid response: {}", e))
 }
 
-/// Submit savings to Supabase leaderboard.
-#[tauri::command]
-async fn submit_savings(
-    supabase_url: String,
-    supabase_key: String,
-    payload: serde_json::Value,
-) -> Result<bool, String> {
-    if supabase_url.is_empty() || supabase_key.is_empty() {
-        return Ok(false);
-    }
-    let client = reqwest::Client::new();
-    let resp = client
-        .post(format!(
-            "{}/rest/v1/savings_entries?on_conflict=anon_id",
-            supabase_url
-        ))
-        .header("Content-Type", "application/json")
-        .header("apikey", &supabase_key)
-        .header("Authorization", format!("Bearer {}", supabase_key))
-        .header("Prefer", "resolution=merge-duplicates")
-        .json(&payload)
-        .send()
-        .await
-        .map_err(|e| format!("Supabase POST failed: {}", e))?;
-    Ok(resp.status().is_success())
-}
-
 // ---------------------------------------------------------------------------
 // Cloud API key management
 // ---------------------------------------------------------------------------
@@ -3294,7 +3267,6 @@ pub fn run() {
             MacosLauncher::LaunchAgent,
             Some(vec!["--hidden"]),
         ))
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -3392,7 +3364,6 @@ pub fn run() {
             fetch_models,
             run_jarvis_command,
             fetch_savings,
-            submit_savings,
             transcribe_audio,
             speech_health,
             pull_ollama_model,

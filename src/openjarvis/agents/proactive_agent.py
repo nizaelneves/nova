@@ -73,7 +73,7 @@ data from the user's connected sources (email, messages, calendar). Your job is 
 2. For each action, output a JSON object in your response inside a ```json ... ``` block.
 
 Each action object must have these fields:
-  - action_type: one of email_delete | email_archive | sms_send | sms_draft_reply |
+  - action_type: one of email_delete | email_archive | sms_draft_reply |
                  calendar_decline | calendar_accept | no_action
   - description: human-readable sentence explaining what you will do
   - payload: dict with the data needed to execute. ALWAYS include:
@@ -204,11 +204,8 @@ def _extract_json_block(text: str) -> Optional[List[Dict[str, Any]]]:
 def _build_notification_channel(channel_spec: str) -> Optional[Any]:
     """Parse a ``"type:identifier"`` string into a channel backend instance.
 
-    Supports:
-      ``imessage:+15551234567``  — sends via AppleScript directly
+    Supports any type registered in ChannelRegistry, e.g.
       ``telegram:123456789``     — instantiates TelegramChannel
-      ``slack:D0123456789``      — instantiates registered Slack channel
-      Any other type registered in ChannelRegistry
 
     Returns ``None`` (silently) if the spec is empty or the channel can't
     be instantiated so the agent degrades gracefully to no notifications.
@@ -218,44 +215,6 @@ def _build_notification_channel(channel_spec: str) -> Optional[Any]:
 
     channel_type, _, channel_id = channel_spec.partition(":")
 
-    # iMessage: wrap send_imessage() in a minimal BaseChannel-compatible shim
-    if channel_type == "imessage":
-        from openjarvis.channels._stubs import (
-            BaseChannel,
-            ChannelStatus,
-        )
-
-        class _IMessageShim(BaseChannel):
-            channel_id = "imessage"
-
-            def __init__(self, handle: str) -> None:
-                self._handle = handle
-
-            def connect(self) -> None:
-                pass
-
-            def disconnect(self) -> None:
-                pass
-
-            def send(
-                self, channel: str, content: str, *, conversation_id: str = ""
-            ) -> bool:
-                from openjarvis.channels.imessage_daemon import send_imessage
-
-                return send_imessage(self._handle, content)
-
-            def status(self) -> ChannelStatus:
-                return ChannelStatus.CONNECTED
-
-            def list_channels(self) -> List[str]:
-                return [self._handle]
-
-            def on_message(self, handler: Any) -> None:
-                pass
-
-        return _IMessageShim(channel_id)
-
-    # All other channel types: look up in ChannelRegistry
     try:
         import openjarvis.channels  # noqa: F401  trigger registration
         from openjarvis.core.registry import ChannelRegistry

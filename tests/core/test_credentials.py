@@ -67,9 +67,9 @@ def test_save_and_load(cred_path):
 def test_credential_special_characters_round_trip(cred_path):
     value = 'quote" backslash\\ internal\nnewline and unicode: café 🔐'
 
-    save_credential("email", "EMAIL_PASSWORD", value, path=cred_path)
+    save_credential("telegram", "TELEGRAM_BOT_TOKEN", value, path=cred_path)
 
-    assert load_credentials(path=cred_path)["email"]["EMAIL_PASSWORD"] == value
+    assert load_credentials(path=cred_path)["telegram"]["TELEGRAM_BOT_TOKEN"] == value
     assert cred_path.read_text(encoding="utf-8")
 
 

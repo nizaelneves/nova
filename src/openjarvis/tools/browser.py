@@ -101,9 +101,7 @@ class BrowserNavigateTool(BaseTool):
         if wait_for not in ("load", "domcontentloaded", "networkidle"):
             wait_for = "load"
 
-        # SSRF check — never skipped. check_ssrf falls back to a pure-Python
-        # implementation when the Rust backend is unavailable, so an
-        # uncompiled extension must not silently disable SSRF protection.
+        # SSRF check — never skipped.
         from openjarvis.security.ssrf import check_ssrf
 
         ssrf_error = check_ssrf(url)

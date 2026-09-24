@@ -257,7 +257,6 @@ def test_app_shutdown_stops_scheduler_before_closing_shared_mcp_clients() -> Non
     memory_backend.close.side_effect = lambda: events.append("memory")
     channel_bridge.disconnect.side_effect = lambda: events.append("channel")
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
 
     app = create_app(
@@ -331,7 +330,6 @@ def test_shutdown_interrupts_mcp_client_during_lazy_initialization() -> None:
 
     client = _BlockingClient()
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(MagicMock(), "test-model", config=config)
     mcp_config = _make_config(
@@ -379,7 +377,6 @@ def test_app_shutdown_closes_lazily_created_memory_backend(monkeypatch) -> None:
     backend = MagicMock()
     monkeypatch.setattr(routes, "_resolve_memory_backend", lambda config: backend)
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(MagicMock(), "test-model", config=config)
 
@@ -411,7 +408,6 @@ def test_app_shutdown_keeps_owned_memory_open_for_live_worker(monkeypatch) -> No
     shutdown_errors: list[BaseException] = []
     backend = MagicMock()
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     app = app_module.create_app(
         MagicMock(),
@@ -467,7 +463,6 @@ def test_app_shutdown_leaves_borrowed_memory_backend_open() -> None:
 
     backend = MagicMock()
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     app = create_app(
         MagicMock(),

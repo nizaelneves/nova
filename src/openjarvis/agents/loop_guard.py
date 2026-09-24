@@ -54,45 +54,24 @@ class LoopGuard:
         # Track cycle keys that have already been warned (for warn-before-block)
         self._warned_cycles: set[str] = set()
 
-        try:
-            from openjarvis._rust_bridge import get_rust_module
-
-            _rust = get_rust_module()
-            self._rust_impl = _rust.LoopGuard(
-                max_identical=config.max_identical_calls,
-                max_ping_pong=(
-                    config.ping_pong_window // 2 if config.ping_pong_window > 1 else 2
-                ),
-                poll_budget=config.poll_tool_budget,
-            )
-        except Exception:
-            self._rust_impl = None
-
     def check_call(self, tool_name: str, arguments: str) -> LoopVerdict:
         """Check whether a tool call should proceed or be blocked."""
-        if self._rust_impl is not None:
-            rust_result = self._rust_impl.check(tool_name, arguments)
-            # Support both raw Rust return (str | None) and LoopVerdict
-            if isinstance(rust_result, LoopVerdict):
-                verdict = rust_result
-            elif rust_result is not None:
-                self._emit_triggered("rust_guard", tool_name)
-                verdict = LoopVerdict(blocked=True, reason=rust_result)
-            else:
-                verdict = LoopVerdict()
-        else:
-            verdict = self._python_check(tool_name, arguments)
+        verdict, cycle_key = self._check(tool_name, arguments)
 
-        # Wrap with warn-before-block logic
+        # Wrap with warn-before-block logic. The cycle key is stable across
+        # repeats (unlike the reason text, which embeds the call count), so the
+        # first trip of a cycle warns and the next one blocks.
         if verdict.blocked and self._config.warn_before_block:
-            cycle_key = verdict.reason
             if cycle_key not in self._warned_cycles:
                 self._warned_cycles.add(cycle_key)
                 return LoopVerdict(blocked=False, warned=True, reason=verdict.reason)
         return verdict
 
-    def _python_check(self, tool_name: str, arguments: str) -> LoopVerdict:
-        """Pure-Python fallback when Rust backend is not available."""
+    def _check(self, tool_name: str, arguments: str) -> tuple[LoopVerdict, str]:
+        """Run the identical-call, polling-budget and ping-pong checks.
+
+        Returns the verdict and a stable key identifying the tripped cycle.
+        """
         # 1. Hash tracking — identical calls
         call_hash = hashlib.sha256(f"{tool_name}:{arguments}".encode()).hexdigest()[:16]
         self._call_counts[call_hash] = self._call_counts.get(call_hash, 0) + 1
@@ -105,7 +84,7 @@ class LoopGuard:
                     f"{self._call_counts[call_hash]} times "
                     f"(max {self._config.max_identical_calls})."
                 ),
-            )
+            ), f"identical:{call_hash}"
 
         # 2. Per-tool budget (polling tools)
         self._per_tool_counts[tool_name] = self._per_tool_counts.get(tool_name, 0) + 1
@@ -117,7 +96,7 @@ class LoopGuard:
                     f"Tool '{tool_name}' exceeded poll budget "
                     f"({self._config.poll_tool_budget})."
                 ),
-            )
+            ), f"poll:{tool_name}"
 
         # 3. Ping-pong detection
         self._tool_sequence.append(tool_name)
@@ -127,9 +106,9 @@ class LoopGuard:
                 return LoopVerdict(
                     blocked=True,
                     reason="Repetitive tool-calling pattern detected (ping-pong).",
-                )
+                ), "ping_pong"
 
-        return LoopVerdict()
+        return LoopVerdict(), ""
 
     def check_response(self, content: str) -> LoopVerdict:
         """Check whether an agent response indicates a loop. Reserved for future use."""
@@ -210,13 +189,11 @@ class LoopGuard:
         return sys_final + tail[-4:]
 
     def reset(self) -> None:
-        """Reset all tracking state — always via Rust backend."""
+        """Reset all tracking state."""
         self._call_counts.clear()
         self._tool_sequence.clear()
         self._per_tool_counts.clear()
         self._warned_cycles.clear()
-        if self._rust_impl is not None:
-            self._rust_impl.reset()
 
     def _detect_ping_pong(self) -> bool:
         """Detect repeating patterns in tool call sequence."""

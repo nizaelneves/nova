@@ -15,7 +15,6 @@ import subprocess
 from dataclasses import dataclass, field, is_dataclass
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -32,14 +31,6 @@ from openjarvis.core.paths import (
     get_config_path,
     get_data_dir,
 )
-
-if TYPE_CHECKING:
-    # Only used by type-checkers (mypy/pyright) for the ``JarvisConfig.mining``
-    # field annotation. The runtime import is deferred inside
-    # ``_parse_mining_section()`` to break the import cycle:
-    # ``mining/_stubs.py`` imports ``HardwareInfo`` from this module at its
-    # top level.
-    from openjarvis.mining._stubs import MiningConfig
 
 try:
     import tomllib  # Python 3.11+
@@ -1209,27 +1200,6 @@ class TelemetryConfig:
 
 
 @dataclass(slots=True)
-class AnalyticsConfig:
-    """External anonymous usage analytics (PostHog).
-
-    Separate concern from :class:`TelemetryConfig`, which stores local
-    FLOPs/energy/inference metrics in SQLite. This controls anonymized
-    usage events sent to the OpenJarvis team's PostHog instance to
-    measure setup success, retention, feature usage, and churn.
-
-    No chat content, prompts, model outputs, file paths, emails, IPs,
-    or hardware identifiers are ever sent. See ``docs/telemetry.md``.
-    """
-
-    enabled: bool = True
-    host: str = "https://34.231.106.201.sslip.io"
-    key: str = "phc_ysKu72QaxzYNmDpHFcesD2ZZAe68zkdWJEKoYYkc5e3n"
-    anon_id_path: str = field(default_factory=lambda: str(get_config_dir() / "anon_id"))
-    flush_interval_seconds: int = 30
-    flush_at_size: int = 100
-
-
-@dataclass(slots=True)
 class TracesConfig:
     """Trace system settings."""
 
@@ -1246,7 +1216,7 @@ class ProactiveConfig:
     hours_back: int = 24  # how many hours of unacted items to scan
     timezone: str = "America/Los_Angeles"
     # Channel to send approval notifications and receive yes/no replies.
-    # Format: "{type}:{id}", e.g. "imessage:+15551234567" or "telegram:123456789"
+    # Format: "{type}:{id}", e.g. "telegram:123456789"
     notification_channel: str = ""
 
 
@@ -1260,122 +1230,11 @@ class TelegramChannelConfig:
 
 
 @dataclass(slots=True)
-class DiscordChannelConfig:
-    """Per-channel config for Discord."""
-
-    bot_token: str = ""
-
-
-@dataclass(slots=True)
-class SlackChannelConfig:
-    """Per-channel config for Slack."""
-
-    bot_token: str = ""
-    app_token: str = ""
-
-
-@dataclass(slots=True)
-class WebhookChannelConfig:
-    """Per-channel config for generic webhooks."""
-
-    url: str = ""
-    secret: str = ""
-    method: str = "POST"
-
-
-@dataclass(slots=True)
-class EmailChannelConfig:
-    """Per-channel config for email (SMTP/IMAP)."""
-
-    smtp_host: str = ""
-    smtp_port: int = 587
-    imap_host: str = ""
-    imap_port: int = 993
-    username: str = ""
-    password: str = ""
-    use_tls: bool = True
-
-
-@dataclass(slots=True)
 class WhatsAppChannelConfig:
     """Per-channel config for WhatsApp Cloud API."""
 
     access_token: str = ""
     phone_number_id: str = ""
-
-
-@dataclass(slots=True)
-class SignalChannelConfig:
-    """Per-channel config for Signal (via signal-cli REST API)."""
-
-    api_url: str = ""
-    phone_number: str = ""
-
-
-@dataclass(slots=True)
-class GoogleChatChannelConfig:
-    """Per-channel config for Google Chat webhooks."""
-
-    webhook_url: str = ""
-
-
-@dataclass(slots=True)
-class IRCChannelConfig:
-    """Per-channel config for IRC."""
-
-    server: str = ""
-    port: int = 6667
-    nick: str = ""
-    password: str = ""
-    use_tls: bool = False
-
-
-@dataclass(slots=True)
-class WebChatChannelConfig:
-    """Per-channel config for in-memory webchat."""
-
-    pass
-
-
-@dataclass(slots=True)
-class TeamsChannelConfig:
-    """Per-channel config for Microsoft Teams (Bot Framework)."""
-
-    app_id: str = ""
-    app_password: str = ""
-    service_url: str = ""
-
-
-@dataclass(slots=True)
-class MatrixChannelConfig:
-    """Per-channel config for Matrix."""
-
-    homeserver: str = ""
-    access_token: str = ""
-
-
-@dataclass(slots=True)
-class MattermostChannelConfig:
-    """Per-channel config for Mattermost."""
-
-    url: str = ""
-    token: str = ""
-
-
-@dataclass(slots=True)
-class FeishuChannelConfig:
-    """Per-channel config for Feishu (Lark)."""
-
-    app_id: str = ""
-    app_secret: str = ""
-
-
-@dataclass(slots=True)
-class BlueBubblesChannelConfig:
-    """Per-channel config for BlueBubbles (iMessage bridge)."""
-
-    url: str = ""
-    password: str = ""
 
 
 @dataclass(slots=True)
@@ -1395,24 +1254,7 @@ class ChannelConfig:
     default_channel: str = ""
     default_agent: str = "simple"
     telegram: TelegramChannelConfig = field(default_factory=TelegramChannelConfig)
-    discord: DiscordChannelConfig = field(default_factory=DiscordChannelConfig)
-    slack: SlackChannelConfig = field(default_factory=SlackChannelConfig)
-    webhook: WebhookChannelConfig = field(default_factory=WebhookChannelConfig)
-    email: EmailChannelConfig = field(default_factory=EmailChannelConfig)
     whatsapp: WhatsAppChannelConfig = field(default_factory=WhatsAppChannelConfig)
-    signal: SignalChannelConfig = field(default_factory=SignalChannelConfig)
-    google_chat: GoogleChatChannelConfig = field(
-        default_factory=GoogleChatChannelConfig,
-    )
-    irc: IRCChannelConfig = field(default_factory=IRCChannelConfig)
-    webchat: WebChatChannelConfig = field(default_factory=WebChatChannelConfig)
-    teams: TeamsChannelConfig = field(default_factory=TeamsChannelConfig)
-    matrix: MatrixChannelConfig = field(default_factory=MatrixChannelConfig)
-    mattermost: MattermostChannelConfig = field(default_factory=MattermostChannelConfig)
-    feishu: FeishuChannelConfig = field(default_factory=FeishuChannelConfig)
-    bluebubbles: BlueBubblesChannelConfig = field(
-        default_factory=BlueBubblesChannelConfig,
-    )
     whatsapp_baileys: WhatsAppBaileysChannelConfig = field(
         default_factory=WhatsAppBaileysChannelConfig,
     )
@@ -1773,7 +1615,6 @@ class JarvisConfig:
     agent: AgentConfig = field(default_factory=AgentConfig)
     server: ServerConfig = field(default_factory=ServerConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
-    analytics: AnalyticsConfig = field(default_factory=AnalyticsConfig)
     traces: TracesConfig = field(default_factory=TracesConfig)
     channel: ChannelConfig = field(default_factory=ChannelConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
@@ -1792,7 +1633,6 @@ class JarvisConfig:
     skills: SkillsConfig = field(default_factory=SkillsConfig)
     digest: DigestConfig = field(default_factory=DigestConfig)
     proactive: ProactiveConfig = field(default_factory=ProactiveConfig)
-    mining: Optional["MiningConfig"] = None
 
     @property
     def _config_dir(self) -> Path:
@@ -1822,7 +1662,6 @@ class JarvisConfig:
 # ``hardware`` is auto-detected and not user-settable.
 _SETTABLE_SECTIONS = frozenset(JarvisConfig.__dataclass_fields__.keys()) - {
     "hardware",
-    "mining",
 }
 
 
@@ -2007,47 +1846,6 @@ def _migrate_toml_data(data: Dict[str, Any], cfg: "JarvisConfig") -> None:
                 )
 
 
-def _parse_mining_section(data: dict) -> Optional["MiningConfig"]:
-    """Parse the ``[mining]`` TOML section into a ``MiningConfig``.
-
-    Returns None if the section is absent. Resolves the ``submit_target``
-    string into a ``SoloTarget`` or ``PoolTarget`` tagged union.
-    """
-    if "mining" not in data:
-        return None
-
-    # Lazy runtime import to break the import cycle: ``mining/_stubs.py``
-    # imports ``HardwareInfo`` from this module at its top level. By the
-    # time ``_parse_mining_section`` is called, ``core.config`` is already
-    # fully initialized in ``sys.modules``, so the cycle is harmless.
-    from openjarvis.mining._stubs import MiningConfig, PoolTarget, SoloTarget
-
-    section = data["mining"]
-    extra = section.get("extra", {}) or {}
-
-    target_str = section.get("submit_target", "solo")
-    submit_target: Any
-    if target_str == "solo":
-        submit_target = SoloTarget(
-            pearld_rpc_url=extra.get("pearld_rpc_url", "http://localhost:44107")
-        )
-    elif isinstance(target_str, str) and target_str.startswith("pool:"):
-        submit_target = PoolTarget(url=target_str[len("pool:") :])
-    else:
-        raise ValueError(
-            f"[mining].submit_target must be 'solo' or 'pool:<url>', got {target_str!r}"
-        )
-
-    return MiningConfig(
-        provider=section["provider"],
-        wallet_address=section["wallet_address"],
-        submit_target=submit_target,
-        fee_bps=int(section.get("fee_bps", 0)),
-        fee_payout_address=section.get("fee_payout_address") or None,
-        extra={k: v for k, v in extra.items()},
-    )
-
-
 @functools.lru_cache(maxsize=1)
 def load_config(path: Optional[Path] = None) -> JarvisConfig:
     """Detect hardware, build defaults, overlay TOML overrides.
@@ -2087,7 +1885,6 @@ def load_config(path: Optional[Path] = None) -> JarvisConfig:
             "agent",
             "server",
             "telemetry",
-            "analytics",
             "traces",
             "security",
             "channel",
@@ -2133,9 +1930,6 @@ def load_config(path: Optional[Path] = None) -> JarvisConfig:
                 f"capabilities.{key}" for key in _security_data["capabilities"]
             )
         apply_security_profile(cfg.security, cfg.server, overrides=_user_security_keys)
-
-        # Mining: dedicated parser for tagged-union submit_target
-        cfg.mining = _parse_mining_section(data)
 
     # Apply profile even without a config file (in case defaults set one)
     if not config_path.exists() and cfg.security.profile:
@@ -2342,51 +2136,9 @@ default_agent = "simple"
 # [channel.telegram]
 # bot_token = ""  # Or set TELEGRAM_BOT_TOKEN env var
 
-# [channel.discord]
-# bot_token = ""  # Or set DISCORD_BOT_TOKEN env var
-
-# [channel.slack]
-# bot_token = ""  # Or set SLACK_BOT_TOKEN env var
-
-# [channel.webhook]
-# url = ""
-
 # [channel.whatsapp]
 # access_token = ""      # Or set WHATSAPP_ACCESS_TOKEN env var
 # phone_number_id = ""   # Or set WHATSAPP_PHONE_NUMBER_ID env var
-
-# [channel.signal]
-# api_url = ""            # signal-cli REST API URL
-# phone_number = ""       # Or set SIGNAL_PHONE_NUMBER env var
-
-# [channel.google_chat]
-# webhook_url = ""        # Or set GOOGLE_CHAT_WEBHOOK_URL env var
-
-# [channel.irc]
-# server = ""
-# port = 6667
-# nick = ""
-# use_tls = false
-
-# [channel.teams]
-# app_id = ""             # Or set TEAMS_APP_ID env var
-# app_password = ""       # Or set TEAMS_APP_PASSWORD env var
-
-# [channel.matrix]
-# homeserver = ""         # Or set MATRIX_HOMESERVER env var
-# access_token = ""       # Or set MATRIX_ACCESS_TOKEN env var
-
-# [channel.mattermost]
-# url = ""                # Or set MATTERMOST_URL env var
-# token = ""              # Or set MATTERMOST_TOKEN env var
-
-# [channel.feishu]
-# app_id = ""             # Or set FEISHU_APP_ID env var
-# app_secret = ""         # Or set FEISHU_APP_SECRET env var
-
-# [channel.bluebubbles]
-# url = ""                # Or set BLUEBUBBLES_URL env var
-# password = ""           # Or set BLUEBUBBLES_PASSWORD env var
 
 [security]
 enabled = true
@@ -2433,26 +2185,20 @@ __all__ = [
     "AgentManagerConfig",
     "OperatorsConfig",
     "AgentLearningConfig",
-    "BlueBubblesChannelConfig",
     "BrowserConfig",
     "CapabilitiesConfig",
     "ChannelConfig",
     "ConfigurationError",
     "DEFAULT_CONFIG_DIR",
     "DEFAULT_CONFIG_PATH",
-    "DiscordChannelConfig",
     "DeepResearchConfig",
     "get_cache_dir",
     "get_config_dir",
     "get_config_path",
     "get_data_dir",
-    "EmailChannelConfig",
     "EngineConfig",
-    "FeishuChannelConfig",
-    "GoogleChatChannelConfig",
     "GpuInfo",
     "HardwareInfo",
-    "IRCChannelConfig",
     "IntelligenceConfig",
     "IntelligenceLearningConfig",
     "JarvisConfig",
@@ -2461,8 +2207,6 @@ __all__ = [
     "LlamaCppEngineConfig",
     "MCPConfig",
     "MLXEngineConfig",
-    "MatrixChannelConfig",
-    "MattermostChannelConfig",
     "MemoryConfig",
     "MetricsConfig",
     "OllamaEngineConfig",
@@ -2474,18 +2218,13 @@ __all__ = [
     "SecurityConfig",
     "ServerConfig",
     "SessionConfig",
-    "SignalChannelConfig",
-    "SlackChannelConfig",
     "SpeechConfig",
     "StorageConfig",
-    "TeamsChannelConfig",
     "TelegramChannelConfig",
     "TelemetryConfig",
     "ToolsConfig",
     "TracesConfig",
     "VLLMEngineConfig",
-    "WebChatChannelConfig",
-    "WebhookChannelConfig",
     "WeatherToolConfig",
     "WhatsAppBaileysChannelConfig",
     "WhatsAppChannelConfig",

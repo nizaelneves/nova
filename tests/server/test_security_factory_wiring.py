@@ -18,16 +18,14 @@ from openjarvis.server.app import create_app
 
 def _config() -> JarvisConfig:
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     config.security.enabled = True
     return config
 
 
 def _runtime_config() -> JarvisConfig:
-    """Factory config without external analytics or derived security."""
+    """Factory config without derived security."""
     config = JarvisConfig()
-    config.analytics.enabled = False
     config.traces.enabled = False
     config.security.enabled = False
     return config

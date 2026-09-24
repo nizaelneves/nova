@@ -58,18 +58,9 @@ class BoundaryGuard:
 
     @staticmethod
     def _default_scanners() -> List["BaseScanner"]:
-        try:
-            from openjarvis.security.scanner import PIIScanner, SecretScanner
+        from openjarvis.security.scanner import PIIScanner, SecretScanner
 
-            return [SecretScanner(), PIIScanner()]
-        except (ImportError, Exception) as exc:
-            logger.warning(
-                "Rust-backed scanners unavailable (%s); "
-                "BoundaryGuard running without scanners. "
-                "Build the Rust extension: uv run maturin develop",
-                exc,
-            )
-            return []
+        return [SecretScanner(), PIIScanner()]
 
     def scan_outbound(self, content: str, destination: str) -> str:
         """Scan text before it leaves the device.

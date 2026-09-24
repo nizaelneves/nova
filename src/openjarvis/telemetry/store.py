@@ -67,25 +67,7 @@ CREATE TABLE IF NOT EXISTS telemetry (
     -- NULL as legacy and excludes those rows from per-token efficiency
     -- sums (so the bimodal-Wh/token leaderboard population disappears).
     token_counting_version INTEGER,
-    mining_session_id    TEXT,
     metadata        TEXT    NOT NULL DEFAULT '{}'
-);
-"""
-
-_CREATE_MINING_STATS_TABLE = """\
-CREATE TABLE IF NOT EXISTS mining_stats (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    recorded_at REAL NOT NULL,
-    provider_id TEXT NOT NULL,
-    shares_submitted INTEGER NOT NULL DEFAULT 0,
-    shares_accepted INTEGER NOT NULL DEFAULT 0,
-    blocks_found INTEGER NOT NULL DEFAULT 0,
-    hashrate REAL NOT NULL DEFAULT 0,
-    uptime_seconds REAL NOT NULL DEFAULT 0,
-    last_share_at REAL,
-    last_error TEXT,
-    payout_target TEXT NOT NULL DEFAULT 'solo',
-    fees_owed INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -105,22 +87,14 @@ INSERT INTO telemetry (
     mean_itl_ms, median_itl_ms, p90_itl_ms, p95_itl_ms, p99_itl_ms, std_itl_ms,
     is_streaming,
     token_counting_version,
-    mining_session_id,
     metadata
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?
+    ?, ?, ?
 )
-"""
-
-_INSERT_MINING = """\
-INSERT INTO mining_stats (
-    recorded_at, provider_id, shares_submitted, shares_accepted, blocks_found,
-    hashrate, uptime_seconds, last_share_at, last_error, payout_target, fees_owed
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _MIGRATE_COLUMNS = [
@@ -157,7 +131,6 @@ _MIGRATE_COLUMNS = [
     # before this migration ran predate per-record versioning and the
     # aggregator filter treats them as legacy.
     ("token_counting_version", "INTEGER"),
-    ("mining_session_id", "TEXT"),
 ]
 
 
@@ -197,7 +170,6 @@ class TelemetryStore:
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute("PRAGMA busy_timeout=5000")
         self._conn.execute(_CREATE_TABLE)
-        self._conn.execute(_CREATE_MINING_STATS_TABLE)
         self._conn.commit()
         self._migrate_schema()
 
@@ -205,7 +177,6 @@ class TelemetryStore:
         self._flush_interval_seconds = flush_interval_seconds
         self._last_flush_time = time.monotonic()
         self._telemetry_batch: list[tuple[Any, ...]] = []
-        self._mining_batch: list[tuple[Any, ...]] = []
         self._closed = False
         self._event_bus: EventBus | None = None
 
@@ -231,7 +202,7 @@ class TelemetryStore:
                 # it unset here means the connection is still open.
                 if self._stop_flusher.is_set():
                     break
-                if self._telemetry_batch or self._mining_batch:
+                if self._telemetry_batch:
                     self._flush_unlocked()
 
     def _migrate_schema(self) -> None:
@@ -290,38 +261,12 @@ class TelemetryStore:
             rec.std_itl_ms,
             1 if rec.is_streaming else 0,
             rec.token_counting_version,
-            rec.mining_session_id,
             json.dumps(rec.metadata),
         )
         with self._lock:
             if self._closed:
                 raise RuntimeError("TelemetryStore is closed")
             self._telemetry_batch.append(row)
-            self._maybe_flush_unlocked()
-
-    def record_mining_stats(self, stats: Any) -> None:
-        """Persist one mining stats snapshot.
-
-        ``stats`` is duck-typed to keep telemetry usable without importing the
-        optional mining package at module import time.
-        """
-        row = (
-            time.time(),
-            stats.provider_id,
-            stats.shares_submitted,
-            stats.shares_accepted,
-            stats.blocks_found,
-            stats.hashrate,
-            stats.uptime_seconds,
-            stats.last_share_at,
-            stats.last_error,
-            stats.payout_target,
-            stats.fees_owed,
-        )
-        with self._lock:
-            if self._closed:
-                raise RuntimeError("TelemetryStore is closed")
-            self._mining_batch.append(row)
             self._maybe_flush_unlocked()
 
     def flush(self) -> None:
@@ -333,20 +278,14 @@ class TelemetryStore:
         if self._telemetry_batch:
             self._conn.executemany(_INSERT, self._telemetry_batch)
             self._telemetry_batch.clear()
-        if self._mining_batch:
-            self._conn.executemany(_INSERT_MINING, self._mining_batch)
-            self._mining_batch.clear()
         self._conn.commit()
         self._last_flush_time = time.monotonic()
 
     def _maybe_flush_unlocked(self) -> None:
         """Flush when the batch is full or has been pending too long."""
-        if not self._telemetry_batch and not self._mining_batch:
+        if not self._telemetry_batch:
             return
-        batch_full = (
-            len(self._telemetry_batch) >= self._batch_size
-            or len(self._mining_batch) >= self._batch_size
-        )
+        batch_full = len(self._telemetry_batch) >= self._batch_size
         stale = (
             self._flush_interval_seconds > 0
             and time.monotonic() - self._last_flush_time >= self._flush_interval_seconds
@@ -360,15 +299,6 @@ class TelemetryStore:
             self._flush_unlocked()
             return self._select_dicts_unlocked(
                 "SELECT * FROM telemetry ORDER BY timestamp DESC LIMIT ?",
-                (limit,),
-            )
-
-    def list_recent_mining_stats(self, limit: int = 50) -> list[dict[str, Any]]:
-        """Return recent mining stats snapshots as dictionaries."""
-        with self._lock:
-            self._flush_unlocked()
-            return self._select_dicts_unlocked(
-                "SELECT * FROM mining_stats ORDER BY recorded_at DESC LIMIT ?",
                 (limit,),
             )
 

@@ -43,9 +43,9 @@ class TokenBucket:
             if self._tokens >= tokens:
                 self._tokens -= tokens
                 return True, 0.0
-            else:
-                wait = (tokens - self._tokens) / self._rate
-                return False, wait
+            if self._rate <= 0:
+                return False, float("inf")
+            return False, (tokens - self._tokens) / self._rate
 
     @property
     def available(self) -> float:
@@ -67,19 +67,11 @@ class RateLimiter:
         self._buckets: Dict[str, TokenBucket] = {}
         self._lock = threading.Lock()
 
-        from openjarvis._rust_bridge import get_rust_module
-
-        _rust = get_rust_module()
-        self._rust_impl = _rust.RateLimiter(
-            requests_per_minute=self._config.requests_per_minute,
-            burst_size=self._config.burst_size,
-        )
-
     def check(self, key: str) -> Tuple[bool, float]:
-        """Check if request is allowed for key — always via Rust backend."""
+        """Check if a request is allowed for *key*. Returns (allowed, wait)."""
         if not self._config.enabled:
             return True, 0.0
-        return self._rust_impl.check(key)
+        return self._get_bucket(key).consume()
 
     def _get_bucket(self, key: str) -> TokenBucket:
         """Get or create a bucket for the given key."""
@@ -93,9 +85,7 @@ class RateLimiter:
             return self._buckets[key]
 
     def reset(self, key: Optional[str] = None) -> None:
-        """Reset rate limit state for a key or all keys — always via Rust backend."""
-        self._rust_impl.reset(key)
-        return
+        """Reset rate limit state for a key or all keys."""
         with self._lock:
             if key:
                 self._buckets.pop(key, None)

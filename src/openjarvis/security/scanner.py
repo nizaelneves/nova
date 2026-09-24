@@ -2,27 +2,60 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple
+import re
+from typing import Dict, List, Pattern, Tuple
 
-from openjarvis._rust_bridge import get_rust_module, scan_result_from_json
 from openjarvis.security._stubs import BaseScanner
-from openjarvis.security.types import ScanResult, ThreatLevel
+from openjarvis.security.types import ScanFinding, ScanResult, ThreatLevel
+
+_PatternTable = Dict[str, Tuple[str, ThreatLevel, str]]
+
+
+class _RegexScanner(BaseScanner):
+    """Scanner driven by a ``PATTERNS`` table of (regex, level, description)."""
+
+    PATTERNS: _PatternTable = {}
+
+    def __init__(self) -> None:
+        self._compiled: List[Tuple[str, Pattern[str], ThreatLevel, str]] = [
+            (name, re.compile(regex), level, desc)
+            for name, (regex, level, desc) in self.PATTERNS.items()
+        ]
+
+    def scan(self, text: str) -> ScanResult:
+        """Return one finding per pattern match in *text*."""
+        findings = [
+            ScanFinding(
+                pattern_name=name,
+                matched_text=m.group(0),
+                threat_level=level,
+                start=m.start(),
+                end=m.end(),
+                description=desc,
+            )
+            for name, regex, level, desc in self._compiled
+            for m in regex.finditer(text)
+        ]
+        return ScanResult(findings=findings)
+
+    def redact(self, text: str) -> str:
+        """Replace matches with ``[REDACTED:{pattern_name}]``."""
+        for name, regex, _level, _desc in self._compiled:
+            text = regex.sub(f"[REDACTED:{name}]", text)
+        return text
+
 
 # ---------------------------------------------------------------------------
 # SecretScanner
 # ---------------------------------------------------------------------------
 
 
-class SecretScanner(BaseScanner):
+class SecretScanner(_RegexScanner):
     """Detect API keys, tokens, passwords, and other secrets in text."""
 
     scanner_id = "secrets"
 
-    def __init__(self) -> None:
-        _rust = get_rust_module()
-        self._rust_impl = _rust.SecretScanner()
-
-    PATTERNS: Dict[str, Tuple[str, ThreatLevel, str]] = {
+    PATTERNS: _PatternTable = {
         "openai_key": (
             r"sk-[A-Za-z0-9_-]{20,}",
             ThreatLevel.CRITICAL,
@@ -75,30 +108,18 @@ class SecretScanner(BaseScanner):
         ),
     }
 
-    def scan(self, text: str) -> ScanResult:
-        """Scan *text* for secret patterns — always via Rust backend."""
-        return scan_result_from_json(self._rust_impl.scan(text))
-
-    def redact(self, text: str) -> str:
-        """Replace secret matches with ``[REDACTED:{pattern_name}]``."""
-        return self._rust_impl.redact(text)
-
 
 # ---------------------------------------------------------------------------
 # PIIScanner
 # ---------------------------------------------------------------------------
 
 
-class PIIScanner(BaseScanner):
+class PIIScanner(_RegexScanner):
     """Detect personally identifiable information in text."""
 
     scanner_id = "pii"
 
-    def __init__(self) -> None:
-        _rust = get_rust_module()
-        self._rust_impl = _rust.PIIScanner()
-
-    PATTERNS: Dict[str, Tuple[str, ThreatLevel, str]] = {
+    PATTERNS: _PatternTable = {
         "email": (
             r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
             ThreatLevel.MEDIUM,
@@ -135,14 +156,6 @@ class PIIScanner(BaseScanner):
             "Public IPv4 address",
         ),
     }
-
-    def scan(self, text: str) -> ScanResult:
-        """Scan *text* for PII patterns — always via Rust backend."""
-        return scan_result_from_json(self._rust_impl.scan(text))
-
-    def redact(self, text: str) -> str:
-        """Replace PII matches with ``[REDACTED:{pattern_name}]``."""
-        return self._rust_impl.redact(text)
 
 
 __all__ = ["PIIScanner", "SecretScanner"]

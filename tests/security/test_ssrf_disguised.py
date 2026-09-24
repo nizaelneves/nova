@@ -1,14 +1,13 @@
 """SSRF: disguised-IPv4 forms are normalized and unresolvable hosts fail closed.
 
-Regression tests for the ``_check_ssrf_python`` fallback used when the compiled
-Rust backend is unavailable.
+Regression tests for ``check_ssrf``.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from openjarvis.security.ssrf import _check_ssrf_python
+from openjarvis.security.ssrf import check_ssrf
 
 
 class TestSSRFDisguisedForms:
@@ -22,18 +21,18 @@ class TestSSRFDisguisedForms:
         ],
     )
     def test_disguised_loopback_blocked(self, url):
-        assert _check_ssrf_python(url) is not None
+        assert check_ssrf(url) is not None
 
     def test_plain_loopback_still_blocked(self):
-        assert _check_ssrf_python("http://127.0.0.1/") is not None
+        assert check_ssrf("http://127.0.0.1/") is not None
 
     def test_metadata_endpoint_blocked(self):
-        assert _check_ssrf_python("http://169.254.169.254/") is not None
+        assert check_ssrf("http://169.254.169.254/") is not None
 
     def test_unresolvable_host_fails_closed(self):
-        result = _check_ssrf_python("http://this-host-does-not-exist-zzz.invalid/")
+        result = check_ssrf("http://this-host-does-not-exist-zzz.invalid/")
         assert result is not None  # blocked, not silently allowed
 
     def test_fail_open_override(self, monkeypatch):
         monkeypatch.setenv("OPENJARVIS_SSRF_FAIL_OPEN", "1")
-        assert _check_ssrf_python("http://another-nonexistent-zzz.invalid/") is None
+        assert check_ssrf("http://another-nonexistent-zzz.invalid/") is None

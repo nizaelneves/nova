@@ -73,60 +73,19 @@ API_KEY_ENV_VARS = {
 
 CHANNEL_SECRET_FIELDS: tuple[tuple[str, str, str], ...] = (
     ("channel.telegram.bot_token", "Telegram bot token", "Telegram"),
-    ("channel.discord.bot_token", "Discord bot token", "Discord"),
-    ("channel.slack.bot_token", "Slack bot token", "Slack"),
-    ("channel.slack.app_token", "Slack app token", "Slack"),
-    ("channel.webhook.secret", "Webhook secret", "generic webhook"),
-    ("channel.email.password", "Email password", "email"),
     ("channel.whatsapp.access_token", "WhatsApp access token", "WhatsApp"),
-    ("channel.irc.password", "IRC password", "IRC"),
-    ("channel.teams.app_password", "Teams app password", "Teams"),
-    ("channel.matrix.access_token", "Matrix access token", "Matrix"),
-    ("channel.mattermost.token", "Mattermost token", "Mattermost"),
-    ("channel.feishu.app_secret", "Feishu app secret", "Feishu"),
-    ("channel.bluebubbles.password", "BlueBubbles password", "BlueBubbles"),
 )
 
 CHANNEL_REFERENCE_FIELDS: tuple[tuple[str, str, str], ...] = (
-    ("channel.webhook.url", "Webhook URL", "generic webhook"),
-    ("channel.email.smtp_host", "Email SMTP host", "email"),
-    ("channel.email.imap_host", "Email IMAP host", "email"),
-    ("channel.email.username", "Email username", "email"),
     ("channel.whatsapp.phone_number_id", "WhatsApp phone number ID", "WhatsApp"),
-    ("channel.signal.api_url", "Signal API URL", "Signal"),
-    ("channel.signal.phone_number", "Signal phone number", "Signal"),
-    ("channel.google_chat.webhook_url", "Google Chat webhook URL", "Google Chat"),
-    ("channel.irc.server", "IRC server", "IRC"),
-    ("channel.irc.nick", "IRC nick", "IRC"),
-    ("channel.teams.app_id", "Teams app ID", "Teams"),
-    ("channel.teams.service_url", "Teams service URL", "Teams"),
-    ("channel.matrix.homeserver", "Matrix homeserver", "Matrix"),
-    ("channel.mattermost.url", "Mattermost URL", "Mattermost"),
-    ("channel.feishu.app_id", "Feishu app ID", "Feishu"),
-    ("channel.bluebubbles.url", "BlueBubbles URL", "BlueBubbles"),
 )
 
 CHANNEL_SECRET_ENV_VARS = {
-    "BLUEBUBBLES_PASSWORD": "BlueBubbles channel",
-    "DISCORD_BOT_TOKEN": "Discord channel",
-    "FEISHU_APP_SECRET": "Feishu channel",
-    "MATTERMOST_TOKEN": "Mattermost channel",
-    "MATRIX_ACCESS_TOKEN": "Matrix channel",
-    "SLACK_APP_TOKEN": "Slack channel",
-    "SLACK_BOT_TOKEN": "Slack channel",
-    "TEAMS_APP_PASSWORD": "Teams channel",
     "TELEGRAM_BOT_TOKEN": "Telegram channel",
     "WHATSAPP_ACCESS_TOKEN": "WhatsApp channel",
 }
 
 CHANNEL_REFERENCE_ENV_VARS = {
-    "BLUEBUBBLES_URL": "BlueBubbles channel",
-    "FEISHU_APP_ID": "Feishu channel",
-    "GOOGLE_CHAT_WEBHOOK_URL": "Google Chat channel",
-    "MATTERMOST_URL": "Mattermost channel",
-    "MATRIX_HOMESERVER": "Matrix channel",
-    "SIGNAL_PHONE_NUMBER": "Signal channel",
-    "TEAMS_APP_ID": "Teams channel",
     "WHATSAPP_PHONE_NUMBER_ID": "WhatsApp channel",
 }
 
@@ -492,19 +451,6 @@ def build_data_boundary_report(
 
 
 def _audit_outbound_settings(config: Any, builder: _FindingBuilder) -> None:
-    if bool(_get(config, "analytics.enabled", False)):
-        builder.add(
-            finding_id="analytics-enabled",
-            status="info",
-            title="Outbound usage analytics are enabled",
-            potential_data_path="runtime usage events -> analytics endpoint",
-            evidence="analytics.enabled = true",
-            recommendation=(
-                "Set analytics.enabled = false for no outbound usage analytics. "
-                "This finding does not assert that prompt content is sent."
-            ),
-        )
-
     provider = _get(config, "intelligence.provider", "")
     if _is_cloud_value(provider):
         builder.add(

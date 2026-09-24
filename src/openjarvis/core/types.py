@@ -206,7 +206,6 @@ class TelemetryRecord:
     # distribution on the public leaderboard. New records always write
     # `TOKEN_COUNTING_VERSION` from `server/savings.py`.
     token_counting_version: Optional[int] = None
-    mining_session_id: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 

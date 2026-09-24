@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from openjarvis.security.ssrf import _check_ssrf_python, check_ssrf, is_private_ip
+from openjarvis.security.ssrf import check_ssrf, is_private_ip
 
 
 class TestIsPrivateIp:
@@ -76,12 +76,7 @@ class TestIsPrivateIp:
 
 
 class TestCheckSsrf:
-    """Tests for SSRF protection.
-
-    The Rust backend performs real DNS resolution, so tests that need to
-    mock DNS use ``_check_ssrf_python`` (the pure-Python implementation)
-    instead of the Rust-backed ``check_ssrf``.
-    """
+    """Tests for SSRF protection."""
 
     def test_blocks_aws_metadata(self):
         result = check_ssrf("http://169.254.169.254/latest/meta-data/")
@@ -104,7 +99,7 @@ class TestCheckSsrf:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("93.184.216.34", 0)),
             ]
-            result = _check_ssrf_python("https://example.com")
+            result = check_ssrf("https://example.com")
         assert result is None
 
     def test_blocks_localhost_url(self):
@@ -112,7 +107,7 @@ class TestCheckSsrf:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("127.0.0.1", 0)),
             ]
-            result = _check_ssrf_python("http://localhost:8080/admin")
+            result = check_ssrf("http://localhost:8080/admin")
         assert result is not None
         assert "private IP" in result
 
@@ -121,7 +116,7 @@ class TestCheckSsrf:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("192.168.1.1", 0)),
             ]
-            result = _check_ssrf_python("http://internal-service.local/api")
+            result = check_ssrf("http://internal-service.local/api")
         assert result is not None
         assert "private IP" in result
 
@@ -149,7 +144,7 @@ class TestCheckSsrf:
             "openjarvis.security.ssrf.socket.getaddrinfo",
             side_effect=socket.gaierror("Name resolution failed"),
         ):
-            result = _check_ssrf_python("https://nonexistent.example.com")
+            result = check_ssrf("https://nonexistent.example.com")
         assert result is not None
 
     def test_dns_failure_allowed_with_fail_open_env(self, monkeypatch):
@@ -161,7 +156,7 @@ class TestCheckSsrf:
             "openjarvis.security.ssrf.socket.getaddrinfo",
             side_effect=socket.gaierror("Name resolution failed"),
         ):
-            result = _check_ssrf_python("https://nonexistent.example.com")
+            result = check_ssrf("https://nonexistent.example.com")
         assert result is None
 
     def test_blocks_dns_rebinding_to_private(self):
@@ -170,7 +165,7 @@ class TestCheckSsrf:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("10.0.0.5", 0)),
             ]
-            result = _check_ssrf_python("https://evil-rebind.example.com")
+            result = check_ssrf("https://evil-rebind.example.com")
         assert result is not None
         assert "private IP" in result
 
@@ -205,12 +200,12 @@ class TestCheckSsrf:
 
     def test_python_impl_blocks_ipv4_mapped_loopback(self):
         """Legacy Python impl must also catch ::ffff:127.0.0.1."""
-        result = _check_ssrf_python("http://[::ffff:127.0.0.1]:6666")
+        result = check_ssrf("http://[::ffff:127.0.0.1]:6666")
         assert result is not None
         assert "private IP" in result
 
     def test_python_impl_blocks_ipv4_mapped_metadata(self):
-        result = _check_ssrf_python("http://[::ffff:169.254.169.254]/latest/meta-data/")
+        result = check_ssrf("http://[::ffff:169.254.169.254]/latest/meta-data/")
         assert result is not None
 
     def test_blocks_ipv4_mapped_alibaba_metadata(self):
@@ -240,32 +235,4 @@ class TestCheckSsrf:
         assert result is not None
 
 
-class TestCheckSsrfPythonFallback:
-    """When the Rust extension is not compiled, ``check_ssrf`` must fall back
-    to the pure-Python implementation rather than raising ``ImportError`` or
-    being silently skipped — the SSRF guard is security-critical.
-    """
-
-    def test_falls_back_to_python_when_rust_unavailable(self):
-        with patch("openjarvis._rust_bridge.RUST_AVAILABLE", False):
-            result = check_ssrf("http://169.254.169.254/latest/meta-data/")
-        assert result is not None
-        assert "cloud metadata" in result.lower() or "Blocked host" in result
-
-    def test_fallback_blocks_private_ip(self):
-        with patch("openjarvis._rust_bridge.RUST_AVAILABLE", False):
-            with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
-                mock_dns.return_value = [(2, 1, 6, "", ("10.0.0.5", 0))]
-                result = check_ssrf("http://internal-service.local/api")
-        assert result is not None
-        assert "private IP" in result
-
-    def test_fallback_allows_public_url_without_rust(self):
-        with patch("openjarvis._rust_bridge.RUST_AVAILABLE", False):
-            with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
-                mock_dns.return_value = [(2, 1, 6, "", ("93.184.216.34", 0))]
-                result = check_ssrf("https://example.com")
-        assert result is None
-
-
-__all__ = ["TestCheckSsrf", "TestCheckSsrfPythonFallback", "TestIsPrivateIp"]
+__all__ = ["TestCheckSsrf", "TestIsPrivateIp"]

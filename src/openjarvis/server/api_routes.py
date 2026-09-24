@@ -194,28 +194,16 @@ memory_router = APIRouter(prefix="/v1/memory", tags=["memory"])
 def _get_memory_backend(request: Request):
     """Return the app-level memory backend, falling back to a fresh SQLiteMemory.
 
-    Raises ``HTTPException(503)`` with an actionable message when the backend
-    cannot be built because the mandatory ``openjarvis_rust`` extension is not
-    installed in the serving venv. This is deliberately distinct from a benign
-    "memory not configured" case (which returns ``None``): a missing native
-    extension must fail loudly, never silently degrade (#502).
+    Returns ``None`` when no backend can be built.
     """
     backend = getattr(request.app.state, "memory_backend", None)
     if backend is None:
-        from openjarvis.tools.storage._stubs import MemoryBackendUnavailable
-
         try:
             from openjarvis.tools.storage.sqlite import SQLiteMemory
 
             backend = SQLiteMemory()
-        except MemoryBackendUnavailable as exc:
-            # The native extension is missing — surface a loud, actionable error
-            # rather than a misleading "no backend" / silent no-op.
-            logger.error("%s", exc)
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except Exception:
-            # Memory is genuinely unconfigured for a benign reason — preserve
-            # the existing graceful "no backend" behaviour.
+            logger.exception("Failed to open the SQLite memory backend")
             return None
     return backend
 
@@ -275,10 +263,8 @@ def memory_stats(request: Request):
 async def memory_config(request: Request):
     """Return current memory configuration.
 
-    Reports memory as *unavailable* (rather than falsely claiming
-    ``backend_type: sqlite``) when the native ``openjarvis_rust`` extension is
-    missing, so the UI can show the real cause instead of a healthy-looking
-    config that backs a silent no-op (#502).
+    Reports memory as *unavailable* when the backend cannot be opened, so the
+    UI can show the real cause.
     """
     try:
         config = getattr(request.app.state, "config", None)
@@ -290,19 +276,13 @@ async def memory_config(request: Request):
         available = True
         detail: Optional[str] = None
         if backend is None:
-            from openjarvis.tools.storage._stubs import MemoryBackendUnavailable
-
             try:
                 from openjarvis.tools.storage.sqlite import SQLiteMemory
 
                 backend = SQLiteMemory()
-            except MemoryBackendUnavailable as exc:
+            except Exception as exc:
                 available = False
                 detail = str(exc)
-            except Exception:
-                # Benign: cannot construct a probe backend here, but the
-                # configured default is still what would be used.
-                pass
         return {
             "backend_type": (
                 backend.backend_id
@@ -1175,13 +1155,11 @@ def include_all_routes(app) -> None:
                 templates_r,
                 global_r,
                 tools_r,
-                sendblue_r,
             ) = create_agent_manager_router(app.state.agent_manager)
             app.include_router(agents_r)
             app.include_router(templates_r)
             app.include_router(global_r)
             app.include_router(tools_r)
-            app.include_router(sendblue_r)
     except ImportError:
         pass
 

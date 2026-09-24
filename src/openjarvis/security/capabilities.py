@@ -65,11 +65,6 @@ class CapabilityPolicy:
         self._policies: Dict[str, AgentPolicy] = {}
         self._default_deny = default_deny
 
-        from openjarvis._rust_bridge import get_rust_module
-
-        _rust = get_rust_module()
-        self._rust_impl = _rust.CapabilityPolicy(default_deny=default_deny)
-
         if policy_path:
             self._load_file(Path(policy_path))
 
@@ -80,7 +75,6 @@ class CapabilityPolicy:
             AgentPolicy(agent_id=agent_id),
         )
         policy.grants.append(CapabilityGrant(capability=capability, pattern=pattern))
-        self._rust_impl.grant(agent_id, capability, pattern)
 
     def deny(self, agent_id: str, capability: str) -> None:
         """Explicitly deny a capability to an agent."""
@@ -89,7 +83,6 @@ class CapabilityPolicy:
             AgentPolicy(agent_id=agent_id),
         )
         policy.deny.append(capability)
-        self._rust_impl.deny(agent_id, capability)
 
     _DEFAULT_AGENT = "_default"
 
@@ -108,13 +101,13 @@ class CapabilityPolicy:
             or agent_id == self._DEFAULT_AGENT
             or agent_id in self._policies
         ):
-            return self._rust_impl.check(agent_id, capability, resource)
+            return self._check_policy(agent_id, capability, resource)
         if self._DEFAULT_AGENT in self._policies:
-            return self._rust_impl.check(self._DEFAULT_AGENT, capability, resource)
-        return self._rust_impl.check(agent_id, capability, resource)
+            return self._check_policy(self._DEFAULT_AGENT, capability, resource)
+        return self._check_policy(agent_id, capability, resource)
 
-    def _check_python(self, agent_id: str, capability: str, resource: str = "") -> bool:
-        """Legacy Python check — kept for reference only."""
+    def _check_policy(self, agent_id: str, capability: str, resource: str) -> bool:
+        """Evaluate *agent_id*'s own policy; denials win over grants."""
         policy = self._policies.get(agent_id)
         if policy is None:
             # No explicit policy — use default
@@ -122,14 +115,14 @@ class CapabilityPolicy:
 
         # Explicit denials take precedence
         for denied in policy.deny:
-            if fnmatch.fnmatch(capability, denied):
+            if fnmatch.fnmatchcase(capability, denied):
                 return False
 
         # Check grants
         for grant in policy.grants:
-            if fnmatch.fnmatch(capability, grant.capability):
+            if fnmatch.fnmatchcase(capability, grant.capability):
                 if resource and grant.pattern != "*":
-                    if fnmatch.fnmatch(resource, grant.pattern):
+                    if fnmatch.fnmatchcase(resource, grant.pattern):
                         return True
                 else:
                     return True

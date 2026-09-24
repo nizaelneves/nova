@@ -29,7 +29,6 @@ def _test_config():
     from openjarvis.core.config import JarvisConfig
 
     cfg = JarvisConfig()
-    cfg.analytics.enabled = False
     cfg.traces.enabled = False
     return cfg
 

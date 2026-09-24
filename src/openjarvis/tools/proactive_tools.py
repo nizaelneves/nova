@@ -427,8 +427,6 @@ class ExecutePendingActionsTool(BaseTool):
                 return _exec_email_delete(payload)
             if atype == "email_archive":
                 return _exec_email_archive(payload)
-            if atype == "sms_send":
-                return _exec_sms_send(payload)
             if atype == "sms_draft_reply":
                 return _exec_sms_draft_reply(payload)
             if atype == "calendar_decline":
@@ -492,20 +490,6 @@ def _exec_email_archive(payload: Dict[str, Any]) -> Tuple[bool, str]:
         conn = GmailConnector()
         conn.archive_message(msg_id)
         return True, f"Archived email {msg_id}"
-    except Exception as exc:
-        return False, str(exc)
-
-
-def _exec_sms_send(payload: Dict[str, Any]) -> Tuple[bool, str]:
-    contact = payload.get("contact", "")
-    body = payload.get("body", "")
-    if not contact or not body:
-        return False, "Missing contact or body in payload"
-    try:
-        from openjarvis.channels.imessage_daemon import send_imessage
-
-        send_imessage(contact, body)
-        return True, f"Sent iMessage to {contact}"
     except Exception as exc:
         return False, str(exc)
 

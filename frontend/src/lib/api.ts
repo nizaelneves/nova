@@ -1,10 +1,5 @@
 import type { ModelInfo, SavingsData, ServerInfo } from '../types';
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from './supabase';
 import { serializeToolCallArguments } from './tool-call';
-
-// ---------------------------------------------------------------------------
-// Supabase config
-// ---------------------------------------------------------------------------
 
 declare global {
   interface Window {
@@ -593,74 +588,6 @@ export async function unbindAgentChannel(
   if (!res.ok) throw new Error(`Failed: ${res.status}`);
 }
 
-// -- SendBlue auto-setup helpers ------------------------------------------
-
-export async function sendblueVerify(
-  apiKeyId: string,
-  apiSecretKey: string,
-): Promise<{ valid: boolean; numbers: string[]; raw: unknown }> {
-  const res = await apiFetch(`/v1/channels/sendblue/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ api_key_id: apiKeyId, api_secret_key: apiSecretKey }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `Verification failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-export async function sendblueRegisterWebhook(
-  apiKeyId: string,
-  apiSecretKey: string,
-  webhookUrl: string,
-): Promise<{ registered: boolean; status: number }> {
-  const res = await apiFetch(`/v1/channels/sendblue/register-webhook`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_key_id: apiKeyId,
-      api_secret_key: apiSecretKey,
-      webhook_url: webhookUrl,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `Webhook registration failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-export async function sendblueTest(
-  apiKeyId: string,
-  apiSecretKey: string,
-  fromNumber: string,
-  toNumber: string,
-): Promise<{ sent: boolean; status: number }> {
-  const res = await apiFetch(`/v1/channels/sendblue/test`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_key_id: apiKeyId,
-      api_secret_key: apiSecretKey,
-      from_number: fromNumber,
-      to_number: toNumber,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `Test message failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-export async function sendblueHealth(): Promise<{ channel_connected: boolean; bridge_wired: boolean; ready: boolean }> {
-  const res = await apiFetch(`/v1/channels/sendblue/health`);
-  if (!res.ok) return { channel_connected: false, bridge_wired: false, ready: false };
-  return res.json();
-}
-
 export async function fetchTemplates(): Promise<AgentTemplate[]> {
   const res = await apiFetch(`/v1/templates`);
   if (!res.ok) throw new Error(`Failed: ${res.status}`);
@@ -971,44 +898,6 @@ export async function fetchAgentTrace(agentId: string, traceId: string): Promise
 }
 
 // ---------------------------------------------------------------------------
-// Leaderboard savings submission (Supabase)
-// ---------------------------------------------------------------------------
-
-export interface SavingsSubmission {
-  anon_id: string;
-  display_name: string;
-  email: string;
-  total_calls: number;
-  total_tokens: number;
-  dollar_savings: number;
-  energy_wh_saved: number;
-  flops_saved: number;
-  token_counting_version?: number;
-}
-
-export async function submitSavings(data: SavingsSubmission): Promise<boolean> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/savings_entries?on_conflict=anon_id`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          Prefer: 'resolution=merge-duplicates',
-        },
-        body: JSON.stringify(data),
-      },
-    );
-    return res.ok || res.status === 201 || res.status === 200;
-  } catch {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Memory
 // ---------------------------------------------------------------------------
 
@@ -1026,8 +915,8 @@ export interface MemoryStats {
 
 export interface MemoryConfig {
   backend: string;
-  // Set by the server when the native `openjarvis_rust` extension is missing,
-  // so the UI can show the real cause instead of a healthy-looking config.
+  // Set by the server when the memory backend cannot be opened, so the UI can
+  // show the real cause instead of a healthy-looking config.
   available?: boolean;
   detail?: string | null;
   context_from_memory: boolean;
@@ -1038,8 +927,7 @@ export interface MemoryConfig {
 
 /**
  * Extract the server's `detail` message from a failed JSON response so the UI
- * surfaces the real cause (e.g. "openjarvis_rust extension is not installed")
- * instead of a blanket fallback string (#502).
+ * surfaces the real cause instead of a blanket fallback string.
  */
 async function memoryErrorDetail(res: Response, fallback: string): Promise<string> {
   try {

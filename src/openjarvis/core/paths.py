@@ -5,8 +5,7 @@ credentials, skills, recipes, …) under a single root so it never clutters the
 user's home directory beyond one directory. That root is resolved here, with
 the following precedence (highest first):
 
-1. ``$OPENJARVIS_HOME`` — explicit override (also honored by the shell
-   installer, see ``scripts/install/install.sh``).
+1. ``$OPENJARVIS_HOME`` — explicit override.
 2. ``$XDG_DATA_HOME/openjarvis`` — when ``$XDG_DATA_HOME`` is set, follow the
    XDG Base Directory spec by nesting a single ``openjarvis`` directory under
    it. We deliberately use ONE directory rather than splitting across XDG

@@ -1,7 +1,4 @@
-"""Background-sampling telemetry session.
-
-Uses Rust ring buffer — Rust backend is mandatory.
-"""
+"""Background-sampling telemetry session."""
 
 from __future__ import annotations
 
@@ -80,8 +77,7 @@ class TelemetrySession:
     """Background-sampling telemetry session.
 
     Spawns a daemon thread that calls monitor.snapshot() at the configured
-    interval. Stores samples in a ring buffer (Rust-backed if available,
-    else pure-Python fallback).
+    interval. Stores samples in a fixed-size ring buffer.
     """
 
     def __init__(

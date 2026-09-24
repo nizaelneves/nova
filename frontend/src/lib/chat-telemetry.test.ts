@@ -58,10 +58,10 @@ describe('chat engine telemetry', () => {
   it('falls back to server info, then the legacy model heuristic', () => {
     expect(
       resolveChatEngine({
-        serverEngine: 'nim',
+        serverEngine: 'litellm',
         selectedModel: 'short',
       }),
-    ).toBe('nim');
+    ).toBe('litellm');
     expect(resolveChatEngine({ selectedModel: 'gpt-5' })).toBe('cloud');
     expect(resolveChatEngine({ selectedModel: 'qwen3:8b' })).toBe('ollama');
   });

@@ -10,7 +10,6 @@ import yaml
 from openjarvis.cli.serve import serve
 
 RENDER_BLUEPRINT = Path(__file__).resolve().parents[2] / "render.yaml"
-RENDER_DOC = Path(__file__).resolve().parents[2] / "docs/deployment/render.md"
 DOCKERFILE = Path(__file__).resolve().parents[2] / "deploy/docker/Dockerfile"
 
 
@@ -142,16 +141,3 @@ def test_render_contract_requires_one_supported_cloud_provider() -> None:
     assert [
         item["key"] for item in service["envVars"] if item.get("sync") is False
     ] == ["OPENAI_API_KEY"]
-
-
-def test_render_free_tier_ephemeral_storage_is_explicitly_documented() -> None:
-    service = _service()
-    env = _env_vars(service)
-    docs = RENDER_DOC.read_text(encoding="utf-8").lower()
-
-    assert service["plan"] == "free"
-    assert "disk" not in service
-    assert env["OPENJARVIS_HOME"]["value"] == "/home/openjarvis/.openjarvis"
-    assert "ephemeral" in docs
-    assert "lost" in docs
-    assert "persistent disk" in docs

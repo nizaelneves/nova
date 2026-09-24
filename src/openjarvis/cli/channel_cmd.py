@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
 from rich.table import Table
 
-_CHANNEL_TYPE_HELP = (
-    "Channel type (sendblue, telegram, discord, slack, webhook, email, "
-    "whatsapp, whatsapp_baileys, signal, google_chat, irc, webchat, teams, "
-    "matrix, mattermost, feishu, bluebubbles)."
-)
+_CHANNEL_TYPE_HELP = "Channel type (telegram, whatsapp, whatsapp_baileys, gmail)."
 
 
 def _get_channel(
@@ -34,121 +30,9 @@ def _get_channel(
             "default_channel in [channel] config."
         )
 
-    kwargs: Dict[str, Any] = {}
-    if key == "telegram":
-        tc = config.channel.telegram
-        if tc.bot_token:
-            kwargs["bot_token"] = tc.bot_token
-    elif key == "discord":
-        dc = config.channel.discord
-        if dc.bot_token:
-            kwargs["bot_token"] = dc.bot_token
-    elif key == "slack":
-        sc = config.channel.slack
-        if sc.bot_token:
-            kwargs["bot_token"] = sc.bot_token
-        if sc.app_token:
-            kwargs["app_token"] = sc.app_token
-    elif key == "webhook":
-        wc = config.channel.webhook
-        if wc.url:
-            kwargs["url"] = wc.url
-        if wc.secret:
-            kwargs["secret"] = wc.secret
-        if wc.method:
-            kwargs["method"] = wc.method
-    elif key == "email":
-        ec = config.channel.email
-        if ec.smtp_host:
-            kwargs["smtp_host"] = ec.smtp_host
-        kwargs["smtp_port"] = ec.smtp_port
-        if ec.username:
-            kwargs["username"] = ec.username
-        if ec.password:
-            kwargs["password"] = ec.password
-        kwargs["use_tls"] = ec.use_tls
-    elif key == "whatsapp":
-        wac = config.channel.whatsapp
-        if wac.access_token:
-            kwargs["access_token"] = wac.access_token
-        if wac.phone_number_id:
-            kwargs["phone_number_id"] = wac.phone_number_id
-    elif key == "signal":
-        sgc = config.channel.signal
-        if sgc.api_url:
-            kwargs["api_url"] = sgc.api_url
-        if sgc.phone_number:
-            kwargs["phone_number"] = sgc.phone_number
-    elif key == "google_chat":
-        gcc = config.channel.google_chat
-        if gcc.webhook_url:
-            kwargs["webhook_url"] = gcc.webhook_url
-    elif key == "irc":
-        ic = config.channel.irc
-        if ic.server:
-            kwargs["server"] = ic.server
-        kwargs["port"] = ic.port
-        if ic.nick:
-            kwargs["nick"] = ic.nick
-        if ic.password:
-            kwargs["password"] = ic.password
-        kwargs["use_tls"] = ic.use_tls
-    elif key == "webchat":
-        pass  # no config needed
-    elif key == "teams":
-        tmc = config.channel.teams
-        if tmc.app_id:
-            kwargs["app_id"] = tmc.app_id
-        if tmc.app_password:
-            kwargs["app_password"] = tmc.app_password
-        if tmc.service_url:
-            kwargs["service_url"] = tmc.service_url
-    elif key == "matrix":
-        mc = config.channel.matrix
-        if mc.homeserver:
-            kwargs["homeserver"] = mc.homeserver
-        if mc.access_token:
-            kwargs["access_token"] = mc.access_token
-    elif key == "mattermost":
-        mmc = config.channel.mattermost
-        if mmc.url:
-            kwargs["url"] = mmc.url
-        if mmc.token:
-            kwargs["token"] = mmc.token
-    elif key == "feishu":
-        fc = config.channel.feishu
-        if fc.app_id:
-            kwargs["app_id"] = fc.app_id
-        if fc.app_secret:
-            kwargs["app_secret"] = fc.app_secret
-    elif key == "bluebubbles":
-        bbc = config.channel.bluebubbles
-        if bbc.url:
-            kwargs["url"] = bbc.url
-        if bbc.password:
-            kwargs["password"] = bbc.password
-    elif key == "whatsapp_baileys":
-        wbc = config.channel.whatsapp_baileys
-        if wbc.auth_dir:
-            kwargs["auth_dir"] = wbc.auth_dir
-        if wbc.assistant_name:
-            kwargs["assistant_name"] = wbc.assistant_name
-        kwargs["assistant_has_own_number"] = wbc.assistant_has_own_number
-    elif key == "sendblue":
-        import os
+    from openjarvis.system._channel_kwargs import build_channel_kwargs
 
-        kwargs["api_key_id"] = os.environ.get("SENDBLUE_API_KEY_ID", "")
-        kwargs["api_secret_key"] = os.environ.get("SENDBLUE_API_SECRET_KEY", "")
-        kwargs["from_number"] = os.environ.get("SENDBLUE_FROM_NUMBER", "")
-        sbc = getattr(config.channel, "sendblue", None)
-        if sbc:
-            if getattr(sbc, "api_key_id", ""):
-                kwargs["api_key_id"] = sbc.api_key_id
-            if getattr(sbc, "api_secret_key", ""):
-                kwargs["api_secret_key"] = sbc.api_secret_key
-            if getattr(sbc, "from_number", ""):
-                kwargs["from_number"] = sbc.from_number
-
+    kwargs = build_channel_kwargs(config.channel, key)
     if not ChannelRegistry.contains(key):
         raise click.ClickException(f"Unknown channel type: {key}")
 

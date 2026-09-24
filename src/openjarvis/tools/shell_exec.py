@@ -148,34 +148,6 @@ class ShellExecTool(BaseTool):
                 env[key] = val
 
         try:
-            from openjarvis._rust_bridge import get_rust_module
-
-            _rust = get_rust_module()
-            output = _rust.ShellExecTool().execute(command, working_dir)
-            return ToolResult(
-                tool_name="shell_exec",
-                content=output or "(no output)",
-                success=True,
-                metadata={
-                    "returncode": 0,
-                    "timeout_used": timeout,
-                    "working_dir": working_dir,
-                },
-            )
-        except ImportError:
-            pass  # Fall through to subprocess below
-        except Exception as exc:
-            return ToolResult(
-                tool_name="shell_exec",
-                content=str(exc),
-                success=False,
-                metadata={
-                    "returncode": -1,
-                    "timeout_used": timeout,
-                    "working_dir": working_dir,
-                },
-            )
-        try:
             result = subprocess.run(
                 command,
                 shell=True,

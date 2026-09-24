@@ -90,25 +90,19 @@ def _safe_eval_node(node: ast.AST) -> Any:
 
 
 def safe_eval(expression: str) -> float:
-    """Evaluate a math expression safely — Rust backend with Python fallback."""
+    """Evaluate a math expression safely via AST walking."""
+    import ast as _ast
+
+    # Support ^ as the power operator (common math/calculator notation).
+    expression = expression.replace("^", "**")
     try:
-        from openjarvis._rust_bridge import get_rust_module
-
-        _rust = get_rust_module()
-        return float(_rust.CalculatorTool().execute(expression))
-    except ImportError:
-        import ast as _ast
-
-        # Support ^ as the power operator (common math/calculator notation).
-        expression = expression.replace("^", "**")
-        try:
-            tree = _ast.parse(expression, mode="eval")
-        except SyntaxError as exc:
-            raise ValueError(f"Syntax error in expression: {exc}") from exc
-        try:
-            return float(_safe_eval_node(tree.body))
-        except ZeroDivisionError:
-            return math.inf
+        tree = _ast.parse(expression, mode="eval")
+    except SyntaxError as exc:
+        raise ValueError(f"Syntax error in expression: {exc}") from exc
+    try:
+        return float(_safe_eval_node(tree.body))
+    except ZeroDivisionError:
+        return math.inf
 
 
 @ToolRegistry.register("calculator")
