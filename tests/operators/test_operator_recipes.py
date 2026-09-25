@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from openjarvis.operators.loader import load_operator
+from nova.operators.loader import load_operator
 
 _OPERATORS_DIR = (
     Path(__file__).parent.parent.parent
     / "src"
-    / "openjarvis"
+    / "nova"
     / "recipes"
     / "data"
     / "operators"

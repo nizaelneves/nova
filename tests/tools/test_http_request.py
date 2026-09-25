@@ -7,7 +7,7 @@ from unittest.mock import patch
 import httpx
 import respx
 
-from openjarvis.tools.http_request import HttpRequestTool
+from nova.tools.http_request import HttpRequestTool
 
 
 class TestHttpRequestTool:
@@ -51,7 +51,7 @@ class TestHttpRequestTool:
     def test_ssrf_blocked_private_ip(self):
         """Request to private IP should be blocked by SSRF protection."""
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf") as mock_ssrf:
+        with patch("nova.tools.http_request.check_ssrf") as mock_ssrf:
             mock_ssrf.return_value = "URL resolves to private IP: 192.168.1.1"
             result = tool.execute(url="http://192.168.1.1/admin")
         assert result.success is False
@@ -61,7 +61,7 @@ class TestHttpRequestTool:
     def test_ssrf_blocked_metadata_endpoint(self):
         """Request to cloud metadata endpoint should be blocked."""
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf") as mock_ssrf:
+        with patch("nova.tools.http_request.check_ssrf") as mock_ssrf:
             mock_ssrf.return_value = (
                 "Blocked host: 169.254.169.254 (cloud metadata endpoint)"
             )
@@ -81,7 +81,7 @@ class TestHttpRequestTool:
             )
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(url="https://api.example.com/data")
         assert result.success is True
         assert '"key": "value"' in result.content
@@ -100,7 +100,7 @@ class TestHttpRequestTool:
             )
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(
                 url="https://api.example.com/submit",
                 method="POST",
@@ -118,7 +118,7 @@ class TestHttpRequestTool:
             return_value=httpx.Response(200, text="updated")
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(
                 url="https://api.example.com/resource/1",
                 method="PUT",
@@ -134,7 +134,7 @@ class TestHttpRequestTool:
             return_value=httpx.Response(204, text="")
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(
                 url="https://api.example.com/resource/1",
                 method="DELETE",
@@ -152,7 +152,7 @@ class TestHttpRequestTool:
             )
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(
                 url="https://api.example.com/check",
                 method="HEAD",
@@ -163,7 +163,7 @@ class TestHttpRequestTool:
     def test_timeout_handling(self):
         """Timeout should produce a clear error."""
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             with patch.object(
                 HttpRequestTool,
                 "_request_following_redirects",
@@ -176,7 +176,7 @@ class TestHttpRequestTool:
     def test_request_error(self):
         """Connection error should produce a clear error."""
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             with patch.object(
                 HttpRequestTool,
                 "_request_following_redirects",
@@ -197,7 +197,7 @@ class TestHttpRequestTool:
         tool = HttpRequestTool()
         # First check (initial URL) passes; the redirect target is blocked.
         with patch(
-            "openjarvis.tools.http_request.check_ssrf",
+            "nova.tools.http_request.check_ssrf",
             side_effect=[None, "Blocked host: 169.254.169.254"],
         ):
             result = tool.execute(url="https://public.example.com/start")
@@ -216,7 +216,7 @@ class TestHttpRequestTool:
             return_value=httpx.Response(200, text="done")
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(url="https://public.example.com/start")
         assert result.success is True
         assert "done" in result.content
@@ -232,7 +232,7 @@ class TestHttpRequestTool:
     def test_method_case_insensitive(self):
         """Method should be case-insensitive."""
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             with respx.mock:
                 respx.get("https://api.example.com/data").mock(
                     return_value=httpx.Response(200, text="ok")
@@ -248,7 +248,7 @@ class TestHttpRequestTool:
             return_value=httpx.Response(200, text=large_body)
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(url="https://api.example.com/large")
         assert result.success is True
         assert "[Response truncated at 1 MB]" in result.content
@@ -262,7 +262,7 @@ class TestHttpRequestTool:
             return_value=httpx.Response(200, text=small_body)
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(url="https://api.example.com/small")
         assert result.success is True
         assert result.content == "hello world"
@@ -282,7 +282,7 @@ class TestHttpRequestTool:
             )
         )
         tool = HttpRequestTool()
-        with patch("openjarvis.tools.http_request.check_ssrf", return_value=None):
+        with patch("nova.tools.http_request.check_ssrf", return_value=None):
             result = tool.execute(url="https://api.example.com/data")
         assert isinstance(result.metadata["headers"], dict)
         assert result.metadata["headers"]["x-request-id"] == "abc123"

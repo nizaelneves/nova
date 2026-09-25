@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.types import ToolCall, ToolResult
-from openjarvis.security.capabilities import DEFAULT_TOOL_CAPABILITIES
-from openjarvis.tools._stubs import BaseTool, ToolExecutor, ToolSpec
-from openjarvis.tools.code_interpreter import CodeInterpreterTool
+from nova.core.events import EventBus, EventType
+from nova.core.types import ToolCall, ToolResult
+from nova.security.capabilities import DEFAULT_TOOL_CAPABILITIES
+from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from nova.tools.code_interpreter import CodeInterpreterTool
 
 # ---------------------------------------------------------------------------
 # Helpers

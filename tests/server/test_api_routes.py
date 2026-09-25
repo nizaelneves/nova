@@ -9,9 +9,9 @@ fastapi = pytest.importorskip("fastapi")
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from openjarvis.core.events import EventBus, EventType  # noqa: E402
-from openjarvis.security.capabilities import CapabilityPolicy  # noqa: E402
-from openjarvis.server.api_routes import (  # noqa: E402
+from nova.core.events import EventBus, EventType  # noqa: E402
+from nova.security.capabilities import CapabilityPolicy  # noqa: E402
+from nova.server.api_routes import (  # noqa: E402
     include_all_routes,
     memory_index,
     memory_search,
@@ -47,7 +47,7 @@ class TestAgentRoutes:
         assert resp.status_code in (404, 501)
 
     def test_admin_lifecycle_is_capability_gated_before_mutation(self):
-        from openjarvis.tools.agent_tools import _SPAWNED_AGENTS
+        from nova.tools.agent_tools import _SPAWNED_AGENTS
 
         app = _make_app()
         app.state.bus = EventBus(record_history=True)
@@ -77,7 +77,7 @@ class TestAgentRoutes:
         }
 
     def test_agent_listing_is_capability_gated_before_disclosure(self):
-        from openjarvis.tools.agent_tools import _SPAWNED_AGENTS
+        from nova.tools.agent_tools import _SPAWNED_AGENTS
 
         app = _make_app()
         app.state.bus = EventBus(record_history=True)
@@ -108,7 +108,7 @@ class TestAgentRoutes:
         )
 
     def test_admin_lifecycle_is_rate_limited_before_mutation(self):
-        from openjarvis.tools.agent_tools import _SPAWNED_AGENTS
+        from nova.tools.agent_tools import _SPAWNED_AGENTS
 
         class _DenyLimiter:
             def __init__(self) -> None:
@@ -171,7 +171,7 @@ class TestAgentRoutes:
 
 
 class TestMemoryRoutes:
-    # 503 is the documented response when the native ``openjarvis_rust``
+    # 503 is the documented response when the native ``nova_rust``
     # extension is absent from the venv (see TestMemoryRustMissing below).
     # These tests are only asserting "the route is wired up", so a backend
     # that cannot be built is tolerated the same way a 500 is.
@@ -218,7 +218,7 @@ class TestMetricsRoute:
         machine's real telemetry database and makes any other response a
         regression rather than accepting all possible production states.
         """
-        monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path))
+        monkeypatch.setenv("NOVA_HOME", str(tmp_path))
 
         client = TestClient(_make_app())
         resp = client.get("/metrics")
@@ -238,10 +238,10 @@ class TestMetricsRoute:
         """
         import time
 
-        from openjarvis.core.types import TelemetryRecord
-        from openjarvis.telemetry.store import TelemetryStore
+        from nova.core.types import TelemetryRecord
+        from nova.telemetry.store import TelemetryStore
 
-        monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path))
+        monkeypatch.setenv("NOVA_HOME", str(tmp_path))
 
         db_path = tmp_path / "telemetry.db"
         store = TelemetryStore(db_path)
@@ -263,16 +263,16 @@ class TestMetricsRoute:
         resp = client.get("/metrics")
         assert resp.status_code == 200
         assert "No metrics available" not in resp.text
-        assert "openjarvis_requests_total 1" in resp.text
-        assert "openjarvis_tokens_total 15" in resp.text
-        assert "openjarvis_latency_avg_ms 2000" in resp.text
+        assert "nova_requests_total 1" in resp.text
+        assert "nova_tokens_total 15" in resp.text
+        assert "nova_latency_avg_ms 2000" in resp.text
 
     def test_metrics_endpoint_empty_db_no_division_by_zero(self, tmp_path, monkeypatch):
         """An existing but empty telemetry.db (total_calls=0) must not
         raise ZeroDivisionError when computing average latency."""
-        from openjarvis.telemetry.store import TelemetryStore
+        from nova.telemetry.store import TelemetryStore
 
-        monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path))
+        monkeypatch.setenv("NOVA_HOME", str(tmp_path))
 
         db_path = tmp_path / "telemetry.db"
         TelemetryStore(db_path).close()  # creates the schema, no records
@@ -281,14 +281,14 @@ class TestMetricsRoute:
         resp = client.get("/metrics")
         assert resp.status_code == 200
         assert "No metrics available" not in resp.text
-        assert "openjarvis_requests_total 0" in resp.text
-        assert "openjarvis_latency_avg_ms 0" in resp.text
+        assert "nova_requests_total 0" in resp.text
+        assert "nova_latency_avg_ms 0" in resp.text
 
     def test_metrics_endpoint_uses_active_app_telemetry_path(self, tmp_path):
         import time
 
-        from openjarvis.core.types import TelemetryRecord
-        from openjarvis.telemetry.store import TelemetryStore
+        from nova.core.types import TelemetryRecord
+        from nova.telemetry.store import TelemetryStore
 
         db_path = tmp_path / "runtime" / "custom-telemetry.sqlite"
         store = TelemetryStore(db_path)
@@ -313,9 +313,9 @@ class TestMetricsRoute:
         resp = TestClient(app).get("/metrics")
 
         assert resp.status_code == 200
-        assert "openjarvis_requests_total 1" in resp.text
-        assert "openjarvis_tokens_total 7" in resp.text
-        assert "openjarvis_latency_avg_ms 500" in resp.text
+        assert "nova_requests_total 1" in resp.text
+        assert "nova_tokens_total 7" in resp.text
+        assert "nova_latency_avg_ms 500" in resp.text
 
 
 class TestSkillRoutes:

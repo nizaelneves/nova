@@ -7,10 +7,10 @@ from unittest import mock
 
 import pytest
 
-from openjarvis.core.registry import EngineRegistry
-from openjarvis.core.types import Message, Role
-from openjarvis.engine._base import EngineConnectionError
-from openjarvis.engine.cloud import (
+from nova.core.registry import EngineRegistry
+from nova.core.types import Message, Role
+from nova.engine._base import EngineConnectionError
+from nova.engine.cloud import (
     _ANTHROPIC_MODELS,
     _GOOGLE_MODELS,
     _OPENAI_MODELS,

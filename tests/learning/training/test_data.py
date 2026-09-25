@@ -5,8 +5,8 @@ from __future__ import annotations
 import time
 from typing import Any, List
 
-from openjarvis.core.types import StepType, Trace, TraceStep
-from openjarvis.learning.training.data import TrainingDataMiner
+from nova.core.types import StepType, Trace, TraceStep
+from nova.learning.training.data import TrainingDataMiner
 
 # ---------------------------------------------------------------------------
 # Helpers

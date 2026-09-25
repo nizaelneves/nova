@@ -815,7 +815,7 @@ export function SyncStatusDisplay({
       </div>
       {hasSynced && connectorId === 'slack' && (
         <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
-          Tip: invite the bot to channels with /invite @OpenJarvis, then re-sync
+          Tip: invite the bot to channels with /invite @Nova, then re-sync
         </div>
       )}
       {syncError && (

@@ -6,11 +6,11 @@ import threading
 import time
 from unittest.mock import MagicMock
 
-from openjarvis.agents._stubs import AgentContext
-from openjarvis.agents.orchestrator import OrchestratorAgent
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.types import Conversation, Message, Role, ToolResult
-from openjarvis.tools._stubs import BaseTool, ToolSpec
+from nova.agents._stubs import AgentContext
+from nova.agents.orchestrator import OrchestratorAgent
+from nova.core.events import EventBus, EventType
+from nova.core.types import Conversation, Message, Role, ToolResult
+from nova.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers

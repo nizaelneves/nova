@@ -34,8 +34,8 @@ export interface AgentEvent {
 
 // ── localStorage persistence ──────────────────────────────────────────
 
-const CONVERSATIONS_KEY = 'openjarvis-conversations';
-const SETTINGS_KEY = 'openjarvis-settings';
+const CONVERSATIONS_KEY = 'nova-conversations';
+const SETTINGS_KEY = 'nova-settings';
 
 interface ConversationStore {
   version: 1;
@@ -91,8 +91,8 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 interface Settings {
   theme: ThemeMode;
   apiUrl: string;
-  // Local server API key (OPENJARVIS_API_KEY). Sent as a Bearer token on
-  // /v1 + /api requests so a key-protected `jarvis serve` doesn't 401 the
+  // Local server API key (NOVA_API_KEY). Sent as a Bearer token on
+  // /v1 + /api requests so a key-protected `nova serve` doesn't 401 the
   // frontend (#266). Empty = no auth header (keyless local default).
   apiKey: string;
   fontSize: 'small' | 'default' | 'large';

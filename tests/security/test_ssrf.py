@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from openjarvis.security.ssrf import check_ssrf, is_private_ip
+from nova.security.ssrf import check_ssrf, is_private_ip
 
 
 class TestIsPrivateIp:
@@ -95,7 +95,7 @@ class TestCheckSsrf:
 
     def test_allows_normal_urls(self):
         # Use Python impl so we can mock DNS resolution
-        with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
+        with patch("nova.security.ssrf.socket.getaddrinfo") as mock_dns:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("93.184.216.34", 0)),
             ]
@@ -103,7 +103,7 @@ class TestCheckSsrf:
         assert result is None
 
     def test_blocks_localhost_url(self):
-        with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
+        with patch("nova.security.ssrf.socket.getaddrinfo") as mock_dns:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("127.0.0.1", 0)),
             ]
@@ -112,7 +112,7 @@ class TestCheckSsrf:
         assert "private IP" in result
 
     def test_blocks_private_ip_url(self):
-        with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
+        with patch("nova.security.ssrf.socket.getaddrinfo") as mock_dns:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("192.168.1.1", 0)),
             ]
@@ -141,7 +141,7 @@ class TestCheckSsrf:
         import socket
 
         with patch(
-            "openjarvis.security.ssrf.socket.getaddrinfo",
+            "nova.security.ssrf.socket.getaddrinfo",
             side_effect=socket.gaierror("Name resolution failed"),
         ):
             result = check_ssrf("https://nonexistent.example.com")
@@ -151,9 +151,9 @@ class TestCheckSsrf:
         """Opt-in escape hatch for trusted, non-exposed local use only."""
         import socket
 
-        monkeypatch.setenv("OPENJARVIS_SSRF_FAIL_OPEN", "1")
+        monkeypatch.setenv("NOVA_SSRF_FAIL_OPEN", "1")
         with patch(
-            "openjarvis.security.ssrf.socket.getaddrinfo",
+            "nova.security.ssrf.socket.getaddrinfo",
             side_effect=socket.gaierror("Name resolution failed"),
         ):
             result = check_ssrf("https://nonexistent.example.com")
@@ -161,7 +161,7 @@ class TestCheckSsrf:
 
     def test_blocks_dns_rebinding_to_private(self):
         """Even if hostname looks normal, block if it resolves to private IP."""
-        with patch("openjarvis.security.ssrf.socket.getaddrinfo") as mock_dns:
+        with patch("nova.security.ssrf.socket.getaddrinfo") as mock_dns:
             mock_dns.return_value = [
                 (2, 1, 6, "", ("10.0.0.5", 0)),
             ]

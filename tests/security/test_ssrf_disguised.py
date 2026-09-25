@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from openjarvis.security.ssrf import check_ssrf
+from nova.security.ssrf import check_ssrf
 
 
 class TestSSRFDisguisedForms:
@@ -34,5 +34,5 @@ class TestSSRFDisguisedForms:
         assert result is not None  # blocked, not silently allowed
 
     def test_fail_open_override(self, monkeypatch):
-        monkeypatch.setenv("OPENJARVIS_SSRF_FAIL_OPEN", "1")
+        monkeypatch.setenv("NOVA_SSRF_FAIL_OPEN", "1")
         assert check_ssrf("http://another-nonexistent-zzz.invalid/") is None

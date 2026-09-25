@@ -59,7 +59,7 @@ class TestDockerFiles:
     def test_dockerfile_has_entrypoint(self):
         content = (DOCKER_DIR / "Dockerfile").read_text()
         assert "ENTRYPOINT" in content
-        assert "jarvis" in content
+        assert "nova" in content
 
     def test_dockerfile_copies_forced_package_includes(self):
         # Every Dockerfile that builds the wheel from an explicit `COPY src/`
@@ -112,7 +112,7 @@ class TestDockerFiles:
 
         # Basic structural checks without requiring PyYAML
         assert "services:" in content
-        assert "jarvis:" in content
+        assert "nova:" in content
 
         if yaml_mod is not None:
             data = yaml_mod.safe_load(content)
@@ -120,11 +120,11 @@ class TestDockerFiles:
 
     def test_docker_compose_has_services(self):
         content = (DOCKER_DIR / "docker-compose.yml").read_text()
-        assert "jarvis:" in content
+        assert "nova:" in content
         assert "ollama:" in content
 
     def test_systemd_service_exists(self):
-        assert (SYSTEMD_DIR / "openjarvis.service").is_file()
+        assert (SYSTEMD_DIR / "nova.service").is_file()
 
 
 class TestImagePinning:
@@ -244,7 +244,7 @@ class TestSystemdHardening:
     """#564 — systemd unit ships secrets via EnvironmentFile and is sandboxed."""
 
     def _service(self) -> str:
-        return (SYSTEMD_DIR / "openjarvis.service").read_text()
+        return (SYSTEMD_DIR / "nova.service").read_text()
 
     def test_environment_file_for_secrets(self):
         assert "EnvironmentFile=" in self._service()

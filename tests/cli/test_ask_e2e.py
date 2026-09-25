@@ -1,4 +1,4 @@
-"""End-to-end tests for ``jarvis ask``."""
+"""End-to-end tests for ``nova ask``."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from openjarvis.cli import cli
-from openjarvis.core.config import JarvisConfig
+from nova.cli import cli
+from nova.core.config import NovaConfig
 
 # Import the actual module (not the Click command attribute)
-_ask_mod = importlib.import_module("openjarvis.cli.ask")
+_ask_mod = importlib.import_module("nova.cli.ask")
 
 
 def _mock_engine_response():
@@ -33,15 +33,15 @@ def _mock_engine_response():
 def _patch_ask(monkeypatch, tmp_path, *, engine_result=None, no_engine=False):
     """Set up common mocks for ask tests."""
     # Re-register SimpleAgent after the autouse `_clean_registries` conftest
-    # fixture clears it. ``JarvisConfig().agent.default_agent`` defaults to
-    # ``"simple"``, so ``jarvis ask "..."`` (no --agent) routes through it.
-    from openjarvis.agents.simple import SimpleAgent
-    from openjarvis.core.registry import AgentRegistry
+    # fixture clears it. ``NovaConfig().agent.default_agent`` defaults to
+    # ``"simple"``, so ``nova ask "..."`` (no --agent) routes through it.
+    from nova.agents.simple import SimpleAgent
+    from nova.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
 
-    cfg = JarvisConfig()
+    cfg = NovaConfig()
     cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
     cfg.traces.enabled = False
 

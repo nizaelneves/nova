@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 from unittest.mock import patch
 
-from openjarvis.tools.git_tool import (
+from nova.tools.git_tool import (
     GitCommitTool,
     GitDiffTool,
     GitLogTool,
@@ -110,7 +110,7 @@ class TestGitStatusTool:
 
     def test_git_not_found(self):
         tool = GitStatusTool()
-        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
+        with patch("nova.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(repo_path=".")
         assert result.success is False
         assert "git binary not found" in result.content
@@ -186,7 +186,7 @@ class TestGitDiffTool:
 
     def test_git_not_found(self):
         tool = GitDiffTool()
-        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
+        with patch("nova.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(repo_path=".")
         assert result.success is False
         assert "git binary not found" in result.content
@@ -314,7 +314,7 @@ class TestGitCommitTool:
 
     def test_git_not_found(self):
         tool = GitCommitTool()
-        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
+        with patch("nova.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(message="test")
         assert result.success is False
         assert "not found" in result.content
@@ -388,7 +388,7 @@ class TestGitLogTool:
 
     def test_git_not_found(self):
         tool = GitLogTool()
-        with patch("openjarvis.tools.git_tool.shutil.which", return_value=None):
+        with patch("nova.tools.git_tool.shutil.which", return_value=None):
             result = tool.execute(repo_path=".")
         assert result.success is False
         assert "not found" in result.content

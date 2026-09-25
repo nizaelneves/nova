@@ -1,8 +1,8 @@
-"""Tests for openjarvis.optimize.types module."""
+"""Tests for nova.optimize.types module."""
 
 from __future__ import annotations
 
-from openjarvis.learning.optimize.types import (
+from nova.learning.optimize.types import (
     OptimizationRun,
     SampleScore,
     SearchDimension,
@@ -11,7 +11,7 @@ from openjarvis.learning.optimize.types import (
     TrialFeedback,
     TrialResult,
 )
-from openjarvis.recipes.loader import Recipe
+from nova.recipes.loader import Recipe
 
 # ---------------------------------------------------------------------------
 # SearchDimension

@@ -33,7 +33,7 @@ import {
   type InferenceSource,
 } from '../lib/api';
 
-const CLOUD_KEY_STATUS_CHANGED = 'openjarvis-cloud-key-status-changed';
+const CLOUD_KEY_STATUS_CHANGED = 'nova-cloud-key-status-changed';
 
 function OllamaModelList() {
   const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
@@ -242,19 +242,19 @@ export function SettingsPage() {
 
   const [memoryStats, setMemoryStats] = useState<{ entries: number; backend: string } | null>(null);
   const [memoryEnabled, setMemoryEnabled] = useState(() => {
-    try { return localStorage.getItem('openjarvis-memory-enabled') !== 'false'; } catch { return true; }
+    try { return localStorage.getItem('nova-memory-enabled') !== 'false'; } catch { return true; }
   });
   const [memoryBackend, setMemoryBackend] = useState(() => {
-    try { return localStorage.getItem('openjarvis-memory-backend') || 'sqlite'; } catch { return 'sqlite'; }
+    try { return localStorage.getItem('nova-memory-backend') || 'sqlite'; } catch { return 'sqlite'; }
   });
   const [memoryTopK, setMemoryTopK] = useState(() => {
-    try { return parseInt(localStorage.getItem('openjarvis-memory-top-k') || '5'); } catch { return 5; }
+    try { return parseInt(localStorage.getItem('nova-memory-top-k') || '5'); } catch { return 5; }
   });
   const [memoryMinScore, setMemoryMinScore] = useState(() => {
-    try { return parseFloat(localStorage.getItem('openjarvis-memory-min-score') || '0.1'); } catch { return 0.1; }
+    try { return parseFloat(localStorage.getItem('nova-memory-min-score') || '0.1'); } catch { return 0.1; }
   });
   const [memoryMaxTokens, setMemoryMaxTokens] = useState(() => {
-    try { return parseInt(localStorage.getItem('openjarvis-memory-max-tokens') || '2048'); } catch { return 2048; }
+    try { return parseInt(localStorage.getItem('nova-memory-max-tokens') || '2048'); } catch { return 2048; }
   });
 
   const [srcKind, setSrcKind] = useState<InferenceSource['kind']>('ollama');
@@ -302,12 +302,12 @@ export function SettingsPage() {
   };
 
   const handleExport = () => {
-    const data = localStorage.getItem('openjarvis-conversations') || '{}';
+    const data = localStorage.getItem('nova-conversations') || '{}';
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `openjarvis-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `nova-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -324,7 +324,7 @@ export function SettingsPage() {
         try {
           const data = JSON.parse(ev.target?.result as string);
           if (data.version === 1) {
-            localStorage.setItem('openjarvis-conversations', JSON.stringify(data));
+            localStorage.setItem('nova-conversations', JSON.stringify(data));
             useAppStore.getState().loadConversations();
             showSaved();
           }
@@ -342,7 +342,7 @@ export function SettingsPage() {
       setTimeout(() => setConfirmClear(false), 3000);
       return;
     }
-    localStorage.removeItem('openjarvis-conversations');
+    localStorage.removeItem('nova-conversations');
     useAppStore.getState().loadConversations();
     setConfirmClear(false);
     showSaved();
@@ -373,7 +373,7 @@ export function SettingsPage() {
         <div className="flex flex-col gap-4">
           {/* Appearance */}
           <Section title="Appearance">
-            <SettingRow label="Theme" description="Choose how OpenJarvis looks">
+            <SettingRow label="Theme" description="Choose how Nova looks">
               <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--color-bg-secondary)' }}>
                 {themeOptions.map((opt) => {
                   const isActive = settings.theme === opt.value;
@@ -445,7 +445,7 @@ export function SettingsPage() {
                 type="password"
                 value={settings.apiKey}
                 onChange={(e) => { updateSettings({ apiKey: e.target.value }); showSaved(); }}
-                placeholder="OPENJARVIS_API_KEY"
+                placeholder="NOVA_API_KEY"
                 autoComplete="off"
                 className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
                 style={{
@@ -565,7 +565,7 @@ export function SettingsPage() {
                 onClick={() => {
                   const next = !memoryEnabled;
                   setMemoryEnabled(next);
-                  try { localStorage.setItem('openjarvis-memory-enabled', String(next)); } catch {}
+                  try { localStorage.setItem('nova-memory-enabled', String(next)); } catch {}
                   showSaved();
                 }}
                 className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
@@ -587,7 +587,7 @@ export function SettingsPage() {
                 value={memoryBackend}
                 onChange={(e) => {
                   setMemoryBackend(e.target.value);
-                  try { localStorage.setItem('openjarvis-memory-backend', e.target.value); } catch {}
+                  try { localStorage.setItem('nova-memory-backend', e.target.value); } catch {}
                   showSaved();
                 }}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
@@ -614,7 +614,7 @@ export function SettingsPage() {
                 onChange={(e) => {
                   const v = parseInt(e.target.value);
                   setMemoryTopK(v);
-                  try { localStorage.setItem('openjarvis-memory-top-k', String(v)); } catch {}
+                  try { localStorage.setItem('nova-memory-top-k', String(v)); } catch {}
                   showSaved();
                 }}
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
@@ -630,7 +630,7 @@ export function SettingsPage() {
                 onChange={(e) => {
                   const v = parseFloat(e.target.value);
                   setMemoryMinScore(v);
-                  try { localStorage.setItem('openjarvis-memory-min-score', String(v)); } catch {}
+                  try { localStorage.setItem('nova-memory-min-score', String(v)); } catch {}
                   showSaved();
                 }}
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
@@ -646,7 +646,7 @@ export function SettingsPage() {
                 onChange={(e) => {
                   const v = parseInt(e.target.value);
                   setMemoryMaxTokens(v);
-                  try { localStorage.setItem('openjarvis-memory-max-tokens', String(v)); } catch {}
+                  try { localStorage.setItem('nova-memory-max-tokens', String(v)); } catch {}
                   showSaved();
                 }}
                 className="w-32 cursor-pointer accent-[var(--color-accent)]"
@@ -719,7 +719,7 @@ export function SettingsPage() {
             {!speechBackendAvailable && speechBackendAvailable !== null && (
               <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
                 Set up a speech backend to use voice input.
-                See the <a href="https://open-jarvis.github.io/OpenJarvis/user-guide/tools/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
+                See the <a href="https://github.com/nizaelneves/nova" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
               </div>
             )}
           </Section>
@@ -769,14 +769,14 @@ export function SettingsPage() {
           <Section title="About">
             <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               <p className="mb-2">
-                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>OpenJarvis</span> — Programming abstractions for on-device AI.
+                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Nova</span> — Programming abstractions for on-device AI.
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
                 Part of Intelligence Per Watt, a research initiative at Stanford SAIL.
               </p>
               <div className="flex gap-3 mt-3 text-xs">
                 <a
-                  href="https://openjarvis.stanford.edu/"
+                  href="https://github.com/nizaelneves/nova"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: 'var(--color-accent)' }}
@@ -784,7 +784,7 @@ export function SettingsPage() {
                   Project site
                 </a>
                 <a
-                  href="https://open-jarvis.github.io/OpenJarvis/"
+                  href="https://github.com/nizaelneves/nova"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: 'var(--color-accent)' }}

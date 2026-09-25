@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from openjarvis.core.types import Message
-from openjarvis.server import cloud_router
+from nova.core.types import Message
+from nova.server import cloud_router
 
 
 def test_get_provider_detects_bare_openrouter_id():

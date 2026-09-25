@@ -1,0 +1,189 @@
+"""Credential persistence for tools and channels.
+
+Stores credentials in ~/.nova/credentials.toml with 0o600 permissions.
+Thread-safe writes via lock. Sets os.environ on save for immediate effect.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import threading
+import time
+from pathlib import Path
+
+import tomlkit
+
+from nova.core.paths import get_config_dir
+from nova.security.file_utils import secure_write_text
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib  # type: ignore[no-redef]
+
+logger = logging.getLogger(__name__)
+
+_LOCK = threading.RLock()
+
+
+def _default_path() -> Path:
+    """Resolve the credentials file under the Nova root (env-aware)."""
+    return get_config_dir() / "credentials.toml"
+
+
+TOOL_CREDENTIALS: dict[str, list[str]] = {
+    "web_search": ["TAVILY_API_KEY", "YOUDOTCOM_API_KEY"],
+    "get_weather": ["OPENWEATHERMAP_API_KEY"],
+    "image_generate": ["OPENAI_API_KEY"],
+    "telegram": ["TELEGRAM_BOT_TOKEN"],
+    "whatsapp": ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
+}
+
+
+# Keys that unlock or upgrade a tool but are not prerequisites for it. Every
+# key in TOOL_CREDENTIALS is otherwise treated as required — by the Settings UI,
+# by ``nova doctor``, and by anything else reading credential status — which
+# leaves no way to describe a tool that also works without one. ``web_search``
+# is the first such tool: the You.com keyless tier serves it with no key at all,
+# and both listed keys only raise limits or result quality.
+OPTIONAL_TOOL_CREDENTIALS: dict[str, frozenset[str]] = {
+    "web_search": frozenset({"TAVILY_API_KEY", "YOUDOTCOM_API_KEY"}),
+}
+
+
+def is_credential_optional(tool_name: str, key: str) -> bool:
+    """Return whether ``key`` is an upgrade for ``tool_name`` rather than required."""
+    return key in OPTIONAL_TOOL_CREDENTIALS.get(tool_name, frozenset())
+
+
+def get_required_credentials(tool_name: str) -> list[str]:
+    """Return only the keys ``tool_name`` cannot run without."""
+    optional = OPTIONAL_TOOL_CREDENTIALS.get(tool_name, frozenset())
+    return [k for k in TOOL_CREDENTIALS.get(tool_name, []) if k not in optional]
+
+
+def load_credentials(path: Path | None = None) -> dict[str, dict[str, str]]:
+    """Load credentials, preserving malformed input as a recoverable backup."""
+    p = Path(path) if path else _default_path()
+    with _LOCK:
+        if not p.exists():
+            return {}
+        try:
+            with open(p, "rb") as f:
+                return tomllib.load(f)
+        except tomllib.TOMLDecodeError:
+            backup = p.with_name(f"{p.name}.corrupt-{time.time_ns()}")
+            try:
+                os.replace(p, backup)
+                os.chmod(backup, 0o600)
+            except OSError:
+                logger.exception(
+                    "Could not preserve malformed credential file %s",
+                    p,
+                )
+                raise
+            logger.warning(
+                "Malformed credential file moved to %s; starting with an empty store",
+                backup,
+            )
+            return {}
+
+
+def _validate_credential_key(tool_name: str, key: str) -> None:
+    allowed = TOOL_CREDENTIALS.get(tool_name, [])
+    if key not in allowed:
+        raise ValueError(f"Unknown credential key '{key}' for tool '{tool_name}'")
+
+
+def _write_credentials(creds: dict[str, dict[str, str]], path: Path) -> None:
+    document = tomlkit.document()
+    for section, kvs in creds.items():
+        table = tomlkit.table()
+        for key, value in kvs.items():
+            table.add(key, value)
+        document.add(section, table)
+    secure_write_text(path, tomlkit.dumps(document), mode=0o600, encoding="utf-8")
+
+
+def save_credential(
+    tool_name: str,
+    key: str,
+    value: str,
+    *,
+    path: Path | None = None,
+) -> None:
+    """Save a single credential key, validate, write file, and set os.environ."""
+    _validate_credential_key(tool_name, key)
+    stripped = value.strip()
+    if not stripped:
+        raise ValueError("Credential value must not be empty")
+
+    p = Path(path) if path else _default_path()
+    with _LOCK:
+        creds = load_credentials(path=p)
+        if tool_name not in creds:
+            creds[tool_name] = {}
+        creds[tool_name][key] = stripped
+        _write_credentials(creds, p)
+
+    os.environ[key] = stripped
+
+
+def delete_credential(
+    tool_name: str,
+    key: str,
+    *,
+    path: Path | None = None,
+) -> None:
+    """Delete a persisted credential and remove it from the running process."""
+    _validate_credential_key(tool_name, key)
+    p = Path(path) if path else _default_path()
+    with _LOCK:
+        creds = load_credentials(path=p)
+        tool_creds = creds.get(tool_name)
+        if tool_creds is not None:
+            tool_creds.pop(key, None)
+            if not tool_creds:
+                creds.pop(tool_name, None)
+            _write_credentials(creds, p)
+
+    os.environ.pop(key, None)
+
+
+def get_credential_status(tool_name: str) -> dict[str, bool]:
+    """Return {KEY: bool} for each declared key indicating if set in env.
+
+    Includes optional keys; use :func:`is_credential_optional` to tell whether a
+    missing key actually blocks the tool.
+    """
+    keys = TOOL_CREDENTIALS.get(tool_name, [])
+    return {k: bool(os.environ.get(k)) for k in keys}
+
+
+def inject_credentials(path: Path | None = None) -> None:
+    """Load credentials.toml and inject into os.environ. Call at server startup."""
+    creds = load_credentials(path=path)
+    for _tool, kvs in creds.items():
+        for k, v in kvs.items():
+            if k not in os.environ:
+                os.environ[k] = v
+
+
+def get_tool_credential(
+    tool_name: str,
+    key: str,
+    *,
+    path: Path | None = None,
+) -> str | None:
+    """Read a single credential without polluting ``os.environ``.
+
+    Falls back to ``os.environ`` if the key is not in credentials.toml,
+    for backward compatibility with Docker env var workflows.
+    """
+    creds = load_credentials(path=path)
+    tool_creds = creds.get(tool_name, {})
+    value = tool_creds.get(key)
+    if value is not None:
+        return value
+    return os.environ.get(key) or None

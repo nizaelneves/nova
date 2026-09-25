@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from openjarvis.channels._stubs import ChannelStatus
-from openjarvis.core.registry import ChannelRegistry
+from nova.channels._stubs import ChannelStatus
+from nova.core.registry import ChannelRegistry
 
 
 def make_common_channel_tests(

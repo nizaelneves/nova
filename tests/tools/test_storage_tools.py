@@ -7,9 +7,9 @@ import tempfile
 
 import pytest
 
-from openjarvis.mcp.server import MCPServer
-from openjarvis.tools.storage._stubs import MemoryBackend, RetrievalResult
-from openjarvis.tools.storage_tools import (
+from nova.mcp.server import MCPServer
+from nova.tools.storage._stubs import MemoryBackend, RetrievalResult
+from nova.tools.storage_tools import (
     MemoryIndexTool,
     MemoryRetrieveTool,
     MemorySearchTool,
@@ -225,7 +225,7 @@ class TestMemoryIndexTool:
 class TestStorageToolsRegistration:
     def test_storage_tools_importable(self):
         """All storage tools are importable and instantiable."""
-        from openjarvis.tools.storage_tools import (
+        from nova.tools.storage_tools import (
             MemoryIndexTool,
             MemoryRetrieveTool,
             MemorySearchTool,
@@ -241,7 +241,7 @@ class TestStorageToolsRegistration:
     def test_auto_discover_finds_storage_tools(self):
         """MCPServer auto-discovery finds storage tools."""
         server = MCPServer()
-        from openjarvis.mcp.protocol import MCPRequest
+        from nova.mcp.protocol import MCPRequest
 
         req = MCPRequest(method="tools/list", id=1)
         resp = server.handle(req)

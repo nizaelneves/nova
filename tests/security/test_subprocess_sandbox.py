@@ -6,8 +6,8 @@ import os
 import shlex
 import tempfile
 
-from openjarvis.core import get_python_executable
-from openjarvis.security.subprocess_sandbox import (
+from nova.core import get_python_executable
+from nova.security.subprocess_sandbox import (
     build_safe_env,
     kill_process_tree,
     run_sandboxed,

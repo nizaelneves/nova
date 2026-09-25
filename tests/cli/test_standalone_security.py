@@ -5,8 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from openjarvis.core.config import JarvisConfig
-from openjarvis.security import SecurityContext
+from nova.core.config import NovaConfig
+from nova.security import SecurityContext
 
 
 def _security(raw_engine, wrapped_engine, policy, limiter):
@@ -20,7 +20,7 @@ def _security(raw_engine, wrapped_engine, policy, limiter):
 
 
 def test_deep_research_setup_chat_wires_security(monkeypatch):
-    from openjarvis.cli.deep_research_setup_cmd import _launch_chat
+    from nova.cli.deep_research_setup_cmd import _launch_chat
 
     raw_engine = MagicMock(name="raw-engine")
     wrapped_engine = MagicMock(name="wrapped-engine")
@@ -38,10 +38,10 @@ def test_deep_research_setup_chat_wires_security(monkeypatch):
         def run(self, text):
             return SimpleNamespace(content="done")
 
-    monkeypatch.setattr("openjarvis.core.config.load_config", lambda: JarvisConfig())
-    monkeypatch.setattr("openjarvis.engine.ollama.OllamaEngine", lambda: raw_engine)
-    monkeypatch.setattr("openjarvis.security.setup_security", setup)
-    monkeypatch.setattr("openjarvis.agents.deep_research.DeepResearchAgent", _Agent)
+    monkeypatch.setattr("nova.core.config.load_config", lambda: NovaConfig())
+    monkeypatch.setattr("nova.engine.ollama.OllamaEngine", lambda: raw_engine)
+    monkeypatch.setattr("nova.security.setup_security", setup)
+    monkeypatch.setattr("nova.agents.deep_research.DeepResearchAgent", _Agent)
     console = MagicMock()
     console.input.return_value = "/quit"
 

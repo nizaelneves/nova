@@ -2,9 +2,9 @@
 
 import pytest
 
-from openjarvis.core.config import MemoryFilesConfig
-from openjarvis.core.paths import get_config_dir
-from openjarvis.prompt.builder import SystemPromptBuilder
+from nova.core.config import MemoryFilesConfig
+from nova.core.paths import get_config_dir
+from nova.prompt.builder import SystemPromptBuilder
 
 
 def test_empty_persona_passes_through_global_defaults():
@@ -39,9 +39,9 @@ def test_none_persona_build_does_not_raise(tmp_path, monkeypatch):
     """
     import dataclasses
 
-    from openjarvis.core.config import load_config
+    from nova.core.config import load_config
 
-    monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("NOVA_HOME", str(tmp_path / "home"))
     cfg = load_config(tmp_path / "missing-config.toml")
     mf = dataclasses.replace(cfg.memory_files, persona_name="none")
     builder = SystemPromptBuilder(

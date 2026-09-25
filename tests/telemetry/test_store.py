@@ -6,9 +6,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.core.types import TelemetryRecord
-from openjarvis.telemetry.store import TelemetryStore
+from nova.core.events import EventBus, EventType
+from nova.core.types import TelemetryRecord
+from nova.telemetry.store import TelemetryStore
 
 
 class TestTelemetryStore:

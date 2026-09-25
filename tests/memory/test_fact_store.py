@@ -1,4 +1,4 @@
-"""Tests for the persistent fact store (openjarvis.memory.store)."""
+"""Tests for the persistent fact store (nova.memory.store)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ import time
 
 import pytest
 
-from openjarvis.core.registry import FactStoreRegistry
-from openjarvis.memory.store import (
+from nova.core.registry import FactStoreRegistry
+from nova.memory.store import (
     TRUST_AUTO,
     TRUST_TRUSTED,
     TRUST_UNTRUSTED,
@@ -440,8 +440,8 @@ def test_create_fact_store_uses_fact_store_registry(tmp_path):
     assert isinstance(store, CustomFactStore)
 
 
-def test_create_fact_store_default_path_uses_openjarvis_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("OPENJARVIS_HOME", str(tmp_path))
+def test_create_fact_store_default_path_uses_nova_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
 
     store = create_fact_store("local")
 

@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from openjarvis.tools.shell_exec import ShellExecTool
+from nova.tools.shell_exec import ShellExecTool
 
 
 def _py(code: str) -> str:
@@ -23,10 +23,10 @@ def _py(code: str) -> str:
 
 class TestShellExecTool:
     def test_registered_via_tools_package_import(self):
-        import openjarvis.tools as tools_pkg
-        from openjarvis.core.registry import ToolRegistry
+        import nova.tools as tools_pkg
+        from nova.core.registry import ToolRegistry
 
-        sys.modules.pop("openjarvis.tools.shell_exec", None)
+        sys.modules.pop("nova.tools.shell_exec", None)
         importlib.reload(tools_pkg)
 
         assert ToolRegistry.contains("shell_exec")
@@ -108,7 +108,7 @@ class TestShellExecTool:
 
     def test_env_clearing(self):
         """Verify that arbitrary env vars are NOT passed through."""
-        marker = "OPENJARVIS_TEST_SECRET_12345"
+        marker = "NOVA_TEST_SECRET_12345"
         os.environ[marker] = "leaked"
         try:
             tool = ShellExecTool()
@@ -122,7 +122,7 @@ class TestShellExecTool:
 
     def test_env_passthrough(self):
         """Verify that explicitly listed env vars ARE passed through."""
-        marker = "OPENJARVIS_TEST_PASSTHROUGH_67890"
+        marker = "NOVA_TEST_PASSTHROUGH_67890"
         os.environ[marker] = "allowed_value"
         try:
             tool = ShellExecTool()
@@ -189,7 +189,7 @@ class TestSanitizedEnvWindowsKeys:
     """
 
     def test_base_env_keys_include_windows_essentials(self):
-        from openjarvis.tools.shell_exec import _WINDOWS_ENV_KEYS
+        from nova.tools.shell_exec import _WINDOWS_ENV_KEYS
 
         for key in (
             "SystemRoot",
@@ -205,7 +205,7 @@ class TestSanitizedEnvWindowsKeys:
             assert key in _WINDOWS_ENV_KEYS, f"{key} missing from Windows keys"
 
     def test_windows_keys_are_only_enabled_on_windows(self):
-        from openjarvis.tools.shell_exec import _BASE_ENV_KEYS, _WINDOWS_ENV_KEYS
+        from nova.tools.shell_exec import _BASE_ENV_KEYS, _WINDOWS_ENV_KEYS
 
         if os.name == "nt":
             assert set(_WINDOWS_ENV_KEYS) <= set(_BASE_ENV_KEYS)

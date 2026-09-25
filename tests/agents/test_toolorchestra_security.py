@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import openjarvis.agents.hybrid.toolorchestra as toolorchestra_module
-from openjarvis.agents.hybrid.toolorchestra import ToolOrchestraAgent
-from openjarvis.core.events import EventBus, EventType
-from openjarvis.security.capabilities import CapabilityPolicy
+import nova.agents.hybrid.toolorchestra as toolorchestra_module
+from nova.agents.hybrid.toolorchestra import ToolOrchestraAgent
+from nova.core.events import EventBus, EventType
+from nova.security.capabilities import CapabilityPolicy
 
 
 class _Limiter:

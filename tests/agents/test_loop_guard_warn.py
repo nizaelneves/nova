@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from openjarvis.agents.loop_guard import LoopGuard, LoopGuardConfig
+from nova.agents.loop_guard import LoopGuard, LoopGuardConfig
 
 _ARGS = '{"q": "test"}'
 

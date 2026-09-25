@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from openjarvis.core.types import StepType, Trace, TraceStep
-from openjarvis.learning.learning_orchestrator import LearningOrchestrator
-from openjarvis.traces.store import TraceStore
+from nova.core.types import StepType, Trace, TraceStep
+from nova.learning.learning_orchestrator import LearningOrchestrator
+from nova.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -1,8 +1,8 @@
-"""Guards for the openjarvis-rust packaging split (#584 / #615).
+"""Guards for the nova-rust packaging split (#584 / #615).
 
-``openjarvis_rust`` is the native PyO3 extension. It is NOT published to PyPI,
+``nova_rust`` is the native PyO3 extension. It is NOT published to PyPI,
 so it must not appear in the published ``desktop`` extra — listing it there
-breaks ``pip install openjarvis[desktop]`` at install time. It lives in the uv
+breaks ``pip install nova[desktop]`` at install time. It lives in the uv
 ``desktop-native`` dependency group instead (excluded from wheel metadata),
 which the desktop app installs from source via
 ``uv sync --group desktop-native``.
@@ -25,7 +25,7 @@ PYPROJECT = ROOT / "pyproject.toml"
 DESKTOP_LIB_RS = ROOT / "frontend" / "src-tauri" / "src" / "lib.rs"
 WINDOWS_INSTALL_PS1 = ROOT / "deploy" / "windows" / "install.ps1"
 QUICKSTART_SH = ROOT / "scripts" / "quickstart.sh"
-CLAUDE_RUNNER = ROOT / "src" / "openjarvis" / "agents" / "claude_code_runner"
+CLAUDE_RUNNER = ROOT / "src" / "nova" / "agents" / "claude_code_runner"
 
 
 def _pyproject() -> dict:
@@ -41,7 +41,7 @@ def test_python310_speech_extras_use_installable_onnxruntime() -> None:
 
 
 def test_desktop_app_syncs_the_native_group() -> None:
-    # Otherwise the group's openjarvis_rust is never installed for the app.
+    # Otherwise the group's nova_rust is never installed for the app.
     assert '"desktop-native"' in DESKTOP_LIB_RS.read_text(), (
         "the desktop app must `uv sync --group desktop-native` so the native "
         "extension is built at launch."
@@ -55,7 +55,7 @@ def test_windows_installer_syncs_the_native_group() -> None:
         in WINDOWS_INSTALL_PS1.read_text()
     ), (
         "the Windows installer must include `--group desktop-native` so "
-        "openjarvis_rust is built during source install."
+        "nova_rust is built during source install."
     )
 
 
@@ -73,7 +73,7 @@ def test_windows_installer_failure_does_not_exit_interactive_host() -> None:
 def test_claude_runner_wheel_maps_only_runtime_files() -> None:
     wheel = _pyproject()["tool"]["hatch"]["build"]["targets"]["wheel"]
     force_include = wheel["force-include"]
-    source = "src/openjarvis/agents/claude_code_runner"
+    source = "src/nova/agents/claude_code_runner"
 
     assert source not in force_include
     for filename in ("index.mjs", "package.json"):
@@ -92,8 +92,8 @@ def test_sdist_omits_desktop_binaries_and_rebuilds_runtime_wheel(tmp_path) -> No
     project = tmp_path / "project"
     project.mkdir()
     runtime_sources = (
-        "src/openjarvis/__init__.py",
-        "src/openjarvis/templates/data/assistant.toml",
+        "src/nova/__init__.py",
+        "src/nova/templates/data/assistant.toml",
     )
     force_include = _pyproject()["tool"]["hatch"]["build"]["targets"]["wheel"][
         "force-include"
@@ -130,10 +130,8 @@ def test_sdist_omits_desktop_binaries_and_rebuilds_runtime_wheel(tmp_path) -> No
     (project / desktop_source).parent.mkdir(parents=True)
     (project / desktop_source).write_text("// desktop source\n")
     generated_assets = {
-        "src/openjarvis/server/static/index.html": (
-            '<script src="assets/app.js"></script>'
-        ),
-        "src/openjarvis/server/static/assets/app.js": "// generated frontend\n",
+        "src/nova/server/static/index.html": ('<script src="assets/app.js"></script>'),
+        "src/nova/server/static/assets/app.js": "// generated frontend\n",
     }
     for relative, contents in generated_assets.items():
         asset = project / relative

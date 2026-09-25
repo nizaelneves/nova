@@ -7,10 +7,10 @@ from unittest import mock
 
 import pytest
 
-from openjarvis.core.registry import EngineRegistry
-from openjarvis.core.types import Message, Role
-from openjarvis.engine._base import EngineConnectionError
-from openjarvis.engine.cloud import (
+from nova.core.registry import EngineRegistry
+from nova.core.types import Message, Role
+from nova.engine._base import EngineConnectionError
+from nova.engine.cloud import (
     CloudEngine,
     _is_codex_model,
     _is_deepseek_model,
@@ -337,7 +337,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "openjarvis.engine.cloud.httpx.post",
+            "nova.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             result = engine.generate(
@@ -384,7 +384,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "openjarvis.engine.cloud.httpx.post",
+            "nova.engine.cloud.httpx.post",
             return_value=fake_response,
         ):
             result = engine.generate(
@@ -413,7 +413,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "openjarvis.engine.cloud.httpx.post",
+            "nova.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             engine.generate(

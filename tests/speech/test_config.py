@@ -1,6 +1,6 @@
 """Tests for speech configuration."""
 
-from openjarvis.core.config import JarvisConfig, SpeechConfig
+from nova.core.config import NovaConfig, SpeechConfig
 
 
 def test_speech_config_defaults():
@@ -12,15 +12,15 @@ def test_speech_config_defaults():
     assert cfg.compute_type == "float16"
 
 
-def test_jarvis_config_has_speech():
-    cfg = JarvisConfig()
+def test_nova_config_has_speech():
+    cfg = NovaConfig()
     assert hasattr(cfg, "speech")
     assert isinstance(cfg.speech, SpeechConfig)
     assert cfg.speech.backend == "auto"
 
 
-def test_jarvis_system_has_speech_backend():
-    """JarvisSystem has a speech_backend attribute."""
-    from openjarvis.system import JarvisSystem
+def test_nova_system_has_speech_backend():
+    """NovaSystem has a speech_backend attribute."""
+    from nova.system import NovaSystem
 
-    assert "speech_backend" in JarvisSystem.__dataclass_fields__
+    assert "speech_backend" in NovaSystem.__dataclass_fields__

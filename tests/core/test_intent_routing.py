@@ -1,4 +1,4 @@
-"""Tests for intent-based agent routing in JarvisSystem."""
+"""Tests for intent-based agent routing in NovaSystem."""
 
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ class TestDetectAgentIntent:
 
     @pytest.fixture()
     def system(self):
-        """Create a minimal JarvisSystem instance for testing _detect_agent_intent."""
-        from openjarvis.system import JarvisSystem
+        """Create a minimal NovaSystem instance for testing _detect_agent_intent."""
+        from nova.system import NovaSystem
 
         mock_engine = MagicMock()
         mock_engine.engine_name = "mock"
-        sys = JarvisSystem.__new__(JarvisSystem)
+        sys = NovaSystem.__new__(NovaSystem)
         sys.engine = mock_engine
         sys.model = "test-model"
         sys.agent_name = "simple"
@@ -26,30 +26,30 @@ class TestDetectAgentIntent:
         yield sys
 
     def test_good_morning_triggers_digest(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = True
             assert system._detect_agent_intent("Good morning!") == "morning_digest"
 
-    def test_good_morning_jarvis_triggers_digest(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+    def test_good_morning_nova_triggers_digest(self, system):
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = True
-            result = system._detect_agent_intent("Good morning Jarvis")
+            result = system._detect_agent_intent("Good morning Nova")
             assert result == "morning_digest"
 
     def test_morning_digest_triggers(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = True
             query = "Show me my morning digest"
             assert system._detect_agent_intent(query) == "morning_digest"
 
     def test_daily_briefing_triggers(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = True
             query = "Give me my daily briefing"
             assert system._detect_agent_intent(query) == "morning_digest"
 
     def test_morning_briefing_triggers(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = True
             query = "morning briefing please"
             assert system._detect_agent_intent(query) == "morning_digest"
@@ -61,6 +61,6 @@ class TestDetectAgentIntent:
         assert system._detect_agent_intent("Good afternoon") is None
 
     def test_no_agent_registered_returns_none(self, system):
-        with patch("openjarvis.core.registry.AgentRegistry") as reg:
+        with patch("nova.core.registry.AgentRegistry") as reg:
             reg.contains.return_value = False
             assert system._detect_agent_intent("Good morning!") is None

@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from openjarvis.agents.deep_research import DeepResearchAgent
-from openjarvis.connectors._stubs import Document
-from openjarvis.connectors.pipeline import IngestionPipeline
-from openjarvis.connectors.retriever import TwoStageRetriever
-from openjarvis.connectors.store import KnowledgeStore
-from openjarvis.tools.knowledge_search import KnowledgeSearchTool
+from nova.agents.deep_research import DeepResearchAgent
+from nova.connectors._stubs import Document
+from nova.connectors.pipeline import IngestionPipeline
+from nova.connectors.retriever import TwoStageRetriever
+from nova.connectors.store import KnowledgeStore
+from nova.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Helpers

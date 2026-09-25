@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from unittest import mock
 
-from openjarvis.core.config import JarvisConfig
-from openjarvis.core.registry import EngineRegistry
-from openjarvis.engine._base import InferenceEngine
-from openjarvis.engine._discovery import (
+from nova.core.config import NovaConfig
+from nova.core.registry import EngineRegistry
+from nova.engine._base import InferenceEngine
+from nova.engine._discovery import (
     _make_engine,
     discover_engines,
     discover_models,
     get_engine,
 )
-from openjarvis.engine.litellm import LiteLLMEngine
+from nova.engine.litellm import LiteLLMEngine
 
 
 class _FakeEngine(InferenceEngine):
@@ -53,9 +53,9 @@ class TestDiscoverEngines:
         _reg("healthy", "healthy")
         _reg("sick", "sick")
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=lambda k, c: _FakeEngine(healthy=(k == "healthy")),
         ):
             result = discover_engines(cfg)
@@ -66,10 +66,10 @@ class TestDiscoverEngines:
         _reg("a", "a")
         _reg("b", "b")
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "b"
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=lambda k, c: _FakeEngine(healthy=True),
         ):
             result = discover_engines(cfg)
@@ -108,9 +108,9 @@ class TestDiscoverEngines:
                     in_flight -= 1
                 return True
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=lambda k, c: _SlowEngine(healthy=True),
         ):
             start = time.monotonic()
@@ -142,7 +142,7 @@ class TestLiteLLMDiscovery:
         model.  Dropping that value while constructing the engine leaves the
         API and Web UI with an empty model list.
         """
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.intelligence.default_model = "groq/llama-3.3-70b-versatile"
         EngineRegistry.register_value("litellm", LiteLLMEngine)
 
@@ -156,14 +156,14 @@ class TestGetEngine:
         _reg("bad", "bad")
         _reg("good", "good")
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "bad"
 
         def _make(k, c):  # noqa: ANN001
             return _FakeEngine(healthy=(k == "good"))
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             result = get_engine(cfg)
@@ -174,14 +174,14 @@ class TestGetEngine:
         _reg("requested", "requested")
         _reg("running", "running")
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "requested"
 
         def _make(k, c):  # noqa: ANN001
             return _FakeEngine(healthy=(k == "running"))
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             result = get_engine(cfg, engine_key="requested")
@@ -190,7 +190,7 @@ class TestGetEngine:
         assert "Requested engine 'requested' is unavailable" in caplog.text
 
     def test_unknown_explicit_key_does_not_substitute(self, caplog) -> None:
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
 
         result = get_engine(cfg, engine_key="not-registered")
 
@@ -205,7 +205,7 @@ class TestGetEngine:
         class _Cloud(_FakeEngine):
             is_cloud = True
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "bad-local"
 
         def _make(k, c):  # noqa: ANN001
@@ -216,7 +216,7 @@ class TestGetEngine:
             return _FakeEngine(healthy=(k == "z-local"))
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             result = get_engine(cfg)
@@ -231,7 +231,7 @@ class TestGetEngine:
         class _Cloud(_FakeEngine):
             is_cloud = True
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "bad-local"
 
         def _make(k, c):  # noqa: ANN001
@@ -240,7 +240,7 @@ class TestGetEngine:
             return _Cloud(healthy=(k == "cloud-only"))
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             result = get_engine(cfg)
@@ -262,7 +262,7 @@ class TestGetEngine:
             def can_serve(self, model: str) -> bool:
                 return model == "servable"
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "picky"
 
         def _make(k, c):  # noqa: ANN001
@@ -271,7 +271,7 @@ class TestGetEngine:
             return _FakeEngine(healthy=(k == "local"))
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             # "picky" is healthy but cannot serve "other" -> fall back to "local"
@@ -293,12 +293,12 @@ class TestGetEngine:
         local engine down) returns None — surfacing a "start your local engine"
         failure instead.
         """
-        from openjarvis.engine.cloud import CloudEngine
+        from nova.engine.cloud import CloudEngine
 
         _reg("ollama", "ollama")
         EngineRegistry.register_value("cloud", CloudEngine)
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "ollama"
 
         def _make(k, c):  # noqa: ANN001
@@ -320,7 +320,7 @@ class TestGetEngine:
             return eng
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=_make,
         ):
             result = get_engine(cfg, model="qwen3.5:0.8b")
@@ -331,11 +331,11 @@ class TestGetEngine:
         """model=None keeps the legacy behaviour: first healthy engine wins."""
         _reg("primary", "primary")
 
-        cfg = JarvisConfig()
+        cfg = NovaConfig()
         cfg.engine.default = "primary"
 
         with mock.patch(
-            "openjarvis.engine._discovery._make_engine",
+            "nova.engine._discovery._make_engine",
             side_effect=lambda k, c: _FakeEngine(healthy=True),  # noqa: ANN001
         ):
             result = get_engine(cfg, model=None)
