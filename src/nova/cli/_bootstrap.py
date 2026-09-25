@@ -23,6 +23,7 @@ from nova.core.config import (
     recommend_engine,
     recommend_model,
 )
+from nova.prompt.defaults import default_memory, default_soul, default_user
 
 # Marker used to redact secret values in __repr__.
 _REDACTED_PLACEHOLDER = "***redacted***"
@@ -70,10 +71,6 @@ def detect_cloud_keys() -> Optional[CloudProvider]:
 # ---------------------------------------------------------------------------
 # Initial config writer
 # ---------------------------------------------------------------------------
-
-_DEFAULT_SOUL = "# Agent Persona\n\nYou are Nova, a helpful personal AI assistant.\n"
-_DEFAULT_MEMORY = "# Agent Memory\n\n"
-_DEFAULT_USER = "# User Profile\n\n"
 
 
 def _toml_quote(value: str) -> str:
@@ -171,11 +168,11 @@ def _seed_memory_files() -> None:
     """Create SOUL.md / MEMORY.md / USER.md / skills/ if absent."""
     home = _cfg.DEFAULT_CONFIG_DIR
     if not (home / "SOUL.md").exists():
-        (home / "SOUL.md").write_text(_DEFAULT_SOUL)
+        (home / "SOUL.md").write_text(default_soul(), encoding="utf-8")
     if not (home / "MEMORY.md").exists():
-        (home / "MEMORY.md").write_text(_DEFAULT_MEMORY)
+        (home / "MEMORY.md").write_text(default_memory(), encoding="utf-8")
     if not (home / "USER.md").exists():
-        (home / "USER.md").write_text(_DEFAULT_USER)
+        (home / "USER.md").write_text(default_user(), encoding="utf-8")
     (home / "skills").mkdir(exist_ok=True)
 
 
