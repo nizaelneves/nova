@@ -2,6 +2,21 @@
 name: weekly-review
 description: Run a weekly review as a mentor. Use when the user asks for a weekly review, wants to reflect on the week, check progress on goals or tasks, plan the next week, or talks about feeling stuck, unproductive or unsure about progress.
 version: 0.1.0
+metadata:
+  nova:
+    triggers:
+      - weekly review
+      - review my week
+      - how was my week
+      - plan next week
+      - plan my week
+      - revisao semanal
+      - revisao da semana
+      - revisar minha semana
+      - revisar a semana
+      - como foi minha semana
+      - planejar a proxima semana
+      - planejar minha semana
 ---
 
 # Weekly Review

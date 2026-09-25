@@ -113,6 +113,14 @@ def _ensure_identity_prompt(messages: list[Message], app_config) -> list[Message
                 system_prompt_config=getattr(cfg, "system_prompt", None),
             )
             prompt = builder.build()
+
+            from nova.skills.router import active_skill_prompt
+
+            skill_section = active_skill_prompt(
+                [m.text for m in messages if m.role == Role.USER and m.text], cfg
+            )
+            if skill_section:
+                prompt = f"{prompt}\n\n{skill_section}"
         except Exception:
             logging.getLogger("nova.server").debug(
                 "Identity system prompt resolution failed; "
@@ -165,6 +173,16 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
         and not request_body.tools
         and (not request_body.stream or bool(getattr(agent, "_tools", None)))
     )
+    if use_server_agent:
+        from nova.skills.router import skill_disables_tools
+
+        user_texts = [
+            m.content
+            for m in request_body.messages
+            if m.role == "user" and isinstance(m.content, str) and m.content
+        ]
+        if skill_disables_tools(user_texts, getattr(request.app.state, "config", None)):
+            use_server_agent = False
 
     # Inject memory context into messages before dispatching
     config = getattr(request.app.state, "config", None)

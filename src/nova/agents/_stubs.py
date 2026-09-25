@@ -243,6 +243,16 @@ class BaseAgent(ABC):
         )
         system_parts = []
         if effective_system_prompt and not identity_already_applied:
+            from nova.skills.router import active_skill_prompt
+
+            user_texts = [
+                m.text for m in context_messages if m.role == Role.USER and m.text
+            ] + [input]
+            skill_section = active_skill_prompt(user_texts)
+            if skill_section:
+                effective_system_prompt = (
+                    f"{effective_system_prompt}\n\n{skill_section}"
+                )
             system_parts.append(effective_system_prompt)
         system_parts.extend(
             message.text
