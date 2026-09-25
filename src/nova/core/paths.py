@@ -119,3 +119,16 @@ def get_cache_dir() -> Path:
     directory instead of scattering across ``~/.cache``.
     """
     return get_config_dir() / "cache"
+
+
+def get_project_skills_dir() -> Path | None:
+    """Return the ``skills/`` folder of the Nova source checkout, if present.
+
+    Skills shipped with the project live here so they are versioned with the
+    code. Returns ``None`` when Nova runs from an installed wheel.
+    """
+    root = _find_source_root()
+    if root is None:
+        return None
+    skills = root / "skills"
+    return skills if skills.is_dir() else None

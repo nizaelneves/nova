@@ -238,7 +238,12 @@ class SystemBuilder:
                 skill_manager = SkillManager(
                     bus, capability_policy=sec.capability_policy
                 )
+                from nova.core.paths import get_project_skills_dir
+
                 skill_paths = [Path(config.skills.skills_dir).expanduser()]
+                project_skills = get_project_skills_dir()
+                if project_skills is not None:
+                    skill_paths.insert(0, project_skills)
                 workspace_skills = Path("./skills")
                 if workspace_skills.exists():
                     skill_paths.insert(0, workspace_skills)
