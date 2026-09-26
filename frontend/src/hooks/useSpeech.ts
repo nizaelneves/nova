@@ -41,7 +41,14 @@ export function useSpeech() {
       mediaRecorderRef.current = recorder;
       setState('recording');
     } catch (err) {
-      setError('Microphone access denied');
+      const name = err instanceof DOMException ? err.name : 'Error';
+      const reasons: Record<string, string> = {
+        NotAllowedError: 'Microphone blocked (browser or Windows privacy setting)',
+        NotFoundError: 'No microphone found',
+        NotReadableError: 'Microphone is in use by another app or unavailable',
+        OverconstrainedError: 'Microphone does not support the requested settings',
+      };
+      setError(`${reasons[name] ?? 'Could not start the microphone'} [${name}]`);
       setState('idle');
     }
   }, []);

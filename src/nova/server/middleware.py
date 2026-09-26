@@ -18,7 +18,7 @@ def create_security_middleware() -> Any:
     - X-XSS-Protection: 1; mode=block
     - Strict-Transport-Security: max-age=31536000; includeSubDomains
     - Referrer-Policy: strict-origin-when-cross-origin
-    - Permissions-Policy: camera=(), microphone=(), geolocation=()
+    - Permissions-Policy: camera=(), microphone=(self), geolocation=()
 
     OPTIONS requests are passed through without headers so that
     CORS preflight is not blocked.
@@ -45,12 +45,12 @@ def create_security_middleware() -> Any:
                 "max-age=31536000; includeSubDomains"
             )
             response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-            response.headers["Permissions-Policy"] = (
-                "camera=(), microphone=(), geolocation=()"
-            )
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self' 'unsafe-inline' 'unsafe-eval'"
-            )
+            response.headers["Permissions-Policy"] = SECURITY_HEADERS[
+                "Permissions-Policy"
+            ]
+            response.headers["Content-Security-Policy"] = SECURITY_HEADERS[
+                "Content-Security-Policy"
+            ]
             return response
 
     return SecurityHeadersMiddleware
@@ -63,6 +63,10 @@ SECURITY_HEADERS = {
     "X-XSS-Protection": "1; mode=block",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-    "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    # Voice input needs the microphone, but only for Nova's own pages.
+    "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
+    # media-src blob: lets the page play the voice audio it just downloaded.
+    "Content-Security-Policy": (
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval'; media-src 'self' blob:"
+    ),
 }

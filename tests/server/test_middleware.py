@@ -23,6 +23,18 @@ class TestSecurityHeaders:
         }
         assert set(SECURITY_HEADERS.keys()) == expected_keys
 
+    def test_microphone_is_allowed_for_own_pages_only(self) -> None:
+        """Voice input needs the mic; camera and location stay blocked."""
+        policy = SECURITY_HEADERS["Permissions-Policy"]
+        assert "microphone=(self)" in policy
+        assert "camera=()" in policy and "geolocation=()" in policy
+
+    def test_voice_audio_blobs_may_be_played(self) -> None:
+        """Nova's voice arrives as a blob: URL, which media-src must allow."""
+        csp = SECURITY_HEADERS["Content-Security-Policy"]
+        assert "media-src 'self' blob:" in csp
+        assert "default-src 'self'" in csp
+
     def test_create_middleware_without_starlette(self) -> None:
         """When starlette is not available, returns None."""
         import importlib

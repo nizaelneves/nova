@@ -101,6 +101,8 @@ interface Settings {
   temperature: number;
   maxTokens: number;
   speechEnabled: boolean;
+  // When Nova speaks her replies: only after you spoke to her, always, or never.
+  voiceReplies: 'voice' | 'always' | 'off';
 }
 
 function loadSettings(): Settings {
@@ -113,7 +115,8 @@ function loadSettings(): Settings {
     defaultAgent: '',
     temperature: 0.7,
     maxTokens: 4096,
-    speechEnabled: false,
+    speechEnabled: true,
+    voiceReplies: 'voice',
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);

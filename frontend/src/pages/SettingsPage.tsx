@@ -699,6 +699,18 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
+            <SettingRow label="Nova's voice" description="When Nova reads her replies aloud (ElevenLabs, local voice as backup)">
+              <select
+                value={settings.voiceReplies}
+                onChange={(e) => { updateSettings({ voiceReplies: e.target.value as 'voice' | 'always' | 'off' }); showSaved(); }}
+                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+                style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+              >
+                <option value="voice">Only when I speak to her</option>
+                <option value="always">Always</option>
+                <option value="off">Never</option>
+              </select>
+            </SettingRow>
             <SettingRow label="Backend status" description="Requires Whisper, Deepgram, or another speech backend">
               <div className="flex items-center gap-2">
                 <span

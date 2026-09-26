@@ -12,6 +12,7 @@ import {
 } from '../../lib/chat-telemetry';
 import { MicButton } from './MicButton';
 import { useSpeech } from '../../hooks/useSpeech';
+import { speakReply, stopSpeaking } from '../../lib/voiceReply';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -83,6 +84,8 @@ export function InputArea() {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // True when the text in the box was dictated with the microphone.
+  const dictatedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const activeId = useAppStore((s) => s.activeId);
@@ -145,12 +148,14 @@ export function InputArea() {
       try {
         const text = await stopRecording();
         if (text) {
+          dictatedRef.current = true;
           setInput((prev) => (prev ? prev + ' ' + text : text));
         }
       } catch {
         // Error is captured in useSpeech
       }
     } else {
+      stopSpeaking();
       await startRecording();
     }
   }, [speechState, startRecording, stopRecording]);
@@ -179,6 +184,9 @@ export function InputArea() {
       return;
     }
 
+    stopSpeaking();
+    const fromVoice = dictatedRef.current;
+    dictatedRef.current = false;
     setInput('');
 
     let convId = activeId;
@@ -528,6 +536,17 @@ export function InputArea() {
         message: `Response: ${accumulatedContent.length} chars`,
       });
       abortRef.current = null;
+
+      const voiceMode = useAppStore.getState().settings.voiceReplies;
+      if (accumulatedContent && (voiceMode === 'always' || (voiceMode === 'voice' && fromVoice))) {
+        speakReply(accumulatedContent)
+          .then((spoke) => {
+            if (spoke?.notice) toast.info(spoke.notice, { duration: 6000 });
+          })
+          .catch((err) => {
+            toast.error(err instanceof Error ? err.message : 'Nova could not speak', { duration: 8000 });
+          });
+      }
 
       // Research path updates session counters optimistically from the
       // `done` event's usage payload — re-fetching here would overwrite
