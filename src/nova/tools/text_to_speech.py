@@ -61,6 +61,9 @@ class TextToSpeechTool(BaseTool):
         text = params.get("text", "")
         voice_id = params.get("voice_id", "")
         backend_key = params.get("backend", "")
+        # With no explicit backend or voice, speak with Nova's own voice:
+        # the configured one, falling back to the local voice on failure.
+        use_router = not backend_key and not voice_id
 
         # Fall back to the configured speech voice so the agent-facing tool
         # speaks in the same voice as `nova chat --voice` instead of the
@@ -93,27 +96,40 @@ class TextToSpeechTool(BaseTool):
                 success=False,
             )
 
-        if not TTSRegistry.contains(backend_key):
-            return ToolResult(
-                tool_name="text_to_speech",
-                content=f"TTS backend '{backend_key}' not available.",
-                success=False,
-            )
+        if use_router:
+            from nova.core.config import load_config
+            from nova.speech.tts_router import NoVoiceAvailable, TTSRouter
 
-        backend_cls = TTSRegistry.get(backend_key)
-        backend = backend_cls()
+            router = TTSRouter(load_config())
+            try:
+                result = router.synthesize(text, speed=speed)
+            except NoVoiceAvailable as exc:
+                return ToolResult(
+                    tool_name="text_to_speech", content=str(exc), success=False
+                )
+            backend_key = router.last_backend
+        else:
+            if not TTSRegistry.contains(backend_key):
+                return ToolResult(
+                    tool_name="text_to_speech",
+                    content=f"TTS backend '{backend_key}' not available.",
+                    success=False,
+                )
 
-        # Only forward parameters the caller (or config) actually set. Passing
-        # voice_id="" or speed=1.0 unconditionally overrides each backend's own
-        # default value: kokoro's synthesize() defaults voice_id to "af_heart",
-        # and an empty string overrides it so the local backend is asked for a
-        # voice named "" and 404s while paid backends happen to tolerate it.
-        synth_kwargs: dict[str, Any] = {}
-        if voice_id:
-            synth_kwargs["voice_id"] = voice_id
-        if speed is not None:
-            synth_kwargs["speed"] = speed
-        result = backend.synthesize(text, **synth_kwargs)
+            backend_cls = TTSRegistry.get(backend_key)
+            backend = backend_cls()
+
+            # Only forward parameters the caller (or config) actually set. Passing
+            # voice_id="" or speed=1.0 unconditionally overrides each backend's own
+            # default value: kokoro's synthesize() defaults voice_id to "af_heart",
+            # and an empty string overrides it so the local backend is asked for a
+            # voice named "" and 404s while paid backends happen to tolerate it.
+            synth_kwargs: dict[str, Any] = {}
+            if voice_id:
+                synth_kwargs["voice_id"] = voice_id
+            if speed is not None:
+                synth_kwargs["speed"] = speed
+            result = backend.synthesize(text, **synth_kwargs)
 
         # Save to file
         if output_dir:

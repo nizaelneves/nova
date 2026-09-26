@@ -998,6 +998,60 @@ async def transcribe_speech(request: Request):
     }
 
 
+class SynthesizeRequest(BaseModel):
+    text: str
+    speed: Optional[float] = None
+
+
+def _tts_router(request: Request):
+    router = getattr(request.app.state, "tts_router", None)
+    if router is None:
+        from nova.core.config import load_config
+        from nova.speech.tts_router import TTSRouter
+
+        router = TTSRouter(getattr(request.app.state, "config", None) or load_config())
+        request.app.state.tts_router = router
+    return router
+
+
+@speech_router.post("/synthesize")
+async def synthesize_speech(request: Request, body: SynthesizeRequest):
+    """Speak *text* with Nova's voice and return WAV audio.
+
+    ElevenLabs is used first; if it fails the local Kokoro voice answers. The
+    ``X-Nova-Voice`` header says which one spoke and ``X-Nova-Voice-Notice``
+    explains a fallback.
+    """
+    from fastapi.responses import Response
+
+    from nova.speech.tts_router import MAX_TEXT_CHARS, NoVoiceAvailable
+
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="text is empty")
+    if len(text) > MAX_TEXT_CHARS:
+        raise HTTPException(
+            status_code=413, detail=f"text is over {MAX_TEXT_CHARS} characters"
+        )
+    router = _tts_router(request)
+    try:
+        result = await asyncio.to_thread(router.synthesize, text, speed=body.speed)
+    except NoVoiceAvailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    headers = {"X-Nova-Voice": router.last_backend}
+    if router.last_notice:
+        headers["X-Nova-Voice-Notice"] = router.last_notice.encode(
+            "ascii", "replace"
+        ).decode()
+    return Response(content=result.audio, media_type="audio/wav", headers=headers)
+
+
+@speech_router.get("/voice-status")
+async def voice_status(request: Request):
+    """Which voices are configured, without making any request or spending credits."""
+    return _tts_router(request).status()
+
+
 @speech_router.get("/health")
 async def speech_health(request: Request):
     """Check if a speech backend is available."""

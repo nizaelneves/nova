@@ -177,7 +177,7 @@ GENERIC_NETWORK_TOOLS = {"http_request"}
 WEATHER_TOOLS = {"get_weather"}
 CHANNEL_OUTBOUND_TOOLS = {"channel_send"}
 CLOUD_MEDIA_TOOLS = {"audio_transcribe", "image_generate", "text_to_speech"}
-CLOUD_TTS_BACKENDS = {"cartesia", "openai", "openai_tts"}
+CLOUD_TTS_BACKENDS = {"cartesia", "elevenlabs", "openai", "openai_tts"}
 # Local knowledge chunks scanned by an inference engine (Deep Research path).
 KNOWLEDGE_ENGINE_TOOLS = {"scan_chunks"}
 # External egress surfaces (web, browser, HTTP, channels, media, knowledge LM).
