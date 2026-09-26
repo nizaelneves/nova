@@ -6,6 +6,7 @@ import importlib
 import logging
 
 # Import engine modules to trigger @EngineRegistry.register() decorators
+import nova.engine.claude_cli  # noqa: F401
 import nova.engine.ollama  # noqa: F401
 import nova.engine.openai_compat_engines  # noqa: F401
 from nova.engine._base import (

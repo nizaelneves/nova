@@ -26,6 +26,7 @@ _HOST_MAP: Dict[str, str | None] = {
     "apple_fm": "apple_fm_host",
     "lemonade": "lemonade_host",
     "cloud": None,
+    "claude_cli": None,
     "litellm": None,
     "gemma_cpp": None,
     # In-process: drives the Apple FM SDK directly, so there is no host.
@@ -185,6 +186,23 @@ def get_engine(
     ]
     if not candidates:
         return None
+
+    # Never move from a local engine to a cloud one on its own: that would send
+    # the conversation off the machine (and spend a subscription) without the
+    # user asking. Cloud engines must be chosen explicitly.
+    if default_is_cloud is False:
+        local_only = [
+            c for c in candidates if not bool(getattr(c[1], "is_cloud", False))
+        ]
+        if len(local_only) < len(candidates):
+            logger.warning(
+                "Default engine %r is unavailable; not falling back to a cloud "
+                "engine automatically. Start it, or choose a cloud engine.",
+                default_key,
+            )
+        candidates = local_only
+        if not candidates:
+            return None
 
     chosen: Tuple[str, InferenceEngine] | None = None
     if default_is_cloud is not None:

@@ -224,7 +224,7 @@ class TestGetEngine:
         assert result is not None
         assert result[0] == "z-local"
 
-    def test_cross_boundary_default_fallback_is_named(self, caplog) -> None:
+    def test_local_default_never_falls_back_to_cloud(self, caplog) -> None:
         _reg("bad-local", "bad-local")
         _reg("cloud-only", "cloud-only")
 
@@ -245,9 +245,8 @@ class TestGetEngine:
         ):
             result = get_engine(cfg)
 
-        assert result is not None
-        assert result[0] == "cloud-only"
-        assert "across the local/cloud boundary" in caplog.text
+        assert result is None
+        assert "not falling back to a cloud engine" in caplog.text
 
     def test_skips_engine_that_cannot_serve_model(self) -> None:
         """#532: a healthy engine that can't serve the requested model is
