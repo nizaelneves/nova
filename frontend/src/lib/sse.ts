@@ -7,6 +7,8 @@ export interface ChatRequest {
   stream: true;
   temperature?: number;
   max_tokens?: number;
+  /** Claude CLI models only: low, medium, high, xhigh or max. */
+  effort?: string;
 }
 
 export async function* streamChat(

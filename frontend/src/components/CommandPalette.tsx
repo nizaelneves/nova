@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Cpu, X, Download, Loader2, Trash2, Check, Cloud, Key, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
+import { thinkSupport } from '../lib/model-capabilities';
 import { useAppStore } from '../lib/store';
 import {
   pullModel,
@@ -149,14 +151,12 @@ export function CommandPalette() {
     setCommandPaletteOpen(false);
 
     if (modelId !== previousModel) {
-      const { setModelLoading, addLogEntry } = useAppStore.getState();
+      const { setModelLoading } = useAppStore.getState();
       setModelLoading(true);
-      addLogEntry({ timestamp: Date.now(), level: 'info', category: 'model', message: `Switching to ${modelId}...` });
       try {
         await preloadModel(modelId, owner);
-        addLogEntry({ timestamp: Date.now(), level: 'info', category: 'model', message: `${modelId} loaded` });
       } catch (e: any) {
-        addLogEntry({ timestamp: Date.now(), level: 'error', category: 'model', message: `Failed to load ${modelId}: ${e.message}` });
+        toast.error(`Failed to load ${modelId}: ${e.message}`);
       } finally {
         setModelLoading(false);
       }
@@ -176,18 +176,10 @@ export function CommandPalette() {
     try {
       await pullModel(modelId);
       setPullSuccess(modelId);
-      useAppStore.getState().addLogEntry({
-        timestamp: Date.now(), level: 'info', category: 'model',
-        message: `Downloaded ${modelId}`,
-      });
       await refreshModels();
       setSelectedModel(modelId);
     } catch (e: any) {
       setPullError(e.message || 'Download failed');
-      useAppStore.getState().addLogEntry({
-        timestamp: Date.now(), level: 'error', category: 'model',
-        message: `Download failed for ${modelId}: ${e.message}`,
-      });
     } finally {
       setPulling(null);
     }
@@ -197,10 +189,6 @@ export function CommandPalette() {
     setDeleting(modelId);
     try {
       await deleteModel(modelId);
-      useAppStore.getState().addLogEntry({
-        timestamp: Date.now(), level: 'info', category: 'model',
-        message: `Deleted ${modelId}`,
-      });
       await refreshModels();
       if (selectedModel === modelId) {
         const remaining = models.filter((m) => m.id !== modelId);
@@ -227,10 +215,6 @@ export function CommandPalette() {
       await saveCloudKey(provider.envKey, keyValue);
       setApiKeys((prev) => ({ ...prev, [provider.envKey]: '' }));
       await refreshCloudKeyStatus();
-      useAppStore.getState().addLogEntry({
-        timestamp: Date.now(), level: 'info', category: 'model',
-        message: `${provider.name} API key ${keyValue ? 'saved' : 'removed'}. Refreshing model list...`,
-      });
       await refreshModels();
     } catch (e: any) {
       setCloudKeyError(e?.message || `Failed to save ${provider.name} API key`);
@@ -380,6 +364,23 @@ export function CommandPalette() {
                           {model.id}
                         </div>
                       </div>
+                      {(() => {
+                        const think = thinkSupport(model.id);
+                        if (!think.label) return null;
+                        const color =
+                          think.level === 'strong' || think.level === 'good'
+                            ? 'var(--color-accent)'
+                            : 'var(--color-text-tertiary)';
+                        return (
+                          <span
+                            className="text-[10px] px-2 py-0.5 rounded-full shrink-0"
+                            style={{ border: `1px solid ${color}`, color }}
+                            title={think.hint}
+                          >
+                            {think.label}
+                          </span>
+                        );
+                      })()}
                       {isActive && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}>
                           Active

@@ -28,6 +28,9 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: int = 1024
     stream: bool = False
     tools: Optional[List[Dict[str, Any]]] = None
+    # Reasoning effort for the Claude CLI engine: low, medium, high, xhigh, max.
+    # Ignored by every other engine.
+    effort: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

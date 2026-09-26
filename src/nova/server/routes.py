@@ -466,6 +466,13 @@ def _engine_key_for_model(engine: Any, model: str) -> str | None:
     return None
 
 
+def _engine_extras(engine: Any, model: str, req: ChatCompletionRequest) -> dict:
+    """Per-request options only the engine that owns *model* understands."""
+    if req.effort and _engine_key_for_model(engine, model) == "claude_cli":
+        return {"effort": req.effort}
+    return {}
+
+
 def _uses_direct_cloud_router(engine: Any, model: str) -> bool:
     """Whether *model* should bypass the configured engine for direct cloud."""
     from nova.server.cloud_router import is_cloud_model
@@ -484,7 +491,7 @@ def _handle_direct(
     """Direct engine call without agent."""
     messages = _to_messages(req.messages)
     messages = _ensure_identity_prompt(messages, app_config)
-    kwargs: dict[str, Any] = {}
+    kwargs: dict[str, Any] = _engine_extras(engine, model, req)
     if req.tools:
         kwargs["tools"] = req.tools
     if bus:
@@ -1023,6 +1030,7 @@ async def _handle_stream(
                         model=model,
                         temperature=req.temperature,
                         max_tokens=req.max_tokens,
+                        **_engine_extras(engine, model, req),
                     )
             async for token in token_iter:
                 full_content += token
@@ -1200,6 +1208,42 @@ async def pull_model(request: Request):
         )
 
     return {"status": "ok", "model": model_name}
+
+
+@router.post("/v1/models/preload")
+async def preload_model(request: Request):
+    """Load a local Ollama model into memory so the first reply is fast."""
+    body = await request.json()
+    model_name = body.get("model", "").strip()
+    if not model_name:
+        raise HTTPException(status_code=400, detail="'model' field is required")
+
+    engine = request.app.state.engine
+    if _engine_key_for_model(engine, model_name) != "ollama":
+        return {"status": "skipped", "model": model_name}
+
+    import httpx as _httpx
+
+    config = getattr(request.app.state, "config", None)
+    host = (
+        getattr(getattr(getattr(config, "engine", None), "ollama", None), "host", "")
+        or "http://localhost:11434"
+    )
+    try:
+        async with _httpx.AsyncClient(base_url=host, timeout=120.0) as client:
+            resp = await client.post(
+                "/api/generate",
+                json={"model": model_name, "prompt": "", "keep_alive": "5m"},
+            )
+        resp.raise_for_status()
+    except (_httpx.ConnectError, _httpx.TimeoutException) as exc:
+        raise HTTPException(status_code=502, detail=f"Ollama unreachable: {exc}")
+    except _httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=exc.response.status_code,
+            detail=f"Ollama error: {exc.response.text[:300]}",
+        )
+    return {"status": "loaded", "model": model_name}
 
 
 @router.delete("/v1/models/{model_name:path}")

@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Square, Paperclip, Search } from 'lucide-react';
+import { Send, Square, Lightbulb, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
-import { fetchSavings, getBase } from '../../lib/api';
+import { getBase } from '../../lib/api';
 import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
 import {
@@ -11,6 +11,8 @@ import {
   resolveChatEngine,
 } from '../../lib/chat-telemetry';
 import { MicButton } from './MicButton';
+import { EffortPicker } from './EffortPicker';
+import { isCliModel, thinkSupport } from '../../lib/model-capabilities';
 import { useSpeech } from '../../hooks/useSpeech';
 import { speakReply, stopSpeaking } from '../../lib/voiceReply';
 import type {
@@ -22,7 +24,7 @@ import type {
   ToolCallInfo,
 } from '../../types';
 
-// While Deep Research is toggled on, poll connected sources for sync
+// While Think is toggled on, poll connected sources for sync
 // progress so we can surface "Searching over N items — sync in progress"
 // next to the toggle. Polling is gated on `enabled` so toggling DR off
 // stops the network chatter immediately.
@@ -91,7 +93,6 @@ export function InputArea() {
   const activeId = useAppStore((s) => s.activeId);
   const selectedModel = useAppStore((s) => s.selectedModel);
   const streamState = useAppStore((s) => s.streamState);
-  const messages = useAppStore((s) => s.messages);
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
   const maxTokens = useAppStore((s) => s.settings.maxTokens);
   const temperature = useAppStore((s) => s.settings.temperature);
@@ -129,6 +130,8 @@ export function InputArea() {
     }
     prevModelRef.current = selectedModel;
   }, [selectedModel, streamState.isStreaming, resetStream]);
+
+  const thinkLevel = thinkSupport(selectedModel).level;
 
   const micDisabled = !speechEnabled || !speechAvailable || streamState.isStreaming;
   const micReason: 'not-enabled' | 'no-backend' | 'streaming' | undefined =
@@ -248,14 +251,6 @@ export function InputArea() {
       activeToolCalls: [],
       content: '',
     });
-    useAppStore.getState().addLogEntry({
-      timestamp: Date.now(),
-      level: 'info',
-      category: 'chat',
-      message: deepResearch
-        ? `Research: "${content.slice(0, 80)}${content.length > 80 ? '...' : ''}"`
-        : `Request: "${content.slice(0, 80)}${content.length > 80 ? '...' : ''}" → ${selectedModel}`,
-    });
 
     try {
       if (deepResearch) {
@@ -284,12 +279,6 @@ export function InputArea() {
               [...researchTraces],
               flushSources(),
             );
-            useAppStore.getState().addLogEntry({
-              timestamp: Date.now(),
-              level: 'info',
-              category: 'tool',
-              message: `Search: "${trace.query}"${trace.person ? ` (person: ${trace.person})` : ''}`,
-            });
           } else if (ev.type === 'search_result') {
             const pending = [...researchTraces].reverse().find((t) => t.status === 'pending');
             if (pending) {
@@ -332,14 +321,6 @@ export function InputArea() {
               );
               lastFlush = now;
             }
-          } else if (ev.type === 'system_metrics') {
-            // Live GPU sample — feed straight to the System panel so Power
-            // (W) and Energy (kJ) tick up in real time as the agent runs.
-            useAppStore.getState().setLiveEnergy({
-              power_w: ev.power_w,
-              energy_j: ev.energy_j,
-              duration_s: ev.duration_s,
-            });
           } else if (ev.type === 'error') {
             // Backend setup/worker failure (Ollama down, planner model
             // missing, KnowledgeStore locked, etc.). Without surfacing the
@@ -350,12 +331,6 @@ export function InputArea() {
               ? `${accumulatedContent}\n\n**Research stopped:** ${msg}`
               : `**Research failed:** ${msg}`;
             setStreamState({ content: accumulatedContent, phase: '' });
-            useAppStore.getState().addLogEntry({
-              timestamp: Date.now(),
-              level: 'error',
-              category: 'chat',
-              message: `Deep Research error: ${msg}`,
-            });
             toast.error(msg, { duration: 8000 });
           } else if (ev.type === 'done') {
             if (ev.usage) {
@@ -367,24 +342,22 @@ export function InputArea() {
                   (ev.usage.prompt_tokens ?? 0) +
                     (ev.usage.completion_tokens ?? 0),
               };
-              // Optimistically roll this research turn into the session
-              // counters so the Session panel updates the moment the
-              // stream finishes, regardless of how /v1/savings aggregates
-              // research telemetry server-side.
-              useAppStore.getState().incrementSavings(usage);
             }
-            // Hold the final live numbers visible for a beat so the panel
-            // doesn't flash to 0 between the SSE close and the next
-            // /v1/telemetry/energy poll picking up the persisted record.
-            window.setTimeout(() => {
-              useAppStore.getState().setLiveEnergy(null);
-            }, 1500);
             break;
           }
         }
       } else {
       for await (const sseEvent of streamChat(
-        { model: selectedModel, messages: apiMessages, stream: true, temperature, max_tokens: maxTokens },
+        {
+          model: selectedModel,
+          messages: apiMessages,
+          stream: true,
+          temperature,
+          max_tokens: maxTokens,
+          ...(isCliModel(selectedModel)
+            ? { effort: useAppStore.getState().settings.cliEffort }
+            : {}),
+        },
         controller.signal,
       )) {
         const eventName = sseEvent.event;
@@ -393,10 +366,6 @@ export function InputArea() {
           setStreamState({ phase: 'Agent thinking...' });
         } else if (eventName === 'inference_start') {
           setStreamState({ phase: 'Generating...' });
-          useAppStore.getState().addLogEntry({
-            timestamp: Date.now(), level: 'info', category: 'chat',
-            message: `Generating with ${selectedModel}...`,
-          });
         } else if (eventName === 'tool_call_start') {
           try {
             const data = JSON.parse(sseEvent.data);
@@ -412,10 +381,6 @@ export function InputArea() {
               activeToolCalls: [...toolCalls],
             });
             updateLastAssistant(convId, accumulatedContent, [...toolCalls]);
-            useAppStore.getState().addLogEntry({
-              timestamp: Date.now(), level: 'info', category: 'tool',
-              message: `Calling ${data.tool}(${serializeToolCallArguments(data.arguments)})`,
-            });
           } catch {}
         } else if (eventName === 'tool_call_end') {
           try {
@@ -469,14 +434,7 @@ export function InputArea() {
         const errMsg = err?.message || String(err);
         accumulatedContent =
           accumulatedContent || `Error: ${errMsg}`;
-        useAppStore.getState().addLogEntry({
-          timestamp: Date.now(), level: 'error', category: 'chat',
-          message: `Stream error: ${errMsg}`,
-        });
       }
-      // If we tore out mid-research, make sure the live System panel
-      // numbers don't get stuck on the last sample.
-      useAppStore.getState().setLiveEnergy(null);
     } finally {
       if (!accumulatedContent) {
         accumulatedContent = 'No response was generated. Please try again.';
@@ -531,10 +489,6 @@ export function InputArea() {
         timerRef.current = null;
       }
       resetStream();
-      useAppStore.getState().addLogEntry({
-        timestamp: Date.now(), level: 'info', category: 'chat',
-        message: `Response: ${accumulatedContent.length} chars`,
-      });
       abortRef.current = null;
 
       const voiceMode = useAppStore.getState().settings.voiceReplies;
@@ -546,16 +500,6 @@ export function InputArea() {
           .catch((err) => {
             toast.error(err instanceof Error ? err.message : 'Nova could not speak', { duration: 8000 });
           });
-      }
-
-      // Research path updates session counters optimistically from the
-      // `done` event's usage payload — re-fetching here would overwrite
-      // it with a potentially stale snapshot if the server's research
-      // telemetry hasn't been merged into /v1/savings yet.
-      if (!deepResearch) {
-        fetchSavings()
-          .then((data) => useAppStore.getState().setSavings(data))
-          .catch(() => {});
       }
     }
   }, [
@@ -595,12 +539,36 @@ export function InputArea() {
               border: `1px solid ${deepResearch ? 'var(--color-accent)' : 'var(--color-border)'}`,
               color: deepResearch ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
             }}
-            title={deepResearch ? 'Deep Research: on' : 'Deep Research: off'}
+            title={deepResearch ? 'Think: on (searches your synced data)' : 'Think: off'}
           >
-            <Search size={12} />
-            Deep Research
+            <Lightbulb size={12} />
+            Think
           </button>
+          <button
+            type="button"
+            onClick={() => useAppStore.getState().setCommandPaletteOpen(true)}
+            disabled={streamState.isStreaming}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors cursor-pointer disabled:cursor-default disabled:opacity-50 max-w-[14rem]"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-secondary)',
+            }}
+            title="Choose model or CLI (Ctrl+K)"
+          >
+            <Cpu size={12} className="shrink-0" />
+            <span className="truncate">{selectedModel || 'Select model'}</span>
+          </button>
+          {isCliModel(selectedModel) && <EffortPicker disabled={streamState.isStreaming} />}
         </div>
+        {deepResearch && (thinkLevel === 'none' || thinkLevel === 'basic') && (
+          <div
+            className="text-[11px] leading-snug"
+            style={{ color: 'var(--color-warning, #d9a441)' }}
+          >
+            {thinkSupport(selectedModel).hint} Choose Sonnet or Opus for the best Think.
+          </div>
+        )}
         {deepResearch && corpusSync.syncing && corpusSync.itemsSynced > 0 && (
           <div
             className="text-[11px] leading-snug"

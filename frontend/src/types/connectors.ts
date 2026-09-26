@@ -84,13 +84,6 @@ export interface ConnectResponse {
   sync_status?: string | null;
 }
 
-export type WizardStep = "pick" | "connect" | "ingest" | "ready";
-
-// Backward-compatible alias
-export type SourceCard = ConnectorMeta;
-
-export type ConnectorCategory = ConnectorMeta['category'];
-
 export const SOURCE_CATALOG: ConnectorMeta[] = [
   // ── Upload / Paste ─────────────────────────────────────────────────
   {

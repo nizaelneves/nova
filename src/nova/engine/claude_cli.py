@@ -38,6 +38,8 @@ from nova.engine._stubs import InferenceEngine
 logger = logging.getLogger(__name__)
 
 _ALIASES = ("sonnet", "opus", "haiku")
+# Reasoning effort levels accepted by ``claude --effort`` (the app's slider).
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 # Above this many characters the system prompt is sent on stdin instead of the
 # command line, which is limited on Windows.
 _MAX_ARG_CHARS = 16_000
@@ -117,7 +119,12 @@ class ClaudeCLIEngine(InferenceEngine):
         return {}
 
     def _build_command(
-        self, *, model: str, system_prompt: str, streaming: bool
+        self,
+        *,
+        model: str,
+        system_prompt: str,
+        streaming: bool,
+        effort: Optional[str] = None,
     ) -> List[str]:
         binary = self._binary()
         if binary is None:
@@ -137,6 +144,12 @@ class ClaudeCLIEngine(InferenceEngine):
             "",
             "--no-session-persistence",
         ]
+        if effort:
+            if effort not in EFFORT_LEVELS:
+                raise EngineConnectionError(
+                    f"Unknown effort '{effort}'; use one of: {', '.join(EFFORT_LEVELS)}"
+                )
+            cmd += ["--effort", effort]
         if streaming:
             cmd += [
                 "--output-format",
@@ -175,7 +188,10 @@ class ClaudeCLIEngine(InferenceEngine):
     ) -> Dict[str, Any]:
         system_prompt, prompt = _flatten_conversation(messages)
         cmd = self._build_command(
-            model=model, system_prompt=system_prompt, streaming=False
+            model=model,
+            system_prompt=system_prompt,
+            streaming=False,
+            effort=kwargs.get("effort"),
         )
         try:
             proc = subprocess.run(
@@ -220,7 +236,10 @@ class ClaudeCLIEngine(InferenceEngine):
     ) -> AsyncIterator[str]:
         system_prompt, prompt = _flatten_conversation(messages)
         cmd = self._build_command(
-            model=model, system_prompt=system_prompt, streaming=True
+            model=model,
+            system_prompt=system_prompt,
+            streaming=True,
+            effort=kwargs.get("effort"),
         )
         try:
             proc = await asyncio.create_subprocess_exec(

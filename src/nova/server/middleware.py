@@ -65,8 +65,10 @@ SECURITY_HEADERS = {
     "Referrer-Policy": "strict-origin-when-cross-origin",
     # Voice input needs the microphone, but only for Nova's own pages.
     "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
-    # media-src blob: lets the page play the voice audio it just downloaded.
+    # media-src blob: lets the page play the voice audio it just downloaded;
+    # data: images and fonts are what the bundled CSS and icons are made of.
     "Content-Security-Policy": (
-        "default-src 'self' 'unsafe-inline' 'unsafe-eval'; media-src 'self' blob:"
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "media-src 'self' blob:; img-src 'self' data: blob:; font-src 'self' data:"
     ),
 }

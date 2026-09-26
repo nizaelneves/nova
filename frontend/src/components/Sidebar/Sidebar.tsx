@@ -3,19 +3,16 @@ import { useNavigate, useLocation } from 'react-router';
 import {
   MessageSquare,
   Plus,
-  BarChart3,
   Settings,
   Search,
   PanelLeftClose,
   PanelLeft,
   Cpu,
-  Rocket,
   Bot,
   Sun,
   Moon,
   Monitor,
   Loader2,
-  ScrollText,
   Database,
 } from 'lucide-react';
 import { ConversationList } from './ConversationList';
@@ -54,12 +51,9 @@ export function Sidebar() {
 
   const navItems = [
     { path: '/', icon: MessageSquare, label: 'Chat' },
-    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/data-sources', icon: Database, label: 'Data Sources' },
     { path: '/agents', icon: Bot, label: 'Agents' },
-    { path: '/logs', icon: ScrollText, label: 'Logs' },
     { path: '/settings', icon: Settings, label: 'Settings' },
-    { path: '/get-started', icon: Rocket, label: 'Get Started' },
   ];
 
   return (
@@ -149,7 +143,7 @@ export function Sidebar() {
                 style={{ color: deepResearch ? 'var(--color-accent)' : 'var(--color-text)' }}
               >
                 {deepResearch
-                  ? 'Deep Research'
+                  ? 'Think'
                   : selectedModel || serverInfo?.model || 'Select model'}
               </span>
               {modelLoading && (

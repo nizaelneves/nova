@@ -5,34 +5,6 @@ export interface SSEEvent {
   data: string;
 }
 
-export interface AgentTurnStartEvent {
-  agent: string;
-  input: string;
-}
-
-export interface InferenceStartEvent {
-  model: string;
-  engine: string;
-  turn: number;
-}
-
-export interface InferenceEndEvent {
-  model: string;
-  engine: string;
-  turn: number;
-}
-
-export interface ToolCallStartEvent {
-  tool: string;
-  arguments: string;
-}
-
-export interface ToolCallEndEvent {
-  tool: string;
-  success: boolean;
-  latency: number;
-}
-
 // --- Chat Types ---
 
 export interface ToolCallInfo {
@@ -108,12 +80,6 @@ export type ResearchEvent =
     }
   | { type: 'done'; usage?: TokenUsage }
   | { type: 'error'; message: string };
-
-export interface LiveEnergyMetrics {
-  power_w: number;
-  energy_j: number;
-  duration_s: number;
-}
 
 export interface ChatMessage {
   id: string;
@@ -191,11 +157,3 @@ export interface ServerInfo {
   engine: string;
 }
 
-// --- Log Types ---
-
-export interface LogEntry {
-  timestamp: number;
-  level: 'info' | 'warn' | 'error';
-  category: 'server' | 'model' | 'chat' | 'tool';
-  message: string;
-}

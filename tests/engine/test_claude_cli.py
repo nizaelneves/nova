@@ -234,3 +234,47 @@ def test_local_default_can_still_fall_back_to_another_local_engine() -> None:
     chosen = _select(default_local=True, others=[cloud, local])
 
     assert chosen is not None and chosen[0] == "lmstudio"
+
+
+def test_effort_is_passed_to_the_cli(fake: dict) -> None:
+    fake["engine"].generate(_messages(), model="opus", effort="high")
+    args = _call(fake)["args"]
+
+    assert args[args.index("--effort") + 1] == "high"
+
+
+def test_no_effort_flag_when_none_is_chosen(fake: dict) -> None:
+    fake["engine"].generate(_messages(), model="opus")
+
+    assert "--effort" not in _call(fake)["args"]
+
+
+def test_effort_also_applies_to_streaming(fake: dict) -> None:
+    async def collect() -> None:
+        async for _ in fake["engine"].stream(_messages(), model="opus", effort="max"):
+            pass
+
+    asyncio.run(collect())
+    args = _call(fake)["args"]
+    assert args[args.index("--effort") + 1] == "max"
+
+
+def test_unknown_effort_is_refused(fake: dict) -> None:
+    with pytest.raises(EngineConnectionError, match="Unknown effort"):
+        fake["engine"].generate(_messages(), model="opus", effort="turbo")
+
+
+def test_server_only_sends_effort_to_the_claude_cli_engine() -> None:
+    from unittest.mock import patch
+
+    from nova.server import routes
+    from nova.server.models import ChatCompletionRequest
+
+    req = ChatCompletionRequest(model="opus", messages=[], effort="high")
+    with patch.object(routes, "_engine_key_for_model", return_value="claude_cli"):
+        assert routes._engine_extras(object(), "opus", req) == {"effort": "high"}
+    with patch.object(routes, "_engine_key_for_model", return_value="ollama"):
+        assert routes._engine_extras(object(), "qwen3.5:2b", req) == {}
+    no_effort = ChatCompletionRequest(model="opus", messages=[])
+    with patch.object(routes, "_engine_key_for_model", return_value="claude_cli"):
+        assert routes._engine_extras(object(), "opus", no_effort) == {}

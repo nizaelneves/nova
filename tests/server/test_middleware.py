@@ -34,6 +34,8 @@ class TestSecurityHeaders:
         csp = SECURITY_HEADERS["Content-Security-Policy"]
         assert "media-src 'self' blob:" in csp
         assert "default-src 'self'" in csp
+        assert "img-src 'self' data: blob:" in csp
+        assert "font-src 'self' data:" in csp
 
     def test_create_middleware_without_starlette(self) -> None:
         """When starlette is not available, returns None."""

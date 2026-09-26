@@ -739,7 +739,7 @@ export function SyncStatusDisplay({
           </span>
         </div>
         <div style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>
-          Deep Research available now · results improve as more {unitLabel} are indexed
+          Think available now · results improve as more {unitLabel} are indexed
         </div>
       </div>
     );

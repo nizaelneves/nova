@@ -2,8 +2,6 @@ import { create } from 'zustand';
 import type {
   Conversation,
   ChatMessage,
-  LiveEnergyMetrics,
-  LogEntry,
   ModelInfo,
   MessageTelemetry,
   ResearchSearchTrace,
@@ -103,6 +101,8 @@ interface Settings {
   speechEnabled: boolean;
   // When Nova speaks her replies: only after you spoke to her, always, or never.
   voiceReplies: 'voice' | 'always' | 'off';
+  // Reasoning effort for Claude CLI models (like the slider in the Claude app).
+  cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 }
 
 function loadSettings(): Settings {
@@ -117,6 +117,7 @@ function loadSettings(): Settings {
     maxTokens: 4096,
     speechEnabled: true,
     voiceReplies: 'voice',
+    cliEffort: 'medium',
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -165,9 +166,6 @@ interface AppState {
   // Sidebar
   sidebarOpen: boolean;
 
-  // System panel
-  systemPanelOpen: boolean;
-
   // Actions: conversations
   loadConversations: () => void;
   importOverlayConversation: () => Promise<void>;
@@ -199,13 +197,6 @@ interface AppState {
   setSelectedModel: (model: string) => void;
   setServerInfo: (info: ServerInfo | null) => void;
   setSavings: (data: SavingsData | null) => void;
-  incrementSavings: (usage: TokenUsage) => void;
-
-  // Live GPU metrics — streamed from /api/research system_metrics events.
-  // When non-null, the System panel renders this instead of polled values
-  // so Power (W) and Energy (kJ) update in real time during a research run.
-  liveEnergy: LiveEnergyMetrics | null;
-  setLiveEnergy: (data: LiveEnergyMetrics | null) => void;
 
   // Actions: settings
   updateSettings: (partial: Partial<Settings>) => void;
@@ -214,8 +205,6 @@ interface AppState {
   setCommandPaletteOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
-  toggleSystemPanel: () => void;
-  setSystemPanelOpen: (open: boolean) => void;
 
   // Data sources (cached between visits to avoid empty-state flicker)
   cachedConnectors: CachedConnector[] | null;
@@ -235,11 +224,6 @@ interface AppState {
   agentEvents: AgentEvent[];
   addAgentEvent: (event: AgentEvent) => void;
   clearAgentEvents: () => void;
-
-  // Logs
-  logEntries: LogEntry[];
-  addLogEntry: (entry: LogEntry) => void;
-  clearLogs: () => void;
 
   // Model loading
   modelLoading: boolean;
@@ -271,7 +255,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
     commandPaletteOpen: false,
     sidebarOpen: true,
-    systemPanelOpen: true,
 
     // ── Conversations ───────────────────────────────────────────────
 
@@ -484,26 +467,6 @@ export const useAppStore = create<AppState>((set, get) => {
     setSelectedModel: (model: string) => set({ selectedModel: model }),
     setServerInfo: (info: ServerInfo | null) => set({ serverInfo: info }),
     setSavings: (data: SavingsData | null) => set({ savings: data }),
-    incrementSavings: (usage: TokenUsage) => {
-      const cur = get().savings;
-      const prompt = usage.prompt_tokens ?? 0;
-      const completion = usage.completion_tokens ?? 0;
-      const total = usage.total_tokens ?? prompt + completion;
-      set({
-        savings: {
-          total_calls: (cur?.total_calls ?? 0) + 1,
-          total_prompt_tokens: (cur?.total_prompt_tokens ?? 0) + prompt,
-          total_completion_tokens: (cur?.total_completion_tokens ?? 0) + completion,
-          total_tokens: (cur?.total_tokens ?? 0) + total,
-          local_cost: cur?.local_cost ?? 0,
-          per_provider: cur?.per_provider ?? [],
-          token_counting_version: cur?.token_counting_version,
-        },
-      });
-    },
-
-    liveEnergy: null,
-    setLiveEnergy: (data: LiveEnergyMetrics | null) => set({ liveEnergy: data }),
 
     cachedConnectors: null,
     setCachedConnectors: (list) => set({ cachedConnectors: list }),
@@ -521,8 +484,6 @@ export const useAppStore = create<AppState>((set, get) => {
     setCommandPaletteOpen: (open: boolean) => set({ commandPaletteOpen: open }),
     toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
     setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
-    toggleSystemPanel: () => set((s) => ({ systemPanelOpen: !s.systemPanelOpen })),
-    setSystemPanelOpen: (open: boolean) => set({ systemPanelOpen: open }),
 
     // ── Agents ─────────────────────────────────────────────────────
 
@@ -539,13 +500,6 @@ export const useAppStore = create<AppState>((set, get) => {
       agentEvents: [...s.agentEvents.slice(-99), event],
     })),
     clearAgentEvents: () => set({ agentEvents: [] }),
-
-    // ── Logs ────────────────────────────────────────────────────────
-    logEntries: [],
-    addLogEntry: (entry) => set((s) => ({
-      logEntries: [...s.logEntries.slice(-499), entry],
-    })),
-    clearLogs: () => set({ logEntries: [] }),
 
     // ── Model loading ───────────────────────────────────────────────
     modelLoading: false,

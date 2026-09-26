@@ -2691,10 +2691,6 @@ export function AgentsPage() {
           toast.error(`Agent "${agent.name}" failed`, {
             description: agent.summary_memory?.replace(/^ERROR: /, '') || 'Unknown error',
           });
-          useAppStore.getState().addLogEntry({
-            timestamp: Date.now(), level: 'error', category: 'model',
-            message: `Agent "${agent.name}" failed: ${agent.summary_memory || 'Unknown error'}`,
-          });
         }
       } catch {}
       await refresh();

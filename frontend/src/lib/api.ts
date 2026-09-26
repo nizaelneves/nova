@@ -1,5 +1,5 @@
-import type { ModelInfo, SavingsData, ServerInfo } from '../types';
-import { serializeToolCallArguments } from './tool-call';
+import type { ModelInfo, ServerInfo } from '../types';
+import { isCliModel } from './model-capabilities';
 
 declare global {
   interface Window {
@@ -136,38 +136,6 @@ export interface SetupStatus {
   requires_source: boolean;
 }
 
-export async function getSetupStatus(): Promise<SetupStatus | null> {
-  if (!isTauri()) return null;
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    return await invoke<SetupStatus>('get_setup_status');
-  } catch {
-    return null;
-  }
-}
-
-/** Start desktop services after an inference source has been persisted. */
-export async function startBackend(): Promise<void> {
-  if (!isTauri()) throw new Error('The desktop backend is available in the desktop app only.');
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke<void>('start_backend');
-  } catch (e: any) {
-    throw new Error(e?.message ?? e ?? 'Failed to start the desktop backend');
-  }
-}
-
-/** Stop an in-flight setup and return the desktop to its inert source chooser. */
-export async function resetInferenceSource(): Promise<void> {
-  if (!isTauri()) throw new Error('Inference setup recovery is available in the desktop app only.');
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke<void>('reset_inference_source');
-  } catch (e: any) {
-    throw new Error(e?.message ?? e ?? 'Failed to reset inference setup');
-  }
-}
-
 // ---------------------------------------------------------------------------
 // API functions
 // ---------------------------------------------------------------------------
@@ -238,30 +206,27 @@ export async function deleteModel(modelName: string): Promise<void> {
 const _CLOUD_PREFIXES = ['gpt-', 'o1-', 'o3-', 'o4-', 'claude-', 'gemini-', 'openrouter/'];
 
 export async function preloadModel(modelName: string, owner?: string): Promise<void> {
-  // Cloud models don't need Ollama preloading
-  if (owner === 'litellm' || _CLOUD_PREFIXES.some(p => modelName.startsWith(p))) {
+  // Cloud and Claude CLI models have nothing to load into memory.
+  if (owner === 'litellm' || isCliModel(modelName) || _CLOUD_PREFIXES.some(p => modelName.startsWith(p))) {
     return;
   }
-  // Trigger Ollama to load the model into memory (empty prompt, no generation).
-  const ollamaUrl = 'http://127.0.0.1:11434';
-  try {
-    const res = await fetch(`${ollamaUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: modelName, prompt: '', keep_alive: '5m' }),
-      signal: AbortSignal.timeout(120_000),
-    });
-    if (!res.ok) throw new Error(`Preload failed: ${res.status}`);
-  } catch (e: any) {
-    if (e.name === 'TimeoutError') throw new Error('Model load timed out (120s)');
-    throw e;
+  // Ask the Nova server to warm the model up (the browser cannot reach Ollama itself).
+  const res = await apiFetch(`/v1/models/preload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: modelName }),
+    signal: AbortSignal.timeout(130_000),
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = typeof body.detail === 'string' ? body.detail : '';
+    } catch {
+      // Not JSON; use the status below.
+    }
+    throw new Error(detail || `Model load failed: ${res.status}`);
   }
-}
-
-export async function fetchSavings(): Promise<SavingsData> {
-  const res = await apiFetch(`/v1/savings`);
-  if (!res.ok) throw new Error(`Failed to fetch savings: ${res.status}`);
-  return res.json();
 }
 
 export async function fetchServerInfo(): Promise<ServerInfo> {
@@ -299,39 +264,6 @@ export async function checkHealth(): Promise<boolean> {
   };
   if (await probe('/health')) return true;
   return probe('/v1/connectors');
-}
-
-export async function fetchEnergy(): Promise<unknown> {
-  if (isTauri()) {
-    try {
-      return await tauriInvoke('fetch_energy', { apiUrl: getBase() });
-    } catch {}
-  }
-  const res = await apiFetch(`/v1/telemetry/energy`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
-}
-
-export async function fetchTelemetry(): Promise<unknown> {
-  if (isTauri()) {
-    try {
-      return await tauriInvoke('fetch_telemetry', { apiUrl: getBase() });
-    } catch {}
-  }
-  const res = await apiFetch(`/v1/telemetry/stats`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
-}
-
-export async function fetchTraces(limit: number = 50): Promise<unknown> {
-  if (isTauri()) {
-    try {
-      return await tauriInvoke('fetch_traces', { apiUrl: getBase(), limit });
-    } catch {}
-  }
-  const res = await apiFetch(`/v1/traces?limit=${limit}`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
 }
 
 // ---------------------------------------------------------------------------
@@ -539,53 +471,11 @@ export async function fetchAgentTasks(agentId: string): Promise<AgentTask[]> {
   return data.tasks || [];
 }
 
-export async function createAgentTask(agentId: string, description: string): Promise<AgentTask> {
-  const res = await apiFetch(`/v1/managed-agents/${agentId}/tasks`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description }),
-  });
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
-}
-
 export async function fetchAgentChannels(agentId: string): Promise<ChannelBinding[]> {
   const res = await apiFetch(`/v1/managed-agents/${agentId}/channels`);
   if (!res.ok) throw new Error(`Failed: ${res.status}`);
   const data = await res.json();
   return data.bindings || [];
-}
-
-export async function bindAgentChannel(
-  agentId: string,
-  channelType: string,
-  config?: Record<string, unknown>,
-): Promise<ChannelBinding> {
-  const res = await fetch(
-    `${getBase()}/v1/managed-agents/${agentId}/channels`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        channel_type: channelType,
-        config: config || {},
-        routing_mode: 'dedicated',
-      }),
-    },
-  );
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
-}
-
-export async function unbindAgentChannel(
-  agentId: string,
-  bindingId: string,
-): Promise<void> {
-  const res = await fetch(
-    `${getBase()}/v1/managed-agents/${agentId}/channels/${bindingId}`,
-    { method: 'DELETE' },
-  );
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
 }
 
 export async function fetchTemplates(): Promise<AgentTemplate[]> {
@@ -612,18 +502,6 @@ export async function recoverManagedAgent(agentId: string): Promise<{ recovered:
   return res.json();
 }
 
-export async function fetchAgentState(agentId: string): Promise<{
-  agent: ManagedAgent;
-  tasks: AgentTask[];
-  channels: ChannelBinding[];
-  messages: AgentMessage[];
-  checkpoint: unknown;
-}> {
-  const res = await apiFetch(`/v1/managed-agents/${agentId}/state`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  return res.json();
-}
-
 export interface AgentToolCallStart {
   tool: string;
   arguments: string;
@@ -634,123 +512,6 @@ export interface AgentToolCallEnd {
   success: boolean;
   latency: number;
   result?: string;
-}
-
-export async function sendAgentMessage(
-  agentId: string,
-  content: string,
-  mode: 'immediate' | 'queued' = 'queued',
-  callbacks?: {
-    onProgress?: (label: string) => void;
-    onContentDelta?: (delta: string, fullContent: string) => void;
-    onToolCallStart?: (info: AgentToolCallStart) => void;
-    onToolCallEnd?: (info: AgentToolCallEnd) => void;
-    onDone?: (fullContent: string, usage?: Record<string, number>, telemetry?: Record<string, unknown>) => void;
-  },
-): Promise<AgentMessage> {
-  const res = await apiFetch(`/v1/managed-agents/${agentId}/messages`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, mode, stream: true }),
-  });
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-
-  // If streaming, consume the SSE response so the agent runs
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream') && res.body) {
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = '';
-    let buffer = '';
-    let lastUsage: Record<string, number> | undefined;
-    let lastTelemetry: Record<string, unknown> | undefined;
-    let currentEvent: string | undefined;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
-            continue;
-          }
-          if (!line.startsWith('data: ')) {
-            if (line.trim() === '') currentEvent = undefined;
-            continue;
-          }
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            currentEvent = undefined;
-            continue;
-          }
-          const evName = currentEvent;
-          currentEvent = undefined;
-
-          if (evName === 'tool_call_start') {
-            try {
-              const parsed = JSON.parse(data);
-              callbacks?.onToolCallStart?.({
-                tool: parsed.tool,
-                arguments: serializeToolCallArguments(parsed.arguments),
-              });
-            } catch {
-              /* skip */
-            }
-            continue;
-          }
-          if (evName === 'tool_call_end') {
-            try {
-              const parsed = JSON.parse(data);
-              callbacks?.onToolCallEnd?.({
-                tool: parsed.tool,
-                success: !!parsed.success,
-                latency: typeof parsed.latency === 'number' ? parsed.latency : 0,
-                result: parsed.result,
-              });
-            } catch {
-              /* skip */
-            }
-            continue;
-          }
-
-          try {
-            const chunk = JSON.parse(data);
-            // Deep-research branch still uses tool_progress in a data chunk
-            const toolProgress = chunk.choices?.[0]?.tool_progress;
-            if (toolProgress) {
-              callbacks?.onProgress?.(toolProgress);
-            }
-            const delta = chunk.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              fullContent += delta;
-              callbacks?.onContentDelta?.(delta, fullContent);
-            }
-            if (chunk.usage) lastUsage = chunk.usage;
-            if (chunk.telemetry) lastTelemetry = chunk.telemetry;
-          } catch {
-            /* skip malformed chunks */
-          }
-        }
-      }
-    } catch { /* stream ended */ }
-
-    callbacks?.onDone?.(fullContent, lastUsage, lastTelemetry);
-
-    return {
-      id: '',
-      agent_id: agentId,
-      direction: 'agent_to_user',
-      content: fullContent,
-      mode,
-      status: 'delivered',
-      created_at: Date.now() / 1000,
-    };
-  }
-
-  return res.json();
 }
 
 /**
@@ -770,20 +531,6 @@ export async function askAgent(agentId: string, content: string): Promise<AgentM
   });
   if (!res.ok) throw new Error(`Failed: ${res.status}`);
   return res.json();
-}
-
-export async function fetchAgentMessages(agentId: string): Promise<AgentMessage[]> {
-  const res = await apiFetch(`/v1/managed-agents/${agentId}/messages`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  const data = await res.json();
-  return data.messages || [];
-}
-
-export async function fetchErrorAgents(): Promise<ManagedAgent[]> {
-  const res = await apiFetch(`/v1/agents/errors`);
-  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-  const data = await res.json();
-  return data.agents || [];
 }
 
 // ---------------------------------------------------------------------------
@@ -975,12 +722,6 @@ export async function indexMemoryPath(path: string): Promise<{ chunks_indexed: n
   return res.json();
 }
 
-export async function getMemoryConfig(): Promise<MemoryConfig> {
-  const res = await apiFetch(`/v1/memory/config`);
-  if (!res.ok) throw new Error('Failed to fetch memory config');
-  return res.json();
-}
-
 // ---------------------------------------------------------------------------
 // Approvals
 // ---------------------------------------------------------------------------
@@ -1058,8 +799,3 @@ export async function setInferenceSource(
     throw new Error(e?.message ?? e ?? 'Failed to save inference source');
   }
 }
-
-/** Stage a first-run choice; Rust confirms it only after backend readiness. */
-export const stageInferenceSource = (
-  src: InferenceSource & { apiKey?: string },
-): Promise<void> => setInferenceSource(src, { pending: true });
