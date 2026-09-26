@@ -17,6 +17,10 @@ from nova.server.comparison import comparison_router
 from nova.server.connectors_router import create_connectors_router
 from nova.server.dashboard import dashboard_router
 from nova.server.digest_routes import create_digest_router
+from nova.server.finances_routes import (
+    create_finances_router,
+    get_shared_finance_store,
+)
 from nova.server.research_router import router as research_router
 from nova.server.routes import router
 from nova.server.tasks_routes import create_tasks_router, get_shared_store
@@ -361,6 +365,7 @@ def create_app(
     app.include_router(upload_router)
     app.include_router(research_router)
     app.include_router(create_tasks_router(lambda: get_shared_store(app)))
+    app.include_router(create_finances_router(lambda: get_shared_finance_store(app)))
     include_all_routes(app)
 
     # Add security headers middleware
