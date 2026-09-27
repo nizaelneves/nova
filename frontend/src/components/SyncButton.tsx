@@ -81,23 +81,19 @@ export function SyncButton() {
 
   const last = newest(overview);
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex items-center justify-center gap-3">
       <button
         type="button"
         onClick={start}
         disabled={busy}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs cursor-pointer transition-colors disabled:cursor-default"
-        style={{
-          background: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-          color: 'var(--color-text-secondary)',
-        }}
+        className="rail-item h-10 gap-2.5 px-5 text-sm cursor-pointer disabled:cursor-default"
+        style={{ border: '1px solid var(--color-border)', borderRadius: '9999px' }}
         title="Sync every connected source now"
       >
-        <RefreshCw size={14} className={busy ? 'animate-spin' : ''} style={{ color: 'var(--color-accent)' }} />
+        <RefreshCw size={16} className={busy ? 'animate-spin' : ''} style={{ color: 'var(--color-accent)' }} />
         {busy ? 'Syncing…' : 'Sync now'}
       </button>
-      <span className="text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>
+      <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
         {overview && overview.connectors.length === 0
           ? 'No sources connected'
           : `Last sync: ${timeAgo(last)}`}

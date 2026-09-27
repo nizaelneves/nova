@@ -8,3 +8,9 @@ terms are preserved in the LICENSE file.
 Changes made to the original work include: renaming the project to Nova, removing
 unused messaging channels, the Rust extension, analytics, mining and auto-update
 components, and rewriting the affected components in Python.
+
+Third-party design assets bundled with the Nova interface:
+  - Inter typeface (SIL Open Font License 1.1), via @fontsource-variable/inter.
+  - League Spartan typeface (SIL Open Font License 1.1), via @fontsource-variable/league-spartan.
+  - Brand logos of connected services, from Iconify ("logos" and "simple-icons" sets, CC0). Logos belong to their owners and only identify each service.
+  - Solar icon set by 480 Design (CC BY 4.0), via Iconify: https://icon-sets.iconify.design/solar/

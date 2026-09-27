@@ -1,8 +1,42 @@
 import { apiFetch } from './api';
+import { useAppStore } from './store';
 
 // Keep replies short enough for the server limit (4000 chars) and for the
 // listener: long answers are spoken up to a natural break.
 const MAX_SPOKEN_CHARS = 1500;
+
+// Live loudness of Nova's voice (0 to 1), read by the orb on every frame.
+let audioContext: AudioContext | null = null;
+let analyser: AnalyserNode | null = null;
+let meter: Uint8Array | null = null;
+
+export function getVoiceLevel(): number {
+  if (!analyser || !meter) return 0;
+  analyser.getByteTimeDomainData(meter as Uint8Array<ArrayBuffer>);
+  let sum = 0;
+  for (const v of meter) {
+    const centred = (v - 128) / 128;
+    sum += centred * centred;
+  }
+  return Math.min(1, Math.sqrt(sum / meter.length) * 3.2);
+}
+
+function listenTo(audio: HTMLAudioElement): void {
+  try {
+    audioContext = audioContext ?? new AudioContext();
+    void audioContext.resume();
+    const source = audioContext.createMediaElementSource(audio);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    meter = new Uint8Array(analyser.fftSize);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+  } catch {
+    // No analyser: the orb still reacts to "speaking", just not to loudness.
+    analyser = null;
+    meter = null;
+  }
+}
 
 let current: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
@@ -32,6 +66,9 @@ export function cleanForSpeech(markdown: string): string {
 /** Stop whatever Nova is saying right now (and cancel a request in flight). */
 export function stopSpeaking(): void {
   requestId += 1;
+  useAppStore.getState().setSpeaking(false);
+  analyser = null;
+  meter = null;
   if (current) {
     current.pause();
     current = null;
@@ -80,10 +117,12 @@ export async function speakReply(markdown: string): Promise<SpeakResult | null> 
   currentUrl = URL.createObjectURL(blob);
   const audio = new Audio(currentUrl);
   current = audio;
+  listenTo(audio);
   audio.onended = () => {
     if (current === audio) stopSpeaking();
   };
   await audio.play();
+  useAppStore.getState().setSpeaking(true);
   return {
     backend: res.headers.get('X-Nova-Voice') ?? '',
     notice: res.headers.get('X-Nova-Voice-Notice') ?? '',

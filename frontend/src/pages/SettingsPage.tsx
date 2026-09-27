@@ -32,6 +32,9 @@ import {
   isTauri,
   fetchSyncSettings,
   saveSyncSettings,
+  fetchHomeSettings,
+  saveHomeSettings,
+  type HomeSettings,
   fetchSyncOverview,
   syncAllConnectors,
   type InferenceSource,
@@ -40,6 +43,8 @@ import {
 } from '../lib/api';
 import { timeAgo } from '../lib/time';
 import { toast } from 'sonner';
+import { Icon } from '../components/Icon';
+import { cleanPhrase } from '../lib/phrase';
 
 const CLOUD_KEY_STATUS_CHANGED = 'nova-cloud-key-status-changed';
 
@@ -351,6 +356,192 @@ function SyncSection({ onSaved }: { onSaved: () => void }) {
           </div>
         ))}
       </div>
+    </Section>
+  );
+}
+
+/** A centered pop-up over the page. Click outside or press Escape to close. */
+function Popup({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: 'rgba(3, 3, 10, 0.72)', backdropFilter: 'blur(4px)' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        role="dialog"
+        aria-label={title}
+        className="w-full max-w-md rounded-2xl p-5"
+        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
+      >
+        <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-heading)' }}>{title}</h4>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** The name in the greeting and the phrases shown on the home screen. */
+function HomeSection({ onSaved }: { onSaved: () => void }) {
+  const [saved, setSaved] = useState<HomeSettings | null>(null);
+  const [name, setName] = useState('');
+  // null = closed; index = editing that phrase; -1 = adding a new one
+  const [editing, setEditing] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const [deleting, setDeleting] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchHomeSettings()
+      .then((h) => { setSaved(h); setName(h.display_name); })
+      .catch(() => setSaved(null));
+  }, []);
+
+  const store = async (changes: Partial<HomeSettings>) => {
+    try {
+      const h = await saveHomeSettings(changes);
+      setSaved(h);
+      setName(h.display_name);
+      onSaved();
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save');
+      return false;
+    }
+  };
+
+  const saveName = () => {
+    if (!saved || name.trim() === saved.display_name) return;
+    void store({ display_name: name.trim() });
+  };
+
+  const phrases = saved?.messages ?? [];
+  const openEditor = (index: number) => {
+    setDraft(index >= 0 ? cleanPhrase(phrases[index]) : '');
+    setEditing(index);
+  };
+  const savePhrase = async () => {
+    const text = cleanPhrase(draft);
+    if (!text || editing === null) return;
+    const next = editing >= 0 ? phrases.map((p, i) => (i === editing ? text : p)) : [...phrases, text];
+    if (await store({ messages: next })) setEditing(null);
+  };
+  const removePhrase = async () => {
+    if (deleting === null) return;
+    if (await store({ messages: phrases.filter((_, i) => i !== deleting) })) setDeleting(null);
+  };
+
+  const iconButton = 'p-1.5 rounded-lg cursor-pointer transition-colors hover:bg-white/5';
+  return (
+    <Section title="Home screen">
+      <SettingRow label="Your name" description="Shown in the greeting: Good Morning, …">
+        <input
+          value={name}
+          maxLength={40}
+          disabled={!saved}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={saveName}
+          className="w-48 text-sm px-3 py-1.5 rounded-lg outline-none"
+          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+        />
+      </SettingRow>
+      <div className="pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm" style={{ color: 'var(--color-text)' }}>Your phrases</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
+              In any language. Nova shows one of them each time the home opens.
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={!saved}
+            onClick={() => openEditor(-1)}
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 shrink-0"
+            style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent-light)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
+          >
+            <Icon name="add-circle" size={16} /> Add phrase
+          </button>
+        </div>
+        <div className="flex flex-col gap-2 mt-3">
+          {saved && phrases.length === 0 && (
+            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>No phrases yet.</div>
+          )}
+          {phrases.map((phrase, i) => (
+            <div
+              key={`${i}-${phrase}`}
+              className="flex items-start gap-3 rounded-xl px-4 py-3"
+              style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+            >
+              <p className="flex-1 text-sm break-words" style={{ color: 'var(--color-text)' }}>
+                {'“'}{cleanPhrase(phrase)}{'”'}
+              </p>
+              <button type="button" aria-label="Edit phrase" title="Edit" className={iconButton}
+                style={{ color: 'var(--color-text-secondary)' }} onClick={() => openEditor(i)}>
+                <Icon name="pen" size={16} />
+              </button>
+              <button type="button" aria-label="Delete phrase" title="Delete" className={iconButton}
+                style={{ color: 'var(--color-error)' }} onClick={() => setDeleting(i)}>
+                <Icon name="trash-bin-minimalistic" size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {editing !== null && (
+        <Popup title={editing >= 0 ? 'Edit phrase' : 'New phrase'} onClose={() => setEditing(null)}>
+          <textarea
+            autoFocus
+            value={draft}
+            rows={4}
+            maxLength={200}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Um passo de cada vez."
+            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-none"
+            style={{ background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+          />
+          <div className="flex items-center justify-between mt-3">
+            <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{draft.length}/200</span>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setEditing(null)}
+                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+                style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
+                Cancel
+              </button>
+              <button type="button" onClick={() => void savePhrase()} disabled={!draft.trim()}
+                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
+                style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
+                Save
+              </button>
+            </div>
+          </div>
+        </Popup>
+      )}
+
+      {deleting !== null && (
+        <Popup title="Delete this phrase?" onClose={() => setDeleting(null)}>
+          <p className="text-sm mb-4 break-words" style={{ color: 'var(--color-text-secondary)' }}>
+            {'“'}{cleanPhrase(phrases[deleting])}{'”'}
+          </p>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setDeleting(null)}
+              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+              style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
+              Cancel
+            </button>
+            <button type="button" onClick={() => void removePhrase()}
+              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+              style={{ background: 'var(--color-error)', color: '#fff' }}>
+              Delete
+            </button>
+          </div>
+        </Popup>
+      )}
     </Section>
   );
 }
@@ -825,6 +1016,7 @@ export function SettingsPage() {
           </Section>
 
           {/* Speech */}
+          <HomeSection onSaved={showSaved} />
           <SyncSection onSaved={showSaved} />
 
           <Section title="Speech">

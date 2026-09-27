@@ -857,9 +857,37 @@ export const saveSyncSettings = (changes: Partial<SyncSettings>): Promise<SyncSe
     body: JSON.stringify(changes),
   });
 
-export const fetchSyncOverview = (): Promise<SyncOverview> =>
+export interface HomeSettings {
+  display_name: string;
+  messages: string[];
+}
+
+export const fetchHomeSettings = (): Promise<HomeSettings> => syncJson('/v1/home');
+
+export const saveHomeSettings = (changes: Partial<HomeSettings>): Promise<HomeSettings> =>
+  syncJson('/v1/home', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+
+export const fetchSyncOverview =(): Promise<SyncOverview> =>
   syncJson('/v1/connectors/sync-status');
 
 /** Start syncing every connected source (the "Sync now" button). */
 export const syncAllConnectors = (): Promise<SyncAllResult> =>
   syncJson('/v1/connectors/sync-all', { method: 'POST' });
+
+/** File types Nova can read when you add them with the "+" button. */
+export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx'];
+
+/** Adds files to Nova's knowledge, so it can use them in answers. Returns how many chunks were added. */
+export async function addFilesToKnowledge(files: File[]): Promise<number> {
+  const form = new FormData();
+  for (const f of files) form.append('files', f);
+  const data = await syncJson<{ chunks_added: number }>('/v1/connectors/upload/ingest/files', {
+    method: 'POST',
+    body: form,
+  });
+  return data.chunks_added;
+}

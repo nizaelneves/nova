@@ -1,229 +1,153 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import {
-  MessageSquare,
-  Plus,
-  Settings,
-  Search,
-  PanelLeftClose,
-  PanelLeft,
-  Cpu,
-  Bot,
-  Sun,
-  Moon,
-  Monitor,
-  Loader2,
-  Database,
-} from 'lucide-react';
 import { ConversationList } from './ConversationList';
+import { Icon, type IconName } from '../Icon';
 import { useAppStore } from '../../lib/store';
+
+interface Module {
+  path: string;
+  icon: IconName;
+  label: string;
+}
+
+/** The main menu, in this order. Names are always English. */
+const MODULES: Module[] = [
+  { path: '/', icon: 'chat-round-dots', label: 'Chat' },
+  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
+  { path: '/finances', icon: 'wallet', label: 'Finances' },
+  { path: '/data-sources', icon: 'database', label: 'Data Sources' },
+  { path: '/agents', icon: 'bot', label: 'Agents' },
+  { path: '/approvals', icon: 'shield-check', label: 'Approvals' },
+  { path: '/settings', icon: 'settings', label: 'Settings' },
+];
+
+function RailItem({
+  module,
+  active,
+  expanded,
+  onClick,
+}: {
+  module: Module;
+  active: boolean;
+  expanded: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-active={active}
+      aria-label={module.label}
+      aria-current={active ? 'page' : undefined}
+      className={`rail-item cursor-pointer ${expanded ? 'w-full px-3' : 'w-11 justify-center'}`}
+    >
+      {active && !expanded && <span aria-hidden="true" className="rail-bar" />}
+      <Icon name={module.icon} size={22} className="rail-icon shrink-0" />
+      {expanded && <span className="text-sm font-normal truncate">{module.label}</span>}
+      {/* Names appear as a tip only while the menu is collapsed to icons. */}
+      {!expanded && <span className="rail-tip">{module.label}</span>}
+    </button>
+  );
+}
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const sidebarOpen = useAppStore((s) => s.sidebarOpen);
+  const expanded = useAppStore((s) => s.sidebarOpen);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const createConversation = useAppStore((s) => s.createConversation);
   const selectedModel = useAppStore((s) => s.selectedModel);
-  const serverInfo = useAppStore((s) => s.serverInfo);
-  const setCommandPaletteOpen = useAppStore((s) => s.setCommandPaletteOpen);
-  const modelLoading = useAppStore((s) => s.modelLoading);
-  const deepResearch = useAppStore((s) => s.deepResearch);
-
-  const settings = useAppStore((s) => s.settings);
-  const updateSettings = useAppStore((s) => s.updateSettings);
-
-  const ThemeIcon = settings.theme === 'light' ? Sun : settings.theme === 'dark' ? Moon : Monitor;
-  const nextTheme = settings.theme === 'light' ? 'dark' : settings.theme === 'dark' ? 'system' : 'light';
-
   const messages = useAppStore((s) => s.messages);
+
   const handleNewChat = () => {
     // Don't create a new chat if the current one is empty
-    if (messages.length === 0) {
-      navigate('/');
-      return;
-    }
-    createConversation(selectedModel);
+    if (messages.length > 0) createConversation(selectedModel);
     navigate('/');
   };
 
-  const navItems = [
-    { path: '/', icon: MessageSquare, label: 'Chat' },
-    { path: '/data-sources', icon: Database, label: 'Data Sources' },
-    { path: '/agents', icon: Bot, label: 'Agents' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
-  ];
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   return (
-    <>
-      {/* Collapse button when sidebar is closed */}
-      {!sidebarOpen && (
-        <button
-          onClick={toggleSidebar}
-          className="fixed top-3 left-3 z-30 p-2 rounded-lg transition-colors cursor-pointer"
-          style={{ color: 'var(--color-text-secondary)', background: 'var(--color-bg-secondary)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg-secondary)')}
-        >
-          <PanelLeft size={18} />
-        </button>
-      )}
-
-      <aside
-        className={`
-          flex flex-col h-full shrink-0 transition-all duration-200 ease-in-out overflow-hidden
-          fixed md:relative z-30
-          ${sidebarOpen ? 'w-[260px]' : 'w-0'}
-        `}
-        style={{
-          background: 'var(--color-sidebar)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRight: sidebarOpen ? '1px solid var(--color-border)' : 'none',
-        }}
-      >
-        <div className="flex flex-col h-full w-[260px]">
-          {/* Header */}
-          <div className="flex items-center justify-between px-3 pt-3 pb-2">
-            <button
-              onClick={toggleSidebar}
-              className="p-2 rounded-lg transition-colors cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <PanelLeftClose size={18} />
-            </button>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => updateSettings({ theme: nextTheme })}
-                className="p-2 rounded-lg transition-colors cursor-pointer"
-                style={{ color: 'var(--color-text-secondary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                title={`Theme: ${settings.theme} (click for ${nextTheme})`}
-              >
-                <ThemeIcon size={16} />
-              </button>
-              <button
-                onClick={handleNewChat}
-                className="p-2 rounded-lg transition-colors cursor-pointer"
-                style={{ color: 'var(--color-text-secondary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                title="New chat"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Model badge */}
+    <aside
+      className={`
+        fixed md:relative z-30 flex flex-col h-full shrink-0
+        transition-[width] duration-300 ease-[var(--ease-out)]
+        ${expanded ? 'w-[260px] overflow-hidden' : 'w-[72px]'}
+      `}
+      style={{
+        background: expanded ? 'var(--color-sidebar)' : 'transparent',
+        backdropFilter: expanded ? 'blur(20px)' : undefined,
+        WebkitBackdropFilter: expanded ? 'blur(20px)' : undefined,
+        borderRight: expanded ? '1px solid var(--color-border)' : '1px solid transparent',
+      }}
+    >
+      <div className={`flex flex-col h-full ${expanded ? 'w-[260px] px-3' : 'w-[72px] items-center'}`}>
+        {/* Show / hide the names and the chat history */}
+        <div className={`pt-5 pb-3 flex items-center ${expanded ? 'justify-between' : 'justify-center'}`}>
           <button
-            onClick={() => setCommandPaletteOpen(true)}
-            className="mx-3 mb-2 flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer"
-            style={{
-              background: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg-tertiary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-bg-secondary)')}
+            type="button"
+            onClick={toggleSidebar}
+            className="rail-item w-11 justify-center cursor-pointer"
+            aria-label={expanded ? 'Hide menu names' : 'Show menu names'}
           >
-            {modelLoading ? (
-              <Loader2 size={14} className="animate-spin" style={{ color: 'var(--color-accent)' }} />
-            ) : (
-              <Cpu size={14} />
-            )}
-            <div className="flex-1 min-w-0">
-              <span
-                className="truncate block text-left"
-                style={{ color: deepResearch ? 'var(--color-accent)' : 'var(--color-text)' }}
-              >
-                {deepResearch
-                  ? 'Think'
-                  : selectedModel || serverInfo?.model || 'Select model'}
-              </span>
-              {modelLoading && (
-                <span className="text-[10px] block text-left" style={{ color: 'var(--color-accent)' }}>
-                  Loading model...
-                </span>
-              )}
-            </div>
-            {!modelLoading && (
-              <kbd
-                className="text-[10px] px-1.5 py-0.5 rounded font-mono"
-                style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)' }}
-              >
-                ⌘K
-              </kbd>
-            )}
+            <Icon name="sidebar-minimalistic" size={20} className="rail-icon" />
+            {!expanded && <span className="rail-tip">Expand menu</span>}
           </button>
-
-          {/* Search */}
-          <div className="px-3 mb-2">
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm"
-              style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+          {expanded && (
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="rail-item px-3 gap-2 cursor-pointer text-sm"
+              aria-label="New chat"
             >
-              <Search size={14} style={{ color: 'var(--color-text-tertiary)' }} />
-              <input
-                type="text"
-                placeholder="Search chats..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm"
-                style={{ color: 'var(--color-text)' }}
+              <Icon name="add-circle" size={20} className="rail-icon" />
+              <span className="font-normal">New chat</span>
+            </button>
+          )}
+        </div>
+
+        <nav className={`flex flex-col gap-2 ${expanded ? '' : 'mt-14 items-center'}`}>
+          {MODULES.map((m) => (
+            <div key={m.path} className={m.path === '/settings' ? 'mt-3' : undefined}>
+              <RailItem
+                module={m}
+                active={isActive(m.path)}
+                expanded={expanded}
+                onClick={() => navigate(m.path)}
               />
             </div>
-          </div>
+          ))}
+        </nav>
 
-          {/* Conversation list */}
-          <div className="flex-1 overflow-y-auto px-2">
-            <ConversationList searchQuery={searchQuery} />
+        {expanded && (
+          <div
+            className="flex-1 min-h-0 flex flex-col mt-4 pt-4"
+            style={{ borderTop: '1px solid var(--color-border)' }}
+          >
+            <div className="mb-2 px-1">
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+                style={{ background: 'var(--color-glass)', border: '1px solid var(--color-border)' }}
+              >
+                <input
+                  type="text"
+                  placeholder="Search chats..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-sm"
+                  style={{ color: 'var(--color-text)' }}
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ConversationList searchQuery={searchQuery} />
+            </div>
           </div>
-
-          {/* Bottom nav */}
-          <nav className="px-2 pb-3 pt-2 flex flex-col gap-0.5" style={{ borderTop: '1px solid var(--color-border)' }}>
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className="relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left cursor-pointer"
-                  style={{
-                    background: isActive ? 'var(--color-accent-subtle)' : 'transparent',
-                    color: isActive ? 'var(--color-text)' : 'var(--color-text-secondary)',
-                    fontWeight: isActive ? 500 : 400,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.background = 'var(--color-bg-secondary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full"
-                      style={{
-                        background: 'var(--color-accent)',
-                        boxShadow: '0 0 8px var(--color-accent-glow)',
-                      }}
-                    />
-                  )}
-                  <item.icon size={16} style={isActive ? { color: 'var(--color-accent)' } : undefined} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-    </>
+        )}
+      </div>
+    </aside>
   );
 }

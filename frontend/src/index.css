@@ -1,57 +1,75 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/league-spartan";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Nova design tokens.
- * Zinc/slate neutrals, blue accent. Light default, dark via class or system pref.
+ * Nova design tokens: the official palette (from the Cadence design).
+ * Dark only. Deep navy backgrounds, teal accent, teal-tinted borders and glows.
+ * Every colour in the app comes from these variables, so changing the palette
+ * means changing this block and nothing else.
  */
 
 @layer base {
   :root {
-    --color-bg: #f9f9f9;
-    --color-bg-secondary: #f4f4f5;
-    --color-bg-tertiary: #e4e4e7;
-    --color-surface: #ffffff;
-    --color-sidebar: rgba(250, 250, 250, 0.85);
-    --color-border: rgba(0, 0, 0, 0.08);
-    --color-border-subtle: rgba(0, 0, 0, 0.04);
+    /* Backgrounds, darkest to lightest */
+    --color-bg: #060610;
+    --color-bg-secondary: #0a0a18;
+    --color-bg-tertiary: #0d0d1f;
+    --color-surface: #0a0a18;
+    --color-glass: rgba(255, 255, 255, 0.03);
+    --color-sidebar: rgba(6, 6, 16, 0.72);
 
-    --color-text: #09090b;
-    --color-text-secondary: #71717a;
-    --color-text-tertiary: #a1a1aa;
-    --color-text-inverse: #fafafa;
+    /* Borders: teal-tinted, three strengths */
+    --color-border: rgba(20, 184, 166, 0.12);
+    --color-border-subtle: rgba(20, 184, 166, 0.06);
+    --color-border-strong: rgba(20, 184, 166, 0.2);
+    --color-border-accent: rgba(20, 184, 166, 0.3);
 
-    --color-accent: #0891b2;
-    --color-accent-hover: #0e7490;
-    --color-accent-subtle: rgba(8, 145, 178, 0.08);
-    --color-accent-glow: rgba(8, 145, 178, 0.25);
+    /* Text */
+    --color-heading: #fafafa;
+    --color-text: #e8e8ed;
+    --color-text-secondary: rgba(255, 255, 255, 0.55);
+    --color-text-tertiary: rgba(255, 255, 255, 0.35);
+    --color-text-inverse: #060610;
+
+    /* Accent: teal */
+    --color-accent: #14b8a6;
+    --color-accent-dark: #0d9488;
+    --color-accent-hover: #2dd4bf;
+    --color-accent-light: #5eead4;
+    --color-accent-subtle: rgba(20, 184, 166, 0.1);
+    --color-accent-glow: rgba(20, 184, 166, 0.3);
 
     --color-accent-amber: #f59e0b;
-    --color-accent-amber-hover: #d97706;
-    --color-accent-amber-subtle: rgba(245, 158, 11, 0.1);
-    --color-accent-purple: #8b5cf6;
-    --color-accent-purple-hover: #7c3aed;
-    --color-accent-purple-subtle: rgba(139, 92, 246, 0.1);
-    --color-accent-blue-subtle: rgba(8, 145, 178, 0.08);
+    --color-accent-amber-hover: #fbbf24;
+    --color-accent-amber-subtle: rgba(245, 158, 11, 0.12);
+    --color-accent-purple: #a78bfa;
+    --color-accent-purple-hover: #c4b5fd;
+    --color-accent-purple-subtle: rgba(167, 139, 250, 0.12);
+    --color-accent-blue-subtle: rgba(20, 184, 166, 0.1);
 
-    --color-success: #16a34a;
-    --color-warning: #ca8a04;
-    --color-error: #dc2626;
+    --color-success: #4ade80;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
 
-    --color-code-bg: #f4f4f5;
-    --color-input-bg: #ffffff;
-    --color-input-border: #d4d4d8;
+    --color-code-bg: #060610;
+    --color-input-bg: rgba(255, 255, 255, 0.03);
+    --color-input-border: rgba(20, 184, 166, 0.2);
 
-    --color-user-bubble: #0891b2;
-    --color-user-bubble-text: #ffffff;
-    --color-on-accent: #ffffff;
-    --color-disabled-bg: #e4e4e7;
+    --color-user-bubble: rgba(20, 184, 166, 0.14);
+    --color-user-bubble-text: #e8e8ed;
+    --color-on-accent: #060610;
+    --color-disabled-bg: #0d0d1f;
 
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    /* Shadows and glows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 14px -2px rgb(0 0 0 / 0.5), 0 0 0 1px rgba(20, 184, 166, 0.06);
+    --shadow-lg: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgba(20, 184, 166, 0.08);
+    --glow-sm: 0 0 20px rgba(20, 184, 166, 0.15);
+    --glow-md: 0 0 40px rgba(20, 184, 166, 0.2);
 
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
@@ -59,109 +77,19 @@
     --radius-xl: 1rem;
     --radius-full: 9999px;
 
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
     --sidebar-width: 260px;
     --chat-max-width: 720px;
 
-    --font-display: 'Chakra Petch', 'Space Grotesk', system-ui, sans-serif;
-    --font-hud: 'IBM Plex Mono', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
-
-    color-scheme: light;
-  }
-
-  .dark {
-    --color-bg: #0a0a0b;
-    --color-bg-secondary: #121214;
-    --color-bg-tertiary: #18181b;
-    --color-surface: #121214;
-    --color-sidebar: rgba(12, 12, 14, 0.72);
-    --color-border: rgba(255, 255, 255, 0.09);
-    --color-border-subtle: rgba(255, 255, 255, 0.05);
-
-    --color-text: #ededef;
-    --color-text-secondary: #8d8d93;
-    --color-text-tertiary: #5c5c63;
-    --color-text-inverse: #0a0a0b;
-
-    --color-accent: #22d3ee;
-    --color-accent-hover: #67e8f9;
-    --color-accent-subtle: rgba(34, 211, 238, 0.1);
-    --color-accent-glow: rgba(34, 211, 238, 0.3);
-
-    --color-accent-amber: #f5a524;
-    --color-accent-amber-hover: #fbbf24;
-    --color-accent-amber-subtle: rgba(245, 165, 36, 0.12);
-    --color-accent-purple: #b794ff;
-    --color-accent-purple-hover: #c9b0ff;
-    --color-accent-purple-subtle: rgba(183, 148, 255, 0.12);
-    --color-accent-blue-subtle: rgba(79, 209, 255, 0.12);
-
-    --color-success: #3ddc97;
-    --color-warning: #f5a524;
-    --color-error: #ff6b6b;
-
-    --color-code-bg: #0c121a;
-    --color-input-bg: #0c121a;
-    --color-input-border: rgba(79, 209, 255, 0.12);
-
-    --color-user-bubble: rgba(79, 209, 255, 0.14);
-    --color-user-bubble-text: #e6f1ff;
-    --color-on-accent: #070b11;
-    --color-disabled-bg: #121a24;
-
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 14px -2px rgb(0 0 0 / 0.5), 0 0 0 1px rgba(79, 209, 255, 0.04);
-    --shadow-lg: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgba(79, 209, 255, 0.06);
+    /* Typography (from the Vectra design): Inter, fine weights, tight headings */
+    --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: var(--font-sans);
+    --font-hud: 'Cascadia Code', 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+    --tracking-heading: -0.02em;
+    --tracking-label: 0.18em;
 
     color-scheme: dark;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not(.light) {
-      --color-bg: #0a0a0b;
-      --color-bg-secondary: #121214;
-      --color-bg-tertiary: #18181b;
-      --color-surface: #121214;
-      --color-sidebar: rgba(12, 12, 14, 0.72);
-      --color-border: rgba(255, 255, 255, 0.09);
-      --color-border-subtle: rgba(255, 255, 255, 0.05);
-
-      --color-text: #ededef;
-      --color-text-secondary: #8d8d93;
-      --color-text-tertiary: #5c5c63;
-      --color-text-inverse: #0a0a0b;
-
-      --color-accent: #22d3ee;
-      --color-accent-hover: #67e8f9;
-      --color-accent-subtle: rgba(34, 211, 238, 0.1);
-      --color-accent-glow: rgba(34, 211, 238, 0.3);
-
-      --color-accent-amber: #f5a524;
-      --color-accent-amber-hover: #fbbf24;
-      --color-accent-amber-subtle: rgba(245, 165, 36, 0.12);
-      --color-accent-purple: #b794ff;
-      --color-accent-purple-hover: #c9b0ff;
-      --color-accent-purple-subtle: rgba(183, 148, 255, 0.12);
-      --color-accent-blue-subtle: rgba(79, 209, 255, 0.12);
-
-      --color-success: #3ddc97;
-      --color-warning: #f5a524;
-      --color-error: #ff6b6b;
-
-      --color-code-bg: #0c121a;
-      --color-input-bg: #0c121a;
-      --color-input-border: rgba(79, 209, 255, 0.12);
-
-      --color-user-bubble: rgba(79, 209, 255, 0.14);
-      --color-user-bubble-text: #e6f1ff;
-      --color-on-accent: #070b11;
-      --color-disabled-bg: #121a24;
-
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-      --shadow-md: 0 4px 14px -2px rgb(0 0 0 / 0.5), 0 0 0 1px rgba(79, 209, 255, 0.04);
-      --shadow-lg: 0 18px 40px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgba(79, 209, 255, 0.06);
-
-      color-scheme: dark;
-    }
   }
 
   * {
@@ -177,9 +105,10 @@
   }
 
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-weight: 400;
-    line-height: 1.5;
+    font-family: var(--font-sans);
+    font-weight: 300;
+    line-height: 1.6;
+    font-feature-settings: 'cv11', 'ss03';
     letter-spacing: -0.01em;
     background-color: var(--color-bg);
     color: var(--color-text);
@@ -190,6 +119,12 @@
   ::selection {
     background-color: var(--color-accent);
     color: white;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 500;
+    letter-spacing: var(--tracking-heading);
+    color: var(--color-heading);
   }
 
   ::-webkit-scrollbar {
@@ -469,39 +404,6 @@
     animation: hud-sweep 2.4s linear infinite;
   }
 
-  .hud-backdrop {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 42%),
-      radial-gradient(circle at 85% 110%, color-mix(in srgb, var(--color-accent-purple) 8%, transparent), transparent 46%),
-      linear-gradient(to bottom, transparent, transparent);
-  }
-
-  .hud-backdrop::before {
-    /* faint grid */
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(var(--color-border-subtle) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-border-subtle) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-    opacity: 0.45;
-  }
-
-  .hud-backdrop::after {
-    /* noise grain */
-    content: '';
-    position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.31 0 0 0 0 0.82 0 0 0 0 1 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode: screen;
-    opacity: 0.5;
-  }
-
   .hud-reticle {
     position: relative;
     display: inline-flex;
@@ -550,10 +452,6 @@
 
 
   /* Activate slow grid drift on backdrop */
-  .hud-backdrop::before {
-    animation: hud-grid-drift 60s linear infinite;
-  }
-
   /* Live heartbeat dot — use next to hud-label for alive indicator */
   .hud-heartbeat {
     display: inline-block;
@@ -595,7 +493,6 @@
     .hud-shimmer,
     .hud-reticle::before,
     .hud-reticle::after,
-    .hud-backdrop::before,
     .hud-scan-beam::before,
     .hud-heartbeat,
     .hud-caret,
@@ -606,74 +503,46 @@
   }
 }
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  --background: #060610;
+  --foreground: #e8e8ed;
+  --card: #0a0a18;
+  --card-foreground: #e8e8ed;
+  --popover: #0a0a18;
+  --popover-foreground: #e8e8ed;
+  --primary: #14b8a6;
+  --primary-foreground: #060610;
+  --secondary: #0d0d1f;
+  --secondary-foreground: #e8e8ed;
+  --muted: #0d0d1f;
+  --muted-foreground: rgba(255, 255, 255, 0.55);
+  --accent: #0d0d1f;
+  --accent-foreground: #e8e8ed;
+  --destructive: #ef4444;
+  --border: rgba(20, 184, 166, 0.12);
+  --input: rgba(20, 184, 166, 0.2);
+  --ring: #14b8a6;
+  --chart-1: #14b8a6;
+  --chart-2: #2dd4bf;
+  --chart-3: #f59e0b;
+  --chart-4: #a78bfa;
+  --chart-5: #4ade80;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #0a0a18;
+  --sidebar-foreground: #e8e8ed;
+  --sidebar-primary: #14b8a6;
+  --sidebar-primary-foreground: #060610;
+  --sidebar-accent: #0d0d1f;
+  --sidebar-accent-foreground: #e8e8ed;
+  --sidebar-border: rgba(20, 184, 166, 0.12);
+  --sidebar-ring: #14b8a6;
 }
 @theme inline {
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Fine, luxurious weights: light text, medium headings (Tailwind's font-* classes) */
+  --font-weight-normal: 300;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
   /* shadcn component tokens — namespaced to avoid collision with Nova design tokens */
   --color-cn-sidebar-ring: var(--sidebar-ring);
   --color-cn-sidebar-border: var(--sidebar-border);
@@ -753,4 +622,466 @@
   color: var(--color-on-accent, #ffffff);
   background: var(--color-accent);
   text-decoration: none;
+}
+
+/* Small uppercase labels (sections, captions), as in the Vectra design */
+.label-caps {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* -- Chat input bar (composer) ------------------------------------------------ */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 0.9rem 0.6rem;
+  border-radius: 1.5rem;
+  background: rgba(13, 13, 31, 0.72);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.composer:focus-within {
+  border-color: var(--color-border-strong, var(--color-border));
+  box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.18), 0 8px 40px rgba(20, 184, 166, 0.08);
+}
+
+.composer-text {
+  width: 100%;
+  padding: 0.15rem 0.35rem;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-height: 200px;
+}
+
+.composer-text::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.composer-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.composer-chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--color-border-strong, var(--color-border));
+  color: var(--color-text);
+}
+
+.composer-chip[data-active='true'] {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+  color: var(--color-accent-light);
+}
+
+.composer-chip:disabled,
+.composer-icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.composer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.composer-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.composer-icon[data-on='true'] {
+  color: var(--color-accent-light);
+  background: var(--color-accent-subtle);
+}
+
+.composer-icon[data-recording='true'] {
+  color: #fff;
+  background: var(--color-error);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.composer-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  color: #04120f;
+  background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent));
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.composer-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(20, 184, 166, 0.45);
+}
+
+.composer-send:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.composer-send[data-stop='true'] {
+  color: #fff;
+  background: var(--color-error);
+}
+
+/* Pop-up menus opened from the input bar (they open upwards). */
+.menu {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  z-index: 40;
+  padding: 0.35rem;
+  border-radius: 1rem;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-strong, var(--color-border));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.menu-heading {
+  padding: 0.5rem 0.65rem 0.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.7rem;
+  text-align: left;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+}
+
+.menu-item[data-selected='true'] {
+  color: var(--color-accent-light);
+}
+
+.menu-title {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.menu-note {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary);
+}
+
+.menu-soon {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.menu-soon:hover {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+/* -- Connector logo tiles (from the "Seamless Integrations" reference) ------- */
+
+.logo-tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.1rem;
+  background: #0e0e11;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.logo-tile:hover,
+*:hover > .logo-tile {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(20, 184, 166, 0.25);
+  transform: scale(1.04);
+}
+
+/* -- Home greeting ---------------------------------------------------------- */
+
+.home-greeting {
+  margin: 0.25rem 0 0.5rem;
+  text-align: center;
+  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-heading);
+}
+
+.home-name {
+  background: linear-gradient(90deg, var(--color-accent-light), var(--color-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-phrase {
+  max-width: 40rem;
+  margin: 0.25rem 0 1.5rem;
+  text-align: center;
+  font-family: 'League Spartan Variable', var(--font-sans);
+  font-size: clamp(1.05rem, 1.9vw, 1.35rem);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* The quotation marks: big, bold and in the accent green so they stand out from the sky. */
+.home-quote {
+  color: var(--color-accent-light);
+  font-weight: 800;
+  font-size: 1.35em;
+  line-height: 0;
+  margin: 0 0.3em;
+  vertical-align: -0.12em;
+  text-shadow: 0 0 18px rgba(20, 184, 166, 0.55);
+}
+
+/* -- Menu rail (left side) ------------------------------------------------ */
+
+.rail-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--color-text-tertiary);
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.rail-item:hover,
+.rail-item:focus-visible {
+  color: var(--color-heading);
+  background-color: rgba(255, 255, 255, 0.03);
+  outline: none;
+}
+
+.rail-item[data-active='true'] {
+  color: var(--color-heading);
+}
+
+.rail-icon {
+  transition: transform 0.3s var(--ease-out), filter 0.3s;
+}
+
+.rail-item:hover .rail-icon,
+.rail-item:focus-visible .rail-icon {
+  transform: scale(1.08);
+}
+
+.rail-item[data-active='true'] .rail-icon {
+  filter: drop-shadow(0 0 8px var(--color-accent-glow));
+}
+
+/* Thin gradient border that fades in on hover and on the active item */
+.rail-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(45, 212, 191, 0.4),
+    rgba(20, 184, 166, 0) 55%,
+    rgba(45, 212, 191, 0.22)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.rail-item:hover::before,
+.rail-item:focus-visible::before,
+.rail-item[data-active='true']::before {
+  opacity: 1;
+}
+
+/* Small glowing bar marking the current module */
+.rail-bar {
+  position: absolute;
+  left: -14px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent-glow);
+}
+
+/* Name shown next to an icon while the menu is collapsed */
+.rail-tip {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translate(-4px, -50%);
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: var(--color-heading);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--glow-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.25s var(--ease-out);
+  z-index: 50;
+}
+
+.rail-item:hover .rail-tip,
+.rail-item:focus-visible .rail-tip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* -- Home-screen sky -------------------------------------------------------- */
+
+.galaxy {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 44%, rgba(20, 184, 166, 0.2), transparent 74%),
+    radial-gradient(ellipse 45% 40% at 50% 44%, rgba(45, 212, 191, 0.08), transparent 70%),
+    radial-gradient(ellipse 70% 55% at 12% 88%, rgba(99, 102, 241, 0.13), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 90% 8%, rgba(20, 184, 166, 0.1), transparent 70%),
+    var(--color-bg);
+  transition: opacity 0.6s ease;
+}
+
+.galaxy[data-dim='true'] {
+  opacity: 0.45;
+}
+
+/* A faint haze that turns very slowly (only the compositor moves it) */
+.galaxy::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 140vmax;
+  height: 140vmax;
+  margin: -70vmax 0 0 -70vmax;
+  background:
+    radial-gradient(circle at 62% 38%, rgba(45, 212, 191, 0.14), transparent 26%),
+    radial-gradient(circle at 34% 66%, rgba(129, 140, 248, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 24%, rgba(20, 184, 166, 0.09), transparent 24%);
+  animation: galaxy-turn 240s linear infinite;
+  will-change: transform;
+}
+
+.galaxy[data-quality='balanced']::before,
+.galaxy[data-quality='off']::before {
+  animation: none;
+}
+
+.galaxy-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes galaxy-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Every other screen: a still, soft glow rising from the bottom */
+.page-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 32% at 50% 108%, rgba(20, 184, 166, 0.13), transparent 70%),
+    var(--color-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .galaxy::before {
+    animation: none;
+  }
+}
+
+/* -- Nova orb (the small face) ------------------------------------------------ */
+
+.orb {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.orb canvas {
+  display: block;
 }

@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { ChatPage } from './pages/ChatPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AgentsPage } from './pages/AgentsPage';
+import { ComingSoonPage } from './pages/ComingSoonPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
 import { CommandPalette } from './components/CommandPalette';
 import { Toaster } from './components/ui/sonner';
@@ -14,17 +15,15 @@ export default function App() {
   const setModels = useAppStore((s) => s.setModels);
   const setModelsLoading = useAppStore((s) => s.setModelsLoading);
   const setServerInfo = useAppStore((s) => s.setServerInfo);
-  const settings = useAppStore((s) => s.settings);
   const commandPaletteOpen = useAppStore((s) => s.commandPaletteOpen);
   const setCommandPaletteOpen = useAppStore((s) => s.setCommandPaletteOpen);
 
-  // Apply theme class to <html>
+  // Nova is dark only: the official palette has no light variant.
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'light');
-    if (settings.theme === 'dark') root.classList.add('dark');
-    else if (settings.theme === 'light') root.classList.add('light');
-  }, [settings.theme]);
+    root.classList.remove('light');
+    root.classList.add('dark');
+  }, []);
 
   // Sync overlay conversations into the main app
   const importOverlay = useAppStore((s) => s.importOverlayConversation);
@@ -71,6 +70,9 @@ export default function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="data-sources" element={<DataSourcesPage />} />
           <Route path="agents" element={<AgentsPage />} />
+          <Route path="tasks" element={<ComingSoonPage title="Tasks" />} />
+          <Route path="finances" element={<ComingSoonPage title="Finances" />} />
+          <Route path="approvals" element={<ComingSoonPage title="Approvals" />} />
         </Route>
       </Routes>
       <Toaster position="bottom-right" />

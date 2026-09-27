@@ -103,6 +103,8 @@ interface Settings {
   voiceReplies: 'voice' | 'always' | 'off';
   // Reasoning effort for Claude CLI models (like the slider in the Claude app).
   cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  // Visual effects: full, balanced (lighter) or off (nothing animated in the background).
+  effects: 'full' | 'balanced' | 'off';
 }
 
 function loadSettings(): Settings {
@@ -118,6 +120,7 @@ function loadSettings(): Settings {
     speechEnabled: true,
     voiceReplies: 'voice',
     cliEffort: 'medium',
+    effects: 'full',
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -225,6 +228,10 @@ interface AppState {
   addAgentEvent: (event: AgentEvent) => void;
   clearAgentEvents: () => void;
 
+  // True while Nova's voice is playing (drives the orb)
+  speaking: boolean;
+  setSpeaking: (speaking: boolean) => void;
+
   // Model loading
   modelLoading: boolean;
   setModelLoading: (loading: boolean) => void;
@@ -254,7 +261,7 @@ export const useAppStore = create<AppState>((set, get) => {
     settings: loadSettings(),
 
     commandPaletteOpen: false,
-    sidebarOpen: true,
+    sidebarOpen: false,
 
     // ── Conversations ───────────────────────────────────────────────
 
@@ -500,6 +507,10 @@ export const useAppStore = create<AppState>((set, get) => {
       agentEvents: [...s.agentEvents.slice(-99), event],
     })),
     clearAgentEvents: () => set({ agentEvents: [] }),
+
+    // ── Voice ───────────────────────────────────────────────────────
+    speaking: false,
+    setSpeaking: (speaking) => set({ speaking }),
 
     // ── Model loading ───────────────────────────────────────────────
     modelLoading: false,

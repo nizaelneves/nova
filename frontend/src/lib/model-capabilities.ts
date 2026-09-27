@@ -23,10 +23,13 @@ export function isEmbedOnlyModel(modelId: string): boolean {
 
 // ── Claude CLI models ───────────────────────────────────────────────────
 
-/** Models served by the Claude CLI engine (they accept a reasoning effort). */
+/**
+ * Models served by the Claude Code CLI (they accept a reasoning effort). Only
+ * the short names count: "claude-sonnet-..." is the paid API, not the CLI.
+ */
 export function isCliModel(modelId: string): boolean {
   const name = (modelId || '').trim().toLowerCase();
-  return name === 'sonnet' || name === 'opus' || name === 'haiku' || name.startsWith('claude-');
+  return name === 'sonnet' || name === 'opus' || name === 'haiku';
 }
 
 export const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
@@ -60,7 +63,7 @@ function localSizeB(name: string): number | null {
 /** A plain-language rating of a model for reasoning, shown next to the model. */
 export function thinkSupport(modelId: string): ThinkSupport {
   const name = (modelId || '').trim().toLowerCase();
-  if (isCliModel(name)) {
+  if (isCliModel(name) || name.startsWith('claude-')) {
     if (name.includes('haiku')) {
       return { level: 'basic', label: 'Think: basic', hint: 'Fast Claude model, light reasoning.' };
     }

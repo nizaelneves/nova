@@ -2,17 +2,19 @@ import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
-import { SyncButton } from '../SyncButton';
+import { Orb } from '../Orb';
 import { StreamingDots } from './StreamingDots';
 import { useAppStore } from '../../lib/store';
-import { Sparkles, Database, X } from 'lucide-react';
+import { Database, X } from 'lucide-react';
 import { listConnectors } from '../../lib/connectors-api';
+import { cleanPhrase } from '../../lib/phrase';
+import { fetchHomeSettings, type HomeSettings } from '../../lib/api';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Good Morning';
+  if (hour < 18) return 'Good Afternoon';
+  return 'Good Evening';
 }
 
 export function ChatArea() {
@@ -30,6 +32,17 @@ export function ChatArea() {
   // Check if any data sources are connected
   const [hasConnectedSources, setHasConnectedSources] = useState<boolean | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // The name and the user's own phrases for the home screen. One phrase is
+  // picked each time the home opens.
+  const [home, setHome] = useState<HomeSettings | null>(null);
+  const [pick] = useState(() => Math.random());
+  useEffect(() => {
+    fetchHomeSettings().then(setHome).catch(() => setHome(null));
+  }, []);
+  const phrase = home && home.messages.length > 0
+    ? home.messages[Math.floor(pick * home.messages.length)]
+    : '';
 
   useEffect(() => {
     listConnectors()
@@ -108,37 +121,14 @@ export function ChatArea() {
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full px-4">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}
-            >
-              <Sparkles size={24} />
-            </div>
-            <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text)' }}>
+            <Orb />
+            <h2 className="home-greeting">
               {getGreeting()}
+              {home?.display_name ? <span className="home-name">, {home.display_name}</span> : null}
             </h2>
-            <p className="text-sm text-center max-w-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-              Ask anything. Your AI runs locally — private, fast, and always available.
-            </p>
-
-            {/* Quick action hints */}
-            <div className="flex gap-3 items-start">
-              <button
-                onClick={() => navigate('/data-sources')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs cursor-pointer transition-colors"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text-secondary)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-accent)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
-              >
-                <Database size={14} style={{ color: 'var(--color-accent)' }} />
-                Connect Data Sources
-              </button>
-              <SyncButton />
-            </div>
+            {phrase && <p className="home-phrase">
+                <span className="home-quote">{'“'}</span>{cleanPhrase(phrase)}<span className="home-quote">{'”'}</span>
+              </p>}
           </div>
         ) : (
           <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-6">

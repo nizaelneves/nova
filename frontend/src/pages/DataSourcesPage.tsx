@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SOURCE_CATALOG } from '../types/connectors';
+import { ConnectorLogo } from '../components/ConnectorLogo';
 import type { ConnectRequest, ConnectorMeta, SyncStatus, OAuthSetupInfo } from '../types/connectors';
 import { listConnectors, connectSource, disconnectSourceUntilComplete, getConnector, getSyncStatus, triggerSync, startServerOAuth } from '../lib/connectors-api';
 
@@ -1092,6 +1093,7 @@ function DataSourcesSection() {
                   padding: '14px 18px',
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}>
+                  <ConnectorLogo id={c.connector_id} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="font-semibold" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
                       {meta?.display_name ?? c.display_name}
@@ -1167,6 +1169,7 @@ function DataSourcesSection() {
                   }}
                   onClick={() => setExpandedId(isExpanded ? null : c.connector_id)}
                 >
+                  <ConnectorLogo id={c.connector_id} size={44} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="font-semibold" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
                       {meta?.display_name ?? c.display_name}

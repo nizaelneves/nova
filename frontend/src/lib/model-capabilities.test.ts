@@ -20,7 +20,8 @@ describe('isEmbedOnlyModel', () => {
 
 describe('Claude CLI models and Think support', () => {
   it('recognises the CLI models', () => {
-    expect(['sonnet', 'opus', 'haiku', 'claude-sonnet-5'].every(isCliModel)).toBe(true);
+    expect(['sonnet', 'opus', 'haiku'].every(isCliModel)).toBe(true);
+    expect(isCliModel('claude-sonnet-5')).toBe(false); // the paid API, not the CLI
     expect(isCliModel('qwen3.5:2b')).toBe(false);
   });
 

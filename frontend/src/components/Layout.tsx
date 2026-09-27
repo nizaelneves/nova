@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 import { ApprovalBell } from './ApprovalBell';
 import { Sidebar } from './Sidebar/Sidebar';
-import { SystemPulse } from './SystemPulse';
+import { Galaxy } from './Galaxy';
 import { useAppStore } from '../lib/store';
 import { checkHealth } from '../lib/api';
 
@@ -23,11 +23,12 @@ export function Layout() {
   }, []);
 
   const navigate = useNavigate();
+  const onHome = useLocation().pathname === '/';
+  const hasMessages = useAppStore((s) => s.messages.length > 0);
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden relative" style={{ paddingTop: '3px' }}>
-      <div className="hud-backdrop" aria-hidden="true" />
-      <SystemPulse apiReachable={apiReachable} />
+    <div className="flex flex-col h-full w-full overflow-hidden relative" style={{ background: 'transparent' }}>
+      {onHome ? <Galaxy dim={hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
       <ApprovalBell />
 
       {/* Health check banner */}

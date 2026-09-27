@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Cpu, X, Download, Loader2, Trash2, Check, Cloud, Key, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { thinkSupport } from '../lib/model-capabilities';
+import { isCliModel, thinkSupport } from '../lib/model-capabilities';
 import { useAppStore } from '../lib/store';
 import {
   pullModel,
@@ -93,7 +93,9 @@ export function CommandPalette() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const models = useAppStore((s) => s.models);
+  // Claude Code models (sonnet/opus/haiku) live in the CLI menu, not in this list.
+  const allModels = useAppStore((s) => s.models);
+  const models = allModels.filter((m) => !isCliModel(m.id));
   const selectedModel = useAppStore((s) => s.selectedModel);
   const setSelectedModel = useAppStore((s) => s.setSelectedModel);
   const setModels = useAppStore((s) => s.setModels);
