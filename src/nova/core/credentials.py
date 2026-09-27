@@ -36,6 +36,7 @@ TOOL_CREDENTIALS: dict[str, list[str]] = {
     "web_search": ["TAVILY_API_KEY", "YOUDOTCOM_API_KEY"],
     "get_weather": ["OPENWEATHERMAP_API_KEY"],
     "elevenlabs": ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"],
+    "anytype": ["ANYTYPE_API_KEY", "ANYTYPE_URL", "ANYTYPE_API_VERSION"],
     "image_generate": ["OPENAI_API_KEY"],
     "telegram": ["TELEGRAM_BOT_TOKEN"],
     "whatsapp": ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
@@ -49,6 +50,7 @@ TOOL_CREDENTIALS: dict[str, list[str]] = {
 # is the first such tool: the You.com keyless tier serves it with no key at all,
 # and both listed keys only raise limits or result quality.
 OPTIONAL_TOOL_CREDENTIALS: dict[str, frozenset[str]] = {
+    "anytype": frozenset({"ANYTYPE_URL", "ANYTYPE_API_VERSION"}),
     "web_search": frozenset({"TAVILY_API_KEY", "YOUDOTCOM_API_KEY"}),
 }
 

@@ -799,3 +799,67 @@ export async function setInferenceSource(
     throw new Error(e?.message ?? e ?? 'Failed to save inference source');
   }
 }
+
+// ---------------------------------------------------------------------------
+// Sync (all connectors)
+// ---------------------------------------------------------------------------
+
+export interface SyncSettings {
+  auto_enabled: boolean;
+  interval_minutes: number;
+  on_start: boolean;
+  disabled_connectors: string[];
+}
+
+export interface SyncRow {
+  connector_id: string;
+  display_name: string;
+  auto: boolean;
+  state: string;
+  items_synced: number;
+  last_sync: string | null;
+  error: string | null;
+}
+
+export interface SyncOverview {
+  connectors: SyncRow[];
+  syncing: boolean;
+}
+
+export interface SyncAllResult {
+  started: string[];
+  already_syncing: string[];
+  failed: Record<string, string>;
+}
+
+async function syncJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await apiFetch(path, init);
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = await res.json();
+      detail = typeof body.detail === 'string' ? body.detail : '';
+    } catch {
+      // Not JSON; use the status below.
+    }
+    throw new Error(detail || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export const fetchSyncSettings = (): Promise<SyncSettings> =>
+  syncJson('/v1/connectors/sync-settings');
+
+export const saveSyncSettings = (changes: Partial<SyncSettings>): Promise<SyncSettings> =>
+  syncJson('/v1/connectors/sync-settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+
+export const fetchSyncOverview = (): Promise<SyncOverview> =>
+  syncJson('/v1/connectors/sync-status');
+
+/** Start syncing every connected source (the "Sync now" button). */
+export const syncAllConnectors = (): Promise<SyncAllResult> =>
+  syncJson('/v1/connectors/sync-all', { method: 'POST' });

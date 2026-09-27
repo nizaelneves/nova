@@ -213,6 +213,30 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
     ],
   },
   {
+    connector_id: 'anytype',
+    display_name: 'Anytype',
+    auth_type: 'token',
+    category: 'documents',
+    icon: 'FileText',
+    color: 'text-cyan-300',
+    description: 'Your Anytype notes (read-only)',
+    unitLabel: 'notes',
+    steps: [
+      {
+        label: 'Keep the Anytype app open on this computer while Nova syncs',
+      },
+      {
+        label: 'In Anytype, open Settings, find "API Keys" and create a new key named "Nova". If you can limit the key, give it read access only',
+      },
+      {
+        label: 'Copy the key and paste it below. Nova only reads your notes: it never creates, edits or deletes anything in Anytype',
+      },
+    ],
+    inputFields: [
+      { name: 'token', placeholder: 'Anytype API key', type: 'password' },
+    ],
+  },
+  {
     connector_id: 'notion',
     display_name: 'Notion',
     auth_type: 'oauth',

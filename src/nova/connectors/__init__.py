@@ -34,6 +34,11 @@ except ImportError:
     pass
 
 try:
+    import nova.connectors.anytype  # noqa: F401
+except ImportError:
+    pass
+
+try:
     import nova.connectors.granola  # noqa: F401
 except ImportError:
     pass

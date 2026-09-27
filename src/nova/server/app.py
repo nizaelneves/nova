@@ -360,7 +360,22 @@ def create_app(
     app.include_router(router)
     app.include_router(dashboard_router)
     app.include_router(comparison_router)
-    app.include_router(create_connectors_router())
+    connectors_router = create_connectors_router()
+    app.include_router(connectors_router)
+    # Keep Anytype (and any other auto-synced source) up to date in the background.
+    from nova.connectors.autosync import start_auto_sync
+
+    app.state.auto_sync_stop = None
+
+    @app.on_event("startup")
+    async def _start_auto_sync() -> None:
+        _, app.state.auto_sync_stop = start_auto_sync(connectors_router.run_auto_sync)
+
+    @app.on_event("shutdown")
+    async def _stop_auto_sync() -> None:
+        if app.state.auto_sync_stop is not None:
+            app.state.auto_sync_stop.set()
+
     app.include_router(create_digest_router())
     app.include_router(upload_router)
     app.include_router(research_router)

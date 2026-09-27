@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 # ``Request`` must be importable at *module* scope so that FastAPI can resolve
 # the stringized ``request: Request`` annotations on the OAuth endpoints below.
@@ -316,6 +316,13 @@ def create_connectors_router():
             return "Connection timed out."
         return raw
 
+    def _make_pipeline(store: Any) -> Any:
+        """Pipeline that also embeds every chunk, when the embedding model exists."""
+        from nova.connectors.embeddings import OptionalOllamaEmbedder
+        from nova.connectors.pipeline import IngestionPipeline
+
+        return IngestionPipeline(store=store, embedder=OptionalOllamaEmbedder())
+
     @_serialized_sync
     def _start_sync(connector_id: str, instance: Any) -> str:
         """Spawn a background sync; returns ``"started"`` or ``"already_syncing"``.
@@ -358,14 +365,11 @@ def create_connectors_router():
 
         def _run_sync() -> None:
             try:
-                from nova.connectors.pipeline import IngestionPipeline
                 from nova.connectors.store import KnowledgeStore
                 from nova.connectors.sync_engine import SyncEngine
 
                 with KnowledgeStore() as store:
-                    with SyncEngine(
-                        pipeline=IngestionPipeline(store=store),
-                    ) as engine:
+                    with SyncEngine(pipeline=_make_pipeline(store)) as engine:
                         engine.sync(instance, cancel_event=cancel_event)
                 final_state = "cancelled" if cancel_event.is_set() else "complete"
                 logger.info("Sync %s for %s", final_state, connector_id)
@@ -442,6 +446,95 @@ def create_connectors_router():
                     }
                 )
         return {"connectors": results}
+
+    # -- syncing everything, and how automatic sync behaves -----------------
+    # (declared before the "/{connector_id}" routes so these names win)
+
+    def _connected_connectors() -> List[Tuple[str, Any]]:
+        """Every connector that currently has working credentials."""
+        _ensure_connectors_registered()
+        found: List[Tuple[str, Any]] = []
+        for key in ConnectorRegistry.keys():
+            try:
+                instance = _get_or_create(key)
+                if instance.is_connected():
+                    found.append((key, instance))
+            except Exception:  # noqa: BLE001
+                continue
+        return found
+
+    @router.get("/sync-settings")
+    async def get_sync_settings():
+        from nova.connectors.sync_settings import load_sync_settings
+
+        return load_sync_settings().to_dict()
+
+    @router.put("/sync-settings")
+    async def put_sync_settings(body: Dict[str, Any]):
+        """Change any of the sync settings; the ones not sent stay as they are."""
+        from nova.connectors.sync_settings import (
+            SyncSettingsError,
+            load_sync_settings,
+            save_sync_settings,
+            validate,
+        )
+
+        try:
+            settings = validate({**load_sync_settings().to_dict(), **body})
+        except SyncSettingsError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        save_sync_settings(settings)
+        return settings.to_dict()
+
+    @router.post("/sync-all")
+    @_serialized_sync
+    def sync_all() -> Dict[str, Any]:
+        """Sync every connected source now (the "Sync now" button)."""
+        outcome: Dict[str, Any] = {"started": [], "already_syncing": [], "failed": {}}
+        for connector_id, instance in _connected_connectors():
+            if _disconnect_pending(connector_id):
+                outcome["failed"][connector_id] = "still stopping"
+                continue
+            try:
+                status = _start_sync(connector_id, instance)
+            except Exception as exc:  # noqa: BLE001
+                outcome["failed"][connector_id] = str(exc)
+                continue
+            if status == "started":
+                outcome["started"].append(connector_id)
+            elif status == "already_syncing":
+                outcome["already_syncing"].append(connector_id)
+            else:
+                outcome["failed"][connector_id] = status
+        return outcome
+
+    @router.get("/sync-status")
+    async def all_sync_status():
+        """State of every connected source, for the Sync button and Settings."""
+        from nova.connectors.sync_settings import load_sync_settings
+
+        skipped = set(load_sync_settings().disabled_connectors)
+        rows: List[Dict[str, Any]] = []
+        for connector_id, instance in _connected_connectors():
+            try:
+                status = await sync_status(connector_id)
+            except HTTPException as exc:
+                status = {"state": "error", "error": str(exc.detail)}
+            rows.append(
+                {
+                    "connector_id": connector_id,
+                    "display_name": getattr(instance, "display_name", connector_id),
+                    "auto": connector_id not in skipped,
+                    "state": status.get("state", "idle"),
+                    "items_synced": status.get("items_synced", 0),
+                    "last_sync": status.get("last_sync"),
+                    "error": status.get("error"),
+                }
+            )
+        return {
+            "connectors": rows,
+            "syncing": any(r["state"] in ("syncing", "stopping") for r in rows),
+        }
 
     @router.get("/{connector_id}")
     async def connector_detail(connector_id: str):
@@ -580,7 +673,7 @@ def create_connectors_router():
                     else:
                         instance.handle_callback(req.token)
 
-            elif connector_id in {"github_notifications", "oura"}:
+            elif connector_id in {"github_notifications", "oura", "anytype"}:
                 if not req.token:
                     raise HTTPException(status_code=400, detail="A token is required")
                 # These token connectors persist their credentials themselves;
@@ -1008,6 +1101,20 @@ def create_connectors_router():
             "error": effective_error,
         }
 
+    def run_auto_sync() -> None:
+        """Start a sync for every connected connector not switched off in Settings."""
+        from nova.connectors.sync_settings import load_sync_settings
+
+        skipped = set(load_sync_settings().disabled_connectors)
+        for connector_id, instance in _connected_connectors():
+            if connector_id in skipped:
+                continue
+            try:
+                _start_sync(connector_id, instance)
+            except Exception:  # noqa: BLE001 - one source must not block the rest
+                logger.exception("Automatic sync could not start for %s", connector_id)
+
+    router.run_auto_sync = run_auto_sync  # type: ignore[attr-defined]
     return router
 
 

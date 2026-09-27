@@ -2,9 +2,10 @@ import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
+import { SyncButton } from '../SyncButton';
 import { StreamingDots } from './StreamingDots';
 import { useAppStore } from '../../lib/store';
-import { Sparkles, Database, MessageSquare, X } from 'lucide-react';
+import { Sparkles, Database, X } from 'lucide-react';
 import { listConnectors } from '../../lib/connectors-api';
 
 function getGreeting(): string {
@@ -121,7 +122,7 @@ export function ChatArea() {
             </p>
 
             {/* Quick action hints */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-start">
               <button
                 onClick={() => navigate('/data-sources')}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs cursor-pointer transition-colors"
@@ -136,20 +137,7 @@ export function ChatArea() {
                 <Database size={14} style={{ color: 'var(--color-accent)' }} />
                 Connect Data Sources
               </button>
-              <button
-                onClick={() => { navigate('/data-sources'); setTimeout(() => window.dispatchEvent(new CustomEvent('switch-tab', { detail: 'messaging' })), 100); }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs cursor-pointer transition-colors"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text-secondary)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-accent)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
-              >
-                <MessageSquare size={14} style={{ color: 'var(--color-accent)' }} />
-                Set Up Messaging Channels
-              </button>
+              <SyncButton />
             </div>
           </div>
         ) : (

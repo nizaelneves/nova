@@ -99,6 +99,8 @@ class SyncEngine:
         exception is re-raised so callers can handle it.
         """
         connector_id: str = connector.connector_id
+        # Duck-typed connectors may predate these optional hooks.
+        replace = bool(getattr(connector, "replaces_existing", False))
 
         # Load any previous checkpoint so we can resume.
         checkpoint = self.get_checkpoint(connector_id)
@@ -130,7 +132,7 @@ class SyncEngine:
                 batch.append(doc)
 
                 if len(batch) >= _BATCH_SIZE:
-                    items_ingested += self._pipeline.ingest(batch)
+                    items_ingested += self._pipeline.ingest(batch, replace=replace)
                     batch = []
                     # Progress checkpoint: track cursor/items so a later
                     # retry can resume from here, but must NOT advance
@@ -146,7 +148,7 @@ class SyncEngine:
 
             # Ingest any remaining documents.
             if batch and not (cancel_event is not None and cancel_event.is_set()):
-                items_ingested += self._pipeline.ingest(batch)
+                items_ingested += self._pipeline.ingest(batch, replace=replace)
 
         except Exception as exc:
             self._save_checkpoint(
@@ -169,6 +171,12 @@ class SyncEngine:
                 error=None,
             )
             return items_ingested
+
+        # Drop indexed documents that no longer exist at the source.
+        list_live = getattr(connector, "current_doc_ids", None)
+        live_ids = list_live() if callable(list_live) else None
+        if live_ids is not None:
+            self._pipeline.prune(connector.knowledge_sources(), live_ids)
 
         # Final checkpoint on successful completion — clear any previous
         # error and advance the watermark to when this sync started.

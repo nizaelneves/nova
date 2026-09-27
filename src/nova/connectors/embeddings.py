@@ -13,7 +13,7 @@ so ingestion never fails because a sidecar service is down.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import requests
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_OLLAMA_HOST = "http://localhost:11434"
+DEFAULT_OLLAMA_HOST = "http://127.0.0.1:11434"
 DEFAULT_EMBED_MODEL = "nomic-embed-text"
 
 
@@ -144,6 +144,30 @@ class OllamaEmbedder:
 # ---------------------------------------------------------------------------
 
 
+class OptionalOllamaEmbedder(OllamaEmbedder):
+    """Embedder that quietly does nothing when the model is not installed.
+
+    The check runs once, on the first chunk, so starting a sync never waits on
+    Ollama. Without the model, indexing continues with text search only.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._usable: Optional[bool] = None
+
+    def embed(self, text: str) -> Optional[bytes]:
+        if self._usable is None:
+            self._usable = self.is_available()
+            if not self._usable:
+                logger.warning(
+                    "Embedding model '%s' is not installed in Ollama; indexing "
+                    "text only. Run: ollama pull %s",
+                    self._model,
+                    self._model,
+                )
+        return super().embed(text) if self._usable else None
+
+
 def decode_embedding(blob: Optional[bytes], *, dtype=None) -> Optional[np.ndarray]:
     """Reconstruct a 1-D vector from a BLOB written by ``OllamaEmbedder.embed``.
 
@@ -161,6 +185,7 @@ def decode_embedding(blob: Optional[bytes], *, dtype=None) -> Optional[np.ndarra
 
 __all__ = [
     "OllamaEmbedder",
+    "OptionalOllamaEmbedder",
     "decode_embedding",
     "DEFAULT_EMBED_MODEL",
     "DEFAULT_OLLAMA_HOST",

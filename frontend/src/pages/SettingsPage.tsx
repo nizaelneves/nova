@@ -30,8 +30,16 @@ import {
   saveToolCredentials,
   deleteToolCredential,
   isTauri,
+  fetchSyncSettings,
+  saveSyncSettings,
+  fetchSyncOverview,
+  syncAllConnectors,
   type InferenceSource,
+  type SyncOverview,
+  type SyncSettings,
 } from '../lib/api';
+import { timeAgo } from '../lib/time';
+import { toast } from 'sonner';
 
 const CLOUD_KEY_STATUS_CHANGED = 'nova-cloud-key-status-changed';
 
@@ -208,6 +216,142 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </h3>
       {children}
     </div>
+  );
+}
+
+const SYNC_INTERVALS = [5, 15, 30, 60, 180, 360, 720, 1440];
+
+function intervalLabel(minutes: number): string {
+  if (minutes < 60) return `Every ${minutes} minutes`;
+  if (minutes === 60) return 'Every hour';
+  if (minutes % 60 === 0 && minutes < 1440) return `Every ${minutes / 60} hours`;
+  if (minutes === 1440) return 'Once a day';
+  return `Every ${minutes} minutes`;
+}
+
+function Switch({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
+      style={{ background: on ? 'var(--color-accent)' : 'var(--color-bg-tertiary)' }}
+    >
+      <span
+        className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
+        style={{ transform: on ? 'translateX(20px)' : 'translateX(0)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+      />
+    </button>
+  );
+}
+
+/** How and when connected sources (Anytype and the others) are kept up to date. */
+function SyncSection({ onSaved }: { onSaved: () => void }) {
+  const [settings, setSettings] = useState<SyncSettings | null>(null);
+  const [overview, setOverview] = useState<SyncOverview | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const reload = useCallback(() => {
+    fetchSyncSettings().then(setSettings).catch(() => setSettings(null));
+    fetchSyncOverview().then(setOverview).catch(() => setOverview(null));
+  }, []);
+  useEffect(reload, [reload]);
+
+  const change = async (changes: Partial<SyncSettings>) => {
+    try {
+      setSettings(await saveSyncSettings(changes));
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save');
+      reload();
+    }
+  };
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      await syncAllConnectors();
+      setTimeout(() => { reload(); setSyncing(false); }, 2500);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not start the sync');
+      setSyncing(false);
+    }
+  };
+
+  if (!settings) {
+    return (
+      <Section title="Synchronization">
+        <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
+      </Section>
+    );
+  }
+  const intervals = SYNC_INTERVALS.includes(settings.interval_minutes)
+    ? SYNC_INTERVALS
+    : [...SYNC_INTERVALS, settings.interval_minutes].sort((a, b) => a - b);
+  const toggleConnector = (id: string) =>
+    change({
+      disabled_connectors: settings.disabled_connectors.includes(id)
+        ? settings.disabled_connectors.filter((c) => c !== id)
+        : [...settings.disabled_connectors, id],
+    });
+
+  return (
+    <Section title="Synchronization">
+      <SettingRow label="Automatic sync" description="Keep every connected source up to date in the background">
+        <Switch on={settings.auto_enabled} label="Automatic sync" onClick={() => change({ auto_enabled: !settings.auto_enabled })} />
+      </SettingRow>
+      <SettingRow label="How often" description="Time between automatic syncs">
+        <select
+          value={settings.interval_minutes}
+          disabled={!settings.auto_enabled}
+          onChange={(e) => change({ interval_minutes: parseInt(e.target.value, 10) })}
+          className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer disabled:opacity-50"
+          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+        >
+          {intervals.map((m) => (
+            <option key={m} value={m}>{intervalLabel(m)}</option>
+          ))}
+        </select>
+      </SettingRow>
+      <SettingRow label="Sync when Nova starts" description="Sync shortly after opening Nova, instead of waiting one interval">
+        <Switch on={settings.on_start} label="Sync when Nova starts" onClick={() => change({ on_start: !settings.on_start })} />
+      </SettingRow>
+      <SettingRow label="Sync now" description="Sync every connected source right away">
+        <button
+          type="button"
+          onClick={syncNow}
+          disabled={syncing}
+          className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
+          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+        >
+          {syncing ? 'Syncing…' : 'Sync now'}
+        </button>
+      </SettingRow>
+      <div className="pt-3">
+        <div className="text-xs mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
+          Sources included in automatic sync
+        </div>
+        {overview && overview.connectors.length === 0 && (
+          <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+            No sources connected yet. Add one in Data Sources.
+          </div>
+        )}
+        {overview?.connectors.map((c) => (
+          <div key={c.connector_id} className="flex items-center justify-between py-2">
+            <div>
+              <div className="text-sm" style={{ color: 'var(--color-text)' }}>{c.display_name}</div>
+              <div className="text-xs" style={{ color: c.error ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}>
+                {c.error ? c.error : `Last sync: ${timeAgo(c.last_sync)}`}
+              </div>
+            </div>
+            <Switch on={c.auto} label={`Auto-sync ${c.display_name}`} onClick={() => toggleConnector(c.connector_id)} />
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -681,6 +825,8 @@ export function SettingsPage() {
           </Section>
 
           {/* Speech */}
+          <SyncSection onSaved={showSaved} />
+
           <Section title="Speech">
             <SettingRow label="Speech-to-Text" description="Enable microphone input for voice dictation">
               <button

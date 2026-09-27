@@ -75,6 +75,9 @@ class BaseConnector(ABC):
     display_name: str
     auth_type: str  # "oauth" | "local" | "bridge" | "filesystem"
     indexed_sources: tuple[str, ...] = ()
+    # True when a document seen again at the source may have been edited, so
+    # the sync must re-index it instead of skipping the known ``doc_id``.
+    replaces_existing: bool = False
 
     def knowledge_sources(self) -> tuple[str, ...]:
         """Return KnowledgeStore source values owned by this connector."""
@@ -101,6 +104,15 @@ class BaseConnector(ABC):
     @abstractmethod
     def sync_status(self) -> SyncStatus:
         """Return current sync progress."""
+
+    def current_doc_ids(self) -> Optional[set[str]]:
+        """Return the ``doc_id`` of every document that exists at the source now.
+
+        After a successful sync, indexed documents missing from this set are
+        removed. ``None`` (the default) means the connector cannot tell, so
+        nothing is ever removed.
+        """
+        return None
 
     def auth_url(self) -> str:
         """Generate an OAuth consent URL.  Only relevant for auth_type='oauth'."""

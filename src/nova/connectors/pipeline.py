@@ -146,17 +146,40 @@ class IngestionPipeline:
     # Public API
     # ------------------------------------------------------------------
 
-    def ingest(self, documents: Iterable[Document]) -> int:
+    def prune(self, sources: Iterable[str], keep_doc_ids: set[str]) -> int:
+        """Delete indexed documents of *sources* that are not in *keep_doc_ids*.
+
+        Used after a full listing of a source so notes deleted at the origin
+        also leave the index. Returns the number of documents removed.
+        """
+        removed = 0
+        for source in dict.fromkeys(sources):
+            rows = self._store._conn.execute(
+                "SELECT DISTINCT doc_id FROM knowledge_chunks WHERE source = ?",
+                (source,),
+            ).fetchall()
+            for (doc_id,) in rows:
+                if doc_id not in keep_doc_ids:
+                    self._store.delete(doc_id)
+                    self._seen_doc_ids.discard(doc_id)
+                    removed += 1
+        return removed
+
+    def ingest(self, documents: Iterable[Document], *, replace: bool = False) -> int:
         """Ingest an iterable of documents into the knowledge store.
 
         Duplicate ``doc_id`` values are silently skipped (both across
-        calls and within a single batch).
+        calls and within a single batch), unless *replace* is true: then an
+        already indexed document is deleted first and stored again, so edits
+        at the source reach the index.
 
         Parameters
         ----------
         documents:
             An iterable of ``Document`` objects (e.g. from a connector's
             ``sync()`` method).
+        replace:
+            Re-index documents whose ``doc_id`` is already stored.
 
         Returns
         -------
@@ -167,7 +190,10 @@ class IngestionPipeline:
 
         for doc in documents:
             if doc.doc_id in self._seen_doc_ids:
-                continue
+                if not replace:
+                    continue
+                self._store.delete(doc.doc_id)
+                self._seen_doc_ids.discard(doc.doc_id)
 
             # Compute v1 provenance fields once per document.
             namespaced_thread = _namespace_thread_id(doc.source, doc.thread_id)
