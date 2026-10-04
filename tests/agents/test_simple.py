@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.agents._stubs import AgentContext, AgentResult
-from nova.agents.simple import SimpleAgent
-from nova.core.events import EventBus, EventType
-from nova.core.types import Conversation, Message, Role
+from phi.agents._stubs import AgentContext, AgentResult
+from phi.agents.simple import SimpleAgent
+from phi.core.events import EventBus, EventType
+from phi.core.types import Conversation, Message, Role
 
 
 def _make_mock_engine(content: str = "Hello there!") -> MagicMock:

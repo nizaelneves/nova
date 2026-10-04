@@ -13,12 +13,12 @@ from __future__ import annotations
 
 import json
 
-from nova.core.events import EventBus
-from nova.core.types import StepType, ToolCall, ToolResult
-from nova.skills.executor import SkillExecutor
-from nova.skills.tool_adapter import SkillTool
-from nova.skills.types import SkillManifest
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.core.events import EventBus
+from phi.core.types import StepType, ToolCall, ToolResult
+from phi.skills.executor import SkillExecutor
+from phi.skills.tool_adapter import SkillTool
+from phi.skills.types import SkillManifest
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class TestSkillTraceTaggingEndToEnd:
@@ -33,7 +33,7 @@ class TestSkillTraceTaggingEndToEnd:
             nonlocal captured_metadata
             captured_metadata = event.data.get("metadata", {})
 
-        from nova.core.events import EventType
+        from phi.core.events import EventType
 
         bus.subscribe(EventType.TOOL_CALL_END, _on_tool_end)
 
@@ -42,7 +42,7 @@ class TestSkillTraceTaggingEndToEnd:
             name="research-skill",
             description="x",
             markdown_content="Just instructions.",
-            metadata={"nova": {"source": "hermes"}},
+            metadata={"phi": {"source": "hermes"}},
         )
         skill_executor = SkillExecutor(ToolExecutor([], bus=bus))
         skill_tool = SkillTool(manifest, skill_executor)
@@ -61,7 +61,7 @@ class TestSkillTraceTaggingEndToEnd:
 
     def test_trace_collector_writes_metadata_to_step(self) -> None:
         """A real TraceCollector populates TraceStep.metadata from the event."""
-        from nova.traces.collector import TraceCollector
+        from phi.traces.collector import TraceCollector
 
         bus = EventBus(record_history=True)
 
@@ -70,7 +70,7 @@ class TestSkillTraceTaggingEndToEnd:
             name="my-skill",
             description="x",
             markdown_content="Body",
-            metadata={"nova": {"source": "openclaw"}},
+            metadata={"phi": {"source": "openclaw"}},
         )
         skill_executor = SkillExecutor(ToolExecutor([], bus=bus))
         skill_tool = SkillTool(manifest, skill_executor)
@@ -81,7 +81,7 @@ class TestSkillTraceTaggingEndToEnd:
             agent_id = "stub"
 
             def run(self, query, context=None, **kwargs):
-                from nova.agents._stubs import AgentResult
+                from phi.agents._stubs import AgentResult
 
                 tool_executor.execute(
                     ToolCall(
@@ -147,7 +147,7 @@ class TestEventMetadataIsJsonSafe:
     """
 
     def test_event_metadata_excludes_non_json_objects(self):
-        from nova.core.events import EventType
+        from phi.core.events import EventType
 
         bus = EventBus(record_history=True)
         captured: dict = {}
@@ -180,7 +180,7 @@ class TestEventMetadataIsJsonSafe:
 
     def test_skill_metadata_still_present_after_filtering(self):
         """The JSON-safe filter must NOT drop legitimate skill metadata."""
-        from nova.core.events import EventType
+        from phi.core.events import EventType
 
         bus = EventBus(record_history=True)
         captured: dict = {}
@@ -195,7 +195,7 @@ class TestEventMetadataIsJsonSafe:
             name="my-skill",
             description="x",
             markdown_content="Body",
-            metadata={"nova": {"source": "hermes"}},
+            metadata={"phi": {"source": "hermes"}},
         )
         skill_executor = SkillExecutor(ToolExecutor([], bus=bus))
         skill_tool = SkillTool(manifest, skill_executor)

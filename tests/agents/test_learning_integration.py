@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.learning.learning_orchestrator import LearningOrchestrator
+from phi.learning.learning_orchestrator import LearningOrchestrator
 
 
 def test_learning_orchestrator_run_with_agent_id(tmp_path):
@@ -40,10 +40,10 @@ def test_learning_orchestrator_run_without_agent_id(tmp_path):
 
 def test_scheduler_tracks_tick_count_for_learning(tmp_path):
     """Scheduler increments per-agent tick count and triggers learning."""
-    from nova.agents.executor import AgentExecutor
-    from nova.agents.manager import AgentManager
-    from nova.agents.scheduler import AgentScheduler
-    from nova.core.events import EventBus, EventType
+    from phi.agents.executor import AgentExecutor
+    from phi.agents.manager import AgentManager
+    from phi.agents.scheduler import AgentScheduler
+    from phi.core.events import EventBus, EventType
 
     mgr = AgentManager(str(tmp_path / "test.db"))
     bus = EventBus(record_history=True)
@@ -77,10 +77,10 @@ def test_scheduler_tracks_tick_count_for_learning(tmp_path):
 
 def test_scheduler_no_learning_when_disabled(tmp_path):
     """Scheduler does not trigger learning when learning_enabled is False."""
-    from nova.agents.executor import AgentExecutor
-    from nova.agents.manager import AgentManager
-    from nova.agents.scheduler import AgentScheduler
-    from nova.core.events import EventBus, EventType
+    from phi.agents.executor import AgentExecutor
+    from phi.agents.manager import AgentManager
+    from phi.agents.scheduler import AgentScheduler
+    from phi.core.events import EventBus, EventType
 
     mgr = AgentManager(str(tmp_path / "test.db"))
     bus = EventBus(record_history=True)

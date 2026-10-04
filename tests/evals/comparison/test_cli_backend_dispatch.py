@@ -8,15 +8,15 @@ from unittest.mock import patch
 import click
 import pytest
 
-from nova.evals.cli import BACKENDS, _build_backend
+from phi.evals.cli import BACKENDS, _build_backend
 
 
 class TestBuildBackendDispatch:
     def test_backends_dict_includes_external(self) -> None:
         assert "hermes" in BACKENDS
         assert "openclaw" in BACKENDS
-        assert "nova-agent" in BACKENDS
-        assert "nova-direct" in BACKENDS
+        assert "phi-agent" in BACKENDS
+        assert "phi-direct" in BACKENDS
 
     def test_unknown_backend_raises(self) -> None:
         with pytest.raises(click.UsageError, match="unknown backend"):
@@ -50,7 +50,7 @@ class TestBuildBackendDispatch:
             )
 
     def test_hermes_returns_hermes_backend(self) -> None:
-        from nova.evals.comparison.third_party import (
+        from phi.evals.comparison.third_party import (
             ThirdPartyConfig,
             ThirdPartyEntry,
         )
@@ -67,12 +67,12 @@ class TestBuildBackendDispatch:
         )
         with (
             patch(
-                "nova.evals.backends.external.hermes_agent.load_third_party_config",
+                "phi.evals.backends.external.hermes_agent.load_third_party_config",
                 return_value=cfg,
             ),
-            patch("nova.evals.backends.external.hermes_agent.verify_commit_pin"),
+            patch("phi.evals.backends.external.hermes_agent.verify_commit_pin"),
         ):
-            from nova.evals.backends.external import HermesBackend
+            from phi.evals.backends.external import HermesBackend
 
             backend = _build_backend(
                 backend_name="hermes",

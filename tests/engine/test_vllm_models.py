@@ -8,10 +8,10 @@ import httpx
 import pytest
 import respx
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.openai_compat_engines import VLLMEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.openai_compat_engines import VLLMEngine
 
 VLLM_HOST = "http://testhost:8000"
 NEW_MODELS = ["gpt-oss:120b", "qwen3:8b", "glm-4.7-flash", "trinity-mini"]

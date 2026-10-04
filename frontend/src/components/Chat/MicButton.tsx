@@ -20,10 +20,10 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
         : reason === 'streaming'
           ? 'Wait for response'
           : state === 'recording'
-            ? 'Stop recording'
+            ? 'Microphone: ON'
             : state === 'transcribing'
               ? 'Transcribing...'
-              : 'Voice input';
+              : 'Microphone: OFF';
 
   const isInactive = disabled || state === 'transcribing';
 

@@ -5,17 +5,17 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from nova.cli import cli
-from nova.core.config import load_config
-from nova.server.auth_middleware import check_bind_safety
+from phi.cli import cli
+from phi.core.config import load_config
+from phi.server.auth_middleware import check_bind_safety
 
 
 def test_chat_simple_preset_can_serve_without_an_api_key(tmp_path: Path) -> None:
-    config_dir = tmp_path / ".nova"
+    config_dir = tmp_path / ".phi"
     config_path = config_dir / "config.toml"
     with (
-        mock.patch("nova.cli.init_cmd.DEFAULT_CONFIG_DIR", config_dir),
-        mock.patch("nova.cli.init_cmd.DEFAULT_CONFIG_PATH", config_path),
+        mock.patch("phi.cli.init_cmd.DEFAULT_CONFIG_DIR", config_dir),
+        mock.patch("phi.cli.init_cmd.DEFAULT_CONFIG_PATH", config_path),
     ):
         result = CliRunner().invoke(
             cli,

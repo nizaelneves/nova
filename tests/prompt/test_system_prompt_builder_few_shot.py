@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.prompt.builder import SystemPromptBuilder
+from phi.prompt.builder import SystemPromptBuilder
 
 
 class TestSystemPromptBuilderFewShot:

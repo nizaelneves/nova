@@ -6,11 +6,11 @@ import threading
 import time
 from unittest.mock import MagicMock
 
-from nova.agents._stubs import AgentContext
-from nova.agents.orchestrator import OrchestratorAgent
-from nova.core.events import EventBus, EventType
-from nova.core.types import Conversation, Message, Role, ToolResult
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents._stubs import AgentContext
+from phi.agents.orchestrator import OrchestratorAgent
+from phi.core.events import EventBus, EventType
+from phi.core.types import Conversation, Message, Role, ToolResult
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers

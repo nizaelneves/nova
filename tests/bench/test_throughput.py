@@ -6,14 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.bench.throughput import ThroughputBenchmark
-from nova.core.registry import BenchmarkRegistry
+from phi.bench.throughput import ThroughputBenchmark
+from phi.core.registry import BenchmarkRegistry
 
 
 @pytest.fixture(autouse=True)
 def _register_throughput():
     """Re-register throughput benchmark after registry clear."""
-    from nova.bench.throughput import ensure_registered
+    from phi.bench.throughput import ensure_registered
 
     ensure_registered()
 

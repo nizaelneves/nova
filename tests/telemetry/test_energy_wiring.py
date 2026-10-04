@@ -14,17 +14,17 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from nova.cli import cli
-from nova.core.config import NovaConfig
-from nova.core.events import EventBus, EventType
-from nova.core.types import Message, Role, TelemetryRecord
-from nova.telemetry.aggregator import AggregatedStats, TelemetryAggregator
-from nova.telemetry.energy_monitor import BASIS_GPU, EnergySample
-from nova.telemetry.instrumented_engine import InstrumentedEngine
-from nova.telemetry.store import TelemetryStore
+from phi.cli import cli
+from phi.core.config import PhiConfig
+from phi.core.events import EventBus, EventType
+from phi.core.types import Message, Role, TelemetryRecord
+from phi.telemetry.aggregator import AggregatedStats, TelemetryAggregator
+from phi.telemetry.energy_monitor import BASIS_GPU, EnergySample
+from phi.telemetry.instrumented_engine import InstrumentedEngine
+from phi.telemetry.store import TelemetryStore
 
-_ask_mod = importlib.import_module("nova.cli.ask")
-_bench_mod = importlib.import_module("nova.cli.bench_cmd")
+_ask_mod = importlib.import_module("phi.cli.ask")
+_bench_mod = importlib.import_module("phi.cli.bench_cmd")
 
 
 # ---------------------------------------------------------------------------
@@ -96,14 +96,14 @@ def _mock_energy_monitor():
 
 
 def _energy_config(tmp_path, gpu_metrics=True):
-    """Build a NovaConfig with energy monitoring enabled."""
-    cfg = NovaConfig()
+    """Build a PhiConfig with energy monitoring enabled."""
+    cfg = PhiConfig()
     cfg.telemetry.enabled = True
     cfg.telemetry.gpu_metrics = gpu_metrics
     cfg.telemetry.energy_vendor = ""
     cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
     # These tests exercise engine-level instrumentation, not agent dispatch.
-    # `nova ask` (no --agent) now falls back to ``agent.default_agent``
+    # `phi ask` (no --agent) now falls back to ``agent.default_agent``
     # which defaults to "simple", and conftest clears the registry per test.
     # Opt out explicitly so the CLI uses direct-engine mode here.
     cfg.agent.default_agent = ""
@@ -203,7 +203,7 @@ class TestCliAskWiring:
         )
         mock_monitor = _mock_energy_monitor()
         with patch(
-            "nova.telemetry.energy_monitor.create_energy_monitor",
+            "phi.telemetry.energy_monitor.create_energy_monitor",
             return_value=mock_monitor,
         ):
             result = CliRunner().invoke(cli, ["ask", "Hello"])
@@ -259,7 +259,7 @@ class TestCliAskWiring:
         )
         mock_monitor = _mock_energy_monitor()
         with patch(
-            "nova.telemetry.energy_monitor.create_energy_monitor",
+            "phi.telemetry.energy_monitor.create_energy_monitor",
             return_value=mock_monitor,
         ):
             CliRunner().invoke(cli, ["ask", "Hello"])
@@ -290,8 +290,8 @@ class TestCliAskWiring:
         )
 
         # Register a trivial agent that calls engine.generate
-        from nova.agents._stubs import AgentResult
-        from nova.core.registry import AgentRegistry
+        from phi.agents._stubs import AgentResult
+        from phi.core.registry import AgentRegistry
 
         class _TestAgent:
             agent_id = "test-wiring-agent"
@@ -336,22 +336,22 @@ class TestSdkWiring:
 
     def test_engine_wrapped_in_ensure_engine(self):
         """_ensure_engine wraps with InstrumentedEngine."""
-        from nova.sdk import Nova
+        from phi.sdk import Phi
 
         engine = _mock_engine()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         with patch(
-            "nova.sdk.get_engine",
+            "phi.sdk.get_engine",
             return_value=("mock", engine),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             j._ensure_engine()
             assert isinstance(j._engine, InstrumentedEngine)
             j.close()
 
     def test_energy_monitor_stored(self, tmp_path):
-        """Energy monitor is created and stored on Nova instance."""
-        from nova.sdk import Nova
+        """Energy monitor is created and stored on Phi instance."""
+        from phi.sdk import Phi
 
         engine = _mock_engine()
         cfg = _energy_config(tmp_path, gpu_metrics=True)
@@ -359,15 +359,15 @@ class TestSdkWiring:
 
         with (
             patch(
-                "nova.sdk.get_engine",
+                "phi.sdk.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.telemetry.energy_monitor.create_energy_monitor",
+                "phi.telemetry.energy_monitor.create_energy_monitor",
                 return_value=mock_monitor,
             ),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             j._ensure_engine()
             assert j._energy_monitor is mock_monitor
             j.close()
@@ -375,24 +375,24 @@ class TestSdkWiring:
 
     def test_no_energy_monitor_when_gpu_metrics_off(self):
         """No energy monitor when gpu_metrics=False."""
-        from nova.sdk import Nova
+        from phi.sdk import Phi
 
         engine = _mock_engine()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = False
 
         with patch(
-            "nova.sdk.get_engine",
+            "phi.sdk.get_engine",
             return_value=("mock", engine),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             j._ensure_engine()
             assert j._energy_monitor is None
             j.close()
 
     def test_ask_full_records_energy(self, tmp_path):
         """ask_full records energy via InstrumentedEngine."""
-        from nova.sdk import Nova
+        from phi.sdk import Phi
 
         engine = _mock_engine()
         cfg = _energy_config(tmp_path, gpu_metrics=True)
@@ -400,15 +400,15 @@ class TestSdkWiring:
 
         with (
             patch(
-                "nova.sdk.get_engine",
+                "phi.sdk.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.telemetry.energy_monitor.create_energy_monitor",
+                "phi.telemetry.energy_monitor.create_energy_monitor",
                 return_value=mock_monitor,
             ),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             result = j.ask_full("Hello")
             assert result["content"] == "Test response"
             j.close()
@@ -423,24 +423,24 @@ class TestSdkWiring:
 
     def test_close_cleans_up_energy_monitor(self):
         """close() releases the energy monitor."""
-        from nova.sdk import Nova
+        from phi.sdk import Phi
 
         engine = _mock_engine()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = True
         mock_monitor = _mock_energy_monitor()
 
         with (
             patch(
-                "nova.sdk.get_engine",
+                "phi.sdk.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.telemetry.energy_monitor.create_energy_monitor",
+                "phi.telemetry.energy_monitor.create_energy_monitor",
                 return_value=mock_monitor,
             ),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             j._ensure_engine()
             j.close()
             mock_monitor.close.assert_called_once()
@@ -448,24 +448,24 @@ class TestSdkWiring:
 
     def test_double_close_safe(self):
         """Double close doesn't crash."""
-        from nova.sdk import Nova
+        from phi.sdk import Phi
 
         engine = _mock_engine()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = True
         mock_monitor = _mock_energy_monitor()
 
         with (
             patch(
-                "nova.sdk.get_engine",
+                "phi.sdk.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.telemetry.energy_monitor.create_energy_monitor",
+                "phi.telemetry.energy_monitor.create_energy_monitor",
                 return_value=mock_monitor,
             ),
         ):
-            j = Nova(config=cfg, model="test-model")
+            j = Phi(config=cfg, model="test-model")
             j._ensure_engine()
             j.close()
             j.close()  # should not raise
@@ -595,21 +595,21 @@ class TestBenchWiring:
             },
         }
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = True
         mock_monitor = _mock_energy_monitor()
 
         with (
             patch(
-                "nova.cli.bench_cmd.get_engine",
+                "phi.cli.bench_cmd.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.cli.bench_cmd.load_config",
+                "phi.cli.bench_cmd.load_config",
                 return_value=cfg,
             ),
             patch(
-                "nova.telemetry.energy_monitor.create_energy_monitor",
+                "phi.telemetry.energy_monitor.create_energy_monitor",
                 return_value=mock_monitor,
             ) as mock_create,
         ):
@@ -636,16 +636,16 @@ class TestBenchWiring:
             },
         }
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = False
 
         with (
             patch(
-                "nova.cli.bench_cmd.get_engine",
+                "phi.cli.bench_cmd.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.cli.bench_cmd.load_config",
+                "phi.cli.bench_cmd.load_config",
                 return_value=cfg,
             ),
         ):
@@ -670,16 +670,16 @@ class TestBenchWiring:
             },
         }
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.gpu_metrics = False
 
         with (
             patch(
-                "nova.cli.bench_cmd.get_engine",
+                "phi.cli.bench_cmd.get_engine",
                 return_value=("mock", engine),
             ),
             patch(
-                "nova.cli.bench_cmd.load_config",
+                "phi.cli.bench_cmd.load_config",
                 return_value=cfg,
             ),
         ):
@@ -719,7 +719,7 @@ def _patch_telemetry_config(tmp_path: Path):
     cfg = mock.MagicMock()
     cfg.telemetry.db_path = str(db_path)
     return mock.patch(
-        "nova.cli.telemetry_cmd.load_config",
+        "phi.cli.telemetry_cmd.load_config",
         return_value=cfg,
     ), db_path
 
@@ -968,7 +968,7 @@ class TestEndToEndPipeline:
 
         mock_monitor = _mock_energy_monitor()
         with patch(
-            "nova.telemetry.energy_monitor.create_energy_monitor",
+            "phi.telemetry.energy_monitor.create_energy_monitor",
             return_value=mock_monitor,
         ):
             CliRunner().invoke(cli, ["ask", "Hello"])
@@ -977,7 +977,7 @@ class TestEndToEndPipeline:
         telem_cfg = mock.MagicMock()
         telem_cfg.telemetry.db_path = cfg.telemetry.db_path
         with mock.patch(
-            "nova.cli.telemetry_cmd.load_config",
+            "phi.cli.telemetry_cmd.load_config",
             return_value=telem_cfg,
         ):
             result = CliRunner().invoke(
@@ -1017,7 +1017,7 @@ class TestEndToEndPipeline:
 
         mock_monitor = _mock_energy_monitor()
         with patch(
-            "nova.telemetry.energy_monitor.create_energy_monitor",
+            "phi.telemetry.energy_monitor.create_energy_monitor",
             return_value=mock_monitor,
         ):
             CliRunner().invoke(cli, ["ask", "Hello"])
@@ -1026,7 +1026,7 @@ class TestEndToEndPipeline:
         telem_cfg = mock.MagicMock()
         telem_cfg.telemetry.db_path = cfg.telemetry.db_path
         with mock.patch(
-            "nova.cli.telemetry_cmd.load_config",
+            "phi.cli.telemetry_cmd.load_config",
             return_value=telem_cfg,
         ):
             result = CliRunner().invoke(

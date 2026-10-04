@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from nova.core.types import Trace
+from phi.core.types import Trace
 
 
 @pytest.fixture
 def store():
-    from nova.traces.store import TraceStore
+    from phi.traces.store import TraceStore
 
     with tempfile.TemporaryDirectory() as tmpdir:
         s = TraceStore(Path(tmpdir) / "traces.db")

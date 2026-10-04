@@ -9,8 +9,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from nova.finances.store import FinanceStore
-from nova.server.finances_routes import create_finances_router
+from phi.finances.store import FinanceStore
+from phi.server.finances_routes import create_finances_router
 
 BASE = "/api/finances"
 
@@ -31,12 +31,8 @@ def _post(client, path, body, status=201):
 
 
 def test_full_flow(client) -> None:
-    me = _post(client, "/accounts", {"name": "Me"})
-    bank = _post(
-        client,
-        "/wallets",
-        {"account_id": me["id"], "name": "Bank", "opening_cents": 50_000},
-    )
+    bank = _post(client, "/banks", {"name": "Nubank"})
+    account = bank["accounts"][0]
     food = _post(client, "/categories", {"name": "Food"})
     made = _post(
         client,
@@ -45,26 +41,43 @@ def test_full_flow(client) -> None:
             "type": "expense",
             "amount_cents": 1_234,
             "date": "2026-10-10",
-            "wallet_id": bank["id"],
+            "account_id": account["id"],
             "category_id": food["id"],
         },
     )["transactions"]
     assert len(made) == 1
 
-    wallets = client.get(f"{BASE}/wallets").json()["wallets"]
-    assert wallets[0]["balance_cents"] == 48_766
+    accounts = client.get(f"{BASE}/accounts").json()["accounts"]
+    assert accounts[0]["balance_cents"] == -1_234
     summary = client.get(f"{BASE}/reports/summary?year=2026&month=2026-10").json()
     assert summary["expense_cents"] == 1_234
     pie = client.get(f"{BASE}/reports/categories?year=2026").json()
     assert pie["categories"][0]["name"] == "Food"
-    assert (
-        client.get(f"{BASE}/overview").json()["accounts"][0]["balance_cents"] == 48_766
+    overview = client.get(f"{BASE}/overview").json()
+    assert overview["banks"][0]["accounts"][0]["balance_cents"] == -1_234
+
+
+def test_bank_auto_creates_first_account_and_can_grow_more(client) -> None:
+    bank = _post(client, "/banks", {"name": "Santander", "first_account_name": "Checking"})
+    assert len(bank["accounts"]) == 1 and bank["accounts"][0]["name"] == "Checking"
+    savings = _post(
+        client, "/accounts", {"bank_id": bank["id"], "name": "Savings", "opening_cents": 500}
     )
+    accounts = client.get(f"{BASE}/accounts?bank_id={bank['id']}").json()["accounts"]
+    assert {a["name"] for a in accounts} == {"Checking", "Savings"}
+    assert savings["bank_id"] == bank["id"]
+
+
+def test_card_is_created_without_any_account_or_bank(client) -> None:
+    card = _post(client, "/cards", {"name": "C6 Platinum", "closing_day": 5, "due_day": 12})
+    assert "account_id" not in card and "bank_id" not in card
+    assert card["logo_key"] == "c6"
+    assert client.delete(f"{BASE}/cards/{card['id']}").status_code == 204
 
 
 def test_recurrence_and_installments_from_the_single_form(client) -> None:
-    me = _post(client, "/accounts", {"name": "Me"})
-    bank = _post(client, "/wallets", {"account_id": me["id"], "name": "Bank"})
+    bank = _post(client, "/banks", {"name": "Bank"})
+    account = bank["accounts"][0]
     parts = _post(
         client,
         "/transactions",
@@ -72,7 +85,7 @@ def test_recurrence_and_installments_from_the_single_form(client) -> None:
             "type": "expense",
             "amount_cents": 9_000,
             "date": "2026-10-10",
-            "wallet_id": bank["id"],
+            "account_id": account["id"],
             "installments": 3,
         },
     )["transactions"]
@@ -84,7 +97,7 @@ def test_recurrence_and_installments_from_the_single_form(client) -> None:
             "type": "income",
             "amount_cents": 100,
             "date": "2026-10-10",
-            "wallet_id": bank["id"],
+            "account_id": account["id"],
             "recurrence": {"freq": "monthly", "count": 5},
         },
     )["transactions"]
@@ -94,33 +107,20 @@ def test_recurrence_and_installments_from_the_single_form(client) -> None:
 
 
 def test_card_invoice_flow(client) -> None:
-    me = _post(client, "/accounts", {"name": "Me"})
-    bank = _post(
-        client,
-        "/wallets",
-        {"account_id": me["id"], "name": "B", "opening_cents": 9_000},
-    )
-    card = _post(
-        client,
-        "/cards",
-        {"account_id": me["id"], "name": "Visa", "closing_day": 10, "due_day": 17},
-    )
+    bank = _post(client, "/banks", {"name": "B"})
+    account = bank["accounts"][0]
+    card = _post(client, "/cards", {"name": "Visa", "closing_day": 10, "due_day": 17})
     _post(
         client,
         "/transactions",
-        {
-            "type": "expense",
-            "amount_cents": 4_000,
-            "date": "2026-09-20",
-            "card_id": card["id"],
-        },
+        {"type": "expense", "amount_cents": 4_000, "date": "2026-09-20", "card_id": card["id"]},
     )
     invoices = client.get(f"{BASE}/cards/{card['id']}/invoices").json()["invoices"]
     assert invoices[0]["month"] == "2026-10" and invoices[0]["status"] == "closed"
     paid = _post(
         client,
         f"/cards/{card['id']}/invoices/2026-10/pay",
-        {"wallet_id": bank["id"]},
+        {"account_id": account["id"]},
         status=200,
     )
     assert paid["status"] == "paid"
@@ -128,68 +128,67 @@ def test_card_invoice_flow(client) -> None:
 
 def test_errors_map_to_http_codes(client) -> None:
     assert client.get(f"{BASE}/transactions/none").status_code == 404
-    bad = client.post(f"{BASE}/accounts", json={"name": "  "})
+    bad = client.post(f"{BASE}/banks", json={"name": "  "})
     assert bad.status_code == 422
-    me = _post(client, "/accounts", {"name": "Me"})
-    bank = _post(client, "/wallets", {"account_id": me["id"], "name": "B"})
+    bank = _post(client, "/banks", {"name": "B"})
+    account = bank["accounts"][0]
     _post(
         client,
         "/transactions",
-        {
-            "type": "income",
-            "amount_cents": 1,
-            "date": "2026-10-01",
-            "wallet_id": bank["id"],
-        },
+        {"type": "income", "amount_cents": 1, "date": "2026-10-01", "account_id": account["id"]},
     )
-    assert client.delete(f"{BASE}/wallets/{bank['id']}").status_code == 409
+    assert client.delete(f"{BASE}/accounts/{account['id']}").status_code == 409
 
 
-def test_archive_then_delete_with_confirmation(client) -> None:
-    me = _post(client, "/accounts", {"name": "Me"})
-    refused = client.post(
-        f"{BASE}/accounts/{me['id']}/delete", json={"confirm_name": "Me"}
-    )
-    assert refused.status_code == 422
-    _post(client, f"/accounts/{me['id']}/archive", {}, status=200)
-    wrong = client.post(
-        f"{BASE}/accounts/{me['id']}/delete", json={"confirm_name": "x"}
-    )
-    assert wrong.status_code == 422
-    done = client.post(
-        f"{BASE}/accounts/{me['id']}/delete", json={"confirm_name": "Me"}
-    )
-    assert done.json() == {"status": "deleted"}
-    assert client.get(f"{BASE}/accounts?archived=true").json()["accounts"] == []
+def test_bank_with_accounts_cannot_be_deleted(client) -> None:
+    bank = _post(client, "/banks", {"name": "B"})
+    assert client.delete(f"{BASE}/banks/{bank['id']}").status_code == 409
+
+
+def test_bank_rename_recomputes_logo(client) -> None:
+    bank = _post(client, "/banks", {"name": "Nubank"})
+    renamed = client.patch(f"{BASE}/banks/{bank['id']}", json={"name": "Caixa"})
+    assert renamed.json()["logo_key"] == "caixa"
 
 
 def test_yield_endpoints(client) -> None:
-    me = _post(client, "/accounts", {"name": "Me"})
+    bank = _post(client, "/banks", {"name": "B"})
+    account = bank["accounts"][0]
     savings = _post(
         client,
-        "/wallets",
-        {
-            "account_id": me["id"],
-            "name": "Cofre",
-            "kind": "savings",
-            "opening_cents": 100_000,
-        },
+        "/accounts",
+        {"bank_id": bank["id"], "name": "Cofre", "kind": "savings", "opening_cents": 100_000},
     )
     response = client.put(
-        f"{BASE}/wallets/{savings['id']}/yield",
+        f"{BASE}/accounts/{savings['id']}/yield",
         json={"month": "2026-09", "amount_cents": 1_000},
     )
     assert response.json()["pct"] == 1.0
-    history = client.get(f"{BASE}/wallets/{savings['id']}/yield").json()["history"]
+    history = client.get(f"{BASE}/accounts/{savings['id']}/yield").json()["history"]
     assert len(history) == 1
 
 
+def test_overview_accepts_a_month_param(client) -> None:
+    bank = _post(client, "/banks", {"name": "B"})
+    account = bank["accounts"][0]
+    _post(
+        client,
+        "/transactions",
+        {"type": "income", "amount_cents": 100, "date": "2026-09-01", "account_id": account["id"]},
+    )
+    overview = client.get(f"{BASE}/overview?month=2026-09").json()
+    assert overview["month"] == "2026-09"
+    assert overview["banks"][0]["accounts"][0]["month"]["income_cents"] == 100
+    other_month = client.get(f"{BASE}/overview?month=2026-10").json()
+    assert other_month["banks"][0]["accounts"][0]["month"]["income_cents"] == 0
+
+
 def test_finances_api_is_served_by_the_real_app(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path / "home"))
-    from nova.server.app import create_app
+    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
+    from phi.server.app import create_app
 
     engine = SimpleNamespace(engine_id="fake", health=lambda: True)
     real = TestClient(create_app(engine, "fake"))
-    created = real.post(f"{BASE}/accounts", json={"name": "Me", "kind": "person"})
+    created = real.post(f"{BASE}/banks", json={"name": "Me"})
     assert created.status_code == 201
     assert (tmp_path / "home" / "finances.db").exists()

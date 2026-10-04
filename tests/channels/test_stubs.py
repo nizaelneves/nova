@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 
-from nova.channels._stubs import (
+from phi.channels._stubs import (
     BaseChannel,
     ChannelMessage,
     ChannelStatus,

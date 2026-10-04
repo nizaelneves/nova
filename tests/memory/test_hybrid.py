@@ -5,10 +5,10 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
-from nova.core.events import EventBus, EventType
-from nova.core.registry import MemoryRegistry
-from nova.tools.storage._stubs import MemoryBackend, RetrievalResult
-from nova.tools.storage.hybrid import (
+from phi.core.events import EventBus, EventType
+from phi.core.registry import MemoryRegistry
+from phi.tools.storage._stubs import MemoryBackend, RetrievalResult
+from phi.tools.storage.hybrid import (
     HybridMemory,
     reciprocal_rank_fusion,
 )
@@ -194,7 +194,7 @@ def test_clear_both():
 def test_event_bus_store():
     bus = EventBus(record_history=True)
     hybrid = _make_hybrid()
-    import nova.tools.storage.hybrid as mod
+    import phi.tools.storage.hybrid as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus
@@ -211,7 +211,7 @@ def test_event_bus_retrieve():
     bus = EventBus(record_history=True)
     hybrid = _make_hybrid()
     hybrid.store("retrievable content here")
-    import nova.tools.storage.hybrid as mod
+    import phi.tools.storage.hybrid as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus

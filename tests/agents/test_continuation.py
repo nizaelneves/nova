@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from nova.agents._stubs import AgentResult, BaseAgent
+from phi.agents._stubs import AgentResult, BaseAgent
 
 
 class MockEngine:

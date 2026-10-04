@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from nova.agents.manager import AgentManager
+from phi.agents.manager import AgentManager
 
 
 @pytest.fixture

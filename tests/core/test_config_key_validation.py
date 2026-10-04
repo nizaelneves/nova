@@ -6,7 +6,7 @@ from typing import get_args, get_origin
 
 import pytest
 
-from nova.core.config import validate_config_key
+from phi.core.config import validate_config_key
 
 
 class TestValidateConfigKey:

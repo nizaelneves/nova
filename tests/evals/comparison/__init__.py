@@ -1,1 +1,1 @@
-"""Tests for nova.evals.comparison."""
+"""Tests for phi.evals.comparison."""

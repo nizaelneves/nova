@@ -1,4 +1,4 @@
-"""Tests for ``nova ask --agent`` CLI integration."""
+"""Tests for ``phi ask --agent`` CLI integration."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from nova.agents._stubs import AgentContext, AgentResult, ToolUsingAgent
-from nova.cli import cli
-from nova.core.types import Role, StepType, ToolCall, ToolResult
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents._stubs import AgentContext, AgentResult, ToolUsingAgent
+from phi.cli import cli
+from phi.core.types import Role, StepType, ToolCall, ToolResult
+from phi.tools._stubs import BaseTool, ToolSpec
 
-_ask_mod = importlib.import_module("nova.cli.ask")
+_ask_mod = importlib.import_module("phi.cli.ask")
 
 
 def _mock_engine(content="Hello from engine"):
@@ -34,9 +34,9 @@ def _mock_engine(content="Hello from engine"):
 
 def _register_agents():
     """Re-register agents after registry clear."""
-    from nova.agents.orchestrator import OrchestratorAgent
-    from nova.agents.simple import SimpleAgent
-    from nova.core.registry import AgentRegistry
+    from phi.agents.orchestrator import OrchestratorAgent
+    from phi.agents.simple import SimpleAgent
+    from phi.core.registry import AgentRegistry
 
     for name, cls in [
         ("simple", SimpleAgent),
@@ -48,12 +48,12 @@ def _register_agents():
 
 def _register_tools():
     """Re-register tools after registry clear."""
-    from nova.core.registry import ToolRegistry
-    from nova.tools.calculator import CalculatorTool
-    from nova.tools.file_read import FileReadTool
-    from nova.tools.llm_tool import LLMTool
-    from nova.tools.retrieval import RetrievalTool
-    from nova.tools.think import ThinkTool
+    from phi.core.registry import ToolRegistry
+    from phi.tools.calculator import CalculatorTool
+    from phi.tools.file_read import FileReadTool
+    from phi.tools.llm_tool import LLMTool
+    from phi.tools.retrieval import RetrievalTool
+    from phi.tools.think import ThinkTool
 
     for name, cls in [
         ("calculator", CalculatorTool),
@@ -107,11 +107,11 @@ class _EngineSetup:
 
 @pytest.fixture
 def agent_setup():
-    from nova.core.config import NovaConfig
-    from nova.core.registry import AgentRegistry, ToolRegistry
+    from phi.core.config import PhiConfig
+    from phi.core.registry import AgentRegistry, ToolRegistry
 
     engine = _mock_engine("unused")
-    config = NovaConfig()
+    config = PhiConfig()
     config.intelligence.default_model = "test-model"
     config.agent.max_turns = 3
     config.traces.enabled = False
@@ -153,9 +153,9 @@ def mock_setup():
         patch.object(_ask_mod, "register_builtin_models"),
         patch.object(_ask_mod, "merge_discovered_models"),
     ):
-        from nova.core.config import NovaConfig
+        from phi.core.config import PhiConfig
 
-        config = NovaConfig()
+        config = PhiConfig()
         config.traces.enabled = False
         mock_cfg.return_value = config
         mock_ge.return_value = ("mock", engine)
@@ -218,8 +218,8 @@ class TestAskAgentOption:
     def test_no_agent_flag_falls_back_to_config_default_agent(self, runner, mock_setup):
         """When --agent is omitted, ``config.agent.default_agent`` is used.
 
-        The default ``NovaConfig`` sets ``default_agent = "simple"``, so
-        ``nova ask "..."`` should route through SimpleAgent rather than
+        The default ``PhiConfig`` sets ``default_agent = "simple"``, so
+        ``phi ask "..."`` should route through SimpleAgent rather than
         the direct-to-engine path. Without this fallback, persona settings
         (``default_system_prompt`` and SOUL.md/MEMORY.md/USER.md) would be
         silently bypassed.
@@ -239,9 +239,9 @@ class TestAskAgentOption:
     ):
         """When config's ``default_agent`` is blank and --agent is omitted,
         the original direct-to-engine path is preserved."""
-        from nova.core.config import NovaConfig
+        from phi.core.config import PhiConfig
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.traces.enabled = False
         cfg.agent.default_agent = ""
         monkeypatch.setattr(_ask_mod, "load_config", lambda *a, **kw: cfg)
@@ -297,8 +297,8 @@ class TestAskSkillsAndTraces:
         runner,
         tmp_path,
     ):
-        from nova.core.config import NovaConfig
-        from nova.traces.store import TraceStore
+        from phi.core.config import PhiConfig
+        from phi.traces.store import TraceStore
 
         skill_dir = tmp_path / "skills" / "hermes" / "llm-wiki"
         skill_dir.mkdir(parents=True)
@@ -316,7 +316,7 @@ class TestAskSkillsAndTraces:
             encoding="utf-8",
         )
 
-        config = NovaConfig()
+        config = PhiConfig()
         config.intelligence.default_model = "test-model"
         config.agent.context_from_memory = False
         config.security.enabled = False
@@ -399,47 +399,47 @@ class TestAskSkillsAndTraces:
 
 class TestBuildTools:
     def test_build_calculator(self, mock_setup):
-        from nova.cli.ask import _build_tools
-        from nova.core.config import NovaConfig
+        from phi.cli.ask import _build_tools
+        from phi.core.config import PhiConfig
 
         _register_tools()
-        config = NovaConfig()
+        config = PhiConfig()
         tools = _build_tools(["calculator"], config, mock_setup, "test-model")
         assert len(tools) == 1
         assert tools[0].tool_id == "calculator"
 
     def test_build_think(self, mock_setup):
-        from nova.cli.ask import _build_tools
-        from nova.core.config import NovaConfig
+        from phi.cli.ask import _build_tools
+        from phi.core.config import PhiConfig
 
         _register_tools()
-        config = NovaConfig()
+        config = PhiConfig()
         tools = _build_tools(["think"], config, mock_setup, "test-model")
         assert len(tools) == 1
         assert tools[0].tool_id == "think"
 
     def test_build_unknown_tool_skipped(self, mock_setup):
-        from nova.cli.ask import _build_tools
-        from nova.core.config import NovaConfig
+        from phi.cli.ask import _build_tools
+        from phi.core.config import PhiConfig
 
-        config = NovaConfig()
+        config = PhiConfig()
         tools = _build_tools(["nonexistent"], config, mock_setup, "test-model")
         assert len(tools) == 0
 
     def test_build_empty_names(self, mock_setup):
-        from nova.cli.ask import _build_tools
-        from nova.core.config import NovaConfig
+        from phi.cli.ask import _build_tools
+        from phi.core.config import PhiConfig
 
-        config = NovaConfig()
+        config = PhiConfig()
         tools = _build_tools(["", " "], config, mock_setup, "test-model")
         assert len(tools) == 0
 
     def test_build_multiple_tools(self, mock_setup):
-        from nova.cli.ask import _build_tools
-        from nova.core.config import NovaConfig
+        from phi.cli.ask import _build_tools
+        from phi.core.config import PhiConfig
 
         _register_tools()
-        config = NovaConfig()
+        config = PhiConfig()
         tools = _build_tools(["calculator", "think"], config, mock_setup, "test-model")
         assert len(tools) == 2
 
@@ -456,17 +456,17 @@ class TestPersonaFilesReachModel:
         self, runner, monkeypatch, tmp_path
     ):
         """SOUL.md content must appear in the system message sent to the engine."""
-        from nova.core.config import NovaConfig
+        from phi.core.config import PhiConfig
 
         # Write a SOUL.md with a unique sentinel string we can grep for
         soul = tmp_path / "SOUL.md"
-        soul.write_text("PERSONA_SENTINEL_zh_nova", encoding="utf-8")
+        soul.write_text("PERSONA_SENTINEL_zh_phi", encoding="utf-8")
         memory = tmp_path / "MEMORY.md"
         memory.write_text("MEMORY_SENTINEL", encoding="utf-8")
         user = tmp_path / "USER.md"
         user.write_text("USER_SENTINEL", encoding="utf-8")
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.traces.enabled = False
         cfg.memory_files.soul_path = str(soul)
         cfg.memory_files.memory_path = str(memory)
@@ -503,7 +503,7 @@ class TestPersonaFilesReachModel:
         assert system_messages, f"No SYSTEM message in {messages!r}"
         joined = "\n".join(m.content for m in system_messages)
         assert "BASELINE_TEMPLATE" in joined
-        assert "PERSONA_SENTINEL_zh_nova" in joined
+        assert "PERSONA_SENTINEL_zh_phi" in joined
         assert "MEMORY_SENTINEL" in joined
         assert "USER_SENTINEL" in joined
 
@@ -511,12 +511,12 @@ class TestPersonaFilesReachModel:
         self, runner, monkeypatch, tmp_path
     ):
         """Orchestrator explicitly accepts and applies persona wiring."""
-        from nova.core.config import NovaConfig
+        from phi.core.config import PhiConfig
 
         soul = tmp_path / "SOUL.md"
         soul.write_text("ORCH_PERSONA_SENTINEL", encoding="utf-8")
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.memory_files.soul_path = str(soul)
         cfg.agent.context_from_memory = False
 

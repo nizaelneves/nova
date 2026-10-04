@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from nova.core.events import EventBus
+from phi.core.events import EventBus
 from tests.agents.fake_engine import FakeEngine
 from tests.agents.scenario_harness import FakeSystem, ScenarioHarness
 
@@ -15,11 +15,11 @@ from tests.agents.scenario_harness import FakeSystem, ScenarioHarness
 @pytest.fixture
 def scenario_harness(tmp_path):
     """Wire up real components for agent lifecycle testing (channels copy)."""
-    from nova.agents.executor import AgentExecutor
-    from nova.agents.manager import AgentManager
-    from nova.agents.monitor_operative import MonitorOperativeAgent
-    from nova.agents.scheduler import AgentScheduler
-    from nova.core.registry import AgentRegistry
+    from phi.agents.executor import AgentExecutor
+    from phi.agents.manager import AgentManager
+    from phi.agents.monitor_operative import MonitorOperativeAgent
+    from phi.agents.scheduler import AgentScheduler
+    from phi.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("monitor_operative"):
         AgentRegistry.register("monitor_operative")(MonitorOperativeAgent)

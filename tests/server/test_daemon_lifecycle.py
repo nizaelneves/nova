@@ -9,8 +9,8 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from nova.cli import daemon_cmd
-from nova.server.daemon import DaemonServer, run_server
+from phi.cli import daemon_cmd
+from phi.server.daemon import DaemonServer, run_server
 
 
 @pytest.fixture

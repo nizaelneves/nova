@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../lib/store';
 import { getVoiceLevel } from '../lib/voiceReply';
 import { FACE, easeEnergy, eyeOpenness, lookDirection } from '../lib/orb';
+import { AMBIENT_EMOJIS } from '../lib/ambientEmojis';
+
+// Click order while trying these out: the plain face, the speaking preview,
+// then each ambient emoji in turn, looping back to the plain face.
+const EMOJI_PHI_STATES = ['idle', 'speaking-preview', ...AMBIENT_EMOJIS.map((e) => e.id)] as const;
+type EmojiPhiState = (typeof EMOJI_PHI_STATES)[number];
 
 /** Side of the drawing box: about a quarter of the window height, between 150 and 250 pixels. */
 function fitToWindow(): number {
@@ -9,18 +15,18 @@ function fitToWindow(): number {
 }
 
 /**
- * The Nova orb: a small round emoji face.
- * Idle, its eyes look to the right and to the left. While Nova speaks it looks
+ * The Phi orb: a small round emoji face.
+ * Idle, its eyes look to the right and to the left. While Phi speaks it looks
  * straight ahead and blinks. Click it to preview the speaking look.
  */
 export function Orb({ size: fixedSize }: { size?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const effects = useAppStore((s) => s.settings.effects);
   const speaking = useAppStore((s) => s.speaking);
-  const [preview, setPreview] = useState(false);
+  const [emojiPhi, setEmojiPhi] = useState<EmojiPhiState>('idle');
   const [autoSize, setAutoSize] = useState(() => fitToWindow());
   const targetRef = useRef(0);
-  targetRef.current = speaking || preview ? 1 : 0;
+  targetRef.current = speaking || emojiPhi === 'speaking-preview' ? 1 : 0;
   const size = fixedSize ?? autoSize;
 
   useEffect(() => {
@@ -28,6 +34,9 @@ export function Orb({ size: fixedSize }: { size?: number }) {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  const emojiPhiRef = useRef(emojiPhi);
+  emojiPhiRef.current = emojiPhi;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -74,6 +83,13 @@ export function Orb({ size: fixedSize }: { size?: number }) {
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
+
+      const ambient = AMBIENT_EMOJIS.find((e) => e.id === emojiPhiRef.current);
+      if (ambient) {
+        ambient.draw(ctx, cx, cy, r, clock);
+        return;
+      }
+
       // the eyes: two white pills that slide sideways to look and squash shut to blink
       const open = eyeOpenness(clock, energy, getVoiceLevel());
       const slide = lookDirection(clock, energy) * FACE.lookRange * r;
@@ -135,9 +151,9 @@ export function Orb({ size: fixedSize }: { size?: number }) {
     <div
       className="orb"
       style={{ width: size, height: size }}
-      onClick={() => setPreview((p) => !p)}
+      onClick={() => setEmojiPhi((p) => EMOJI_PHI_STATES[(EMOJI_PHI_STATES.indexOf(p) + 1) % EMOJI_PHI_STATES.length])}
       role="img"
-      aria-label="Nova"
+      aria-label="Phi"
     >
       <canvas ref={canvasRef} style={{ width: size, height: size }} />
     </div>

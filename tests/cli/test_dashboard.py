@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.cli.dashboard import DashboardApp
+from phi.cli.dashboard import DashboardApp
 
 
 class TestDashboard:

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.learning.intelligence.orchestrator.sft_trainer import (
+from phi.learning.intelligence.orchestrator.sft_trainer import (
     OrchestratorSFTConfig,
     OrchestratorSFTDataset,
 )
@@ -178,7 +178,7 @@ class TestSFTLabelMasking:
 class TestSFTRegistration:
     def test_registered_in_learning_registry(self):
         # Import to trigger registration
-        import nova.learning.intelligence.orchestrator.sft_trainer  # noqa: F401
-        from nova.core.registry import LearningRegistry
+        import phi.learning.intelligence.orchestrator.sft_trainer  # noqa: F401
+        from phi.core.registry import LearningRegistry
 
         assert LearningRegistry.contains("orchestrator_sft")

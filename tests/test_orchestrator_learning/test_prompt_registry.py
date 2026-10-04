@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.learning.intelligence.orchestrator.prompt_registry import (
+from phi.learning.intelligence.orchestrator.prompt_registry import (
     TOOL_DESCRIPTIONS,
     build_system_prompt,
 )

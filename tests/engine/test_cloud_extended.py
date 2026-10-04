@@ -7,10 +7,10 @@ from unittest import mock
 
 import pytest
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.cloud import (
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.cloud import (
     _ANTHROPIC_MODELS,
     _GOOGLE_MODELS,
     _OPENAI_MODELS,

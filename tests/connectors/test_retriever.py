@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.connectors.retriever import ColBERTReranker, Reranker, TwoStageRetriever
-from nova.connectors.store import KnowledgeStore
-from nova.tools.storage._stubs import RetrievalResult
+from phi.connectors.retriever import ColBERTReranker, Reranker, TwoStageRetriever
+from phi.connectors.store import KnowledgeStore
+from phi.tools.storage._stubs import RetrievalResult
 
 
 def _has_torch() -> bool:

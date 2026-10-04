@@ -9,11 +9,11 @@ from unittest.mock import patch
 
 import pytest
 
-pytest.importorskip("fastapi", reason="nova[server] not installed")
+pytest.importorskip("fastapi", reason="phi[server] not installed")
 
-from nova.cli.scan_cmd import PrivacyScanner  # noqa: E402
-from nova.server.api_routes import _iterate_sync_stream  # noqa: E402
-from nova.server.routes import security_scan  # noqa: E402
+from phi.cli.scan_cmd import PrivacyScanner  # noqa: E402
+from phi.server.api_routes import _iterate_sync_stream  # noqa: E402
+from phi.server.routes import security_scan  # noqa: E402
 
 
 def test_security_scan_runs_on_worker_thread() -> None:

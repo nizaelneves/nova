@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.types import RoutingContext
-from nova.learning._stubs import QueryAnalyzer, RouterPolicy
-from nova.learning.routing.router import DefaultQueryAnalyzer
+from phi.core.types import RoutingContext
+from phi.learning._stubs import QueryAnalyzer, RouterPolicy
+from phi.learning.routing.router import DefaultQueryAnalyzer
 
 
 class _DummyRouter(RouterPolicy):

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from nova.learning.intelligence.orchestrator.policy_model import (
+from phi.learning.intelligence.orchestrator.policy_model import (
     OrchestratorPolicyModel,
 )
-from nova.learning.intelligence.orchestrator.types import (
+from phi.learning.intelligence.orchestrator.types import (
     EpisodeState,
     OrchestratorAction,
     OrchestratorObservation,

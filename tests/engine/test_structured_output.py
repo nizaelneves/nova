@@ -10,11 +10,11 @@ import httpx
 import pytest
 import respx
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._stubs import ResponseFormat
-from nova.engine.cloud import CloudEngine
-from nova.engine.ollama import OllamaEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._stubs import ResponseFormat
+from phi.engine.cloud import CloudEngine
+from phi.engine.ollama import OllamaEngine
 
 # ---------------------------------------------------------------------------
 # ResponseFormat dataclass
@@ -252,7 +252,7 @@ class TestGoogleStructuredOutput:
             {"google": mock.MagicMock(), "google.genai": mock.MagicMock()},
         ):
             with mock.patch(
-                "nova.engine.cloud.genai_types", fake_genai_types, create=True
+                "phi.engine.cloud.genai_types", fake_genai_types, create=True
             ):
                 # We need to actually test the config mutation. The simplest
                 # approach is to observe the config object passed to

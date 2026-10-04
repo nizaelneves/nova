@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from nova.server.middleware import SECURITY_HEADERS, create_security_middleware
+from phi.server.middleware import SECURITY_HEADERS, create_security_middleware
 
 
 class TestSecurityHeaders:
@@ -30,7 +30,7 @@ class TestSecurityHeaders:
         assert "camera=()" in policy and "geolocation=()" in policy
 
     def test_voice_audio_blobs_may_be_played(self) -> None:
-        """Nova's voice arrives as a blob: URL, which media-src must allow."""
+        """Phi's voice arrives as a blob: URL, which media-src must allow."""
         csp = SECURITY_HEADERS["Content-Security-Policy"]
         assert "media-src 'self' blob:" in csp
         assert "default-src 'self'" in csp
@@ -41,7 +41,7 @@ class TestSecurityHeaders:
         """When starlette is not available, returns None."""
         import importlib
 
-        import nova.server.middleware as mod
+        import phi.server.middleware as mod
 
         blocked = {
             "starlette": None,

@@ -6,14 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.bench.latency import LatencyBenchmark
-from nova.core.registry import BenchmarkRegistry
+from phi.bench.latency import LatencyBenchmark
+from phi.core.registry import BenchmarkRegistry
 
 
 @pytest.fixture(autouse=True)
 def _register_latency():
     """Re-register latency benchmark after registry clear."""
-    from nova.bench.latency import ensure_registered
+    from phi.bench.latency import ensure_registered
 
     ensure_registered()
 
@@ -80,7 +80,7 @@ class TestLatencyBenchmark:
         assert result.metrics == {}
 
     def test_ensure_registered(self):
-        from nova.bench.latency import ensure_registered
+        from phi.bench.latency import ensure_registered
 
         ensure_registered()  # should not raise
         assert BenchmarkRegistry.contains("latency")

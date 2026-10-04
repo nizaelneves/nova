@@ -1,10 +1,10 @@
-"""Tests for resolve_mcp_servers in nova.core.config."""
+"""Tests for resolve_mcp_servers in phi.core.config."""
 
 from pathlib import Path
 
 import pytest
 
-from nova.core.config import resolve_mcp_servers
+from phi.core.config import resolve_mcp_servers
 
 
 class TestResolveMcpServers:

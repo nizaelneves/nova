@@ -4,28 +4,28 @@
 class TestSystemLearningIntegration:
     def test_learning_orchestrator_not_created_when_disabled(self):
         """Default config has training_enabled=False, so no orchestrator."""
-        from nova.core.config import NovaConfig
-        from nova.system import SystemBuilder
+        from phi.core.config import PhiConfig
+        from phi.system import SystemBuilder
 
-        config = NovaConfig()
+        config = PhiConfig()
         assert config.learning.training_enabled is False
         result = SystemBuilder._setup_learning_orchestrator(config)
         assert result is None
 
     def test_learning_orchestrator_created_when_enabled(self):
         """When training_enabled=True, orchestrator is created."""
-        from nova.core.config import NovaConfig
-        from nova.learning.learning_orchestrator import LearningOrchestrator
-        from nova.system import SystemBuilder
+        from phi.core.config import PhiConfig
+        from phi.learning.learning_orchestrator import LearningOrchestrator
+        from phi.system import SystemBuilder
 
-        config = NovaConfig()
+        config = PhiConfig()
         config.learning.training_enabled = True
         result = SystemBuilder._setup_learning_orchestrator(config)
         assert isinstance(result, LearningOrchestrator)
 
     def test_config_has_training_fields(self):
         """LearningConfig has the training pipeline fields."""
-        from nova.core.config import LearningConfig
+        from phi.core.config import LearningConfig
 
         config = LearningConfig()
         assert config.training_enabled is False
@@ -37,7 +37,7 @@ class TestSystemLearningIntegration:
 
     def test_training_components_exported(self):
         """Learning package exports all training components."""
-        from nova.learning import (
+        from phi.learning import (
             AgentConfigEvolver,
             LearningOrchestrator,
             LoRATrainer,

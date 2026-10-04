@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from nova.connectors._stubs import Attachment, Document
-from nova.connectors.attachment_store import AttachmentStore
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.store import KnowledgeStore
+from phi.connectors._stubs import Attachment, Document
+from phi.connectors.attachment_store import AttachmentStore
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.store import KnowledgeStore
 
 # ---------------------------------------------------------------------------
 # Helpers

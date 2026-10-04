@@ -1,6 +1,6 @@
 # Memory and Retrieval
 
-Nova stores facts the agent has learned so it can retrieve them later.
+Phi stores facts the agent has learned so it can retrieve them later.
 
 ## Backends
 

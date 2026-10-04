@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.telemetry.session import (
+from phi.telemetry.session import (
     TelemetrySample,
     TelemetrySession,
     _PythonRingBuffer,

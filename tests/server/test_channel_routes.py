@@ -10,9 +10,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-pytest.importorskip("fastapi", reason="nova[server] not installed")
+pytest.importorskip("fastapi", reason="phi[server] not installed")
 
-from nova.channels._stubs import ChannelStatus  # noqa: E402
+from phi.channels._stubs import ChannelStatus  # noqa: E402
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def mock_bridge():
 @pytest.fixture
 def app_with_bridge(mock_engine, mock_bridge):
     """FastAPI app with channel bridge configured."""
-    from nova.server.app import create_app
+    from phi.server.app import create_app
 
     return create_app(
         mock_engine,
@@ -56,7 +56,7 @@ def app_with_bridge(mock_engine, mock_bridge):
 @pytest.fixture
 def app_without_bridge(mock_engine):
     """FastAPI app without channel bridge."""
-    from nova.server.app import create_app
+    from phi.server.app import create_app
 
     return create_app(mock_engine, "test-model")
 
@@ -97,7 +97,7 @@ class TestChannelSend:
     def test_send_success(self, client_with_bridge, mock_bridge):
         resp = client_with_bridge.post(
             "/v1/channels/send",
-            json={"channel": "slack", "content": "Hello from Nova"},
+            json={"channel": "slack", "content": "Hello from Phi"},
         )
         assert resp.status_code == 200
         data = resp.json()

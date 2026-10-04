@@ -8,17 +8,17 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from nova.cli.scan_cmd import PrivacyScanner, ScanResult, scan
-from nova.core.config import NovaConfig
+from phi.cli.scan_cmd import PrivacyScanner, ScanResult, scan
+from phi.core.config import PhiConfig
 
 
 def _low_noise_config():
     """Baseline config with no warn/fail findings under an empty scan root.
 
-    NovaConfig defaults include absolute store paths under the real
-    NOVA_HOME; clear those so tests only see artifacts under tmp_path.
+    PhiConfig defaults include absolute store paths under the real
+    PHI_HOME; clear those so tests only see artifacts under tmp_path.
     """
-    config = NovaConfig()
+    config = PhiConfig()
     config.traces.enabled = False
     config.telemetry.enabled = False
     config.agent.context_from_memory = False
@@ -37,7 +37,7 @@ def _low_noise_config():
     config.optimize.judge_model = ""
     config.server.host = "127.0.0.1"
     config.security.profile = "personal"
-    # Avoid scanning the developer's real ~/.nova store files.
+    # Avoid scanning the developer's real ~/.phi store files.
     config.traces.db_path = ""
     config.telemetry.db_path = ""
     config.security.audit_log_path = ""
@@ -57,10 +57,10 @@ def _low_noise_config():
 
 def _patch_config(monkeypatch, tmp_path, config, config_loaded=True, error=""):
     monkeypatch.setattr(
-        "nova.cli.scan_cmd._load_data_boundary_config",
+        "phi.cli.scan_cmd._load_data_boundary_config",
         lambda: (config, tmp_path, config_loaded, error, ""),
     )
-    monkeypatch.setattr("nova.cli.scan_cmd.get_config_dir", lambda: tmp_path)
+    monkeypatch.setattr("phi.cli.scan_cmd.get_config_dir", lambda: tmp_path)
 
 
 def test_scan_data_boundaries_json_redacts_paths(monkeypatch, tmp_path):
@@ -168,7 +168,7 @@ def test_scan_data_boundaries_strict_passes_with_info_only(
     result = CliRunner().invoke(scan, ["--data-boundaries", "--strict"])
 
     assert result.exit_code == 0
-    assert "Nova Data-Boundary Scan" in result.output
+    assert "Phi Data-Boundary Scan" in result.output
 
 
 def test_scan_data_boundaries_init_defaults_strict_exits_on_warn(
@@ -247,7 +247,7 @@ def test_existing_scan_quick_json_still_works(monkeypatch):
 
 
 def test_top_level_cli_registers_data_boundary_scan(monkeypatch, tmp_path):
-    from nova.cli import cli
+    from phi.cli import cli
 
     config = _low_noise_config()
     _patch_config(monkeypatch, tmp_path, config)
@@ -277,23 +277,23 @@ def test_existing_scan_quick_text_still_works(monkeypatch):
     result = CliRunner().invoke(scan, ["--quick"])
 
     assert result.exit_code == 0
-    assert "Nova Security Scan" in result.output
+    assert "Phi Security Scan" in result.output
 
 
-def test_data_boundary_loader_honors_nova_config(
+def test_data_boundary_loader_honors_phi_config(
     monkeypatch,
     tmp_path,
 ):
-    from nova.cli import scan_cmd
-    from nova.core.config import load_config
+    from phi.cli import scan_cmd
+    from phi.core.config import load_config
 
     config_path = tmp_path / "custom.toml"
     config_path.write_text(
         "[telemetry]\nenabled = false\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("NOVA_CONFIG", str(config_path))
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("PHI_CONFIG", str(config_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
     load_config.cache_clear()
 
     _config, _root, loaded, error, root_error = scan_cmd._load_data_boundary_config()
@@ -304,10 +304,10 @@ def test_data_boundary_loader_honors_nova_config(
 
 
 def test_data_boundary_loader_reports_root_error(monkeypatch):
-    from nova.cli import scan_cmd
+    from phi.cli import scan_cmd
 
     monkeypatch.setattr(
-        "nova.cli.scan_cmd.get_config_dir",
+        "phi.cli.scan_cmd.get_config_dir",
         lambda: (_ for _ in ()).throw(RuntimeError("bad home")),
     )
 
@@ -321,16 +321,16 @@ def test_data_boundary_loader_reports_root_error(monkeypatch):
 
 def test_data_boundary_cli_reports_real_root_error_without_import_crash():
     repo_root = Path(__file__).resolve().parents[2]
-    invalid_home = repo_root / ".invalid-nova-home"
+    invalid_home = repo_root / ".invalid-phi-home"
     env = os.environ.copy()
-    env["NOVA_HOME"] = str(invalid_home)
+    env["PHI_HOME"] = str(invalid_home)
     env["PYTHONPATH"] = str(repo_root / "src")
 
     result = subprocess.run(
         [
             sys.executable,
             "-c",
-            "from nova.cli import main; main()",
+            "from phi.cli import main; main()",
             "scan",
             "--data-boundaries",
             "--json",

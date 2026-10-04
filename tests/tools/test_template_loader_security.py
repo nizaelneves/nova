@@ -11,7 +11,7 @@ import os
 
 import pytest
 
-from nova.tools.templates.loader import (
+from phi.tools.templates.loader import (
     ToolTemplate,
     discover_templates,
     safe_eval_expr,

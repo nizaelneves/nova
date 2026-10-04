@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.sandbox.wasm_runner import WasmResult, WasmRunner, create_sandbox_runner
+from phi.sandbox.wasm_runner import WasmResult, WasmRunner, create_sandbox_runner
 
 
 class TestWasmRunner:

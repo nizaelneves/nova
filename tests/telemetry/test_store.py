@@ -6,9 +6,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import TelemetryRecord
-from nova.telemetry.store import TelemetryStore
+from phi.core.events import EventBus, EventType
+from phi.core.types import TelemetryRecord
+from phi.telemetry.store import TelemetryStore
 
 
 class TestTelemetryStore:

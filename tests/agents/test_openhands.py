@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents._stubs import BaseAgent
-from nova.agents.openhands import OpenHandsAgent
-from nova.core.registry import AgentRegistry
+from phi.agents._stubs import BaseAgent
+from phi.agents.openhands import OpenHandsAgent
+from phi.core.registry import AgentRegistry
 
 
 class TestOpenHandsAgentRegistration:

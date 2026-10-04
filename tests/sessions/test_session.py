@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from nova.sessions.session import (
+from phi.sessions.session import (
     Session,
     SessionIdentity,
     SessionStore,

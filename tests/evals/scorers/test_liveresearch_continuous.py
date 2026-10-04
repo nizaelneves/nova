@@ -13,10 +13,10 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from nova.evals.cli import main as cli_main
-from nova.evals.core.runner import EvalRunner, _extract_continuous_score
-from nova.evals.core.types import EvalRecord, RunConfig
-from nova.evals.scorers.liveresearch import (
+from phi.evals.cli import main as cli_main
+from phi.evals.core.runner import EvalRunner, _extract_continuous_score
+from phi.evals.core.types import EvalRecord, RunConfig
+from phi.evals.scorers.liveresearch import (
     _escape_newlines_inside_strings,
     _parse_judge_response,
     _safe_json_loads,
@@ -76,7 +76,7 @@ def test_continuous_score_fields_present_in_summary(tmp_path):
     out = tmp_path / "out.jsonl"
     cfg = RunConfig(
         benchmark="test",
-        backend="nova-direct",
+        backend="phi-direct",
         model="test-model",
         output_path=str(out),
     )

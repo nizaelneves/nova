@@ -1,12 +1,12 @@
-"""Tests for nova.optimize.feedback.collector module."""
+"""Tests for phi.optimize.feedback.collector module."""
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.core.types import Trace
-from nova.learning.optimize.feedback.collector import FeedbackCollector
-from nova.learning.optimize.feedback.judge import TraceJudge
+from phi.core.types import Trace
+from phi.learning.optimize.feedback.collector import FeedbackCollector
+from phi.learning.optimize.feedback.judge import TraceJudge
 
 
 def _make_trace(trace_id: str = "trace-001") -> Trace:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from nova.core.registry import RouterPolicyRegistry
-from nova.learning.routing.heuristic_policy import ensure_registered
-from nova.learning.routing.router import HeuristicRouter
+from phi.core.registry import RouterPolicyRegistry
+from phi.learning.routing.heuristic_policy import ensure_registered
+from phi.learning.routing.router import HeuristicRouter
 
 
 class TestHeuristicPolicy:

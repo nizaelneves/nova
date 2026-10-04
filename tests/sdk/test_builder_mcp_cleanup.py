@@ -16,18 +16,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.core.config import NovaConfig
-from nova.system.builder import SystemBuilder
+from phi.core.config import PhiConfig
+from phi.system.builder import SystemBuilder
 
 
 @pytest.fixture
 def _mock_mcp_stack():
     """Patch MCPClient / transports / MCPToolProvider so no real I/O happens."""
     with (
-        patch("nova.mcp.client.MCPClient") as MockClient,
-        patch("nova.mcp.transport.StreamableHTTPTransport") as MockHttp,
-        patch("nova.mcp.transport.StdioTransport") as MockStdio,
-        patch("nova.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("phi.mcp.client.MCPClient") as MockClient,
+        patch("phi.mcp.transport.StreamableHTTPTransport") as MockHttp,
+        patch("phi.mcp.transport.StdioTransport") as MockStdio,
+        patch("phi.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         MockProvider.return_value.discover.return_value = []
         MockClient.return_value.initialize.return_value = None
@@ -40,7 +40,7 @@ def _mock_mcp_stack():
 
 
 def test_failed_initialize_closes_the_client(_mock_mcp_stack, caplog):
-    builder = SystemBuilder(config=NovaConfig())
+    builder = SystemBuilder(config=PhiConfig())
 
     bad_client = MagicMock()
     bad_client.initialize.side_effect = RuntimeError("handshake failed")

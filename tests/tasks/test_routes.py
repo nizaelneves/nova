@@ -8,8 +8,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from nova.server.tasks_routes import create_tasks_router
-from nova.tasks.store import TaskStore
+from phi.server.tasks_routes import create_tasks_router
+from phi.tasks.store import TaskStore
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_delete_task(client) -> None:
 
 
 def test_area_flow_including_the_move_on_delete_rule(client) -> None:
-    home = client.get("/api/tasks/areas").json()["areas"][0]
+    home = client.post("/api/tasks/areas", json={"name": "Home"}).json()
     work = client.post("/api/tasks/areas", json={"name": "Work"}).json()
     assert client.post("/api/tasks/areas", json={"name": "work"}).status_code == 422
     _task(client, area_id=work["id"])

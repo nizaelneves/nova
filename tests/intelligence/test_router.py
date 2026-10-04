@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from nova.core.registry import ModelRegistry
-from nova.core.types import ModelSpec
-from nova.learning._stubs import RoutingContext
-from nova.learning.routing.router import (
+from phi.core.registry import ModelRegistry
+from phi.core.types import ModelSpec
+from phi.learning._stubs import RoutingContext
+from phi.learning.routing.router import (
     HeuristicRouter,
     build_routing_context,
 )

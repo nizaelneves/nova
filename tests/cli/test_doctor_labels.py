@@ -1,4 +1,4 @@
-"""Tests for ``nova doctor`` optional dependency labels."""
+"""Tests for ``phi doctor`` optional dependency labels."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 _real_import = builtins.__import__
 
@@ -50,7 +50,7 @@ class TestDoctorOptionalLabels:
             c for c in data if c["name"] == "Optional: Apple Silicon energy monitoring"
         ]
         assert len(apple_checks) == 1
-        assert "Not installed (nova[energy-apple])" == apple_checks[0]["message"]
+        assert "Not installed (phi[energy-apple])" == apple_checks[0]["message"]
 
     def test_nvidia_label_uses_current_extra_name(self) -> None:
         """NVIDIA hint should reference the current project extra."""
@@ -63,4 +63,4 @@ class TestDoctorOptionalLabels:
             c for c in data if c["name"] == "Optional: NVIDIA energy monitoring"
         ]
         assert len(nvidia_checks) == 1
-        assert "Not installed (nova[gpu-metrics])" == nvidia_checks[0]["message"]
+        assert "Not installed (phi[gpu-metrics])" == nvidia_checks[0]["message"]

@@ -6,8 +6,8 @@ from typing import List
 
 import pytest
 
-from nova.channels._stubs import BaseChannel, ChannelHandler, ChannelStatus
-from nova.core.registry import ChannelRegistry
+from phi.channels._stubs import BaseChannel, ChannelHandler, ChannelStatus
+from phi.core.registry import ChannelRegistry
 
 
 class TestChannelRegistry:

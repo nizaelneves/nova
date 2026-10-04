@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from nova.connectors._stubs import Document
-from nova.core.registry import ConnectorRegistry
+from phi.connectors._stubs import Document
+from phi.core.registry import ConnectorRegistry
 
 
 def test_github_notifications_registered():
     """GitHubNotificationsConnector is discoverable via ConnectorRegistry."""
-    from nova.connectors.github_notifications import (
+    from phi.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -55,7 +55,7 @@ _NOTIFICATIONS_RESPONSE = [
 @pytest.fixture()
 def connector(tmp_path):
     """GitHubNotificationsConnector with fake token file."""
-    from nova.connectors.github_notifications import (
+    from phi.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -69,7 +69,7 @@ def test_is_connected(connector):
 
 
 def test_is_connected_no_file(tmp_path):
-    from nova.connectors.github_notifications import (
+    from phi.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -80,7 +80,7 @@ def test_is_connected_no_file(tmp_path):
 def test_sync_yields_documents(connector):
     """Sync returns Documents for each notification."""
     with patch(
-        "nova.connectors.github_notifications._github_api_get",
+        "phi.connectors.github_notifications._github_api_get",
         return_value=_NOTIFICATIONS_RESPONSE,
     ):
         docs = list(connector.sync(since=datetime(2026, 4, 1)))

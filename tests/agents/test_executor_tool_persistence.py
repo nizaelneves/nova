@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from nova.agents._stubs import AgentResult
-from nova.agents.executor import AgentExecutor, _tool_calls_for_storage
-from nova.agents.manager import AgentManager
-from nova.core.events import EventBus
-from nova.core.types import ToolResult
+from phi.agents._stubs import AgentResult
+from phi.agents.executor import AgentExecutor, _tool_calls_for_storage
+from phi.agents.manager import AgentManager
+from phi.core.events import EventBus
+from phi.core.types import ToolResult
 
 
 def test_tool_results_are_serialized_for_managed_messages() -> None:

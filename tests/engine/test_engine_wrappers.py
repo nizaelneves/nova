@@ -8,12 +8,12 @@ from typing import Any, Dict, List
 
 import pytest
 
-from nova.core.events import EventBus
-from nova.core.types import Message, Role
-from nova.engine._stubs import InferenceEngine, StreamChunk
-from nova.engine.multi import MultiEngine
-from nova.security.guardrails import GuardrailsEngine
-from nova.telemetry.instrumented_engine import InstrumentedEngine
+from phi.core.events import EventBus
+from phi.core.types import Message, Role
+from phi.engine._stubs import InferenceEngine, StreamChunk
+from phi.engine.multi import MultiEngine
+from phi.security.guardrails import GuardrailsEngine
+from phi.telemetry.instrumented_engine import InstrumentedEngine
 
 # ---------------------------------------------------------------------------
 # Fake engine that yields predetermined StreamChunks via stream_full

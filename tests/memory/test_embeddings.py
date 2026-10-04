@@ -6,7 +6,7 @@ import pytest
 
 st = pytest.importorskip("sentence_transformers")
 
-from nova.tools.storage.embeddings import (  # noqa: E402
+from phi.tools.storage.embeddings import (  # noqa: E402
     Embedder,
     SentenceTransformerEmbedder,
 )

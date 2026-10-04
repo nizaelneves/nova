@@ -10,7 +10,7 @@ the trip from the monitor to the JSONL file.
 
 from __future__ import annotations
 
-from nova.evals.core.types import EvalResult
+from phi.evals.core.types import EvalResult
 
 
 def _apple_result() -> EvalResult:
@@ -72,7 +72,7 @@ class TestSerializedRow:
         """
         import inspect
 
-        from nova.evals.core import runner as runner_mod
+        from phi.evals.core import runner as runner_mod
 
         source = inspect.getsource(runner_mod)
         for key in (

@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from nova.agents.deep_research import DeepResearchAgent
-from nova.connectors._stubs import Document
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.retriever import TwoStageRetriever
-from nova.connectors.store import KnowledgeStore
-from nova.tools.knowledge_search import KnowledgeSearchTool
+from phi.agents.deep_research import DeepResearchAgent
+from phi.connectors._stubs import Document
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.retriever import TwoStageRetriever
+from phi.connectors.store import KnowledgeStore
+from phi.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from nova.connectors._stubs import Document
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.store import KnowledgeStore
+from phi.connectors._stubs import Document
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.store import KnowledgeStore
 
 # ---------------------------------------------------------------------------
 # Helpers

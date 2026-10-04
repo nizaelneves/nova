@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.telemetry.flops import (
+from phi.telemetry.flops import (
     GPU_PEAK_TFLOPS_BF16,
     MODEL_PARAMS_B,
     compute_mfu,

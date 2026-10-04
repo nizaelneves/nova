@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from nova.core.registry import ToolRegistry
-from nova.tools.code_interpreter import CodeInterpreterTool
+from phi.core.registry import ToolRegistry
+from phi.tools.code_interpreter import CodeInterpreterTool
 
 
 class TestCodeInterpreterTool:

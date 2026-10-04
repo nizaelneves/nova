@@ -6,7 +6,7 @@ import pytest
 
 pydantic = pytest.importorskip("pydantic")
 
-from nova.server.models import (  # noqa: E402
+from phi.server.models import (  # noqa: E402
     ChatCompletionChunk,
     ChatCompletionRequest,
     ChatCompletionResponse,

@@ -36,7 +36,7 @@ export async function saveCloudKey(keyName: string, keyValue: string): Promise<v
 
 // Cached API base URL fetched from the Tauri backend at startup.
 // This avoids hardcoding the port — the Rust backend is the single
-// source of truth for NOVA_PORT.
+// source of truth for PHI_PORT.
 let _tauriApiBase: string | null = null;
 
 /** Pre-fetch the API base URL from the Tauri backend (call once at init). */
@@ -54,7 +54,7 @@ const DESKTOP_API_FALLBACK = 'http://127.0.0.1:8000';
 
 const getSettingsApiUrl = (): string => {
   try {
-    const raw = localStorage.getItem('nova-settings');
+    const raw = localStorage.getItem('phi-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.apiUrl) return parsed.apiUrl.replace(/\/+$/, '');
@@ -71,21 +71,21 @@ export const getBase = (): string => {
   return '';
 };
 
-// Resolve the local server API key (NOVA_API_KEY). When `nova serve`
+// Resolve the local server API key (PHI_API_KEY). When `phi serve`
 // is started with a key, AuthMiddleware 401s every /v1 and /api request that
 // lacks a Bearer token — so the frontend must send it (#266). Sourced from the
 // same settings blob as the API URL, with an optional build-time env override.
 // Returns '' when unset, so a keyless local server keeps working unchanged.
 export const getApiKey = (): string => {
   try {
-    const raw = localStorage.getItem('nova-settings');
+    const raw = localStorage.getItem('phi-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.apiKey) return String(parsed.apiKey);
     }
   } catch {}
-  if (import.meta.env.VITE_NOVA_API_KEY) {
-    return import.meta.env.VITE_NOVA_API_KEY as string;
+  if (import.meta.env.VITE_PHI_API_KEY) {
+    return import.meta.env.VITE_PHI_API_KEY as string;
   }
   return '';
 };
@@ -210,7 +210,7 @@ export async function preloadModel(modelName: string, owner?: string): Promise<v
   if (owner === 'litellm' || isCliModel(modelName) || _CLOUD_PREFIXES.some(p => modelName.startsWith(p))) {
     return;
   }
-  // Ask the Nova server to warm the model up (the browser cannot reach Ollama itself).
+  // Ask the Phi server to warm the model up (the browser cannot reach Ollama itself).
   const res = await apiFetch(`/v1/models/preload`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -809,6 +809,8 @@ export interface SyncSettings {
   interval_minutes: number;
   on_start: boolean;
   disabled_connectors: string[];
+  /** Local time of day, HH:MM, used when the interval is once a day. */
+  daily_time: string;
 }
 
 export interface SyncRow {
@@ -844,7 +846,9 @@ async function syncJson<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new Error(detail || `Request failed: ${res.status}`);
   }
-  return res.json();
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : (undefined as T);
 }
 
 export const fetchSyncSettings = (): Promise<SyncSettings> =>
@@ -860,6 +864,8 @@ export const saveSyncSettings = (changes: Partial<SyncSettings>): Promise<SyncSe
 export interface HomeSettings {
   display_name: string;
   messages: string[];
+  /** How often the home screen moves on to a different phrase, in minutes. */
+  phrase_rotation_minutes: number;
 }
 
 export const fetchHomeSettings = (): Promise<HomeSettings> => syncJson('/v1/home');
@@ -871,17 +877,131 @@ export const saveHomeSettings = (changes: Partial<HomeSettings>): Promise<HomeSe
     body: JSON.stringify(changes),
   });
 
-export const fetchSyncOverview =(): Promise<SyncOverview> =>
+export interface DataFolder {
+  path: string;
+  exists: boolean;
+}
+
+export const fetchDataFolder = (): Promise<DataFolder> => syncJson('/v1/data-folder');
+
+/** Opens the Phi data folder in the computer's file explorer. */
+export const openDataFolder = (): Promise<{ opened: string }> =>
+  syncJson('/v1/data-folder/open', { method: 'POST' });
+
+export interface MemoryNotes {
+  about_you: string;
+  memories: string;
+}
+
+export const fetchMemoryNotes = (): Promise<MemoryNotes> => syncJson('/v1/memory-notes');
+
+export const saveMemoryNotes = (changes: Partial<MemoryNotes>): Promise<MemoryNotes> =>
+  syncJson('/v1/memory-notes', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+
+export const fetchSyncOverview = (): Promise<SyncOverview> =>
   syncJson('/v1/connectors/sync-status');
 
 /** Start syncing every connected source (the "Sync now" button). */
 export const syncAllConnectors = (): Promise<SyncAllResult> =>
   syncJson('/v1/connectors/sync-all', { method: 'POST' });
 
-/** File types Nova can read when you add them with the "+" button. */
-export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx'];
+// ---------------------------------------------------------------------------
+// Pings (standalone reminders)
+// ---------------------------------------------------------------------------
 
-/** Adds files to Nova's knowledge, so it can use them in answers. Returns how many chunks were added. */
+export type PingPriority = 'high' | 'medium' | 'low';
+export type PingRepeatType = 'none' | 'weekly' | 'monthly';
+
+export interface Ping {
+  id: string;
+  text: string;
+  /** ISO date, YYYY-MM-DD. */
+  date: string;
+  /** 24h HH:MM. */
+  time: string;
+  priority: PingPriority;
+  repeat_type: PingRepeatType;
+  /** Repeat every N week(s)/month(s), depending on repeat_type. */
+  repeat_interval: number;
+  /** 0=Mon..6=Sun. Only meaningful when repeat_type === 'weekly'. */
+  repeat_days_of_week: number[];
+  completed: boolean;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface PingCreate {
+  text: string;
+  date: string;
+  time: string;
+  priority?: PingPriority;
+  repeat_type?: PingRepeatType;
+  repeat_interval?: number;
+  repeat_days_of_week?: number[];
+}
+
+export type PingUpdate = Partial<PingCreate>;
+
+export interface PingsSettings {
+  notifications_enabled: boolean;
+  /** Always-on/free in this pass; not user-editable from the frontend. */
+  in_app_enabled: boolean;
+  browser_enabled: boolean;
+  /** Minutes before the due time to notify by default (0 = at the exact time). */
+  default_lead_minutes: number;
+  tasks_reminders_enabled: boolean;
+  tasks_lead_minutes: number;
+  finances_reminders_enabled: boolean;
+  finances_lead_days: number;
+}
+
+export const fetchPings = (upcoming = false): Promise<Ping[]> =>
+  syncJson<{ pings: Ping[] }>(`/v1/pings${upcoming ? '?upcoming=true' : ''}`).then((r) => r.pings);
+
+export const createPing = (body: PingCreate): Promise<Ping> =>
+  syncJson('/v1/pings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+export const updatePing = (id: string, body: PingUpdate): Promise<Ping> =>
+  syncJson(`/v1/pings/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+export const completePing = (id: string): Promise<Ping> =>
+  syncJson(`/v1/pings/${id}/complete`, { method: 'POST' });
+
+export const snoozePing = (id: string, minutes?: number): Promise<Ping> =>
+  syncJson(`/v1/pings/${id}/snooze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(minutes !== undefined ? { minutes } : {}),
+  });
+
+export const deletePing = (id: string): Promise<void> =>
+  syncJson(`/v1/pings/${id}`, { method: 'DELETE' });
+
+export const fetchPingsSettings = (): Promise<PingsSettings> => syncJson('/v1/pings/settings');
+
+export const savePingsSettings = (changes: Partial<PingsSettings>): Promise<PingsSettings> =>
+  syncJson('/v1/pings/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+
+/** File types Phi can read when you add them with the "+" button. */
+export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx', '.xlsx'];
+
+/** Adds files to Phi's knowledge, so it can use them in answers. Returns how many chunks were added. */
 export async function addFilesToKnowledge(files: File[]): Promise<number> {
   const form = new FormData();
   for (const f of files) form.append('files', f);

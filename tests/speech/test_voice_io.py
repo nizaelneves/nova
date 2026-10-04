@@ -6,7 +6,7 @@ import struct
 import sys
 from types import SimpleNamespace
 
-from nova.speech.voice_io import record_until_silence
+from phi.speech.voice_io import record_until_silence
 
 
 class _FakeStream:

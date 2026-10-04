@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 import threading
 import time
 from typing import List
 
 import pytest
 
-from nova.connectors.autosync import start_auto_sync
-from nova.connectors.sync_settings import (
+from phi.connectors.autosync import start_auto_sync
+from phi.connectors.sync_settings import (
     SyncSettings,
     SyncSettingsError,
     load_sync_settings,
@@ -23,7 +24,7 @@ from nova.connectors.sync_settings import (
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path))
     return tmp_path
 
 
@@ -53,16 +54,33 @@ def test_a_broken_settings_file_falls_back_to_defaults(home) -> None:
     assert load_sync_settings() == SyncSettings()
 
 
+def test_a_field_from_an_older_version_is_dropped_not_treated_as_corrupt(home) -> None:
+    """Renaming a setting must never look like a broken file and wipe the rest."""
+    (home / "sync_settings.json").write_text(
+        '{"auto_enabled": false, "interval_minutes": 30, "sync_when_phi_starts": true}',
+        encoding="utf-8",
+    )
+
+    loaded = load_sync_settings()
+
+    assert loaded.auto_enabled is False
+    assert loaded.interval_minutes == 30
+
+
 @pytest.mark.parametrize(
     "bad",
     [
-        {"interval_minutes": 0},
+        {"interval_minutes": -1},
         {"interval_minutes": 5000},
         {"interval_minutes": 1.5},
         {"interval_minutes": True},
         {"auto_enabled": "yes"},
         {"disabled_connectors": "anytype"},
         {"colour": "red"},
+        {"daily_time": "25:00"},
+        {"daily_time": "3:00"},
+        {"daily_time": "03:60"},
+        {"daily_time": 300},
     ],
 )
 def test_invalid_settings_are_refused(bad) -> None:
@@ -190,7 +208,7 @@ def test_the_real_app_starts_and_stops_the_loop(home) -> None:
 
     from fastapi.testclient import TestClient
 
-    from nova.server.app import create_app
+    from phi.server.app import create_app
 
     app = create_app(SimpleNamespace(engine_id="fake", health=lambda: True), "fake")
 
@@ -224,12 +242,12 @@ class FakeSource:
         self.connected = False
 
     def sync_status(self):
-        from nova.connectors._stubs import SyncStatus
+        from phi.connectors._stubs import SyncStatus
 
         return SyncStatus()
 
     def sync(self, **kwargs):
-        from nova.connectors._stubs import Document
+        from phi.connectors._stubs import Document
 
         self.synced.set()
         yield Document(
@@ -246,9 +264,9 @@ def api(home, monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    from nova.core.registry import ConnectorRegistry
-    from nova.server import connectors_router
-    from nova.server.connectors_router import create_connectors_router
+    from phi.core.registry import ConnectorRegistry
+    from phi.server import connectors_router
+    from phi.server.connectors_router import create_connectors_router
 
     router = create_connectors_router()
     app = FastAPI()
@@ -286,7 +304,7 @@ def test_settings_endpoints_read_and_change_them(api) -> None:
 
 
 def open_settings() -> str:
-    from nova.connectors.sync_settings import settings_path
+    from phi.connectors.sync_settings import settings_path
 
     return settings_path().read_text(encoding="utf-8")
 
@@ -294,10 +312,19 @@ def open_settings() -> str:
 def test_invalid_settings_are_a_422_and_change_nothing(api) -> None:
     client, _, _ = api
 
-    bad = client.put("/v1/connectors/sync-settings", json={"interval_minutes": 0})
+    bad = client.put("/v1/connectors/sync-settings", json={"interval_minutes": -1})
 
     assert bad.status_code == 422
     assert client.get("/v1/connectors/sync-settings").json()["interval_minutes"] == 15
+
+
+def test_interval_zero_means_only_when_phi_starts(api) -> None:
+    client, _, _ = api
+
+    changed = client.put("/v1/connectors/sync-settings", json={"interval_minutes": 0})
+
+    assert changed.status_code == 200
+    assert changed.json()["interval_minutes"] == 0
 
 
 def test_sync_all_starts_every_connected_source(api) -> None:
@@ -357,3 +384,99 @@ def test_the_fixed_names_are_not_swallowed_by_the_connector_id_routes(api) -> No
 
     assert client.get("/v1/connectors/sync-status").status_code == 200
     assert client.get("/v1/connectors/sync-settings").status_code == 200
+
+
+# -- once a day, at a chosen time ------------------------------------------------
+
+
+class DailyHarness:
+    """The loop with a hand-moved wall clock, to test "once a day at HH:MM"."""
+
+    def __init__(self, start: datetime, **settings) -> None:
+        self.wall = start
+        self.settings = SyncSettings(**settings)
+        self.runs: List[datetime] = []
+        self.thread, self.stop = start_auto_sync(
+            lambda: self.runs.append(self.wall),
+            get_settings=lambda: self.settings,
+            wall_clock=lambda: self.wall,
+            first_delay=10_000,  # never reached: these tests use on_start=False
+            tick=0.002,
+        )
+
+    def at(self, moment: datetime) -> None:
+        self.wall = moment
+        time.sleep(0.05)
+
+    def close(self) -> None:
+        self.stop.set()
+        self.thread.join(timeout=2)
+
+
+@pytest.fixture
+def daily():
+    made: List[DailyHarness] = []
+
+    def make(start, **settings) -> DailyHarness:
+        made.append(DailyHarness(start, **settings))
+        return made[-1]
+
+    yield make
+    for item in made:
+        item.close()
+
+
+def test_daily_sync_waits_for_the_chosen_time_then_runs_once(daily) -> None:
+    h = daily(datetime(2026, 10, 1, 8, 0), interval_minutes=1440, on_start=False, daily_time="21:30")
+
+    h.at(datetime(2026, 10, 1, 21, 29))
+    assert h.runs == []
+    h.at(datetime(2026, 10, 1, 21, 30))
+    assert len(h.runs) == 1
+    h.at(datetime(2026, 10, 1, 23, 59))  # same day: no second run
+    assert len(h.runs) == 1
+    h.at(datetime(2026, 10, 2, 21, 29))
+    assert len(h.runs) == 1
+    h.at(datetime(2026, 10, 2, 21, 31))  # next day
+    assert len(h.runs) == 2
+
+
+def test_daily_sync_missed_while_off_runs_when_phi_opens_later_that_day(daily) -> None:
+    h = daily(datetime(2026, 10, 1, 8, 0), interval_minutes=1440, on_start=False, daily_time="03:00")
+    # started at 08:00 after 03:00 already passed: today counts as done, tomorrow it runs
+    assert h.runs == []
+    h.at(datetime(2026, 10, 2, 3, 5))
+    assert len(h.runs) == 1
+
+
+def test_daily_time_is_ignored_for_other_intervals(daily) -> None:
+    h = daily(datetime(2026, 10, 1, 8, 0), interval_minutes=30, on_start=False, daily_time="08:00")
+    h.at(datetime(2026, 10, 1, 9, 0))  # wall clock moves, but the 30-minute timer is monotonic
+    assert h.runs == []
+
+
+# -- once, only when Phi starts -------------------------------------------------
+
+
+def test_only_on_start_runs_exactly_once_then_stops(loop) -> None:
+    h = loop(interval_minutes=0, on_start=False)
+
+    h.advance(19)
+    assert h.runs == []
+    h.advance(2)  # past first_delay (20)
+    assert len(h.runs) == 1
+    h.advance(1000)  # no periodic timer: it never runs again on its own
+    assert len(h.runs) == 1
+
+
+def test_only_on_start_does_not_repeat_just_from_toggling_the_switch(loop) -> None:
+    """"Only when Phi starts" means the process start, not flipping the switch."""
+    h = loop(interval_minutes=0)
+    h.advance(21)
+    assert len(h.runs) == 1
+
+    h.settings = SyncSettings(auto_enabled=False, interval_minutes=0)
+    h.advance(5)
+    h.settings = SyncSettings(auto_enabled=True, interval_minutes=0)
+    h.advance(1000)
+    assert len(h.runs) == 1

@@ -20,9 +20,9 @@ import pytest
 
 fastapi = pytest.importorskip("fastapi")
 
-from nova.agents._stubs import AgentResult  # noqa: E402
-from nova.server.models import ChatCompletionRequest, ChatMessage  # noqa: E402
-from nova.server.routes import (  # noqa: E402
+from phi.agents._stubs import AgentResult  # noqa: E402
+from phi.server.models import ChatCompletionRequest, ChatMessage  # noqa: E402
+from phi.server.routes import (  # noqa: E402
     _agent_model_locks,
     _get_agent_model_lock,
     _handle_agent,

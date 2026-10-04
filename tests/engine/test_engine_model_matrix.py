@@ -5,11 +5,11 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.ollama import OllamaEngine
-from nova.engine.openai_compat_engines import (
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.ollama import OllamaEngine
+from phi.engine.openai_compat_engines import (
     AppleFmEngine,
     ExoEngine,
     LemonadeEngine,

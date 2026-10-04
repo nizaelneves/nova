@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.evals.core.pricing import PRICING, compute_turn_cost, estimate_cost
+from phi.evals.core.pricing import PRICING, compute_turn_cost, estimate_cost
 
 
 class TestPricing:

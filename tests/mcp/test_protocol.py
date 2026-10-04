@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from nova.mcp.protocol import (
+from phi.mcp.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
     INVALID_REQUEST,

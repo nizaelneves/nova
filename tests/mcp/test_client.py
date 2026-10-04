@@ -9,13 +9,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.mcp.client import MCPClient
-from nova.mcp.protocol import MCPError, MCPResponse
-from nova.mcp.server import MCPServer
-from nova.mcp.transport import InProcessTransport
-from nova.tools._stubs import ToolSpec
-from nova.tools.calculator import CalculatorTool
-from nova.tools.think import ThinkTool
+from phi.mcp.client import MCPClient
+from phi.mcp.protocol import MCPError, MCPResponse
+from phi.mcp.server import MCPServer
+from phi.mcp.transport import InProcessTransport
+from phi.tools._stubs import ToolSpec
+from phi.tools.calculator import CalculatorTool
+from phi.tools.think import ThinkTool
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ class TestMCPClient:
         result = client.initialize()
         assert "protocolVersion" in result
         assert "serverInfo" in result
-        assert result["serverInfo"]["name"] == "nova"
+        assert result["serverInfo"]["name"] == "phi"
         assert client._initialized is True
 
     def test_initialize_sets_capabilities(self, client):

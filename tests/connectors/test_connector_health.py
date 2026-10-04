@@ -10,20 +10,20 @@ import pytest
 
 # All connectors that should be testable without credentials
 _LOCAL_CONNECTORS = [
-    ("apple_notes", "nova.connectors.apple_notes", "AppleNotesConnector"),
-    ("imessage", "nova.connectors.imessage", "IMessageConnector"),
+    ("apple_notes", "phi.connectors.apple_notes", "AppleNotesConnector"),
+    ("imessage", "phi.connectors.imessage", "IMessageConnector"),
 ]
 
 _TOKEN_CONNECTORS = [
-    ("gmail_imap", "nova.connectors.gmail_imap", "GmailIMAPConnector"),
-    ("outlook", "nova.connectors.outlook", "OutlookConnector"),
-    ("slack", "nova.connectors.slack_connector", "SlackConnector"),
-    ("notion", "nova.connectors.notion", "NotionConnector"),
-    ("granola", "nova.connectors.granola", "GranolaConnector"),
-    ("gdrive", "nova.connectors.gdrive", "GDriveConnector"),
-    ("gcalendar", "nova.connectors.gcalendar", "GCalendarConnector"),
-    ("gcontacts", "nova.connectors.gcontacts", "GContactsConnector"),
-    ("dropbox", "nova.connectors.dropbox", "DropboxConnector"),
+    ("gmail_imap", "phi.connectors.gmail_imap", "GmailIMAPConnector"),
+    ("outlook", "phi.connectors.outlook", "OutlookConnector"),
+    ("slack", "phi.connectors.slack_connector", "SlackConnector"),
+    ("notion", "phi.connectors.notion", "NotionConnector"),
+    ("granola", "phi.connectors.granola", "GranolaConnector"),
+    ("gdrive", "phi.connectors.gdrive", "GDriveConnector"),
+    ("gcalendar", "phi.connectors.gcalendar", "GCalendarConnector"),
+    ("gcontacts", "phi.connectors.gcontacts", "GContactsConnector"),
+    ("dropbox", "phi.connectors.dropbox", "DropboxConnector"),
 ]
 
 _ALL_CONNECTORS = _LOCAL_CONNECTORS + _TOKEN_CONNECTORS
@@ -124,8 +124,8 @@ def test_knowledge_store_has_data() -> None:
 
     Skips if the DB is missing or has no indexed rows (fresh install / empty store).
     """
-    from nova.connectors.store import KnowledgeStore
-    from nova.core.config import DEFAULT_CONFIG_DIR
+    from phi.connectors.store import KnowledgeStore
+    from phi.core.config import DEFAULT_CONFIG_DIR
 
     db_path = DEFAULT_CONFIG_DIR / "knowledge.db"
     if not db_path.exists():
@@ -152,8 +152,8 @@ def test_knowledge_store_sources_have_chunks() -> None:
 
     Skips if the DB is missing or empty (same as test_knowledge_store_has_data).
     """
-    from nova.connectors.store import KnowledgeStore
-    from nova.core.config import DEFAULT_CONFIG_DIR
+    from phi.connectors.store import KnowledgeStore
+    from phi.core.config import DEFAULT_CONFIG_DIR
 
     db_path = DEFAULT_CONFIG_DIR / "knowledge.db"
     if not db_path.exists():

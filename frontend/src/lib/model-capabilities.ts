@@ -27,9 +27,22 @@ export function isEmbedOnlyModel(modelId: string): boolean {
  * Models served by the Claude Code CLI (they accept a reasoning effort). Only
  * the short names count: "claude-sonnet-..." is the paid API, not the CLI.
  */
-export function isCliModel(modelId: string): boolean {
+export function isClaudeCliModel(modelId: string): boolean {
   const name = (modelId || '').trim().toLowerCase();
   return name === 'sonnet' || name === 'opus' || name === 'haiku';
+}
+
+/**
+ * Models served by the Codex CLI, always written "codex:<name>". The prefix keeps
+ * them apart from the OpenAI API models, which are billed through an API key.
+ */
+export function isCodexCliModel(modelId: string): boolean {
+  return (modelId || '').trim().toLowerCase().startsWith('codex:');
+}
+
+/** Models served by any command-line engine (they accept a reasoning effort). */
+export function isCliModel(modelId: string): boolean {
+  return isClaudeCliModel(modelId) || isCodexCliModel(modelId);
 }
 
 export const EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
@@ -63,7 +76,7 @@ function localSizeB(name: string): number | null {
 /** A plain-language rating of a model for reasoning, shown next to the model. */
 export function thinkSupport(modelId: string): ThinkSupport {
   const name = (modelId || '').trim().toLowerCase();
-  if (isCliModel(name) || name.startsWith('claude-')) {
+  if (isClaudeCliModel(name) || name.startsWith('claude-')) {
     if (name.includes('haiku')) {
       return { level: 'basic', label: 'Think: basic', hint: 'Fast Claude model, light reasoning.' };
     }

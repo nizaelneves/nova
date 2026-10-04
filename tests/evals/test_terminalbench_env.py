@@ -16,8 +16,8 @@ from typing import Any, Dict, List
 
 import pytest
 
-from nova.evals.core.environment import TaskEnvironmentError
-from nova.evals.execution.terminalbench_env import TerminalBenchTaskEnv
+from phi.evals.core.environment import TaskEnvironmentError
+from phi.evals.execution.terminalbench_env import TerminalBenchTaskEnv
 
 # ---------------------------------------------------------------------------
 # Fake terminal_bench seam

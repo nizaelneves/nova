@@ -6,7 +6,7 @@ import builtins
 import sys
 from unittest.mock import MagicMock
 
-from nova.tools.image_tool import ImageGenerateTool
+from phi.tools.image_tool import ImageGenerateTool
 
 
 class TestImageGenerateTool:

@@ -1,10 +1,10 @@
-"""Tests for nova.cli._bootstrap.detect_cloud_keys."""
+"""Tests for phi.cli._bootstrap.detect_cloud_keys."""
 
 from __future__ import annotations
 
 import pytest
 
-from nova.cli import _bootstrap
+from phi.cli import _bootstrap
 
 ALL_KEYS = (
     "OPENROUTER_API_KEY",

@@ -7,10 +7,10 @@ from unittest import mock
 
 import pytest
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.cloud import (
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.cloud import (
     CloudEngine,
     _is_codex_model,
     _is_deepseek_model,
@@ -337,7 +337,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "nova.engine.cloud.httpx.post",
+            "phi.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             result = engine.generate(
@@ -384,7 +384,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "nova.engine.cloud.httpx.post",
+            "phi.engine.cloud.httpx.post",
             return_value=fake_response,
         ):
             result = engine.generate(
@@ -413,7 +413,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "nova.engine.cloud.httpx.post",
+            "phi.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             engine.generate(

@@ -5,16 +5,16 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict, List, Optional
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import Message, Role
-from nova.memory.store import (
+from phi.core.events import EventBus, EventType
+from phi.core.types import Message, Role
+from phi.memory.store import (
     TRUST_AUTO,
     TRUST_TRUSTED,
     TRUST_UNTRUSTED,
     Fact,
 )
-from nova.tools.storage._stubs import MemoryBackend, RetrievalResult
-from nova.tools.storage.context import (
+from phi.tools.storage._stubs import MemoryBackend, RetrievalResult
+from phi.tools.storage.context import (
     ContextConfig,
     build_context_message,
     format_context,
@@ -241,7 +241,7 @@ def test_inject_context_prioritizes_newest_facts_within_token_budget():
 
 def test_inject_context_merges_with_existing_system_message():
     messages = [
-        Message(role=Role.SYSTEM, content="You are Nova."),
+        Message(role=Role.SYSTEM, content="You are Phi."),
         Message(role=Role.USER, content="What is my favorite color?"),
     ]
     facts = [Fact(text="The user's favorite color is blue")]
@@ -250,9 +250,9 @@ def test_inject_context_merges_with_existing_system_message():
 
     system_messages = [m for m in augmented if m.role == Role.SYSTEM]
     assert len(system_messages) == 1
-    assert "You are Nova." in system_messages[0].content
+    assert "You are Phi." in system_messages[0].content
     assert "favorite color is blue" in system_messages[0].content
-    assert messages[0].content == "You are Nova."
+    assert messages[0].content == "You are Phi."
 
 
 def test_inject_context_collapses_multiple_system_messages():
@@ -359,7 +359,7 @@ def test_inject_context_publishes_event():
     backend = _FakeMemory(results)
     messages = [Message(role=Role.USER, content="hello")]
 
-    import nova.tools.storage.context as mod
+    import phi.tools.storage.context as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus

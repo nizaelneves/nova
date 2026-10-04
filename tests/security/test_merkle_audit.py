@@ -5,8 +5,8 @@ from __future__ import annotations
 import threading
 import time
 
-from nova.security.audit import AuditLogger
-from nova.security.types import (
+from phi.security.audit import AuditLogger
+from phi.security.types import (
     ScanFinding,
     SecurityEvent,
     SecurityEventType,

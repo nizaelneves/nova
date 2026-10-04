@@ -10,10 +10,10 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from nova.cli import cli
-from nova.core.config import NovaConfig
-from nova.core.events import EventBus, EventType
-from nova.core.types import ToolResult
+from phi.cli import cli
+from phi.core.config import PhiConfig
+from phi.core.events import EventBus, EventType
+from phi.core.types import ToolResult
 
 
 def write_skill(root: Path, name: str, steps: list[dict]) -> None:
@@ -28,13 +28,13 @@ def write_skill(root: Path, name: str, steps: list[dict]) -> None:
 
 @pytest.fixture
 def skill_cli(tmp_path):
-    from nova.core.registry import ToolRegistry
-    from nova.tools.calculator import CalculatorTool
-    from nova.tools.shell_exec import ShellExecTool
+    from phi.core.registry import ToolRegistry
+    from phi.tools.calculator import CalculatorTool
+    from phi.tools.shell_exec import ShellExecTool
 
     ToolRegistry.register_value("calculator", CalculatorTool)
     ToolRegistry.register_value("shell_exec", ShellExecTool)
-    cfg = NovaConfig()
+    cfg = PhiConfig()
     cfg.security.audit_log_path = str(tmp_path / "audit.db")
     cfg.security.capabilities.enabled = True
     cfg.security.capabilities.default_deny = True
@@ -42,10 +42,10 @@ def skill_cli(tmp_path):
     cfg.learning.skills.overlay_dir = str(tmp_path / "overlays")
     bus = EventBus(record_history=True)
     with (
-        patch("nova.cli.skill_cmd._get_skill_paths", return_value=[tmp_path]),
-        patch("nova.cli.skill_cmd.load_config", return_value=cfg),
-        patch("nova.core.config.load_config", return_value=cfg),
-        patch("nova.cli.skill_cmd.EventBus", return_value=bus),
+        patch("phi.cli.skill_cmd._get_skill_paths", return_value=[tmp_path]),
+        patch("phi.cli.skill_cmd.load_config", return_value=cfg),
+        patch("phi.core.config.load_config", return_value=cfg),
+        patch("phi.cli.skill_cmd.EventBus", return_value=bus),
     ):
         yield tmp_path, cfg, bus
 
@@ -122,7 +122,7 @@ def test_default_deny_blocks_real_shell_before_dispatch(skill_cli):
             }
         ],
     )
-    with patch("nova.tools.shell_exec.ShellExecTool.execute") as execute:
+    with patch("phi.tools.shell_exec.ShellExecTool.execute") as execute:
         result = CliRunner().invoke(cli, ["skill", "run", "shell"], input="y\n")
     assert result.exit_code != 0
     assert "code:execute" in result.output and "denied" in result.output
@@ -168,7 +168,7 @@ def test_granted_shell_still_requires_user_confirmation(
         ],
     )
     with patch(
-        "nova.tools.shell_exec.ShellExecTool.execute",
+        "phi.tools.shell_exec.ShellExecTool.execute",
         return_value=ToolResult(
             tool_name="shell_exec",
             content="STEP_RAN",
@@ -215,7 +215,7 @@ def test_policy_startup_failure_never_dispatches(skill_cli):
             }
         ],
     )
-    with patch("nova.tools.shell_exec.ShellExecTool.execute") as execute:
+    with patch("phi.tools.shell_exec.ShellExecTool.execute") as execute:
         result = CliRunner().invoke(cli, ["skill", "run", "shell"])
     assert result.exit_code != 0
     execute.assert_not_called()

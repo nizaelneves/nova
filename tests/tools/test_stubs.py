@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import ToolCall, ToolResult
-from nova.security.capabilities import DEFAULT_TOOL_CAPABILITIES
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
-from nova.tools.code_interpreter import CodeInterpreterTool
+from phi.core.events import EventBus, EventType
+from phi.core.types import ToolCall, ToolResult
+from phi.security.capabilities import DEFAULT_TOOL_CAPABILITIES
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.tools.code_interpreter import CodeInterpreterTool
 
 # ---------------------------------------------------------------------------
 # Helpers

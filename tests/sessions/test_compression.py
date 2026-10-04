@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.registry import CompressionRegistry
-from nova.core.types import Message, Role
+from phi.core.registry import CompressionRegistry
+from phi.core.types import Message, Role
 
 
 @pytest.fixture(autouse=True)
 def _register_compressors():
     """Re-register compression strategies after registry clear."""
-    from nova.sessions.compression import (
+    from phi.sessions.compression import (
         ModelSummarization,
         RuleBasedPrecompression,
         SessionConsolidation,
@@ -35,7 +35,7 @@ def _make_messages(n: int) -> list[Message]:
 
 
 def test_rule_based_strips_tool_boilerplate():
-    from nova.sessions.compression import RuleBasedPrecompression
+    from phi.sessions.compression import RuleBasedPrecompression
 
     compressor = RuleBasedPrecompression()
     long_snippet = "x" * 5000
@@ -59,7 +59,7 @@ def test_rule_based_strips_tool_boilerplate():
 
 
 def test_session_consolidation_preserves_recent():
-    from nova.sessions.compression import SessionConsolidation
+    from phi.sessions.compression import SessionConsolidation
 
     compressor = SessionConsolidation()
     msgs = _make_messages(20)
@@ -69,8 +69,8 @@ def test_session_consolidation_preserves_recent():
 
 
 def test_compression_registry():
-    from nova.core.registry import CompressionRegistry
-    from nova.sessions.compression import RuleBasedPrecompression
+    from phi.core.registry import CompressionRegistry
+    from phi.sessions.compression import RuleBasedPrecompression
 
     assert CompressionRegistry.contains("rule_based_precompression")
     cls = CompressionRegistry.get("rule_based_precompression")
@@ -78,7 +78,7 @@ def test_compression_registry():
 
 
 def test_tiered_summaries_gradient():
-    from nova.sessions.compression import TieredSummaries
+    from phi.sessions.compression import TieredSummaries
 
     compressor = TieredSummaries()
     msgs = _make_messages(20)

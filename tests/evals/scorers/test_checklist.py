@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.evals.scorers._checklist import (
+from phi.evals.scorers._checklist import (
     ChecklistScorer,
     contains_key_phrases,
     normalize_str,

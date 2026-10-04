@@ -1,4 +1,4 @@
-"""Tests for nova.learning.spec_search.external_adapter."""
+"""Tests for phi.learning.spec_search.external_adapter."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from nova.evals.core.types import EvalRecord
-from nova.learning.spec_search.external_adapter import (
+from phi.evals.core.types import EvalRecord
+from phi.learning.spec_search.external_adapter import (
     write_external_records_as_traces,
 )
-from nova.traces.store import TraceStore
+from phi.traces.store import TraceStore
 
 
 def _fake_records(n: int) -> list[EvalRecord]:

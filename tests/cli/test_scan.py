@@ -1,4 +1,4 @@
-"""Tests for ``nova scan`` privacy scanner CLI command."""
+"""Tests for ``phi scan`` privacy scanner CLI command."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import sys
 from subprocess import CompletedProcess
 from unittest.mock import MagicMock, patch
 
-from nova.cli.scan_cmd import PrivacyScanner, ScanResult
+from phi.cli.scan_cmd import PrivacyScanner, ScanResult
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -446,11 +446,11 @@ class TestJsonOutput:
     def test_json_output_structure(self) -> None:
         from click.testing import CliRunner
 
-        from nova.cli.scan_cmd import scan
+        from phi.cli.scan_cmd import scan
 
         runner = CliRunner()
         with patch(
-            "nova.cli.scan_cmd.PrivacyScanner.run_all",
+            "phi.cli.scan_cmd.PrivacyScanner.run_all",
             return_value=[
                 ScanResult("Test", "ok", "all good", "all"),
             ],

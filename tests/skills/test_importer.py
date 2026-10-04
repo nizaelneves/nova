@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from nova.skills.importer import SkillImporter
-from nova.skills.parser import SkillParser
-from nova.skills.sources.base import ResolvedSkill
-from nova.skills.tool_translator import ToolTranslator
+from phi.skills.importer import SkillImporter
+from phi.skills.parser import SkillParser
+from phi.skills.sources.base import ResolvedSkill
+from phi.skills.tool_translator import ToolTranslator
 
 
 def _make_resolved(tmp_path: Path, body: str = "Body") -> ResolvedSkill:

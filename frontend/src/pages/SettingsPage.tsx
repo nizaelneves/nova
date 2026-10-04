@@ -6,9 +6,6 @@ import {
   Database,
   Info,
   Check,
-  Sun,
-  Moon,
-  Monitor,
   Download,
   Upload,
   Trash2,
@@ -17,7 +14,7 @@ import {
   Search,
   Brain,
 } from 'lucide-react';
-import { useAppStore, type ThemeMode } from '../lib/store';
+import { useAppStore } from '../lib/store';
 import {
   checkHealth,
   fetchSpeechHealth,
@@ -32,21 +29,31 @@ import {
   isTauri,
   fetchSyncSettings,
   saveSyncSettings,
-  fetchHomeSettings,
-  saveHomeSettings,
-  type HomeSettings,
-  fetchSyncOverview,
+  fetchMemoryNotes,
+  fetchDataFolder,
+  openDataFolder,
+  saveMemoryNotes,
+  fetchAvailableTools,
+  type ToolInfo,
   syncAllConnectors,
   type InferenceSource,
-  type SyncOverview,
   type SyncSettings,
 } from '../lib/api';
-import { timeAgo } from '../lib/time';
 import { toast } from 'sonner';
+import { CLI_ENGINES_ENABLED } from '../lib/features';
 import { Icon } from '../components/Icon';
-import { cleanPhrase } from '../lib/phrase';
+import {
+  MEMORIZE_CATEGORIES,
+  addItem,
+  loadMemorize,
+  removeItem,
+  saveMemorize,
+  toggleCategory,
+  type MemorizeCategory,
+  type MemorizeData,
+} from '../lib/memorize';
 
-const CLOUD_KEY_STATUS_CHANGED = 'nova-cloud-key-status-changed';
+const CLOUD_KEY_STATUS_CHANGED = 'phi-cloud-key-status-changed';
 
 function OllamaModelList() {
   const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
@@ -176,22 +183,20 @@ function ApiKeyInput({
   );
 }
 
-function CloudProviderStatus({ label, keyName }: { label: string; keyName: string }) {
+function CloudProviderStatus({ label, keyName, toolName }: { label: string; keyName: string; toolName: string }) {
   const [hasKey, setHasKey] = useState(false);
   const desktopKeyStorage = isTauri();
 
   const refresh = useCallback(async () => {
-    if (!desktopKeyStorage) {
-      setHasKey(false);
-      return;
-    }
     try {
-      const status = await getCloudKeyStatus();
+      const status = desktopKeyStorage
+        ? await getCloudKeyStatus()
+        : await fetchToolCredentialStatus(toolName);
       setHasKey(!!status[keyName]);
     } catch {
       setHasKey(false);
     }
-  }, [desktopKeyStorage, keyName]);
+  }, [desktopKeyStorage, keyName, toolName]);
 
   useEffect(() => {
     void refresh();
@@ -227,6 +232,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const SYNC_INTERVALS = [5, 15, 30, 60, 180, 360, 720, 1440];
 
 function intervalLabel(minutes: number): string {
+  if (minutes === 0) return 'Only when Phi starts';
   if (minutes < 60) return `Every ${minutes} minutes`;
   if (minutes === 60) return 'Every hour';
   if (minutes % 60 === 0 && minutes < 1440) return `Every ${minutes / 60} hours`;
@@ -256,12 +262,10 @@ function Switch({ on, onClick, label }: { on: boolean; onClick: () => void; labe
 /** How and when connected sources (Anytype and the others) are kept up to date. */
 function SyncSection({ onSaved }: { onSaved: () => void }) {
   const [settings, setSettings] = useState<SyncSettings | null>(null);
-  const [overview, setOverview] = useState<SyncOverview | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   const reload = useCallback(() => {
     fetchSyncSettings().then(setSettings).catch(() => setSettings(null));
-    fetchSyncOverview().then(setOverview).catch(() => setOverview(null));
   }, []);
   useEffect(reload, [reload]);
 
@@ -293,22 +297,16 @@ function SyncSection({ onSaved }: { onSaved: () => void }) {
       </Section>
     );
   }
-  const intervals = SYNC_INTERVALS.includes(settings.interval_minutes)
-    ? SYNC_INTERVALS
-    : [...SYNC_INTERVALS, settings.interval_minutes].sort((a, b) => a - b);
-  const toggleConnector = (id: string) =>
-    change({
-      disabled_connectors: settings.disabled_connectors.includes(id)
-        ? settings.disabled_connectors.filter((c) => c !== id)
-        : [...settings.disabled_connectors, id],
-    });
-
+  const selectableIntervals = [0, ...SYNC_INTERVALS];
+  const intervals = selectableIntervals.includes(settings.interval_minutes)
+    ? selectableIntervals
+    : [...selectableIntervals, settings.interval_minutes].sort((a, b) => a - b);
   return (
     <Section title="Synchronization">
-      <SettingRow label="Automatic sync" description="Keep every connected source up to date in the background">
-        <Switch on={settings.auto_enabled} label="Automatic sync" onClick={() => change({ auto_enabled: !settings.auto_enabled })} />
+      <SettingRow label="Automatic Sync" description="Works In The Background">
+        <Switch on={settings.auto_enabled} label="Automatic Sync" onClick={() => change({ auto_enabled: !settings.auto_enabled })} />
       </SettingRow>
-      <SettingRow label="How often" description="Time between automatic syncs">
+      <SettingRow label="How Often">
         <select
           value={settings.interval_minutes}
           disabled={!settings.auto_enabled}
@@ -321,227 +319,222 @@ function SyncSection({ onSaved }: { onSaved: () => void }) {
           ))}
         </select>
       </SettingRow>
-      <SettingRow label="Sync when Nova starts" description="Sync shortly after opening Nova, instead of waiting one interval">
-        <Switch on={settings.on_start} label="Sync when Nova starts" onClick={() => change({ on_start: !settings.on_start })} />
-      </SettingRow>
-      <SettingRow label="Sync now" description="Sync every connected source right away">
+      {settings.interval_minutes === 1440 && (
+        <SettingRow label="At What Time">
+          <input
+            type="time"
+            value={settings.daily_time}
+            disabled={!settings.auto_enabled}
+            onChange={(e) => { if (e.target.value) void change({ daily_time: e.target.value }); }}
+            className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer disabled:opacity-50"
+            style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+          />
+        </SettingRow>
+      )}
+      <SettingRow label="" description="Sync Every Connected Source">
         <button
           type="button"
           onClick={syncNow}
           disabled={syncing}
-          className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+          className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg cursor-pointer disabled:opacity-60"
+          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
         >
-          {syncing ? 'Syncing…' : 'Sync now'}
+          <Icon name="refresh" size={14} className={syncing ? 'animate-spin' : undefined} />
+          {syncing ? 'Syncing…' : 'Sync Now'}
         </button>
       </SettingRow>
-      <div className="pt-3">
-        <div className="text-xs mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
-          Sources included in automatic sync
+    </Section>
+  );
+}
+
+/** What Phi remembers about you: two notes you can read and edit. */
+function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; memoryStats: { entries: number; backend: string } | null }) {
+  const [saved, setSaved] = useState<{ about_you: string; memories: string } | null>(null);
+  const [aboutYou, setAboutYou] = useState('');
+  const [memories, setMemories] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetchMemoryNotes()
+      .then((n) => { setSaved(n); setAboutYou(n.about_you); setMemories(n.memories); })
+      .catch(() => setSaved(null));
+  }, []);
+
+  const dirty = !!saved && (aboutYou !== saved.about_you || memories !== saved.memories);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const n = await saveMemoryNotes({ about_you: aboutYou, memories });
+      setSaved(n);
+      setAboutYou(n.about_you);
+      setMemories(n.memories);
+      onSaved();
+      toast.success('Phi will use this from your next message');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const box = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
+  return (
+    <Section title="Memory">
+      <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
+        Everything here is sent to the model as background, so Phi knows who you are. Edit it freely: what you write is what Phi remembers.
+      </p>
+      <div className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm" style={{ color: 'var(--color-text)' }}>About you</span>
+          <textarea value={aboutYou} rows={7} disabled={!saved} onChange={(e) => setAboutYou(e.target.value)}
+            placeholder="Your name, language, work, goals…"
+            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y" style={box} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm" style={{ color: 'var(--color-text)' }}>Things to remember</span>
+          <textarea value={memories} rows={7} disabled={!saved} onChange={(e) => setMemories(e.target.value)}
+            placeholder="Preferences, decisions, anything Phi should keep in mind between chats…"
+            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y" style={box} />
+        </label>
+        <div className="flex items-center justify-between">
+          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+            {memoryStats ? `Also indexed: ${memoryStats.entries} saved entries (${memoryStats.backend})` : ''}
+          </span>
+          <button type="button" onClick={() => void save()} disabled={!dirty || busy}
+            className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-40"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
+            {busy ? 'Saving…' : 'Save memory'}
+          </button>
         </div>
-        {overview && overview.connectors.length === 0 && (
-          <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            No sources connected yet. Add one in Data Sources.
-          </div>
-        )}
-        {overview?.connectors.map((c) => (
-          <div key={c.connector_id} className="flex items-center justify-between py-2">
-            <div>
-              <div className="text-sm" style={{ color: 'var(--color-text)' }}>{c.display_name}</div>
-              <div className="text-xs" style={{ color: c.error ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}>
-                {c.error ? c.error : `Last sync: ${timeAgo(c.last_sync)}`}
-              </div>
-            </div>
-            <Switch on={c.auto} label={`Auto-sync ${c.display_name}`} onClick={() => toggleConnector(c.connector_id)} />
-          </div>
-        ))}
       </div>
     </Section>
   );
 }
 
-/** A centered pop-up over the page. Click outside or press Escape to close. */
-function Popup({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+// Keys already shown in "API Keys" are not repeated under Tools.
+const CLOUD_KEYS = new Set(['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY', 'TYPESAFE_API_KEY']);
+
+/**
+ * Every tool that needs a key shows up here on its own, straight from the server.
+ * To add a tool: register it in the backend (and list its keys in TOOL_CREDENTIALS),
+ * or plug in an MCP server. No change to this screen is needed.
+ */
+function ToolsSection() {
+  const [tools, setTools] = useState<ToolInfo[] | null>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    fetchAvailableTools().then(setTools).catch(() => setTools([]));
+  }, []);
+
+  const withKeys = (tools ?? []).filter(
+    (t) => t.source === 'tool' && t.credential_keys.some((k) => !CLOUD_KEYS.has(k)),
+  );
+  const others = (tools ?? []).length - withKeys.length;
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(3, 3, 10, 0.72)', backdropFilter: 'blur(4px)' }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        role="dialog"
-        aria-label={title}
-        className="w-full max-w-md rounded-2xl p-5"
-        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
-      >
-        <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-heading)' }}>{title}</h4>
-        {children}
-      </div>
-    </div>
+    <Section title="Tools">
+      {tools === null && <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>}
+      {withKeys.map((t) => (
+        <div key={t.name}>
+          {t.credential_keys.filter((k) => !CLOUD_KEYS.has(k)).map((key) => (
+            <SettingRow key={key} label={`${t.name.replace(/_/g, ' ')} (${key.replace(/_API_KEY$/, '').toLowerCase()})`} description={`${t.description || t.category} — ${key}`}>
+              <ApiKeyInput keyName={key} placeholder={key} toolName={t.name} />
+            </SettingRow>
+          ))}
+        </div>
+      ))}
+      {tools !== null && (
+        <div className="text-xs pt-3" style={{ color: 'var(--color-text-tertiary)' }}>
+          {others} more tools work without a key. New tools, including any MCP server, appear here automatically when they need one.
+        </div>
+      )}
+    </Section>
   );
 }
 
-/** The name in the greeting and the phrases shown on the home screen. */
-function HomeSection({ onSaved }: { onSaved: () => void }) {
-  const [saved, setSaved] = useState<HomeSettings | null>(null);
-  const [name, setName] = useState('');
-  // null = closed; index = editing that phrase; -1 = adding a new one
-  const [editing, setEditing] = useState<number | null>(null);
-  const [draft, setDraft] = useState('');
-  const [deleting, setDeleting] = useState<number | null>(null);
-
+/** Where Phi keeps its files on this computer, with a button to open that folder. */
+function DataFolderRow() {
+  const [path, setPath] = useState<string | null>(null);
   useEffect(() => {
-    fetchHomeSettings()
-      .then((h) => { setSaved(h); setName(h.display_name); })
-      .catch(() => setSaved(null));
+    fetchDataFolder().then((f) => setPath(f.path)).catch(() => setPath(null));
   }, []);
 
-  const store = async (changes: Partial<HomeSettings>) => {
+  const open = async () => {
     try {
-      const h = await saveHomeSettings(changes);
-      setSaved(h);
-      setName(h.display_name);
-      onSaved();
-      return true;
+      await openDataFolder();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save');
-      return false;
+      toast.error(err instanceof Error ? err.message : 'Could not open the folder');
     }
   };
 
-  const saveName = () => {
-    if (!saved || name.trim() === saved.display_name) return;
-    void store({ display_name: name.trim() });
-  };
-
-  const phrases = saved?.messages ?? [];
-  const openEditor = (index: number) => {
-    setDraft(index >= 0 ? cleanPhrase(phrases[index]) : '');
-    setEditing(index);
-  };
-  const savePhrase = async () => {
-    const text = cleanPhrase(draft);
-    if (!text || editing === null) return;
-    const next = editing >= 0 ? phrases.map((p, i) => (i === editing ? text : p)) : [...phrases, text];
-    if (await store({ messages: next })) setEditing(null);
-  };
-  const removePhrase = async () => {
-    if (deleting === null) return;
-    if (await store({ messages: phrases.filter((_, i) => i !== deleting) })) setDeleting(null);
-  };
-
-  const iconButton = 'p-1.5 rounded-lg cursor-pointer transition-colors hover:bg-white/5';
   return (
-    <Section title="Home screen">
-      <SettingRow label="Your name" description="Shown in the greeting: Good Morning, …">
-        <input
-          value={name}
-          maxLength={40}
-          disabled={!saved}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={saveName}
-          className="w-48 text-sm px-3 py-1.5 rounded-lg outline-none"
-          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-        />
-      </SettingRow>
-      <div className="pt-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm" style={{ color: 'var(--color-text)' }}>Your phrases</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
-              In any language. Nova shows one of them each time the home opens.
-            </div>
+    <SettingRow label="Phi folder" description="Tasks, finances, memory, knowledge and settings are saved here">
+      <div className="flex items-center gap-2 max-w-md">
+        <code className="text-xs truncate px-2 py-1 rounded" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }} title={path ?? ''}>
+          {path ?? 'Unavailable'}
+        </code>
+        <button
+          type="button"
+          onClick={() => void open()}
+          disabled={!path}
+          className="composer-icon shrink-0 disabled:opacity-40"
+          title="Open in file explorer"
+          aria-label="Open in file explorer"
+        >
+          <Icon name="folder" size={18} />
+        </button>
+      </div>
+    </SettingRow>
+  );
+}
+
+/** Effects (background stars, the face animation) — picked here, applied on Save. */
+function AppearanceSection({
+  settings,
+  updateSettings,
+  onSaved,
+}: {
+  settings: { effects: 'full' | 'balanced' | 'off' };
+  updateSettings: (partial: { effects: 'full' | 'balanced' | 'off' }) => void;
+  onSaved: () => void;
+}) {
+  const [draft, setDraft] = useState(settings.effects);
+  useEffect(() => setDraft(settings.effects), [settings.effects]);
+  const dirty = draft !== settings.effects;
+
+  return (
+    <Section title="Appearance">
+      <SettingRow label="Effects">
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--color-bg-secondary)' }}>
+            {([['full', 'Full'], ['balanced', 'Balanced'], ['off', 'Off']] as const).map(([value, label]) => {
+              const isActive = draft === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setDraft(value)}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
+                  style={{
+                    background: isActive ? 'var(--color-accent)' : 'transparent',
+                    color: isActive ? 'var(--color-on-accent)' : 'var(--color-text-tertiary)',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
           <button
             type="button"
-            disabled={!saved}
-            onClick={() => openEditor(-1)}
-            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 shrink-0"
-            style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent-light)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
+            onClick={() => { updateSettings({ effects: draft }); onSaved(); }}
+            disabled={!dirty}
+            className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-40"
+            style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
           >
-            <Icon name="add-circle" size={16} /> Add phrase
+            Save
           </button>
         </div>
-        <div className="flex flex-col gap-2 mt-3">
-          {saved && phrases.length === 0 && (
-            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>No phrases yet.</div>
-          )}
-          {phrases.map((phrase, i) => (
-            <div
-              key={`${i}-${phrase}`}
-              className="flex items-start gap-3 rounded-xl px-4 py-3"
-              style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
-            >
-              <p className="flex-1 text-sm break-words" style={{ color: 'var(--color-text)' }}>
-                {'“'}{cleanPhrase(phrase)}{'”'}
-              </p>
-              <button type="button" aria-label="Edit phrase" title="Edit" className={iconButton}
-                style={{ color: 'var(--color-text-secondary)' }} onClick={() => openEditor(i)}>
-                <Icon name="pen" size={16} />
-              </button>
-              <button type="button" aria-label="Delete phrase" title="Delete" className={iconButton}
-                style={{ color: 'var(--color-error)' }} onClick={() => setDeleting(i)}>
-                <Icon name="trash-bin-minimalistic" size={16} />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {editing !== null && (
-        <Popup title={editing >= 0 ? 'Edit phrase' : 'New phrase'} onClose={() => setEditing(null)}>
-          <textarea
-            autoFocus
-            value={draft}
-            rows={4}
-            maxLength={200}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Um passo de cada vez."
-            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-none"
-            style={{ background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-          />
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>{draft.length}/200</span>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setEditing(null)}
-                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-                style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-                Cancel
-              </button>
-              <button type="button" onClick={() => void savePhrase()} disabled={!draft.trim()}
-                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-                style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-                Save
-              </button>
-            </div>
-          </div>
-        </Popup>
-      )}
-
-      {deleting !== null && (
-        <Popup title="Delete this phrase?" onClose={() => setDeleting(null)}>
-          <p className="text-sm mb-4 break-words" style={{ color: 'var(--color-text-secondary)' }}>
-            {'“'}{cleanPhrase(phrases[deleting])}{'”'}
-          </p>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setDeleting(null)}
-              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-              Cancel
-            </button>
-            <button type="button" onClick={() => void removePhrase()}
-              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-              style={{ background: 'var(--color-error)', color: '#fff' }}>
-              Delete
-            </button>
-          </div>
-        </Popup>
-      )}
+      </SettingRow>
     </Section>
   );
 }
@@ -550,7 +543,7 @@ function SettingRow({ label, description, children }: { label: string; descripti
   return (
     <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
       <div>
-        <div className="text-sm" style={{ color: 'var(--color-text)' }}>{label}</div>
+        {label && <div className="text-sm" style={{ color: 'var(--color-text)' }}>{label}</div>}
         {description && (
           <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>{description}</div>
         )}
@@ -560,13 +553,143 @@ function SettingRow({ label, description, children }: { label: string; descripti
   );
 }
 
-const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
-];
+
+const SETTINGS_TABS = [
+  { id: 'general', label: 'General' },
+  { id: 'ai', label: 'API' },
+  { id: 'integrations', label: 'Integrations' },
+  { id: 'memory', label: 'Memory' },
+  { id: 'about', label: 'About' },
+] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
+
+/** The topics Phi should help the user memorize, and the items they add under them. */
+function MemorizeSection({ onSaved }: { onSaved: () => void }) {
+  const [data, setData] = useState<MemorizeData>(() => loadMemorize());
+  const [picked, setPicked] = useState<MemorizeCategory | ''>('');
+  const [text, setText] = useState('');
+  const [source, setSource] = useState('');
+
+  const update = (next: MemorizeData) => {
+    setData(next);
+    saveMemorize(next);
+    onSaved();
+  };
+
+  const enabled = MEMORIZE_CATEGORIES.filter((c) => data.enabled.includes(c.id));
+  const target = enabled.find((c) => c.id === picked)?.id ?? enabled[0]?.id;
+  const label = (id: MemorizeCategory) => MEMORIZE_CATEGORIES.find((c) => c.id === id)?.label ?? id;
+  const box = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
+
+  const add = () => {
+    if (!target || !text.trim()) return;
+    update(addItem(data, { category: target, text, source }));
+    setText('');
+    setSource('');
+  };
+
+  return (
+    <>
+      <Section title="What should Phi help you memorize?">
+        {MEMORIZE_CATEGORIES.map((c) => (
+          <SettingRow key={c.id} label={c.label} description={c.description}>
+            <Switch
+              on={data.enabled.includes(c.id)}
+              label={c.label}
+              onClick={() => update(toggleCategory(data, c.id))}
+            />
+          </SettingRow>
+        ))}
+        <p className="text-xs mt-3" style={{ color: 'var(--color-text-tertiary)' }}>
+          How and when Phi brings these up (a ping, out loud, or on command) is set up next.
+        </p>
+      </Section>
+
+      <Section title="Your items">
+        {!target ? (
+          <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
+            Turn on at least one topic above to start adding what you want to memorize.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <select
+              value={target}
+              onChange={(e) => setPicked(e.target.value as MemorizeCategory)}
+              aria-label="Topic"
+              className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer w-full"
+              style={box}
+            >
+              {enabled.map((c) => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+            </select>
+            <textarea
+              value={text}
+              rows={3}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="What do you want to memorize?"
+              className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y"
+              style={box}
+            />
+            <input
+              type="text"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="Source (optional): book, verse reference, author…"
+              className="w-full text-sm px-3 py-1.5 rounded-lg outline-none"
+              style={box}
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={add}
+                disabled={!text.trim()}
+                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-40"
+                style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
+
+        {data.items.length > 0 && (
+          <div className="flex flex-col mt-4">
+            {data.items.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-start justify-between gap-3 py-3"
+                style={{ borderTop: '1px solid var(--color-border-subtle)' }}
+              >
+                <div className="min-w-0">
+                  <div className="text-xs mb-1" style={{ color: 'var(--color-accent)' }}>{label(item.category)}</div>
+                  <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>{item.text}</div>
+                  {item.source && (
+                    <div className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>{item.source}</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => update(removeItem(data, item.id))}
+                  className="p-1 rounded cursor-pointer shrink-0"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                  aria-label="Remove item"
+                  title="Remove"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </>
+  );
+}
 
 export function SettingsPage() {
+  const [tab, setTab] = useState<SettingsTab>('general');
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const conversations = useAppStore((s) => s.conversations);
@@ -576,21 +699,6 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   const [memoryStats, setMemoryStats] = useState<{ entries: number; backend: string } | null>(null);
-  const [memoryEnabled, setMemoryEnabled] = useState(() => {
-    try { return localStorage.getItem('nova-memory-enabled') !== 'false'; } catch { return true; }
-  });
-  const [memoryBackend, setMemoryBackend] = useState(() => {
-    try { return localStorage.getItem('nova-memory-backend') || 'sqlite'; } catch { return 'sqlite'; }
-  });
-  const [memoryTopK, setMemoryTopK] = useState(() => {
-    try { return parseInt(localStorage.getItem('nova-memory-top-k') || '5'); } catch { return 5; }
-  });
-  const [memoryMinScore, setMemoryMinScore] = useState(() => {
-    try { return parseFloat(localStorage.getItem('nova-memory-min-score') || '0.1'); } catch { return 0.1; }
-  });
-  const [memoryMaxTokens, setMemoryMaxTokens] = useState(() => {
-    try { return parseInt(localStorage.getItem('nova-memory-max-tokens') || '2048'); } catch { return 2048; }
-  });
 
   const [srcKind, setSrcKind] = useState<InferenceSource['kind']>('ollama');
   const [customHost, setCustomHost] = useState('http://localhost:1234/v1');
@@ -637,12 +745,12 @@ export function SettingsPage() {
   };
 
   const handleExport = () => {
-    const data = localStorage.getItem('nova-conversations') || '{}';
+    const data = localStorage.getItem('phi-conversations') || '{}';
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `nova-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `phi-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -659,7 +767,7 @@ export function SettingsPage() {
         try {
           const data = JSON.parse(ev.target?.result as string);
           if (data.version === 1) {
-            localStorage.setItem('nova-conversations', JSON.stringify(data));
+            localStorage.setItem('phi-conversations', JSON.stringify(data));
             useAppStore.getState().loadConversations();
             showSaved();
           }
@@ -677,133 +785,78 @@ export function SettingsPage() {
       setTimeout(() => setConfirmClear(false), 3000);
       return;
     }
-    localStorage.removeItem('nova-conversations');
+    localStorage.removeItem('phi-conversations');
     useAppStore.getState().loadConversations();
     setConfirmClear(false);
     showSaved();
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-10">
-      <div className="max-w-2xl mx-auto">
-        <header className="mb-6">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-              Settings
-            </h1>
-            {saved && (
-              <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{
-                background: 'var(--color-accent-subtle)',
-                color: 'var(--color-success)',
-              }}>
-                <Check size={12} /> Saved
-              </span>
-            )}
-          </div>
-          <p className="text-sm mt-2 max-w-2xl" style={{ color: 'var(--color-text-secondary)' }}>
-            App preferences — appearance, model defaults, keyboard shortcuts, and data management.
-          </p>
-        </header>
+    <div className="flex flex-col h-full px-6 py-5 gap-4 overflow-y-auto">
+      <div className="flex items-center justify-end min-h-[1.75rem]">
+        {saved && (
+          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{
+            background: 'var(--color-accent-subtle)',
+            color: 'var(--color-success)',
+          }}>
+            <Check size={12} /> Saved
+          </span>
+        )}
+      </div>
 
+      <div className="flex justify-center">
+        <div className="pings-tab-pill" role="tablist">
+          {SETTINGS_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setTab(t.id)}
+              className="pings-tab-pill-item"
+              data-active={tab === t.id}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="w-full max-w-2xl mx-auto pb-6">
         <div className="flex flex-col gap-4">
-          {/* Appearance */}
-          <Section title="Appearance">
-            <SettingRow label="Theme" description="Choose how Nova looks">
-              <div className="flex gap-1 p-0.5 rounded-lg" style={{ background: 'var(--color-bg-secondary)' }}>
-                {themeOptions.map((opt) => {
-                  const isActive = settings.theme === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => { updateSettings({ theme: opt.value }); showSaved(); }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
-                      style={{
-                        background: isActive ? 'var(--color-surface)' : 'transparent',
-                        color: isActive ? 'var(--color-text)' : 'var(--color-text-tertiary)',
-                        boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
-                      }}
-                    >
-                      <opt.icon size={14} />
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </SettingRow>
-            <SettingRow label="Font size">
-              <select
-                value={settings.fontSize}
-                onChange={(e) => { updateSettings({ fontSize: e.target.value as any }); showSaved(); }}
-                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <option value="small">Small</option>
-                <option value="default">Default</option>
-                <option value="large">Large</option>
-              </select>
-            </SettingRow>
-          </Section>
+          {tab === 'general' && (
+            <>
+              <AppearanceSection settings={settings} updateSettings={updateSettings} onSaved={showSaved} />
+              <Section title="Floating Phi">
+                <SettingRow label="Show Phi on screen" description="A small button you can drag anywhere. Click it to see what is waiting for you.">
+                  <Switch on={settings.floatingPhi} label="Show Phi on screen"
+                    onClick={() => { updateSettings({ floatingPhi: !settings.floatingPhi }); showSaved(); }} />
+                </SettingRow>
+              </Section>
+            </>
+          )}
 
-          {/* Connection */}
-          <Section title="Connection">
-            <SettingRow label="Server status" description={serverInfo ? `${serverInfo.engine} / ${serverInfo.model}` : 'Not connected'}>
+          {tab === 'ai' && (
+          <>
+          {/* Local Engine */}
+          <Section title="Local Engine">
+            <SettingRow label="Engine">
               <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: healthy === true ? 'var(--color-success)' : healthy === false ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
-                />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {healthy === true ? 'Connected' : healthy === false ? 'Disconnected' : 'Checking...'}
-                </span>
+                <select
+                  value={srcKind}
+                  onChange={(e) => { setSrcKind(e.target.value as InferenceSource['kind']); setSrcMsg(''); }}
+                  className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
+                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+                >
+                  <option value="ollama">Ollama (Default)</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <button onClick={saveSource}
+                  className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+                  style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
+                  Save
+                </button>
               </div>
-            </SettingRow>
-            <SettingRow label="API URL" description="Set if backend runs on a different port or host">
-              <input
-                type="text"
-                value={settings.apiUrl}
-                onChange={(e) => { updateSettings({ apiUrl: e.target.value }); showSaved(); }}
-                placeholder="http://localhost:8000"
-                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              />
-            </SettingRow>
-            <SettingRow label="API key" description="Required only if the server was started with an API key">
-              <input
-                type="password"
-                value={settings.apiKey}
-                onChange={(e) => { updateSettings({ apiKey: e.target.value }); showSaved(); }}
-                placeholder="NOVA_API_KEY"
-                autoComplete="off"
-                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              />
-            </SettingRow>
-          </Section>
-
-          {/* Inference source */}
-          <Section title="Inference source">
-            <SettingRow label="Source" description="Where the app runs models. Applies after restart.">
-              <select
-                value={srcKind}
-                onChange={(e) => { setSrcKind(e.target.value as InferenceSource['kind']); setSrcMsg(''); }}
-                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
-                style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-              >
-                <option value="ollama">Bundled Ollama (default)</option>
-                <option value="custom">Custom OpenAI-compatible server</option>
-              </select>
             </SettingRow>
             {srcKind === 'custom' && (
               <>
@@ -826,6 +879,7 @@ export function SettingsPage() {
                     <option value="sglang">SGLang</option>
                     <option value="llamacpp">llama.cpp</option>
                     <option value="mlx">MLX</option>
+                    <option value="lemonade">Lemonade</option>
                   </select>
                 </SettingRow>
                 <SettingRow label="API key (optional)" description="Only if your server requires one">
@@ -835,162 +889,32 @@ export function SettingsPage() {
                 </SettingRow>
               </>
             )}
-            <SettingRow label="" description={srcMsg}>
-              <button onClick={saveSource}
-                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
-                style={{ background: 'var(--color-accent, var(--color-bg-tertiary))', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
-                Save inference source
-              </button>
-            </SettingRow>
-          </Section>
-
-          {/* Models */}
-          <Section title="Models">
-            <SettingRow label="Local models (Ollama)" description="Models available for local inference">
-              <OllamaModelList />
-            </SettingRow>
-            <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
-              Run <code className="px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--color-bg-tertiary)' }}>ollama pull &lt;model-name&gt;</code> in your terminal to add more models
-            </div>
-            <SettingRow label="Cloud providers" description="Green dot means API key is configured">
-              <div className="flex flex-wrap gap-3">
-                <CloudProviderStatus label="OpenAI" keyName="OPENAI_API_KEY" />
-                <CloudProviderStatus label="Anthropic" keyName="ANTHROPIC_API_KEY" />
-                <CloudProviderStatus label="Google" keyName="GEMINI_API_KEY" />
-                <CloudProviderStatus label="OpenRouter" keyName="OPENROUTER_API_KEY" />
-              </div>
-            </SettingRow>
+            {srcMsg && (
+              <p className="text-xs mt-3" style={{ color: 'var(--color-text-tertiary)' }}>{srcMsg}</p>
+            )}
           </Section>
 
           {/* API Keys */}
           <Section title="API Keys">
-            <SettingRow label="OpenAI" description="GPT-4, GPT-3.5, etc.">
-              <ApiKeyInput keyName="OPENAI_API_KEY" placeholder="sk-..." />
+            <SettingRow label="OpenAI">
+              <ApiKeyInput keyName="OPENAI_API_KEY" toolName="openai" placeholder="sk-..." />
             </SettingRow>
-            <SettingRow label="Anthropic" description="Claude models">
-              <ApiKeyInput keyName="ANTHROPIC_API_KEY" placeholder="sk-ant-..." />
+            <SettingRow label="Anthropic">
+              <ApiKeyInput keyName="ANTHROPIC_API_KEY" toolName="anthropic" placeholder="sk-ant-..." />
             </SettingRow>
-            <SettingRow label="Google" description="Gemini models">
-              <ApiKeyInput keyName="GEMINI_API_KEY" placeholder="AI..." />
+            <SettingRow label="Google">
+              <ApiKeyInput keyName="GEMINI_API_KEY" toolName="gemini" placeholder="AI..." />
             </SettingRow>
-            <SettingRow label="OpenRouter" description="Multi-provider routing">
-              <ApiKeyInput keyName="OPENROUTER_API_KEY" placeholder="sk-or-..." />
+            <SettingRow label="OpenRouter">
+              <ApiKeyInput keyName="OPENROUTER_API_KEY" toolName="openrouter" placeholder="sk-or-..." />
             </SettingRow>
-          </Section>
-
-          {/* Tools */}
-          <Section title="Tools">
-            <SettingRow label="Web Search" description="Tavily key for web search tool">
-              <ApiKeyInput keyName="TAVILY_API_KEY" placeholder="tvly-..." toolName="web_search" />
+            <SettingRow label="TypeSafe">
+              <ApiKeyInput keyName="TYPESAFE_API_KEY" toolName="jev" placeholder="ts_..." />
             </SettingRow>
           </Section>
 
-          {/* Memory */}
-          <Section title="Memory">
-            <SettingRow label="Memory status" description={memoryStats ? `${memoryStats.backend} backend — ${memoryStats.entries} entries` : 'Unable to reach memory service'}>
-              <div className="flex items-center gap-2">
-                <Brain size={14} style={{ color: memoryStats ? 'var(--color-accent)' : 'var(--color-text-tertiary)' }} />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {memoryStats ? `${memoryStats.entries} entries` : 'Unavailable'}
-                </span>
-              </div>
-            </SettingRow>
-            <SettingRow label="Use memory context" description="Automatically inject relevant memories into conversations">
-              <button
-                onClick={() => {
-                  const next = !memoryEnabled;
-                  setMemoryEnabled(next);
-                  try { localStorage.setItem('nova-memory-enabled', String(next)); } catch {}
-                  showSaved();
-                }}
-                className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
-                style={{
-                  background: memoryEnabled ? 'var(--color-accent)' : 'var(--color-bg-tertiary)',
-                }}
-              >
-                <span
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
-                  style={{
-                    transform: memoryEnabled ? 'translateX(20px)' : 'translateX(0)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }}
-                />
-              </button>
-            </SettingRow>
-            <SettingRow label="Memory backend" description="Which retrieval engine to use">
-              <select
-                value={memoryBackend}
-                onChange={(e) => {
-                  setMemoryBackend(e.target.value);
-                  try { localStorage.setItem('nova-memory-backend', e.target.value); } catch {}
-                  showSaved();
-                }}
-                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <option value="sqlite">sqlite</option>
-                <option value="faiss">faiss</option>
-                <option value="bm25">bm25</option>
-                <option value="colbert">colbert</option>
-                <option value="hybrid">hybrid</option>
-              </select>
-            </SettingRow>
-            <SettingRow label="Results to inject" description={`${memoryTopK}`}>
-              <input
-                type="range"
-                min="1"
-                max="20"
-                step="1"
-                value={memoryTopK}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value);
-                  setMemoryTopK(v);
-                  try { localStorage.setItem('nova-memory-top-k', String(v)); } catch {}
-                  showSaved();
-                }}
-                className="w-32 cursor-pointer accent-[var(--color-accent)]"
-              />
-            </SettingRow>
-            <SettingRow label="Min relevance score" description={`${memoryMinScore}`}>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={memoryMinScore}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  setMemoryMinScore(v);
-                  try { localStorage.setItem('nova-memory-min-score', String(v)); } catch {}
-                  showSaved();
-                }}
-                className="w-32 cursor-pointer accent-[var(--color-accent)]"
-              />
-            </SettingRow>
-            <SettingRow label="Max context tokens" description={`${memoryMaxTokens}`}>
-              <input
-                type="range"
-                min="256"
-                max="8192"
-                step="256"
-                value={memoryMaxTokens}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value);
-                  setMemoryMaxTokens(v);
-                  try { localStorage.setItem('nova-memory-max-tokens', String(v)); } catch {}
-                  showSaved();
-                }}
-                className="w-32 cursor-pointer accent-[var(--color-accent)]"
-              />
-            </SettingRow>
-          </Section>
-
-          {/* Model defaults */}
-          <Section title="Model Defaults">
+          {/* Model parameters */}
+          <Section title="Model Parameters">
             <SettingRow label="Temperature" description={`${settings.temperature}`}>
               <input
                 type="range"
@@ -1014,13 +938,27 @@ export function SettingsPage() {
               />
             </SettingRow>
           </Section>
+          </>
+          )}
+
+          {tab === 'integrations' && (
+            <>
+              <ToolsSection />
+              <SyncSection onSaved={showSaved} />
+            </>
+          )}
+
+          {tab === 'memory' && (
+            <>
+              <MemorizeSection onSaved={showSaved} />
+              <MemoryNotesSection onSaved={showSaved} memoryStats={memoryStats} />
+            </>
+          )}
 
           {/* Speech */}
-          <HomeSection onSaved={showSaved} />
-          <SyncSection onSaved={showSaved} />
-
+          {tab === 'general' && (
           <Section title="Speech">
-            <SettingRow label="Speech-to-Text" description="Enable microphone input for voice dictation">
+            <SettingRow label="Speech-To-Text" description="Dictation">
               <button
                 onClick={() => { updateSettings({ speechEnabled: !settings.speechEnabled }); showSaved(); }}
                 className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
@@ -1037,45 +975,30 @@ export function SettingsPage() {
                 />
               </button>
             </SettingRow>
-            <SettingRow label="Nova's voice" description="When Nova reads her replies aloud (ElevenLabs, local voice as backup)">
+            <SettingRow label="Voice Mode">
               <select
                 value={settings.voiceReplies}
                 onChange={(e) => { updateSettings({ voiceReplies: e.target.value as 'voice' | 'always' | 'off' }); showSaved(); }}
                 className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
                 style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
               >
-                <option value="voice">Only when I speak to her</option>
+                <option value="voice">When I Speak To Her</option>
                 <option value="always">Always</option>
                 <option value="off">Never</option>
               </select>
             </SettingRow>
-            <SettingRow label="Backend status" description="Requires Whisper, Deepgram, or another speech backend">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    background: speechBackendAvailable === true ? 'var(--color-success)'
-                      : speechBackendAvailable === false ? 'var(--color-text-tertiary)'
-                      : 'var(--color-text-tertiary)',
-                  }}
-                />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {speechBackendAvailable === null ? 'Checking...'
-                    : speechBackendAvailable ? 'Available'
-                    : 'Not configured'}
-                </span>
-              </div>
+            <SettingRow label="Clap Activation">
+              <Switch on={settings.clapToActivate} label="Clap Activation"
+                onClick={() => { updateSettings({ clapToActivate: !settings.clapToActivate }); showSaved(); }} />
             </SettingRow>
-            {!speechBackendAvailable && speechBackendAvailable !== null && (
-              <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
-                Set up a speech backend to use voice input.
-                See the <a href="https://github.com/nizaelneves/nova" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
-              </div>
-            )}
           </Section>
+          )}
 
+          {tab === 'general' && (
+          <>
           {/* Data */}
           <Section title="Data">
+            <DataFolderRow />
             <SettingRow label="Conversations" description={`${conversations.length} stored locally`}>
               <div className="flex gap-2">
                 <button
@@ -1114,27 +1037,109 @@ export function SettingsPage() {
               </button>
             </SettingRow>
           </Section>
+          </>
+          )}
+
+          {/* Connection */}
+          {tab === 'general' && (
+          <Section title="Connection">
+            <SettingRow label="Server status" description={serverInfo ? `${serverInfo.engine} / ${serverInfo.model}` : 'Not connected'}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: healthy === true ? 'var(--color-success)' : healthy === false ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
+                />
+                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {healthy === true ? 'Connected' : healthy === false ? 'Disconnected' : 'Checking...'}
+                </span>
+              </div>
+            </SettingRow>
+            <SettingRow label="API URL" description="Set if backend runs on a different port or host">
+              <input
+                type="text"
+                value={settings.apiUrl}
+                onChange={(e) => { updateSettings({ apiUrl: e.target.value }); showSaved(); }}
+                placeholder="http://localhost:8000"
+                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+            </SettingRow>
+            <SettingRow label="API key" description="Required only if the server was started with an API key">
+              <input
+                type="password"
+                value={settings.apiKey}
+                onChange={(e) => { updateSettings({ apiKey: e.target.value }); showSaved(); }}
+                placeholder="PHI_API_KEY"
+                autoComplete="off"
+                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text)',
+                  border: '1px solid var(--color-border)',
+                }}
+              />
+            </SettingRow>
+          </Section>
+          )}
+
+          {/* Status */}
+          {tab === 'general' && (
+          <Section title="Status">
+            <SettingRow label="Local Models">
+              <OllamaModelList />
+            </SettingRow>
+            <SettingRow label="Cloud Models">
+              <div className="flex flex-wrap gap-3">
+                <CloudProviderStatus label="OpenAI" keyName="OPENAI_API_KEY" toolName="openai" />
+                <CloudProviderStatus label="Anthropic" keyName="ANTHROPIC_API_KEY" toolName="anthropic" />
+                <CloudProviderStatus label="Google" keyName="GEMINI_API_KEY" toolName="gemini" />
+                <CloudProviderStatus label="OpenRouter" keyName="OPENROUTER_API_KEY" toolName="openrouter" />
+                <CloudProviderStatus label="TypeSafe" keyName="TYPESAFE_API_KEY" toolName="jev" />
+              </div>
+            </SettingRow>
+            <SettingRow label="Transcription Engine">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: speechBackendAvailable === true ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}
+                />
+                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  {speechBackendAvailable === null ? 'Checking...'
+                    : speechBackendAvailable ? 'Available'
+                    : 'Not configured'}
+                </span>
+              </div>
+            </SettingRow>
+            {!speechBackendAvailable && speechBackendAvailable !== null && (
+              <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
+                Set up a speech backend to use voice input.
+                See the <a href="https://github.com/nizaelneves/phi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
+              </div>
+            )}
+          </Section>
+          )}
 
           {/* About */}
+          {tab === 'about' && (
           <Section title="About">
             <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               <p className="mb-2">
-                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Nova</span> — Programming abstractions for on-device AI.
+                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>PhiOS</span> — your personal AI copilot, running on your own computer.
               </p>
-              <p className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-                Part of Intelligence Per Watt, a research initiative at Stanford SAIL.
-              </p>
-              <div className="flex gap-3 mt-3 text-xs">
+              <p className="mb-2">Your AI Assistant in constant becoming.</p>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text)' }}>Adding local models</div>
+                <p className="text-xs">
+                  Run <code className="px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--color-bg-tertiary)' }}>ollama pull &lt;model-name&gt;</code> in your terminal to add more models.
+                </p>
+              </div>
+              <div className="flex gap-3 mt-4 text-xs">
                 <a
-                  href="https://github.com/nizaelneves/nova"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--color-accent)' }}
-                >
-                  Project site
-                </a>
-                <a
-                  href="https://github.com/nizaelneves/nova"
+                  href="https://github.com/nizaelneves/phi"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: 'var(--color-accent)' }}
@@ -1144,6 +1149,7 @@ export function SettingsPage() {
               </div>
             </div>
           </Section>
+          )}
         </div>
       </div>
     </div>

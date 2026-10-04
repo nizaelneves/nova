@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from nova.core.types import ToolCall, ToolResult
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.core.types import ToolCall, ToolResult
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Test tool helpers

@@ -6,9 +6,9 @@ import json
 
 import httpx
 
-from nova.core.types import Message, Role
-from nova.engine._openai_compat import _OpenAICompatibleEngine
-from nova.engine.ollama import OllamaEngine
+from phi.core.types import Message, Role
+from phi.engine._openai_compat import _OpenAICompatibleEngine
+from phi.engine.ollama import OllamaEngine
 
 # ---------------------------------------------------------------------------
 # _OpenAICompatibleEngine tests

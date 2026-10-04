@@ -18,13 +18,13 @@ import pytest
 pytestmark = pytest.mark.hub
 
 PROVIDERS = [
-    ("nova.evals.datasets.pinchbench", "PinchBenchDataset"),
-    ("nova.evals.datasets.liveresearch", "LiveResearchBenchDataset"),
-    ("nova.evals.datasets.gaia", "GAIADataset"),
-    ("nova.evals.datasets.liveresearchbench", "LiveResearchBenchDataset"),
-    ("nova.evals.datasets.taubench", "TauBenchDataset"),
-    ("nova.evals.datasets.toolcall15", "ToolCall15Dataset"),
-    ("nova.evals.datasets.livecodebench", "LiveCodeBenchDataset"),
+    ("phi.evals.datasets.pinchbench", "PinchBenchDataset"),
+    ("phi.evals.datasets.liveresearch", "LiveResearchBenchDataset"),
+    ("phi.evals.datasets.gaia", "GAIADataset"),
+    ("phi.evals.datasets.liveresearchbench", "LiveResearchBenchDataset"),
+    ("phi.evals.datasets.taubench", "TauBenchDataset"),
+    ("phi.evals.datasets.toolcall15", "ToolCall15Dataset"),
+    ("phi.evals.datasets.livecodebench", "LiveCodeBenchDataset"),
 ]
 
 
@@ -80,7 +80,7 @@ def test_train_and_test_are_disjoint_per_provider(mod_name, cls_name):
 @pytest.mark.slow
 def test_toolcall15_split_is_nonempty():
     """Regression: toolcall15 must not silently return 0 records for split=train."""
-    from nova.evals.datasets.toolcall15 import ToolCall15Dataset
+    from phi.evals.datasets.toolcall15 import ToolCall15Dataset
 
     ds = ToolCall15Dataset()
     ds.load(split="train", seed=42)

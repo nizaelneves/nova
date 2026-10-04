@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents.research_loop import (
+from phi.agents.research_loop import (
     SEARCH_TOOL_SPEC,
     SYSTEM_PROMPT,
     ResearchAgent,
@@ -21,7 +21,7 @@ from nova.agents.research_loop import (
     renumber_citations,
     shape_results_for_model,
 )
-from nova.connectors.hybrid_search import SearchHit
+from phi.connectors.hybrid_search import SearchHit
 
 
 class _MockEngine:

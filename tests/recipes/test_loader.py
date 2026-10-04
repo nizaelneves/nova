@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from nova.recipes.loader import (
+from phi.recipes.loader import (
     Recipe,
     discover_recipes,
     load_recipe,

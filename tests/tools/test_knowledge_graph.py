@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.tools.storage.knowledge_graph import (
+from phi.tools.storage.knowledge_graph import (
     Entity,
     KnowledgeGraphMemory,
     Relation,

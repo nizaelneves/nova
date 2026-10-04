@@ -1,8 +1,8 @@
-"""Tests for nova.optimize.types module."""
+"""Tests for phi.optimize.types module."""
 
 from __future__ import annotations
 
-from nova.learning.optimize.types import (
+from phi.learning.optimize.types import (
     OptimizationRun,
     SampleScore,
     SearchDimension,
@@ -11,7 +11,7 @@ from nova.learning.optimize.types import (
     TrialFeedback,
     TrialResult,
 )
-from nova.recipes.loader import Recipe
+from phi.recipes.loader import Recipe
 
 # ---------------------------------------------------------------------------
 # SearchDimension

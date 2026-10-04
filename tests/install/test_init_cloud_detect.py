@@ -1,4 +1,4 @@
-"""Tests for init's cloud auto-detect and from-bare-nova flag."""
+"""Tests for init's cloud auto-detect and from-bare-phi flag."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from nova.cli.init_cmd import init
+from phi.cli.init_cmd import init
 
 
 def _clear_keys(monkeypatch) -> None:
@@ -20,47 +20,47 @@ def _clear_keys(monkeypatch) -> None:
         monkeypatch.delenv(k, raising=False)
 
 
-def test_init_accepts_from_bare_nova_flag(tmp_nova_home: Path, monkeypatch) -> None:
-    """The --from-bare-nova flag exists and suppresses the launch-chat prompt."""
+def test_init_accepts_from_bare_phi_flag(tmp_phi_home: Path, monkeypatch) -> None:
+    """The --from-bare-phi flag exists and suppresses the launch-chat prompt."""
     _clear_keys(monkeypatch)
     runner = CliRunner()
     # Use --engine + --no-download + --no-scan to skip interactive paths
     # that would otherwise hang on a non-TTY runner.
     result = runner.invoke(
         init,
-        ["--from-bare-nova", "--engine", "ollama", "--no-download", "--no-scan"],
+        ["--from-bare-phi", "--engine", "ollama", "--no-download", "--no-scan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output
-    # When --from-bare-nova, we expect NOT to see a "launch chat" affordance.
+    # When --from-bare-phi, we expect NOT to see a "launch chat" affordance.
     assert "Launch chat" not in result.output
 
 
-def test_init_proposes_cloud_when_key_in_env(tmp_nova_home: Path, monkeypatch) -> None:
+def test_init_proposes_cloud_when_key_in_env(tmp_phi_home: Path, monkeypatch) -> None:
     """When ANTHROPIC_API_KEY is set, init mentions cloud / anthropic."""
     _clear_keys(monkeypatch)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     runner = CliRunner()
     result = runner.invoke(
         init,
-        ["--from-bare-nova", "--engine", "ollama", "--no-download", "--no-scan"],
+        ["--from-bare-phi", "--engine", "ollama", "--no-download", "--no-scan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output
     assert "anthropic" in result.output.lower() or "cloud" in result.output.lower()
 
 
-def test_init_from_bare_nova_skips_engine_prompt(
-    tmp_nova_home: Path, monkeypatch
+def test_init_from_bare_phi_skips_engine_prompt(
+    tmp_phi_home: Path, monkeypatch
 ) -> None:
-    """--from-bare-nova must not hang on the engine-selection prompt
+    """--from-bare-phi must not hang on the engine-selection prompt
     even when --engine is not provided."""
     _clear_keys(monkeypatch)
     runner = CliRunner()
     # Note: NO --engine flag passed. Without the gating fix this would hang.
     result = runner.invoke(
         init,
-        ["--from-bare-nova", "--no-download", "--no-scan"],
+        ["--from-bare-phi", "--no-download", "--no-scan"],
         catch_exceptions=False,
     )
     assert result.exit_code == 0, result.output

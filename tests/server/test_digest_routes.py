@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-pytest.importorskip("fastapi", reason="nova[server] not installed")
+pytest.importorskip("fastapi", reason="phi[server] not installed")
 
-from nova.agents.digest_store import DigestArtifact, DigestStore
+from phi.agents.digest_store import DigestArtifact, DigestStore
 
 
 @pytest.fixture()
@@ -25,7 +25,7 @@ def store(tmp_path):
             sources_used=["gmail"],
             generated_at=datetime.now(timezone.utc),
             model_used="test",
-            voice_used="nova",
+            voice_used="phi",
         )
     )
     # Write fake audio file
@@ -40,8 +40,8 @@ def _make_app(db_path: str):
 
     from fastapi import FastAPI
 
-    from nova.agents.digest_store import DigestStore
-    from nova.server.digest_routes import create_digest_router
+    from phi.agents.digest_store import DigestStore
+    from phi.server.digest_routes import create_digest_router
 
     # Patch get_today to fall back to get_latest — avoids timezone issues in CI
     original_get_today = DigestStore.get_today
@@ -84,7 +84,7 @@ def test_get_digest_404(tmp_path):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    from nova.server.digest_routes import create_digest_router
+    from phi.server.digest_routes import create_digest_router
 
     app = FastAPI()
     app.include_router(create_digest_router(db_path=str(tmp_path / "empty.db")))
@@ -103,16 +103,16 @@ def test_get_history(store, tmp_path):
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 1
-    assert data[0]["voice_used"] == "nova"
+    assert data[0]["voice_used"] == "phi"
 
 
-def test_generate_runs_entire_nova_lifecycle_on_one_worker(tmp_path, monkeypatch):
+def test_generate_runs_entire_phi_lifecycle_on_one_worker(tmp_path, monkeypatch):
     """Construction, ask, and cleanup all stay off the event-loop thread."""
-    from nova.server import digest_routes
+    from phi.server import digest_routes
 
     calls: list[tuple[str, int]] = []
 
-    class FakeNova:
+    class FakePhi:
         def __init__(self):
             calls.append(("init", threading.get_ident()))
 
@@ -129,7 +129,7 @@ def test_generate_runs_entire_nova_lifecycle_on_one_worker(tmp_path, monkeypatch
         def __exit__(self, exc_type, exc, tb):
             calls.append(("exit", threading.get_ident()))
 
-    monkeypatch.setattr("nova.sdk.Nova", FakeNova)
+    monkeypatch.setattr("phi.sdk.Phi", FakePhi)
     router = digest_routes.create_digest_router(db_path=str(tmp_path / "digest.db"))
     endpoint = next(
         route.endpoint for route in router.routes if route.path.endswith("/generate")

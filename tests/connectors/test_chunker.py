@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.connectors.chunker import ChunkResult, SemanticChunker
+from phi.connectors.chunker import ChunkResult, SemanticChunker
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -15,11 +15,11 @@ except ImportError:  # respx is an optional test-only dep; MockTransport tests
     respx = None  # type: ignore[assignment]  # still run without it.
     _HAS_RESPX = False
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine._openai_compat import EngineContextLengthError
-from nova.engine.openai_compat_engines import MLXEngine, VLLMEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine._openai_compat import EngineContextLengthError
+from phi.engine.openai_compat_engines import MLXEngine, VLLMEngine
 
 # respx-backed tests exercise the SYNC client paths (generate/list_models/health)
 # and skip cleanly when respx is absent; the async stream/timeout/disconnect tests

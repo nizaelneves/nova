@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from nova.a2a.protocol import (
+from phi.a2a.protocol import (
     A2ARequest,
     A2AResponse,
     A2ATask,
     AgentCard,
     TaskState,
 )
-from nova.a2a.server import A2AServer
-from nova.core.events import EventBus, EventType
+from phi.a2a.server import A2AServer
+from phi.core.events import EventBus, EventType
 
 
 class TestAgentCard:

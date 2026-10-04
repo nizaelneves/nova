@@ -13,9 +13,9 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
-from nova.core.types import StepType, Trace, TraceStep
-from nova.learning.agents.agent_evolver import AgentConfigEvolver
-from nova.traces.store import TraceStore
+from phi.core.types import StepType, Trace, TraceStep
+from phi.learning.agents.agent_evolver import AgentConfigEvolver
+from phi.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

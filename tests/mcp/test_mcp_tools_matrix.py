@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from nova.mcp.client import MCPClient
-from nova.mcp.server import MCPServer
-from nova.mcp.transport import InProcessTransport
-from nova.tools.calculator import CalculatorTool
-from nova.tools.think import ThinkTool
+from phi.mcp.client import MCPClient
+from phi.mcp.server import MCPServer
+from phi.mcp.transport import InProcessTransport
+from phi.tools.calculator import CalculatorTool
+from phi.tools.think import ThinkTool
 
 # Tool configs: (tool_class, call_arguments, expected_substring)
 _TOOL_CONFIGS = {

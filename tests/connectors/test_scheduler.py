@@ -8,11 +8,11 @@ from typing import Iterator, Optional
 
 import pytest
 
-from nova.connectors._stubs import BaseConnector, Document, SyncStatus
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.scheduler import SyncScheduler
-from nova.connectors.store import KnowledgeStore
-from nova.connectors.sync_engine import SyncEngine
+from phi.connectors._stubs import BaseConnector, Document, SyncStatus
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.scheduler import SyncScheduler
+from phi.connectors.store import KnowledgeStore
+from phi.connectors.sync_engine import SyncEngine
 
 # ---------------------------------------------------------------------------
 # Fixtures and helpers

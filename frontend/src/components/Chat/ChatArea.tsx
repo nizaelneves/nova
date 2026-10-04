@@ -3,19 +3,11 @@ import { useNavigate } from 'react-router';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
 import { Orb } from '../Orb';
+import { VoiceVisualizer } from '../VoiceVisualizer';
 import { StreamingDots } from './StreamingDots';
 import { useAppStore } from '../../lib/store';
 import { Database, X } from 'lucide-react';
 import { listConnectors } from '../../lib/connectors-api';
-import { cleanPhrase } from '../../lib/phrase';
-import { fetchHomeSettings, type HomeSettings } from '../../lib/api';
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 18) return 'Good Afternoon';
-  return 'Good Evening';
-}
 
 export function ChatArea() {
   const activeId = useAppStore((s) => s.activeId);
@@ -32,17 +24,6 @@ export function ChatArea() {
   // Check if any data sources are connected
   const [hasConnectedSources, setHasConnectedSources] = useState<boolean | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-
-  // The name and the user's own phrases for the home screen. One phrase is
-  // picked each time the home opens.
-  const [home, setHome] = useState<HomeSettings | null>(null);
-  const [pick] = useState(() => Math.random());
-  useEffect(() => {
-    fetchHomeSettings().then(setHome).catch(() => setHome(null));
-  }, []);
-  const phrase = home && home.messages.length > 0
-    ? home.messages[Math.floor(pick * home.messages.length)]
-    : '';
 
   useEffect(() => {
     listConnectors()
@@ -121,14 +102,12 @@ export function ChatArea() {
       >
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full px-4">
-            <Orb />
-            <h2 className="home-greeting">
-              {getGreeting()}
-              {home?.display_name ? <span className="home-name">, {home.display_name}</span> : null}
-            </h2>
-            {phrase && <p className="home-phrase">
-                <span className="home-quote">{'“'}</span>{cleanPhrase(phrase)}<span className="home-quote">{'”'}</span>
-              </p>}
+            <div className="relative">
+              <Orb />
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2">
+                <VoiceVisualizer />
+              </div>
+            </div>
           </div>
         ) : (
           <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-6">

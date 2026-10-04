@@ -1,4 +1,4 @@
-"""Tests for nova.optimize.optimizer module."""
+"""Tests for phi.optimize.optimizer module."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
-from nova.evals.core.types import RunSummary
-from nova.learning.optimize.optimizer import OptimizationEngine
-from nova.learning.optimize.store import OptimizationStore
-from nova.learning.optimize.types import (
+from phi.evals.core.types import RunSummary
+from phi.learning.optimize.optimizer import OptimizationEngine
+from phi.learning.optimize.store import OptimizationStore
+from phi.learning.optimize.types import (
     OptimizationRun,
     SearchDimension,
     SearchSpace,
@@ -47,7 +47,7 @@ def _sample_summary(accuracy: float = 0.8) -> RunSummary:
     return RunSummary(
         benchmark="test",
         category="reasoning",
-        backend="nova-direct",
+        backend="phi-direct",
         model="test-model",
         total_samples=50,
         scored_samples=50,
@@ -619,7 +619,7 @@ class TestLoadOptimizeConfig:
     """Tests for load_optimize_config."""
 
     def test_loads_toml_file(self, tmp_path) -> None:
-        from nova.learning.optimize.config import load_optimize_config
+        from phi.learning.optimize.config import load_optimize_config
 
         toml_content = b"""
 [optimize]
@@ -644,7 +644,7 @@ engine = "ollama"
         assert config["optimize"]["fixed"]["engine"] == "ollama"
 
     def test_file_not_found(self, tmp_path) -> None:
-        from nova.learning.optimize.config import load_optimize_config
+        from phi.learning.optimize.config import load_optimize_config
 
         try:
             load_optimize_config(tmp_path / "nonexistent.toml")
@@ -653,7 +653,7 @@ engine = "ollama"
             pass
 
     def test_loads_string_path(self, tmp_path) -> None:
-        from nova.learning.optimize.config import load_optimize_config
+        from phi.learning.optimize.config import load_optimize_config
 
         path = tmp_path / "test.toml"
         path.write_bytes(b"[optimize]\nmax_trials = 5\n")

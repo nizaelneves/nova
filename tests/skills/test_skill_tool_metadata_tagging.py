@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from nova.core.types import ToolResult
-from nova.skills.executor import SkillExecutor
-from nova.skills.tool_adapter import SkillTool
-from nova.skills.types import SkillManifest, SkillStep
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.core.types import ToolResult
+from phi.skills.executor import SkillExecutor
+from phi.skills.tool_adapter import SkillTool
+from phi.skills.types import SkillManifest, SkillStep
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class _EchoTool(BaseTool):
@@ -54,7 +54,7 @@ class TestSkillToolMetadataTagging:
             name="apple-notes",
             description="Apple Notes",
             markdown_content="Use memo",
-            metadata={"nova": {"source": "hermes"}},
+            metadata={"phi": {"source": "hermes"}},
         )
         tool = self._make_tool(manifest)
         result = tool.execute(task="create a note")

@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents._stubs import AgentContext, AgentResult
-from nova.core.events import EventBus, EventType
-from nova.core.registry import AgentRegistry, RouterPolicyRegistry, ToolRegistry
-from nova.core.types import (
+from phi.agents._stubs import AgentContext, AgentResult
+from phi.core.events import EventBus, EventType
+from phi.core.registry import AgentRegistry, RouterPolicyRegistry, ToolRegistry
+from phi.core.types import (
     Conversation,
     Message,
     Role,
@@ -23,8 +23,8 @@ from nova.core.types import (
 
 
 def _register_agents():
-    from nova.agents.orchestrator import OrchestratorAgent
-    from nova.agents.simple import SimpleAgent
+    from phi.agents.orchestrator import OrchestratorAgent
+    from phi.agents.simple import SimpleAgent
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
@@ -33,8 +33,8 @@ def _register_agents():
 
 
 def _register_tools():
-    from nova.tools.calculator import CalculatorTool
-    from nova.tools.think import ThinkTool
+    from phi.tools.calculator import CalculatorTool
+    from phi.tools.think import ThinkTool
 
     if not ToolRegistry.contains("calculator"):
         ToolRegistry.register_value("calculator", CalculatorTool)
@@ -101,7 +101,7 @@ class TestOrchestratorWithCalculator:
         _register_agents()
         _register_tools()
 
-        from nova.tools.calculator import CalculatorTool
+        from phi.tools.calculator import CalculatorTool
 
         engine = MagicMock()
         engine.engine_id = "mock"
@@ -164,7 +164,7 @@ class TestAPIServerRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from nova.server.app import create_app
+        from phi.server.app import create_app
 
         engine = _make_engine("API response!")
         app = create_app(engine, "test-model")
@@ -189,7 +189,7 @@ class TestAPIServerRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from nova.server.app import create_app
+        from phi.server.app import create_app
 
         engine = _make_engine()
         app = create_app(engine, "test-model")
@@ -241,7 +241,7 @@ class TestTelemetryThroughAgent:
     def test_telemetry_record_created(self):
         """Telemetry records are now produced by InstrumentedEngine,
         not by agents directly."""
-        from nova.telemetry.instrumented_engine import InstrumentedEngine
+        from phi.telemetry.instrumented_engine import InstrumentedEngine
 
         _register_agents()
         bus = EventBus(record_history=True)
@@ -264,9 +264,9 @@ class TestToolExecutorIntegration:
 
     def test_calculator_and_think(self):
         _register_tools()
-        from nova.tools._stubs import ToolExecutor
-        from nova.tools.calculator import CalculatorTool
-        from nova.tools.think import ThinkTool
+        from phi.tools._stubs import ToolExecutor
+        from phi.tools.calculator import CalculatorTool
+        from phi.tools.think import ThinkTool
 
         bus = EventBus(record_history=True)
         executor = ToolExecutor([CalculatorTool(), ThinkTool()], bus=bus)
@@ -301,8 +301,8 @@ class TestHeuristicRewardWithTelemetry:
     """HeuristicRewardFunction scores using TelemetryRecord data."""
 
     def test_reward_from_telemetry_record(self):
-        from nova.learning._stubs import RoutingContext
-        from nova.learning.routing.heuristic_reward import HeuristicRewardFunction
+        from phi.learning._stubs import RoutingContext
+        from phi.learning.routing.heuristic_reward import HeuristicRewardFunction
 
         rec = TelemetryRecord(
             timestamp=0.0,
@@ -330,7 +330,7 @@ class TestRouterPolicyRegistryDiscovery:
     """RouterPolicyRegistry discovers both heuristic and learned."""
 
     def test_both_policies_registered(self):
-        from nova.learning import ensure_registered
+        from phi.learning import ensure_registered
 
         ensure_registered()
         assert RouterPolicyRegistry.contains("heuristic")
@@ -343,8 +343,8 @@ class TestTelemetryPipeline:
     def test_store_then_aggregate(self, tmp_path):
         import time
 
-        from nova.telemetry.aggregator import TelemetryAggregator
-        from nova.telemetry.store import TelemetryStore
+        from phi.telemetry.aggregator import TelemetryAggregator
+        from phi.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -387,8 +387,8 @@ class TestEventBusTelemetryAggregator:
     """EventBus → TelemetryStore → TelemetryAggregator end-to-end."""
 
     def test_event_driven_pipeline(self, tmp_path):
-        from nova.telemetry.aggregator import TelemetryAggregator
-        from nova.telemetry.store import TelemetryStore
+        from phi.telemetry.aggregator import TelemetryAggregator
+        from phi.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -419,9 +419,9 @@ class TestAskFlowWithRouterPolicy:
     """Full ask flow with router policy (mocked)."""
 
     def test_mocked_ask_with_registry_router(self):
-        from nova.learning._stubs import RoutingContext
-        from nova.learning.routing.heuristic_policy import ensure_registered
-        from nova.learning.routing.router import HeuristicRouter
+        from phi.learning._stubs import RoutingContext
+        from phi.learning.routing.heuristic_policy import ensure_registered
+        from phi.learning.routing.router import HeuristicRouter
 
         ensure_registered()
         router_cls = RouterPolicyRegistry.get("heuristic")
@@ -442,10 +442,10 @@ class TestRewardTelemetryIntegration:
     def test_score_from_aggregated_stats(self, tmp_path):
         import time
 
-        from nova.learning._stubs import RoutingContext
-        from nova.learning.routing.heuristic_reward import HeuristicRewardFunction
-        from nova.telemetry.aggregator import TelemetryAggregator
-        from nova.telemetry.store import TelemetryStore
+        from phi.learning._stubs import RoutingContext
+        from phi.learning.routing.heuristic_reward import HeuristicRewardFunction
+        from phi.telemetry.aggregator import TelemetryAggregator
+        from phi.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -487,12 +487,12 @@ class TestRewardTelemetryIntegration:
 
 
 class TestSDKImport:
-    """Verify Nova class is importable from nova."""
+    """Verify Phi class is importable from phi."""
 
-    def test_nova_imports(self):
-        from nova import Nova
+    def test_phi_imports(self):
+        from phi import Phi
 
-        assert Nova is not None
+        assert Phi is not None
 
 
 class TestSDKAskFlow:
@@ -501,12 +501,12 @@ class TestSDKAskFlow:
     def test_sdk_ask_e2e(self):
         from unittest.mock import patch
 
-        from nova.core.config import NovaConfig
-        from nova.sdk import Nova
+        from phi.core.config import PhiConfig
+        from phi.sdk import Phi
 
         engine = _make_engine("SDK response")
-        with patch("nova.sdk.get_engine", return_value=("mock", engine)):
-            j = Nova(config=NovaConfig(), model="test-model")
+        with patch("phi.sdk.get_engine", return_value=("mock", engine)):
+            j = Phi(config=PhiConfig(), model="test-model")
             result = j.ask("Hello from integration test")
             assert result == "SDK response"
             j.close()
@@ -516,10 +516,10 @@ class TestSDKMemoryHandle:
     """SDK memory handle with SQLite backend."""
 
     def test_index_and_search(self, tmp_path):
-        from nova.core.config import NovaConfig
-        from nova.sdk import MemoryHandle
+        from phi.core.config import PhiConfig
+        from phi.sdk import MemoryHandle
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         handle = MemoryHandle(cfg)
 
         mock_backend = MagicMock()
@@ -550,8 +550,8 @@ class TestBenchmarkRegistryDiscovery:
     """BenchmarkRegistry discovers latency + throughput."""
 
     def test_discovers_benchmarks(self):
-        from nova.bench import ensure_registered
-        from nova.core.registry import BenchmarkRegistry
+        from phi.bench import ensure_registered
+        from phi.core.registry import BenchmarkRegistry
 
         ensure_registered()
         assert BenchmarkRegistry.contains("latency")
@@ -564,9 +564,9 @@ class TestBenchmarkSuiteRunAll:
     def test_suite_produces_jsonl(self):
         import json
 
-        from nova.bench import ensure_registered
-        from nova.bench._stubs import BenchmarkSuite
-        from nova.core.registry import BenchmarkRegistry
+        from phi.bench import ensure_registered
+        from phi.bench._stubs import BenchmarkSuite
+        from phi.core.registry import BenchmarkRegistry
 
         ensure_registered()
         benchmarks = [cls() for _, cls in BenchmarkRegistry.items()]
@@ -588,10 +588,10 @@ class TestFullPipeline:
     def test_full_pipeline(self, tmp_path):
         from unittest.mock import patch
 
-        from nova.agents._stubs import AgentResult
-        from nova.core.config import NovaConfig
-        from nova.core.registry import AgentRegistry
-        from nova.sdk import Nova
+        from phi.agents._stubs import AgentResult
+        from phi.core.config import PhiConfig
+        from phi.core.registry import AgentRegistry
+        from phi.sdk import Phi
 
         engine = _make_engine("Pipeline response")
 
@@ -611,11 +611,11 @@ class TestFullPipeline:
 
         AgentRegistry.register_value("pipeline-test", PipelineAgent)
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
 
-        with patch("nova.sdk.get_engine", return_value=("mock", engine)):
-            j = Nova(config=cfg, model="test-model")
+        with patch("phi.sdk.get_engine", return_value=("mock", engine)):
+            j = Phi(config=cfg, model="test-model")
             result = j.ask("Full pipeline test", agent="pipeline-test")
             assert result == "Pipeline response"
             j.close()

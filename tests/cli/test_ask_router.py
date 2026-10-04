@@ -1,4 +1,4 @@
-"""Tests for model resolution fallback chain in nova ask."""
+"""Tests for model resolution fallback chain in phi ask."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from nova.cli import cli
-from nova.core.config import NovaConfig
+from phi.cli import cli
+from phi.core.config import PhiConfig
 
-_ask_mod = importlib.import_module("nova.cli.ask")
+_ask_mod = importlib.import_module("phi.cli.ask")
 
 
 def _mock_engine():
@@ -31,12 +31,12 @@ def _mock_engine():
 def _register_agents():
     """Re-register agents after the conftest registry clear.
 
-    The default ``NovaConfig().agent.default_agent`` is ``"simple"``,
-    so ``nova ask "..."`` (without ``--agent``) routes through SimpleAgent.
+    The default ``PhiConfig().agent.default_agent`` is ``"simple"``,
+    so ``phi ask "..."`` (without ``--agent``) routes through SimpleAgent.
     Without this re-registration, that path raises ``Unknown agent: simple``.
     """
-    from nova.agents.simple import SimpleAgent
-    from nova.core.registry import AgentRegistry
+    from phi.agents.simple import SimpleAgent
+    from phi.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
@@ -103,7 +103,7 @@ class TestAskModelResolution:
             mock.patch.object(
                 _ask_mod,
                 "load_config",
-                return_value=NovaConfig(),
+                return_value=PhiConfig(),
             ) as mock_config,
         ):
             cfg = mock_config.return_value
@@ -137,7 +137,7 @@ class TestAskModelResolution:
             mock.patch.object(
                 _ask_mod,
                 "load_config",
-                return_value=NovaConfig(),
+                return_value=PhiConfig(),
             ) as mock_config,
         ):
             cfg = mock_config.return_value

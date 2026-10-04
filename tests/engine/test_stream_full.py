@@ -9,9 +9,9 @@ from typing import Any, Dict, List
 import httpx
 import pytest
 
-from nova.core.types import Message, Role
-from nova.engine._stubs import InferenceEngine, StreamChunk
-from nova.engine.openai_compat_engines import VLLMEngine
+from phi.core.types import Message, Role
+from phi.engine._stubs import InferenceEngine, StreamChunk
+from phi.engine.openai_compat_engines import VLLMEngine
 
 
 def _sse_transport(sse_lines: list[str]) -> httpx.MockTransport:

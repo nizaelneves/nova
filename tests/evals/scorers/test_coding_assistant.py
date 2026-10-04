@@ -1,7 +1,7 @@
 """Tests for the coding_assistant scorer."""
 
-from nova.evals.core.types import EvalRecord
-from nova.evals.scorers.coding_assistant import CodingAssistantScorer
+from phi.evals.core.types import EvalRecord
+from phi.evals.scorers.coding_assistant import CodingAssistantScorer
 
 
 def _make_record(buggy_code, test_code, originally_failing, originally_passing):

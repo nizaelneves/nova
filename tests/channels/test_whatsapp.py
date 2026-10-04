@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.channels._stubs import ChannelStatus
-from nova.channels.whatsapp import WhatsAppChannel
-from nova.core.events import EventBus, EventType
-from nova.core.registry import ChannelRegistry
+from phi.channels._stubs import ChannelStatus
+from phi.channels.whatsapp import WhatsAppChannel
+from phi.core.events import EventBus, EventType
+from phi.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 

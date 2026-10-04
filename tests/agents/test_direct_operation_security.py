@@ -6,13 +6,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents.claude_code import ClaudeCodeAgent
-from nova.agents.hybrid.baseline_cloud import BaselineCloudAgent
-from nova.agents.hybrid.mini_swe_agent import MiniSWEAgent
-from nova.agents.opencode import OpenCodeAgent
-from nova.agents.openhands import OpenHandsAgent
-from nova.core.events import EventBus, EventType
-from nova.security.capabilities import CapabilityPolicy
+from phi.agents.claude_code import ClaudeCodeAgent
+from phi.agents.hybrid.baseline_cloud import BaselineCloudAgent
+from phi.agents.hybrid.mini_swe_agent import MiniSWEAgent
+from phi.agents.opencode import OpenCodeAgent
+from phi.agents.openhands import OpenHandsAgent
+from phi.core.events import EventBus, EventType
+from phi.security.capabilities import CapabilityPolicy
 
 
 class _RecordingLimiter:

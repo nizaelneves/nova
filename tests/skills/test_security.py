@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from nova.skills.security import (
+from phi.skills.security import (
     TrustTier,
     classify_trust_tier,
     has_dangerous_capabilities,
     validate_capabilities,
 )
-from nova.skills.types import SkillManifest
+from phi.skills.types import SkillManifest
 
 
 class TestTrustTiers:

@@ -2,8 +2,8 @@ import { useAppStore } from '../../lib/store';
 import { EFFORT_LABELS, EFFORT_LEVELS, type EffortLevel } from '../../lib/model-capabilities';
 
 /**
- * Reasoning effort for Claude Code, as in the Claude app: the current level
- * above a Faster ... Smarter slider.
+ * Reasoning effort for the command-line engines (Claude Code and Codex): the
+ * current level above a Faster ... Smarter slider.
  */
 export function EffortSlider() {
   const effort = useAppStore((s) => s.settings.cliEffort);

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from nova.connectors.attachment_store import AttachmentStore
+from phi.connectors.attachment_store import AttachmentStore
 
 # ---------------------------------------------------------------------------
 # Fixtures

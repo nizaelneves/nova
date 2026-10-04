@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.core.config import GpuInfo, HardwareInfo, recommend_model
+from phi.core.config import GpuInfo, HardwareInfo, recommend_model
 
 
 class TestRecommendModelTiers:

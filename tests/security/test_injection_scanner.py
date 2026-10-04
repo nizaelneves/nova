@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from nova.security.injection_scanner import InjectionScanner
-from nova.security.types import ThreatLevel
+from phi.security.injection_scanner import InjectionScanner
+from phi.security.types import ThreatLevel
 
 
 class TestInjectionScanner:

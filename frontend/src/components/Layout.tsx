@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { ApprovalBell } from './ApprovalBell';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Galaxy } from './Galaxy';
+import { PhiBubble } from './PhiBubble';
 import { useAppStore } from '../lib/store';
 import { checkHealth } from '../lib/api';
 
@@ -29,7 +29,6 @@ export function Layout() {
   return (
     <div className="flex flex-col h-full w-full overflow-hidden relative" style={{ background: 'transparent' }}>
       {onHome ? <Galaxy dim={hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
-      <ApprovalBell />
 
       {/* Health check banner */}
       {apiReachable === false && (
@@ -45,7 +44,7 @@ export function Layout() {
             className="w-1.5 h-1.5 rounded-full shrink-0"
             style={{ background: 'var(--color-error)' }}
           />
-          <span>Cannot reach Nova backend</span>
+          <span>Cannot reach Phi backend</span>
           <button
             onClick={() => navigate('/settings')}
             className="text-sm underline cursor-pointer ml-auto shrink-0"
@@ -70,6 +69,7 @@ export function Layout() {
           </div>
         </main>
       </div>
+      <PhiBubble />
     </div>
   );
 }

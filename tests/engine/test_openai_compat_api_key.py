@@ -6,8 +6,8 @@ import httpx
 import pytest
 import respx
 
-from nova.core.types import Message, Role
-from nova.engine.openai_compat_engines import (
+from phi.core.types import Message, Role
+from phi.engine.openai_compat_engines import (
     OpenAICompatEngine,
     VLLMEngine,
     normalize_openai_base_url,

@@ -1,4 +1,4 @@
-"""Tests for nova.optimize.llm_optimizer module."""
+"""Tests for phi.optimize.llm_optimizer module."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.core.types import StepType, Trace, TraceStep
-from nova.evals.core.backend import InferenceBackend
-from nova.evals.core.types import RunSummary
-from nova.learning.optimize.llm_optimizer import LLMOptimizer
-from nova.learning.optimize.types import (
+from phi.core.types import StepType, Trace, TraceStep
+from phi.evals.core.backend import InferenceBackend
+from phi.evals.core.types import RunSummary
+from phi.learning.optimize.llm_optimizer import LLMOptimizer
+from phi.learning.optimize.types import (
     SampleScore,
     SearchDimension,
     SearchSpace,

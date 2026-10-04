@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.telemetry.efficiency import (
+from phi.telemetry.efficiency import (
     EfficiencyMetrics,
     compute_efficiency,
     estimate_model_bytes_per_token,

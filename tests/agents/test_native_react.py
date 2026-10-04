@@ -7,12 +7,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents._stubs import AgentContext
-from nova.agents.native_react import NativeReActAgent
-from nova.core.events import EventBus, EventType
-from nova.core.registry import AgentRegistry
-from nova.core.types import Conversation, Message, Role, ToolResult
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents._stubs import AgentContext
+from phi.agents.native_react import NativeReActAgent
+from phi.core.events import EventBus, EventType
+from phi.core.registry import AgentRegistry
+from phi.core.types import Conversation, Message, Role, ToolResult
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers

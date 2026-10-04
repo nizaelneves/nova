@@ -5,7 +5,7 @@ from __future__ import annotations
 import textwrap
 from pathlib import Path
 
-from nova.core.config import ChannelConfig, NovaConfig, load_config
+from phi.core.config import ChannelConfig, PhiConfig, load_config
 
 
 class TestChannelConfigDefaults:
@@ -23,14 +23,14 @@ class TestChannelConfigDefaults:
         assert cfg.default_agent == "orchestrator"
 
 
-class TestChannelConfigInNovaConfig:
-    def test_channel_config_in_nova_config(self) -> None:
-        cfg = NovaConfig()
+class TestChannelConfigInPhiConfig:
+    def test_channel_config_in_phi_config(self) -> None:
+        cfg = PhiConfig()
         assert hasattr(cfg, "channel")
         assert isinstance(cfg.channel, ChannelConfig)
 
-    def test_nova_config_channel_defaults(self) -> None:
-        cfg = NovaConfig()
+    def test_phi_config_channel_defaults(self) -> None:
+        cfg = PhiConfig()
         assert cfg.channel.enabled is False
         assert cfg.channel.default_channel == ""
 

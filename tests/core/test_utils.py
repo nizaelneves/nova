@@ -1,4 +1,4 @@
-"""Tests for cross-platform process helpers in ``nova.core.utils``."""
+"""Tests for cross-platform process helpers in ``phi.core.utils``."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from nova.core.utils import (
+from phi.core.utils import (
     _windows_process_alive,
     process_alive,
     terminate_process,
@@ -47,19 +47,19 @@ class TestProcessAlive:
 
     def test_permission_error_is_conservatively_alive(self) -> None:
         with (
-            patch("nova.core.utils.platform.system", return_value="Linux"),
-            patch("nova.core.utils.os.kill", side_effect=PermissionError),
-            patch("nova.core.utils._posix_process_state", return_value=None),
+            patch("phi.core.utils.platform.system", return_value="Linux"),
+            patch("phi.core.utils.os.kill", side_effect=PermissionError),
+            patch("phi.core.utils._posix_process_state", return_value=None),
         ):
             assert process_alive(1234) is True
 
     def test_windows_path_never_calls_os_kill(self) -> None:
         with (
-            patch("nova.core.utils.platform.system", return_value="Windows"),
+            patch("phi.core.utils.platform.system", return_value="Windows"),
             patch(
-                "nova.core.utils._windows_process_alive", return_value=True
+                "phi.core.utils._windows_process_alive", return_value=True
             ) as win_alive,
-            patch("nova.core.utils.os.kill") as os_kill,
+            patch("phi.core.utils.os.kill") as os_kill,
         ):
             assert process_alive(4321) is True
         win_alive.assert_called_once_with(4321)
@@ -144,9 +144,9 @@ class TestTerminateProcess:
 
     def test_posix_escalates_to_sigkill(self) -> None:
         with (
-            patch("nova.core.utils.platform.system", return_value="Linux"),
-            patch("nova.core.utils.process_alive", return_value=True),
-            patch("nova.core.utils.os.kill") as os_kill,
+            patch("phi.core.utils.platform.system", return_value="Linux"),
+            patch("phi.core.utils.process_alive", return_value=True),
+            patch("phi.core.utils.os.kill") as os_kill,
         ):
             terminate_process(1234, grace_seconds=0)
         assert os_kill.call_args_list == [
@@ -156,9 +156,9 @@ class TestTerminateProcess:
 
     def test_windows_graceful_taskkill(self) -> None:
         with (
-            patch("nova.core.utils.platform.system", return_value="Windows"),
-            patch("nova.core.utils.process_alive", side_effect=[True, False]),
-            patch("nova.core.utils.subprocess.run") as run,
+            patch("phi.core.utils.platform.system", return_value="Windows"),
+            patch("phi.core.utils.process_alive", side_effect=[True, False]),
+            patch("phi.core.utils.subprocess.run") as run,
         ):
             terminate_process(1234, grace_seconds=1)
         run.assert_called_once_with(
@@ -167,9 +167,9 @@ class TestTerminateProcess:
 
     def test_windows_escalates_to_forced_tree_kill(self) -> None:
         with (
-            patch("nova.core.utils.platform.system", return_value="Windows"),
-            patch("nova.core.utils.process_alive", return_value=True),
-            patch("nova.core.utils.subprocess.run") as run,
+            patch("phi.core.utils.platform.system", return_value="Windows"),
+            patch("phi.core.utils.process_alive", return_value=True),
+            patch("phi.core.utils.subprocess.run") as run,
         ):
             terminate_process(1234, grace_seconds=0)
         assert run.call_args_list == [

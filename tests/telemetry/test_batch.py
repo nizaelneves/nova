@@ -9,7 +9,7 @@ from typing import Generator
 
 import pytest
 
-from nova.telemetry.batch import BatchMetrics, EnergyBatch
+from phi.telemetry.batch import BatchMetrics, EnergyBatch
 
 # ---------------------------------------------------------------------------
 # BatchMetrics defaults

@@ -5,9 +5,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest import mock
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine.litellm import LiteLLMEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine.litellm import LiteLLMEngine
 
 
 class TestLiteLLMEngineHealth:

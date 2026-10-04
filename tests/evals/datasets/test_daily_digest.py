@@ -1,6 +1,6 @@
 """Tests for the daily_digest dataset."""
 
-from nova.evals.datasets.daily_digest import DailyDigestDataset
+from phi.evals.datasets.daily_digest import DailyDigestDataset
 
 
 def test_dataset_loads():

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { ConversationList } from './ConversationList';
 import { Icon, type IconName } from '../Icon';
 import { useAppStore } from '../../lib/store';
+import { FX_WIDTH, useRailSurge } from '../../lib/railSurge';
 
 interface Module {
   path: string;
@@ -14,9 +15,11 @@ interface Module {
 const MODULES: Module[] = [
   { path: '/', icon: 'chat-round-dots', label: 'Chat' },
   { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
+  { path: '/workspaces', icon: 'widget-2', label: 'Workspaces' },
+  { path: '/pings', icon: 'bell', label: 'Pings' },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
-  { path: '/data-sources', icon: 'database', label: 'Data Sources' },
   { path: '/agents', icon: 'bot', label: 'Agents' },
+  { path: '/data-sources', icon: 'database', label: 'Data Sources' },
   { path: '/approvals', icon: 'shield-check', label: 'Approvals' },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
@@ -41,7 +44,6 @@ function RailItem({
       aria-current={active ? 'page' : undefined}
       className={`rail-item cursor-pointer ${expanded ? 'w-full px-3' : 'w-11 justify-center'}`}
     >
-      {active && !expanded && <span aria-hidden="true" className="rail-bar" />}
       <Icon name={module.icon} size={22} className="rail-icon shrink-0" />
       {expanded && <span className="text-sm font-normal truncate">{module.label}</span>}
       {/* Names appear as a tip only while the menu is collapsed to icons. */}
@@ -69,6 +71,12 @@ export function Sidebar() {
 
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
+  const navRef = useRef<HTMLElement>(null);
+  const surgeRef = useRef<HTMLSpanElement>(null);
+  const fxRef = useRef<HTMLCanvasElement>(null);
+  const activePath = MODULES.find((m) => isActive(m.path))?.path ?? null;
+  useRailSurge(navRef, surgeRef, fxRef, activePath, expanded);
 
   return (
     <aside
@@ -109,9 +117,11 @@ export function Sidebar() {
           )}
         </div>
 
-        <nav className={`flex flex-col gap-2 ${expanded ? '' : 'mt-14 items-center'}`}>
+        <nav ref={navRef} className={`relative flex flex-col gap-2 ${expanded ? '' : 'mt-14 items-center'}`}>
+          <canvas ref={fxRef} aria-hidden="true" className="rail-fx" style={{ width: FX_WIDTH }} />
+          <span ref={surgeRef} aria-hidden="true" className="rail-surge" />
           {MODULES.map((m) => (
-            <div key={m.path} className={m.path === '/settings' ? 'mt-3' : undefined}>
+            <div key={m.path} data-rail-path={m.path} className={m.path === '/settings' ? 'mt-3' : undefined}>
               <RailItem
                 module={m}
                 active={isActive(m.path)}

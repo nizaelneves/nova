@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.channels._stubs import ChannelStatus
-from nova.channels.gmail import GmailChannel
-from nova.core.events import EventBus, EventType
-from nova.core.registry import ChannelRegistry
+from phi.channels._stubs import ChannelStatus
+from phi.channels.gmail import GmailChannel
+from phi.core.events import EventBus, EventType
+from phi.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 
@@ -188,8 +188,8 @@ class TestLive:
 
         result = ch.send(
             recipient,
-            "Nova Gmail channel test message",
-            metadata={"subject": "Nova Test"},
+            "Phi Gmail channel test message",
+            metadata={"subject": "Phi Test"},
         )
         assert result is True
         ch.disconnect()

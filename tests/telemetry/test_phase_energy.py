@@ -8,11 +8,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import Message, Role, TelemetryRecord
-from nova.telemetry.aggregator import TelemetryAggregator
-from nova.telemetry.instrumented_engine import InstrumentedEngine
-from nova.telemetry.store import TelemetryStore
+from phi.core.events import EventBus, EventType
+from phi.core.types import Message, Role, TelemetryRecord
+from phi.telemetry.aggregator import TelemetryAggregator
+from phi.telemetry.instrumented_engine import InstrumentedEngine
+from phi.telemetry.store import TelemetryStore
 
 # ---------------------------------------------------------------------------
 # Helpers

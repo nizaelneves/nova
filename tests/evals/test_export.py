@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 
-from nova.evals.core.export import (
+from phi.evals.core.export import (
     _compute_efficiency,
     _compute_normalized,
     export_artifacts_manifest,
     export_jsonl,
     export_summary_json,
 )
-from nova.evals.core.trace import QueryTrace, TurnTrace
+from phi.evals.core.trace import QueryTrace, TurnTrace
 
 
 def _make_traces(n=3):

@@ -4,7 +4,7 @@ import { addFilesToKnowledge, KNOWLEDGE_FILE_TYPES } from '../../lib/api';
 import { useDismiss } from '../../hooks/useDismiss';
 import { Icon } from '../Icon';
 
-/** The "+" button: add files (spreadsheets, documents) so Nova can use them. */
+/** The "+" button: add files (spreadsheets, documents) so Phi can use them. */
 export function AttachMenu({ disabled }: { disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,7 @@ export function AttachMenu({ disabled }: { disabled?: boolean }) {
       const chunks = await addFilesToKnowledge(files);
       toast.success(
         chunks > 0
-          ? `Nova read ${files.length} file${files.length > 1 ? 's' : ''} (${chunks} parts saved)`
+          ? `Phi read ${files.length} file${files.length > 1 ? 's' : ''} (${chunks} parts saved)`
           : 'The file had no text to read',
       );
     } catch (err) {
@@ -51,14 +51,14 @@ export function AttachMenu({ disabled }: { disabled?: boolean }) {
           <button type="button" className="menu-item" onClick={() => fileRef.current?.click()}>
             <Icon name="paperclip" size={18} />
             <span>
-              <span className="menu-title">Add files</span>
+              <span className="menu-title">Add Files</span>
               <span className="menu-note">{KNOWLEDGE_FILE_TYPES.join('  ')}</span>
             </span>
           </button>
           <div className="menu-item menu-soon" aria-disabled="true">
-            <Icon name="document-text" size={18} />
+            <Icon name="database" size={18} />
             <span>
-              <span className="menu-title">Spreadsheets (.xlsx)</span>
+              <span className="menu-title">Add Context @</span>
               <span className="menu-note">Coming soon</span>
             </span>
           </div>

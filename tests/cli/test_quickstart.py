@@ -1,4 +1,4 @@
-"""Tests for ``nova quickstart`` command."""
+"""Tests for ``phi quickstart`` command."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 
 class TestQuickstartCommand:
@@ -28,27 +28,27 @@ class TestQuickstartCommand:
         hw.gpu = MagicMock(name="Test GPU", vram_gb=24, count=1, vendor="nvidia")
 
         with (
-            patch("nova.cli.quickstart_cmd.detect_hardware", return_value=hw),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
+            patch("phi.cli.quickstart_cmd.detect_hardware", return_value=hw),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
             patch(
-                "nova.cli.quickstart_cmd.generate_default_toml",
+                "phi.cli.quickstart_cmd.generate_default_toml",
                 return_value="[engine]\n",
             ),
             patch(
-                "nova.cli.quickstart_cmd.recommend_engine",
+                "phi.cli.quickstart_cmd.recommend_engine",
                 return_value="ollama",
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_engine_health",
+                "phi.cli.quickstart_cmd._check_engine_health",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_model_available",
+                "phi.cli.quickstart_cmd._check_model_available",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._test_query",
+                "phi.cli.quickstart_cmd._test_query",
                 return_value="Hello!",
             ),
         ):
@@ -70,27 +70,27 @@ class TestQuickstartCommand:
         hw.gpu = None
 
         with (
-            patch("nova.cli.quickstart_cmd.detect_hardware", return_value=hw),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
+            patch("phi.cli.quickstart_cmd.detect_hardware", return_value=hw),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
             patch(
-                "nova.cli.quickstart_cmd.generate_default_toml",
+                "phi.cli.quickstart_cmd.generate_default_toml",
                 return_value="[engine]\n",
             ),
             patch(
-                "nova.cli.quickstart_cmd.recommend_engine",
+                "phi.cli.quickstart_cmd.recommend_engine",
                 return_value="ollama",
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_engine_health",
+                "phi.cli.quickstart_cmd._check_engine_health",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_model_available",
+                "phi.cli.quickstart_cmd._check_model_available",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._test_query",
+                "phi.cli.quickstart_cmd._test_query",
                 return_value="Hello!",
             ),
         ):
@@ -114,26 +114,26 @@ class TestQuickstartCommand:
         hw.gpu = None
 
         with (
-            patch("nova.cli.quickstart_cmd.detect_hardware", return_value=hw),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
+            patch("phi.cli.quickstart_cmd.detect_hardware", return_value=hw),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
             patch(
-                "nova.cli.quickstart_cmd.generate_default_toml",
+                "phi.cli.quickstart_cmd.generate_default_toml",
                 return_value="[engine]\nnew = true\n",
             ),
             patch(
-                "nova.cli.quickstart_cmd.recommend_engine",
+                "phi.cli.quickstart_cmd.recommend_engine",
                 return_value="ollama",
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_engine_health",
+                "phi.cli.quickstart_cmd._check_engine_health",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_model_available",
+                "phi.cli.quickstart_cmd._check_model_available",
                 return_value=True,
             ),
-            patch("nova.cli.quickstart_cmd._test_query", return_value="Hello!"),
+            patch("phi.cli.quickstart_cmd._test_query", return_value="Hello!"),
         ):
             runner = CliRunner()
             result = runner.invoke(cli, ["quickstart", "--force"])
@@ -151,19 +151,19 @@ class TestQuickstartCommand:
         hw.gpu = None
 
         with (
-            patch("nova.cli.quickstart_cmd.detect_hardware", return_value=hw),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
+            patch("phi.cli.quickstart_cmd.detect_hardware", return_value=hw),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
             patch(
-                "nova.cli.quickstart_cmd.generate_default_toml",
+                "phi.cli.quickstart_cmd.generate_default_toml",
                 return_value="[engine]\n",
             ),
             patch(
-                "nova.cli.quickstart_cmd.recommend_engine",
+                "phi.cli.quickstart_cmd.recommend_engine",
                 return_value="ollama",
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_engine_health",
+                "phi.cli.quickstart_cmd._check_engine_health",
                 return_value=False,
             ),
         ):
@@ -186,31 +186,31 @@ class TestQuickstartCommand:
         hw.gpu = MagicMock(name="Apple GPU", vram_gb=16, count=1, vendor="apple")
 
         with (
-            patch("nova.cli.quickstart_cmd.detect_hardware", return_value=hw),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
-            patch("nova.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
+            patch("phi.cli.quickstart_cmd.detect_hardware", return_value=hw),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_PATH", config_path),
+            patch("phi.cli.quickstart_cmd.DEFAULT_CONFIG_DIR", tmp_path),
             patch(
-                "nova.cli.quickstart_cmd.generate_default_toml",
+                "phi.cli.quickstart_cmd.generate_default_toml",
                 return_value='[engine]\ndefault = "mlx"\n',
             ),
             patch(
-                "nova.cli.quickstart_cmd.recommend_engine",
+                "phi.cli.quickstart_cmd.recommend_engine",
                 return_value="mlx",
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_engine_health",
+                "phi.cli.quickstart_cmd._check_engine_health",
                 return_value=False,
             ),
             patch(
-                "nova.cli.quickstart_cmd._discover_healthy_engines",
+                "phi.cli.quickstart_cmd._discover_healthy_engines",
                 return_value=["ollama"],
             ),
             patch(
-                "nova.cli.quickstart_cmd._check_model_available",
+                "phi.cli.quickstart_cmd._check_model_available",
                 return_value=True,
             ),
             patch(
-                "nova.cli.quickstart_cmd._test_query",
+                "phi.cli.quickstart_cmd._test_query",
                 return_value="Hello!",
             ),
         ):

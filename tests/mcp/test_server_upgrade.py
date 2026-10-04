@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from nova.mcp.protocol import MCPRequest
-from nova.mcp.server import MCPServer
-from nova.tools.calculator import CalculatorTool
-from nova.tools.think import ThinkTool
+from phi.mcp.protocol import MCPRequest
+from phi.mcp.server import MCPServer
+from phi.tools.calculator import CalculatorTool
+from phi.tools.think import ThinkTool
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ class TestServerTitle:
         resp = server.handle(req)
         server_info = resp.result["serverInfo"]
         assert "title" in server_info
-        assert server_info["title"] == "Nova Tool Server"
+        assert server_info["title"] == "Phi Tool Server"
 
 
 class TestListChanged:
@@ -112,7 +112,7 @@ class TestAutoDiscovery:
 
 class TestStorageToolAnnotations:
     def test_memory_store_destructive(self):
-        from nova.tools.storage_tools import MemoryStoreTool
+        from phi.tools.storage_tools import MemoryStoreTool
 
         server = MCPServer([MemoryStoreTool()])
         req = MCPRequest(method="tools/list", id=1)
@@ -122,7 +122,7 @@ class TestStorageToolAnnotations:
         assert tool["annotations"]["readOnlyHint"] is False
 
     def test_memory_retrieve_read_only(self):
-        from nova.tools.storage_tools import MemoryRetrieveTool
+        from phi.tools.storage_tools import MemoryRetrieveTool
 
         server = MCPServer([MemoryRetrieveTool()])
         req = MCPRequest(method="tools/list", id=1)

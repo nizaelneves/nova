@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from nova.mcp.client import MCPClient
-from nova.mcp.server import MCPServer
-from nova.mcp.transport import InProcessTransport
-from nova.tools._stubs import ToolSpec
-from nova.tools.calculator import CalculatorTool
-from nova.tools.mcp_adapter import MCPToolAdapter, MCPToolProvider
-from nova.tools.think import ThinkTool
+from phi.mcp.client import MCPClient
+from phi.mcp.server import MCPServer
+from phi.mcp.transport import InProcessTransport
+from phi.tools._stubs import ToolSpec
+from phi.tools.calculator import CalculatorTool
+from phi.tools.mcp_adapter import MCPToolAdapter, MCPToolProvider
+from phi.tools.think import ThinkTool
 
 
 @pytest.fixture
@@ -103,7 +103,7 @@ class TestMCPToolProvider:
         assert "think" in names
 
     def test_discovered_tools_are_base_tool(self, client):
-        from nova.tools._stubs import BaseTool
+        from phi.tools._stubs import BaseTool
 
         provider = MCPToolProvider(client)
         tools = provider.discover()

@@ -3,11 +3,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-REGISTRY_PATH = "nova.core.registry.AgentRegistry.get"
+REGISTRY_PATH = "phi.core.registry.AgentRegistry.get"
 
 
 def test_run_ephemeral_creates_and_runs_agent():
-    from nova.agents.executor import AgentExecutor
+    from phi.agents.executor import AgentExecutor
 
     manager = MagicMock()
     executor = AgentExecutor(manager=manager, event_bus=MagicMock())
@@ -27,7 +27,7 @@ def test_run_ephemeral_creates_and_runs_agent():
 
 
 def test_run_ephemeral_passes_input():
-    from nova.agents.executor import AgentExecutor
+    from phi.agents.executor import AgentExecutor
 
     manager = MagicMock()
     executor = AgentExecutor(manager=manager, event_bus=MagicMock())
@@ -47,13 +47,13 @@ def test_run_ephemeral_passes_input():
 
 
 def test_run_ephemeral_resolves_tools_and_preserves_security():
-    from nova.agents.executor import AgentExecutor
-    from nova.agents.simple import SimpleAgent
-    from nova.core.events import EventBus
-    from nova.core.registry import AgentRegistry, ToolRegistry
-    from nova.core.types import ToolResult
-    from nova.security.capabilities import CapabilityPolicy
-    from nova.tools._stubs import BaseTool, ToolSpec
+    from phi.agents.executor import AgentExecutor
+    from phi.agents.simple import SimpleAgent
+    from phi.core.events import EventBus
+    from phi.core.registry import AgentRegistry, ToolRegistry
+    from phi.core.types import ToolResult
+    from phi.security.capabilities import CapabilityPolicy
+    from phi.tools._stubs import BaseTool, ToolSpec
 
     class _FlushProbe(BaseTool):
         calls = 0

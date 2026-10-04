@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.core.registry import SpeechRegistry
-from nova.speech._stubs import TranscriptionResult
-from nova.speech.openai_whisper import OpenAIWhisperBackend
+from phi.core.registry import SpeechRegistry
+from phi.speech._stubs import TranscriptionResult
+from phi.speech.openai_whisper import OpenAIWhisperBackend
 
 
 @pytest.fixture(autouse=True)
@@ -28,8 +28,8 @@ def test_openai_whisper_transcribe():
     mock_response.duration = 2.0
     mock_client.audio.transcriptions.create.return_value = mock_response
 
-    with patch("nova.speech.openai_whisper.OpenAI", return_value=mock_client):
-        from nova.speech.openai_whisper import OpenAIWhisperBackend
+    with patch("phi.speech.openai_whisper.OpenAI", return_value=mock_client):
+        from phi.speech.openai_whisper import OpenAIWhisperBackend
 
         backend = OpenAIWhisperBackend(api_key="test-key")
         result = backend.transcribe(b"fake audio", format="wav")
@@ -40,16 +40,16 @@ def test_openai_whisper_transcribe():
 
 
 def test_openai_whisper_health():
-    with patch("nova.speech.openai_whisper.OpenAI"):
-        from nova.speech.openai_whisper import OpenAIWhisperBackend
+    with patch("phi.speech.openai_whisper.OpenAI"):
+        from phi.speech.openai_whisper import OpenAIWhisperBackend
 
         backend = OpenAIWhisperBackend(api_key="test-key")
         assert backend.health() is True
 
 
 def test_openai_whisper_health_no_key():
-    with patch("nova.speech.openai_whisper.OpenAI"):
-        from nova.speech.openai_whisper import OpenAIWhisperBackend
+    with patch("phi.speech.openai_whisper.OpenAI"):
+        from phi.speech.openai_whisper import OpenAIWhisperBackend
 
         backend = OpenAIWhisperBackend.__new__(OpenAIWhisperBackend)
         backend._client = None

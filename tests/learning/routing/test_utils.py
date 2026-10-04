@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.learning.routing._utils import classify_query
+from phi.learning.routing._utils import classify_query
 
 
 class TestClassifyQuery:

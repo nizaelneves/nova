@@ -1,4 +1,4 @@
-"""CLI-level regression tests for ``nova ask`` vision input.
+"""CLI-level regression tests for ``phi ask`` vision input.
 
 The unit tests in ``tests/test_vision.py`` cover the ``Message.images`` ->
 ``messages_to_dicts`` serialization contract in isolation. These tests lock
@@ -17,13 +17,13 @@ from typing import Any
 
 from click.testing import CliRunner
 
-from nova.cli import cli
-from nova.core.config import NovaConfig
-from nova.core.types import Role
+from phi.cli import cli
+from phi.core.config import PhiConfig
+from phi.core.types import Role
 
 # Import the module (not the Click command attribute) so we can monkeypatch
 # the names it looks up at call time.
-_ask_mod = importlib.import_module("nova.cli.ask")
+_ask_mod = importlib.import_module("phi.cli.ask")
 
 # A minimal but valid 1x1 PNG so ``click.Path(exists=True)`` is satisfied and
 # the bytes are deterministic.
@@ -59,8 +59,8 @@ class _RecordingEngine:
 
 
 def _patch_ask(monkeypatch, tmp_path: Path, *, engine_name: str) -> _RecordingEngine:
-    """Wire ``nova ask`` to a recording engine reported under ``engine_name``."""
-    cfg = NovaConfig()
+    """Wire ``phi ask`` to a recording engine reported under ``engine_name``."""
+    cfg = PhiConfig()
     cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
     # Keep memory context out of the picture so the user message we inspect is
     # the one the CLI built directly from the query + image.

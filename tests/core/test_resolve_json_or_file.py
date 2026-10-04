@@ -1,11 +1,11 @@
-"""Tests for resolve_json_or_file in nova.core.config."""
+"""Tests for resolve_json_or_file in phi.core.config."""
 
 import json
 from pathlib import Path
 
 import pytest
 
-from nova.core.config import load_config, resolve_json_or_file
+from phi.core.config import load_config, resolve_json_or_file
 
 
 class TestResolveJsonOrFile:

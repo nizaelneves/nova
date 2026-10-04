@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from nova.tools.agent_tools import (
+from phi.tools.agent_tools import (
     _SPAWNED_AGENTS,
     AgentKillTool,
     AgentListTool,

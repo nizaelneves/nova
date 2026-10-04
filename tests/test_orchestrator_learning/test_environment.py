@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import ToolResult
-from nova.learning.intelligence.orchestrator.environment import (
+from phi.core.events import EventBus, EventType
+from phi.core.types import ToolResult
+from phi.learning.intelligence.orchestrator.environment import (
     OrchestratorEnvironment,
 )
-from nova.learning.intelligence.orchestrator.types import OrchestratorAction
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.learning.intelligence.orchestrator.types import OrchestratorAction
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # -- Mock tool ---------------------------------------------------------------
 

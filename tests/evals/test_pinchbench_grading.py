@@ -1,7 +1,7 @@
 """Tests for PinchBench grading functions."""
 
-from nova.evals.core.types import EvalRecord
-from nova.evals.scorers.pinchbench import (
+from phi.evals.core.types import EvalRecord
+from phi.evals.scorers.pinchbench import (
     _grade_automated,
     _parse_judge_response,
     _summarize_transcript,

@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from nova.core.types import TelemetryRecord
-from nova.telemetry.aggregator import TelemetryAggregator
-from nova.telemetry.store import TelemetryStore
+from phi.core.types import TelemetryRecord
+from phi.telemetry.aggregator import TelemetryAggregator
+from phi.telemetry.store import TelemetryStore
 
 
 class TestTokensPerJouleStorage:

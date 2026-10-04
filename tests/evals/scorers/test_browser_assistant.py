@@ -1,7 +1,7 @@
 """Tests for the browser_assistant scorer."""
 
-from nova.evals.core.types import EvalRecord
-from nova.evals.scorers.browser_assistant import (
+from phi.evals.core.types import EvalRecord
+from phi.evals.scorers.browser_assistant import (
     BrowserAssistantScorer,
 )
 

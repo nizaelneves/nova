@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from nova.core.config import MemoryFilesConfig, SystemPromptConfig
+from phi.core.config import MemoryFilesConfig, SystemPromptConfig
 
 
 def test_base_agent_uses_builder(tmp_path: Path):
     soul = tmp_path / "SOUL.md"
-    soul.write_text("I am Nova.")
+    soul.write_text("I am Phi.")
     memory = tmp_path / "MEMORY.md"
     memory.write_text("- User likes Python")
 
-    from nova.prompt.builder import SystemPromptBuilder
+    from phi.prompt.builder import SystemPromptBuilder
 
     builder = SystemPromptBuilder(
         agent_template="You are a helpful assistant.",
@@ -23,6 +23,6 @@ def test_base_agent_uses_builder(tmp_path: Path):
         system_prompt_config=SystemPromptConfig(),
     )
     prompt = builder.build()
-    assert "Nova" in prompt
+    assert "Phi" in prompt
     assert "Python" in prompt
     assert "helpful assistant" in prompt

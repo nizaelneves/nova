@@ -6,10 +6,10 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any, Dict, List
 from unittest import mock
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import Message, Role, TelemetryRecord
-from nova.engine._base import InferenceEngine
-from nova.telemetry.wrapper import instrumented_generate
+from phi.core.events import EventBus, EventType
+from phi.core.types import Message, Role, TelemetryRecord
+from phi.engine._base import InferenceEngine
+from phi.telemetry.wrapper import instrumented_generate
 
 
 class _StubEngine(InferenceEngine):

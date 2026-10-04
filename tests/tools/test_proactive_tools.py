@@ -6,13 +6,13 @@ import json
 
 import pytest
 
-from nova.tools.approval_store import (
+from phi.tools.approval_store import (
     STATUS_APPROVED,
     STATUS_EXECUTED,
     TIER_LOW,
     ApprovalStore,
 )
-from nova.tools.proactive_tools import ExecutePendingActionsTool, QueueActionTool
+from phi.tools.proactive_tools import ExecutePendingActionsTool, QueueActionTool
 
 
 def _approved_sms_draft(store: ApprovalStore, payload: dict[str, str]):

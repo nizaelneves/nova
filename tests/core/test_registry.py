@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.registry import (
+from phi.core.registry import (
     EngineRegistry,
     ModelRegistry,
     RouterPolicyRegistry,

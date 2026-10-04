@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nova.telemetry.phase_metrics import compute_phase_metrics, split_at_ttft
-from nova.telemetry.session import TelemetrySample, TelemetrySession
+from phi.telemetry.phase_metrics import compute_phase_metrics, split_at_ttft
+from phi.telemetry.session import TelemetrySample, TelemetrySession
 
 
 class TestComputePhaseMetrics:

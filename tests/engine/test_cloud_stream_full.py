@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.core.types import Message, Role, ToolCall
-from nova.engine._stubs import StreamChunk
+from phi.core.types import Message, Role, ToolCall
+from phi.engine._stubs import StreamChunk
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -20,7 +20,7 @@ from nova.engine._stubs import StreamChunk
 
 def _make_cloud_engine(**overrides: Any) -> Any:
     """Create a CloudEngine without calling __init__ (no env vars needed)."""
-    from nova.engine.cloud import CloudEngine
+    from phi.engine.cloud import CloudEngine
 
     engine = CloudEngine.__new__(CloudEngine)
     engine._openai_client = overrides.get("openai_client")

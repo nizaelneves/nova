@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.scheduler.scheduler import ScheduledTask
-from nova.scheduler.tools import (
+from phi.scheduler.scheduler import ScheduledTask
+from phi.scheduler.tools import (
     CancelScheduledTaskTool,
     ListScheduledTasksTool,
     PauseScheduledTaskTool,

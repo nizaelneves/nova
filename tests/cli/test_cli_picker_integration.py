@@ -6,28 +6,28 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from nova.cli._model_switch import (
+from phi.cli._model_switch import (
     interactive_pick_model,
     resolve_chat_cli_model,
     variant_preset_model,
 )
-from nova.cli._runtime_panel import (
+from phi.cli._runtime_panel import (
     ChatRuntimeOptions,
     interactive_pick_runtime_options,
     runtime_cli_options,
     tty_wants_runtime_panel,
 )
-from nova.cli.chat_cmd import chat
-from nova.core.config import NovaConfig
+from phi.cli.chat_cmd import chat
+from phi.core.config import PhiConfig
 
 
-def _chat_patches(engine: MagicMock, config: NovaConfig | None = None):
-    cfg = config or NovaConfig()
+def _chat_patches(engine: MagicMock, config: PhiConfig | None = None):
+    cfg = config or PhiConfig()
     cfg.intelligence.default_model = "default-m"
     return (
-        patch("nova.cli.chat_cmd.load_config", return_value=cfg),
-        patch("nova.engine.get_engine", return_value=("ollama", engine)),
-        patch("nova.intelligence.register_builtin_models"),
+        patch("phi.cli.chat_cmd.load_config", return_value=cfg),
+        patch("phi.engine.get_engine", return_value=("ollama", engine)),
+        patch("phi.intelligence.register_builtin_models"),
     )
 
 
@@ -67,16 +67,16 @@ class TestModelSwitchBranches:
             assert interactive_pick_model(MagicMock(), engine) is None
 
     def test_resolve_falls_back_to_discovered_model(self) -> None:
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = ""
         eng = MagicMock()
         with (
             patch(
-                "nova.engine.discover_engines",
+                "phi.engine.discover_engines",
                 return_value=[("ollama", eng)],
             ),
             patch(
-                "nova.engine.discover_models",
+                "phi.engine.discover_models",
                 return_value={"ollama": ["discovered"]},
             ),
         ):
@@ -162,18 +162,18 @@ class TestChatPickerIntegration:
     def test_cloud_chat_never_receives_ollama_runtime_kwargs(self) -> None:
         engine = MagicMock()
         engine.generate.return_value = {"content": "ok"}
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = "gpt-4o-mini"
         with (
-            patch("nova.cli.chat_cmd.load_config", return_value=cfg),
-            patch("nova.engine.get_engine", return_value=("cloud", engine)),
-            patch("nova.intelligence.register_builtin_models"),
+            patch("phi.cli.chat_cmd.load_config", return_value=cfg),
+            patch("phi.engine.get_engine", return_value=("cloud", engine)),
+            patch("phi.intelligence.register_builtin_models"),
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=True,
             ) as wants_panel,
         ):
@@ -195,14 +195,14 @@ class TestChatPickerIntegration:
 
     def test_cloud_chat_rejects_ollama_runtime_flags(self) -> None:
         engine = MagicMock()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = "gpt-4o-mini"
         with (
-            patch("nova.cli.chat_cmd.load_config", return_value=cfg),
-            patch("nova.engine.get_engine", return_value=("cloud", engine)),
-            patch("nova.intelligence.register_builtin_models"),
+            patch("phi.cli.chat_cmd.load_config", return_value=cfg),
+            patch("phi.engine.get_engine", return_value=("cloud", engine)),
+            patch("phi.intelligence.register_builtin_models"),
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
         ):
@@ -218,17 +218,17 @@ class TestChatPickerIntegration:
     def test_rich_markup_in_runtime_labels_is_rendered_literally(self) -> None:
         engine = MagicMock()
         engine.generate.return_value = {"content": "ok"}
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = "default-m"
         with (
-            patch("nova.cli.chat_cmd.load_config", return_value=cfg),
+            patch("phi.cli.chat_cmd.load_config", return_value=cfg),
             patch(
-                "nova.engine.get_engine",
+                "phi.engine.get_engine",
                 return_value=("[bold]engine[/bold]", engine),
             ),
-            patch("nova.intelligence.register_builtin_models"),
+            patch("phi.intelligence.register_builtin_models"),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=False,
             ),
         ):
@@ -244,16 +244,16 @@ class TestChatPickerIntegration:
 
     def test_native_react_gets_engine_options_via_setattr(self) -> None:
         """NativeReActAgent rejects engine_options kwarg; chat uses setattr."""
-        import nova.agents  # noqa: F401
-        from nova.agents.native_react import NativeReActAgent
-        from nova.core.registry import AgentRegistry
+        import phi.agents  # noqa: F401
+        from phi.agents.native_react import NativeReActAgent
+        from phi.core.registry import AgentRegistry
 
         if not AgentRegistry.contains("native_react"):
             AgentRegistry.register_value("native_react", NativeReActAgent)
 
         engine = MagicMock()
         engine.generate.return_value = {"content": "ok"}
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = "gemma4:e4b"
         cfg.agent.default_agent = "native_react"
         p = _chat_patches(engine, cfg)
@@ -262,11 +262,11 @@ class TestChatPickerIntegration:
             p[1],
             p[2],
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=False,
             ),
         ):
@@ -288,15 +288,15 @@ class TestChatPickerIntegration:
             p[1],
             p[2],
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=True,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=False,
             ),
             patch(
-                "nova.cli._model_switch.interactive_pick_model",
+                "phi.cli._model_switch.interactive_pick_model",
                 return_value="picked-model",
             ),
         ):
@@ -318,11 +318,11 @@ class TestChatPickerIntegration:
             p[1],
             p[2],
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=True,
             ),
         ):
@@ -350,7 +350,7 @@ class TestChatPickerIntegration:
 
     def test_no_model_available_exits(self) -> None:
         engine = MagicMock()
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.default_model = ""
         p = _chat_patches(engine, cfg)
         with (
@@ -358,15 +358,15 @@ class TestChatPickerIntegration:
             p[1],
             p[2],
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=False,
             ),
             patch(
-                "nova.cli._model_switch.resolve_chat_cli_model",
+                "phi.cli._model_switch.resolve_chat_cli_model",
                 return_value="",
             ),
         ):
@@ -375,7 +375,7 @@ class TestChatPickerIntegration:
         assert "No model available" in result.output
 
     def test_smart_preset_used_when_no_flag(self) -> None:
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.intelligence.model_chat = "preset-chat"
         eng = MagicMock()
         eng.generate.return_value = {"content": "x"}
@@ -385,11 +385,11 @@ class TestChatPickerIntegration:
             p[1],
             p[2],
             patch(
-                "nova.cli._model_switch.tty_wants_model_picker",
+                "phi.cli._model_switch.tty_wants_model_picker",
                 return_value=False,
             ),
             patch(
-                "nova.cli._runtime_panel.tty_wants_runtime_panel",
+                "phi.cli._runtime_panel.tty_wants_runtime_panel",
                 return_value=False,
             ),
         ):

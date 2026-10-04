@@ -6,7 +6,7 @@ import builtins
 import sys
 from unittest.mock import MagicMock
 
-from nova.tools.pdf_tool import PDFExtractTool, _parse_pages
+from phi.tools.pdf_tool import PDFExtractTool, _parse_pages
 
 
 class TestPDFExtractTool:

@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from nova.core.types import StepType, Trace, TraceStep
-from nova.traces.analyzer import TraceAnalyzer
-from nova.traces.store import TraceStore
+from phi.core.types import StepType, Trace, TraceStep
+from phi.traces.analyzer import TraceAnalyzer
+from phi.traces.store import TraceStore
 
 
 def _make_trace(

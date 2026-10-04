@@ -6,12 +6,12 @@ from collections import Counter
 
 import pytest
 
-from nova.agents import tool_resolver
-from nova.connectors.store import KnowledgeStore
-from nova.core.registry import ToolRegistry
-from nova.core.types import ToolResult
-from nova.tools import description_loader
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents import tool_resolver
+from phi.connectors.store import KnowledgeStore
+from phi.core.registry import ToolRegistry
+from phi.core.types import ToolResult
+from phi.tools import description_loader
+from phi.tools._stubs import BaseTool, ToolSpec
 
 
 class _AlphaTool(BaseTool):

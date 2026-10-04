@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from nova.core.config import NovaConfig
-from nova.core.events import EventBus
-from nova.system import QueryOrchestrator
+from phi.core.config import PhiConfig
+from phi.core.events import EventBus
+from phi.system import QueryOrchestrator
 
 
 class _FakeEngine:
@@ -36,7 +36,7 @@ class _FakeEngine:
 class _FakeSystem:
     """Minimum surface QueryOrchestrator reads — no subsystems wired."""
 
-    config: NovaConfig = field(default_factory=NovaConfig)
+    config: PhiConfig = field(default_factory=PhiConfig)
     bus: EventBus = field(default_factory=EventBus)
     engine: Any = None
     engine_key: str = "fake"
@@ -76,7 +76,7 @@ class TestAskDirectEngineMode:
 
     def test_uses_config_defaults_when_omitted(self):
         engine = _FakeEngine({"content": ""})
-        config = NovaConfig()
+        config = PhiConfig()
         config.intelligence.temperature = 0.42
         config.intelligence.max_tokens = 77
         system = _FakeSystem(config=config, engine=engine)
@@ -121,7 +121,7 @@ class TestDetectAgentIntent:
         ],
     )
     def test_morning_digest_triggers(self, query):
-        from nova.core.registry import AgentRegistry
+        from phi.core.registry import AgentRegistry
 
         # Register a stub so the intent check returns the name.
         try:

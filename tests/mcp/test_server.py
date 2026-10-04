@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import ToolResult
-from nova.mcp.protocol import (
+from phi.core.events import EventBus, EventType
+from phi.core.types import ToolResult
+from phi.mcp.protocol import (
     INVALID_PARAMS,
     METHOD_NOT_FOUND,
     MCPRequest,
 )
-from nova.mcp.server import MCPServer
-from nova.tools._stubs import BaseTool, ToolSpec
-from nova.tools.calculator import CalculatorTool
-from nova.tools.think import ThinkTool
+from phi.mcp.server import MCPServer
+from phi.tools._stubs import BaseTool, ToolSpec
+from phi.tools.calculator import CalculatorTool
+from phi.tools.think import ThinkTool
 
 
 class _ProbeTool(BaseTool):
@@ -141,7 +141,7 @@ class TestMCPServer:
         assert "protocolVersion" in result
         assert "capabilities" in result
         assert "serverInfo" in result
-        assert result["serverInfo"]["name"] == "nova"
+        assert result["serverInfo"]["name"] == "phi"
 
     def test_initialize_capabilities(self, server):
         req = MCPRequest(method="initialize", id=1)

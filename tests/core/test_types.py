@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from nova.core.types import (
+from phi.core.types import (
     Conversation,
     Message,
     ModelSpec,

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.connectors.embedding_store import EmbeddingStore
+from phi.connectors.embedding_store import EmbeddingStore
 
 torch = pytest.importorskip("torch", reason="torch required for embedding tests")
 

@@ -12,7 +12,7 @@ leaderboard. These tests pin the conservative fallback behaviour.
 
 from __future__ import annotations
 
-from nova.server.savings import compute_savings
+from phi.server.savings import compute_savings
 
 
 class TestPromptTokensEvaluatedFallback:

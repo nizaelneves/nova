@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Nova",
+  "productName": "PhiOS",
   "version": "1.0.1",
-  "identifier": "com.nova.desktop",
+  "identifier": "com.phi.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Nova",
+        "title": "PhiOS",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -40,7 +40,7 @@
     ],
     "category": "Utility",
     "shortDescription": "On-device AI assistant with energy monitoring and trace debugging",
-    "longDescription": "Nova Desktop wraps the Nova research framework in a native desktop application with real-time energy monitoring, trace debugging, learning curve visualization, and memory browsing.",
+    "longDescription": "PhiOS Desktop wraps the Phi research framework in a native desktop application with real-time energy monitoring, trace debugging, learning curve visualization, and memory browsing.",
     "macOS": {
       "entitlements": "Entitlements.plist",
       "minimumSystemVersion": "10.15",
@@ -57,7 +57,7 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["nova"]
+        "schemes": ["phi"]
       }
     }
   }

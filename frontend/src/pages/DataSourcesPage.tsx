@@ -816,7 +816,7 @@ export function SyncStatusDisplay({
       </div>
       {hasSynced && connectorId === 'slack' && (
         <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)', marginTop: 4 }}>
-          Tip: invite the bot to channels with /invite @Nova, then re-sync
+          Tip: invite the bot to channels with /invite @Phi, then re-sync
         </div>
       )}
       {syncError && (
@@ -1043,14 +1043,14 @@ function DataSourcesSection() {
     return (
       <div className="flex flex-col gap-5">
         <section>
-          <div className="hud-label mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
+          <div className="label-caps mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
             Loading sources…
           </div>
           <div className="flex flex-col gap-2">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="hud-panel data-skeleton"
+                className="source-card data-skeleton"
                 style={{
                   padding: '14px 18px',
                   height: 60,
@@ -1069,7 +1069,7 @@ function DataSourcesSection() {
       {/* Connected sources */}
       {connected.length > 0 && (
         <section>
-          <div className="hud-label mb-2 flex items-center gap-2">
+          <div className="label-caps mb-2 flex items-center gap-2">
             <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: 'var(--color-success)' }} />
             Connected · {connected.length}
           </div>
@@ -1082,7 +1082,7 @@ function DataSourcesSection() {
             return (
               <div
                 key={c.connector_id}
-                className="hud-panel"
+                className="source-card"
                 style={{
                   borderColor: hasError
                     ? 'color-mix(in srgb, var(--color-error) 28%, transparent)'
@@ -1115,7 +1115,7 @@ function DataSourcesSection() {
                   <button
                     onClick={() => handleDisconnect(c.connector_id)}
                     disabled={connectorActionsBusy}
-                    className="hud-label"
+                    className="label-caps"
                     style={{
                       padding: '6px 12px',
                       background: 'transparent',
@@ -1142,7 +1142,7 @@ function DataSourcesSection() {
       {/* Not connected list */}
       {notConnected.length > 0 && (
         <section>
-          <div className="hud-label mb-2 flex items-center gap-2">
+          <div className="label-caps mb-2 flex items-center gap-2">
             <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: 'var(--color-text-tertiary)' }} />
             Available · {notConnected.length}
           </div>
@@ -1154,7 +1154,7 @@ function DataSourcesSection() {
             return (
               <div
                 key={c.connector_id}
-                className="hud-panel"
+                className="source-card"
                 style={{
                   gridColumn: isExpanded ? '1 / -1' : undefined,
                   opacity: isExpanded ? 1 : 0.85,

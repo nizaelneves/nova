@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from nova.security.scanner import PIIScanner, SecretScanner
-from nova.security.types import ThreatLevel
+from phi.security.scanner import PIIScanner, SecretScanner
+from phi.security.types import ThreatLevel
 
 # ---------------------------------------------------------------------------
 # SecretScanner tests

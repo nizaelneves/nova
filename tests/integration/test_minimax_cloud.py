@@ -10,9 +10,9 @@ import os
 
 import pytest
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine.cloud import CloudEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine.cloud import CloudEngine
 
 _MINIMAX_KEY = os.environ.get("MINIMAX_API_KEY", "")
 _skip_no_key = pytest.mark.skipif(

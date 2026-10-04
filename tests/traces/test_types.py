@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from nova.core.types import StepType, Trace, TraceStep
+from phi.core.types import StepType, Trace, TraceStep
 
 
 class TestTraceStep:

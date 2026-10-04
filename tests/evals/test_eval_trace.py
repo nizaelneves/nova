@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.evals.core.trace import QueryTrace, TurnTrace
+from phi.evals.core.trace import QueryTrace, TurnTrace
 
 
 class TestTurnTrace:

@@ -1,7 +1,7 @@
-from nova.agents._stubs import AgentResult
-from nova.agents.executor import AgentExecutor
-from nova.agents.manager import AgentManager
-from nova.core.events import EventBus, EventType
+from phi.agents._stubs import AgentResult
+from phi.agents.executor import AgentExecutor
+from phi.agents.manager import AgentManager
+from phi.core.events import EventBus, EventType
 
 
 def test_budget_exceeded_sets_status(tmp_path):

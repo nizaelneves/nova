@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from nova.tools.db_query import DatabaseQueryTool
+from phi.tools.db_query import DatabaseQueryTool
 
 
 class TestDatabaseQueryTool:

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Cpu, X, Download, Loader2, Trash2, Check, Cloud, Key, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { isCliModel, thinkSupport } from '../lib/model-capabilities';
+import { isCliModel } from '../lib/model-capabilities';
 import { useAppStore } from '../lib/store';
 import {
   pullModel,
@@ -260,30 +260,41 @@ export function CommandPalette() {
       <div className="fixed inset-0" style={{ background: 'rgba(0,0,0,0.5)' }} />
 
       <div
-        className="relative w-full max-w-lg rounded-xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-2xl overflow-hidden"
         style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-lg)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.45), var(--shadow-lg)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tabs */}
-        <div className="flex" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          {(['installed', 'catalogue', 'cloud'] as Tab[]).map((t) => (
+        {/* Tabs + close */}
+        <div className="flex items-center gap-1 px-3 pt-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            {(['installed', 'catalogue', 'cloud'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                style={{
+                  color: tab === t ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+                  background: tab === t ? 'var(--color-accent-subtle)' : 'transparent',
+                }}
+              >
+                {TAB_LABELS[t]}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 flex justify-end">
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="flex-1 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer"
-              style={{
-                color: tab === t ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
-                borderBottom: tab === t ? '2px solid var(--color-accent)' : '2px solid transparent',
-                background: 'transparent',
-              }}
+              onClick={() => setCommandPaletteOpen(false)}
+              className="p-1 rounded-lg cursor-pointer"
+              style={{ color: 'var(--color-text-tertiary)' }}
             >
-              {TAB_LABELS[t]}
+              <X size={16} />
             </button>
-          ))}
+          </div>
         </div>
 
         {/* Search (not for cloud tab) */}
@@ -303,13 +314,6 @@ export function CommandPalette() {
               className="flex-1 bg-transparent outline-none text-sm"
               style={{ color: 'var(--color-text)' }}
             />
-            <button
-              onClick={() => setCommandPaletteOpen(false)}
-              className="p-1 rounded cursor-pointer"
-              style={{ color: 'var(--color-text-tertiary)' }}
-            >
-              <X size={16} />
-            </button>
           </div>
         )}
 
@@ -366,25 +370,8 @@ export function CommandPalette() {
                           {model.id}
                         </div>
                       </div>
-                      {(() => {
-                        const think = thinkSupport(model.id);
-                        if (!think.label) return null;
-                        const color =
-                          think.level === 'strong' || think.level === 'good'
-                            ? 'var(--color-accent)'
-                            : 'var(--color-text-tertiary)';
-                        return (
-                          <span
-                            className="text-[10px] px-2 py-0.5 rounded-full shrink-0"
-                            style={{ border: `1px solid ${color}`, color }}
-                            title={think.hint}
-                          >
-                            {think.label}
-                          </span>
-                        );
-                      })()}
                       {isActive && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-accent)' }}>
                           Active
                         </span>
                       )}
@@ -459,11 +446,11 @@ export function CommandPalette() {
           ) : (
             /* ── Cloud Models tab ── */
             <div className="px-4 py-2">
-              <div className="text-[11px] mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-                {desktopKeyStorage
-                  ? 'Add your API keys to use cloud models. Keys are stored in secure desktop storage.'
-                  : 'Configure cloud provider keys in the server environment to use cloud models.'}
-              </div>
+              {desktopKeyStorage && (
+                <div className="text-[11px] mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
+                  Add your API keys to use cloud models. Keys are stored in secure desktop storage.
+                </div>
+              )}
 
               {CLOUD_PROVIDERS.map((provider) => {
                 const key = apiKeys[provider.envKey] || '';
@@ -553,6 +540,30 @@ export function CommandPalette() {
                   </div>
                 );
               })}
+
+              <div className="opacity-50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cloud size={14} style={{ color: 'var(--color-text-tertiary)' }} />
+                  <span className="text-xs font-medium" style={{ color: 'var(--color-text)' }}>TypeSafe</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text-tertiary)' }}>
+                    Coming Soon
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  <div className="flex-1 flex items-center rounded-lg" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
+                    <Key size={12} className="ml-2.5 shrink-0" style={{ color: 'var(--color-text-tertiary)' }} />
+                    <input
+                      type="password"
+                      value=""
+                      disabled
+                      readOnly
+                      placeholder="JEV_API_KEY"
+                      className="flex-1 text-xs px-2 py-1.5 bg-transparent outline-none font-mono"
+                      style={{ color: 'var(--color-text)' }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -571,7 +582,7 @@ export function CommandPalette() {
           ) : tab === 'catalogue' ? (
             <span>Models are downloaded from the Ollama registry</span>
           ) : (
-            <span>API keys are stored locally and never sent to Nova servers</span>
+            <span>Stored Only Locally</span>
           )}
         </div>
       </div>

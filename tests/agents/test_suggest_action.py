@@ -1,6 +1,6 @@
 """Tests for suggest_action helper."""
 
-from nova.agents.errors import FatalError, RetryableError, suggest_action
+from phi.agents.errors import FatalError, RetryableError, suggest_action
 
 
 def test_suggest_action_rate_limit():

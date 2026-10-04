@@ -1,10 +1,10 @@
-"""Tests for the ``nova workflow`` CLI commands."""
+"""Tests for the ``phi workflow`` CLI commands."""
 
 from __future__ import annotations
 
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 
 class TestWorkflowCmd:

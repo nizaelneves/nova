@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from nova.tasks.store import AreaNotEmpty, NotFound, TaskError, TaskStore
+from phi.tasks.store import AreaNotEmpty, NotFound, TaskError, TaskStore
 
 NOW = datetime(2026, 10, 7, 12, 0)  # Wednesday, noon
 
@@ -28,10 +28,10 @@ def _finish(store: TaskStore, task: dict) -> list:
     return [t for t in store.list_tasks() if t["id"] not in before]
 
 
-def test_a_default_area_exists_so_tasks_can_be_created_at_once(store) -> None:
-    assert [a["name"] for a in store.list_areas()] == ["General"]
+def test_no_area_is_auto_seeded_but_a_task_can_still_be_created(store) -> None:
+    assert store.list_areas() == []
     task = _add(store, "Pay rent", "2026-10-10")
-    assert task["area"] == "General" and task["status"] == "todo"
+    assert task["area_id"] is None and task["area"] == "" and task["status"] == "todo"
 
 
 def test_required_and_optional_fields(store) -> None:
@@ -69,8 +69,10 @@ def test_rename_area_keeps_its_tasks(store) -> None:
     assert renamed["name"] == "Work" and renamed["task_count"] == 1
 
 
-def test_deleting_an_area_with_tasks_needs_a_destination(store) -> None:
-    home = store.list_areas()[0]
+def test_deleting_an_area_with_tasks_needs_a_destination_when_others_remain(
+    store,
+) -> None:
+    home = store.create_area("Home")
     work = store.create_area("Work")
     _add(store, "a", "2026-10-09", area_id=work["id"])
     _add(store, "b", "2026-10-09", area_id=work["id"])
@@ -85,14 +87,25 @@ def test_deleting_an_area_with_tasks_needs_a_destination(store) -> None:
 
 
 def test_empty_area_deletes_without_a_destination(store) -> None:
+    store.create_area("Home")
     extra = store.create_area("Empty")
     store.delete_area(extra["id"])
     assert len(store.list_areas()) == 1
 
 
-def test_last_area_cannot_be_deleted(store) -> None:
-    with pytest.raises(TaskError):
-        store.delete_area(store.list_areas()[0]["id"])
+def test_last_area_can_be_deleted_and_nulls_out_its_tasks(store) -> None:
+    only = store.create_area("Only")
+    _add(store, "a", "2026-10-09", area_id=only["id"])
+    _add(store, "b", "2026-10-09", area_id=only["id"])
+
+    store.delete_area(only["id"])
+    assert store.list_areas() == []
+    assert {t["area_id"] for t in store.list_tasks()} == {None}
+    assert {t["area"] for t in store.list_tasks()} == {""}
+
+    # a fresh task can still be created with no area at all
+    task = _add(store, "c", "2026-10-09")
+    assert task["area_id"] is None
 
 
 def test_cannot_move_tasks_into_the_area_being_deleted(store) -> None:
@@ -123,8 +136,9 @@ def test_today_upcoming_overdue_views(store) -> None:
 
 
 def test_views_can_be_limited_to_an_area(store) -> None:
+    home_area = store.create_area("Home")
     work = store.create_area("Work")
-    _add(store, "home", "2026-10-07")
+    _add(store, "home", "2026-10-07", area_id=home_area["id"])
     _add(store, "job", "2026-10-07", area_id=work["id"])
     tasks = store.list_tasks(view="today", area_id=work["id"])
     assert [t["title"] for t in tasks] == ["job"]
@@ -222,9 +236,69 @@ def test_monthly_series_returns_to_the_anchor_day(store) -> None:
 def test_data_survives_reopening_the_database(tmp_path) -> None:
     path = tmp_path / "tasks.db"
     first = TaskStore(path, now=lambda: NOW)
+    first.create_area("Home")
     _add(first, "kept", "2026-10-09")
     first.close()
     second = TaskStore(path, now=lambda: NOW)
     assert [t["title"] for t in second.list_tasks()] == ["kept"]
     assert len(second.list_areas()) == 1
     second.close()
+
+
+def test_migration_makes_area_id_nullable_on_an_old_schema_db(tmp_path) -> None:
+    """A pre-existing db (from before areas became optional) had ``area_id``
+    as NOT NULL and auto-seeded a "General" area. Opening it with the new
+    store must not crash, must keep existing tasks and their area, and must
+    allow deleting the only area afterwards (nulling out its tasks)."""
+    import sqlite3
+
+    db_path = tmp_path / "old.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript(
+        """
+        CREATE TABLE areas (
+            id       TEXT PRIMARY KEY,
+            name     TEXT NOT NULL UNIQUE COLLATE NOCASE,
+            position INTEGER NOT NULL
+        );
+        CREATE TABLE tasks (
+            id           TEXT PRIMARY KEY,
+            title        TEXT NOT NULL,
+            notes        TEXT NOT NULL DEFAULT '',
+            area_id      TEXT NOT NULL REFERENCES areas(id),
+            due          TEXT NOT NULL,
+            all_day      INTEGER NOT NULL,
+            priority     TEXT,
+            status       TEXT NOT NULL DEFAULT 'todo',
+            recurrence   TEXT,
+            series_id    TEXT,
+            occurrence   INTEGER NOT NULL DEFAULT 1,
+            created_at   TEXT NOT NULL,
+            completed_at TEXT
+        );
+        CREATE INDEX tasks_due ON tasks (due);
+        CREATE INDEX tasks_area ON tasks (area_id);
+        INSERT INTO areas (id, name, position) VALUES ('area1', 'General', 1);
+        INSERT INTO tasks (id, title, notes, area_id, due, all_day, priority,
+            status, recurrence, series_id, occurrence, created_at, completed_at)
+        VALUES ('task1', 'Old task', '', 'area1', '2026-10-09', 1, NULL, 'todo',
+            NULL, NULL, 1, '2026-10-01T00:00:00', NULL);
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store = TaskStore(db_path, now=lambda: NOW)
+    try:
+        task = store.get_task("task1")
+        assert task["area_id"] == "area1" and task["area"] == "General"
+        # The only area can now be deleted; its task loses its area instead
+        # of blocking the deletion.
+        store.delete_area("area1")
+        assert store.list_areas() == []
+        assert store.get_task("task1")["area_id"] is None
+        # And a brand-new task can be created with no area at all.
+        fresh = store.create_task(title="New", due="2026-10-10", all_day=True)
+        assert fresh["area_id"] is None
+    finally:
+        store.close()

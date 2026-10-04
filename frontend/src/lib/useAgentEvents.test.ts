@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildWsProtocols, buildWsUrl } from './useAgentEvents';
 
-const SETTINGS_KEY = 'nova-settings';
+const SETTINGS_KEY = 'phi-settings';
 
 class MemoryStorage {
   private store = new Map<string, string>();
@@ -66,8 +66,8 @@ describe('buildWsProtocols', () => {
     const protocols = buildWsProtocols();
 
     expect(protocols).toEqual([
-      'nova.auth.v1',
-      `nova.key.b64url.${encoded}`,
+      'phi.auth.v1',
+      `phi.key.b64url.${encoded}`,
     ]);
     expect(new Set(protocols).size).toBe(protocols?.length);
     expect(protocols?.every((value) => /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(value)))

@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from nova.connectors.obsidian import ObsidianConnector
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.store import KnowledgeStore
-from nova.connectors.sync_engine import SyncEngine
-from nova.tools.knowledge_search import KnowledgeSearchTool
+from phi.connectors.obsidian import ObsidianConnector
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.store import KnowledgeStore
+from phi.connectors.sync_engine import SyncEngine
+from phi.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Fixtures

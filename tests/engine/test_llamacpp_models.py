@@ -8,10 +8,10 @@ import httpx
 import pytest
 import respx
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.openai_compat_engines import LlamaCppEngine
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.openai_compat_engines import LlamaCppEngine
 
 LLAMACPP_HOST = "http://testhost:8080"
 # Only models with llamacpp in supported_engines

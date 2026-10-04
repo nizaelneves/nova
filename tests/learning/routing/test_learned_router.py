@@ -5,11 +5,11 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from nova.core.types import StepType, Trace, TraceStep
-from nova.learning._stubs import RoutingContext
-from nova.learning.routing.learned_router import LearnedRouterPolicy
-from nova.traces.analyzer import TraceAnalyzer
-from nova.traces.store import TraceStore
+from phi.core.types import StepType, Trace, TraceStep
+from phi.learning._stubs import RoutingContext
+from phi.learning.routing.learned_router import LearnedRouterPolicy
+from phi.traces.analyzer import TraceAnalyzer
+from phi.traces.store import TraceStore
 
 
 def _make_trace(
@@ -44,8 +44,8 @@ def _make_trace(
 
 class TestLearnedRouterPolicy:
     def test_registered_as_learned(self) -> None:
-        from nova.core.registry import RouterPolicyRegistry
-        from nova.learning.routing.learned_router import ensure_registered
+        from phi.core.registry import RouterPolicyRegistry
+        from phi.learning.routing.learned_router import ensure_registered
 
         ensure_registered()
         assert RouterPolicyRegistry.contains("learned")

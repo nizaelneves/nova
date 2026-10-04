@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.agents._stubs import AgentResult
-from nova.agents.deep_research import DeepResearchAgent
-from nova.connectors.store import KnowledgeStore
-from nova.core.registry import AgentRegistry
-from nova.tools.knowledge_search import KnowledgeSearchTool
+from phi.agents._stubs import AgentResult
+from phi.agents.deep_research import DeepResearchAgent
+from phi.connectors.store import KnowledgeStore
+from phi.core.registry import AgentRegistry
+from phi.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Fixtures

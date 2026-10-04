@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.agents._stubs import AgentContext
-from nova.agents.rlm import RLMAgent
-from nova.core.events import EventBus, EventType
-from nova.core.registry import AgentRegistry
-from nova.core.types import ToolResult
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents._stubs import AgentContext
+from phi.agents.rlm import RLMAgent
+from phi.core.events import EventBus, EventType
+from phi.core.registry import AgentRegistry
+from phi.core.types import ToolResult
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -180,7 +180,7 @@ class TestRLMDirectAnswer:
         assert result.tool_results == []
 
     def test_default_deny_blocks_agent_before_generated_code(self):
-        from nova.security.capabilities import CapabilityPolicy
+        from phi.security.capabilities import CapabilityPolicy
 
         class _RecordingLimiter:
             def __init__(self):

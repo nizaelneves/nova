@@ -1,8 +1,8 @@
-"""Tests for the LLM-backed fact extractor (nova.memory.extractor)."""
+"""Tests for the LLM-backed fact extractor (phi.memory.extractor)."""
 
 from __future__ import annotations
 
-from nova.memory.extractor import FactExtractor
+from phi.memory.extractor import FactExtractor
 
 
 class FakeEngine:

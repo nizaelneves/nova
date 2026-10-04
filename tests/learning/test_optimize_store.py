@@ -1,9 +1,9 @@
-"""Tests for nova.optimize.store module."""
+"""Tests for phi.optimize.store module."""
 
 from __future__ import annotations
 
-from nova.learning.optimize.store import OptimizationStore
-from nova.learning.optimize.types import (
+from phi.learning.optimize.store import OptimizationStore
+from phi.learning.optimize.types import (
     OptimizationRun,
     SampleScore,
     SearchDimension,

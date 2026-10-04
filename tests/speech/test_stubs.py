@@ -1,6 +1,6 @@
 """Tests for speech ABC and data types."""
 
-from nova.speech._stubs import Segment, SpeechBackend, TranscriptionResult
+from phi.speech._stubs import Segment, SpeechBackend, TranscriptionResult
 
 
 def test_transcription_result():

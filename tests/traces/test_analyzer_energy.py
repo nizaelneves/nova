@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from nova.core.types import StepType, Trace, TraceStep
-from nova.traces.analyzer import StepTypeStats, TraceAnalyzer
-from nova.traces.store import TraceStore
+from phi.core.types import StepType, Trace, TraceStep
+from phi.traces.analyzer import StepTypeStats, TraceAnalyzer
+from phi.traces.store import TraceStore
 
 
 def _make_trace(steps: list[TraceStep]) -> Trace:

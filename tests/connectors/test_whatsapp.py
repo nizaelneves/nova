@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-from nova.connectors.whatsapp import WhatsAppConnector
-from nova.core.registry import ConnectorRegistry
+from phi.connectors.whatsapp import WhatsAppConnector
+from phi.core.registry import ConnectorRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,7 +184,7 @@ def test_sync_status_after_sync(tmp_path: Path) -> None:
 
 def test_registry_registration() -> None:
     """WhatsAppConnector is registered under 'whatsapp' in ConnectorRegistry."""
-    from nova.connectors.whatsapp import WhatsAppConnector  # noqa: PLC0415
+    from phi.connectors.whatsapp import WhatsAppConnector  # noqa: PLC0415
 
     ConnectorRegistry.register_value("whatsapp", WhatsAppConnector)
     assert ConnectorRegistry.contains("whatsapp")

@@ -1,4 +1,4 @@
-# Nova on native Windows
+# Phi on native Windows
 
 Phase-1 of the native-Windows-support RFC (#298). Mirrors the Linux
 (`deploy/systemd/`) and macOS (`deploy/launchd/`) deployments — but for
@@ -9,7 +9,7 @@ PowerShell, without WSL2 or Docker.
 In an elevated-or-regular PowerShell:
 
 ```powershell
-irm https://github.com/nizaelneves/nova | iex
+irm https://github.com/nizaelneves/phi | iex
 ```
 
 What it does:
@@ -18,8 +18,8 @@ What it does:
 2. Checks Python 3.10 – 3.13 (3.14 has no numpy wheels yet — see #432).
 3. Checks `git` on PATH.
 4. Installs `uv` (https://astral.sh/uv) if absent.
-5. Clones the Nova repository to `%LOCALAPPDATA%\Nova`
-   (override with `$env:NOVA_HOME`).
+5. Clones the Phi repository to `%LOCALAPPDATA%\Phi`
+   (override with `$env:PHI_HOME`).
 6. Runs `uv sync --extra desktop --group desktop-native` so the FastAPI server,
    speech backend, and native extension are importable.
 7. Optionally prompts to register a scheduled task that auto-starts the
@@ -38,21 +38,21 @@ the same knobs are honored via env vars when the corresponding flag is
 absent:
 
 ```powershell
-$env:NOVA_SKIP_SERVICE = '1'
-irm https://github.com/nizaelneves/nova | iex
+$env:PHI_SKIP_SERVICE = '1'
+irm https://github.com/nizaelneves/phi | iex
 ```
 
-The available env vars: `NOVA_SKIP_SERVICE`, `NOVA_SERVICE`,
-`NOVA_FORCE`. If you need richer control, save the script first
+The available env vars: `PHI_SKIP_SERVICE`, `PHI_SERVICE`,
+`PHI_FORCE`. If you need richer control, save the script first
 (`irm ... -OutFile install.ps1; .\install.ps1 -Force`).
 
 ## Manual scheduled-task setup
 
 If you skipped the prompt during install, you can register / inspect /
-remove the task with `nova-service.ps1`:
+remove the task with `phi-service.ps1`:
 
 ```powershell
-$srv = "$env:LOCALAPPDATA\Nova\src\deploy\windows\nova-service.ps1"
+$srv = "$env:LOCALAPPDATA\Phi\src\deploy\windows\phi-service.ps1"
 
 # install (idempotent — replaces existing)
 powershell -ExecutionPolicy Bypass -File $srv install
@@ -73,27 +73,27 @@ up if missed).
 
 By default the scheduled task binds `127.0.0.1` — reachable only from
 this machine, no API key required. This matches launchd parity (see
-`deploy/launchd/com.nova.plist`).
+`deploy/launchd/com.phi.plist`).
 
 To expose on your LAN:
 
 ```powershell
 # 1. Generate an API key. The server REFUSES to bind 0.0.0.0 without one.
-$env:NOVA_API_KEY = (uv run nova auth generate-key)
+$env:PHI_API_KEY = (uv run phi auth generate-key)
 
 # 2. Re-register the task with -ListenHost 0.0.0.0.
 powershell -ExecutionPolicy Bypass -File $srv install -ListenHost 0.0.0.0
 ```
 
-`nova-service.ps1 install` refuses `-ListenHost 0.0.0.0` if
-`$env:NOVA_API_KEY` is unset — same guard as the systemd unit's
-`EnvironmentFile=/etc/nova/env`.
+`phi-service.ps1 install` refuses `-ListenHost 0.0.0.0` if
+`$env:PHI_API_KEY` is unset — same guard as the systemd unit's
+`EnvironmentFile=/etc/phi/env`.
 
 ## Parity table
 
 | Concern | systemd | launchd | Windows |
 |---------|---------|---------|---------|
-| Service definition | `deploy/systemd/nova.service` | `deploy/launchd/com.nova.plist` | `deploy/windows/nova-service.ps1` (cmdlet-driven) |
+| Service definition | `deploy/systemd/phi.service` | `deploy/launchd/com.phi.plist` | `deploy/windows/phi-service.ps1` (cmdlet-driven) |
 | Default bind | `0.0.0.0` (with API key) | `127.0.0.1` (no API key) | `127.0.0.1` (no API key) |
 | Restart on failure | `Restart=on-failure RestartSec=5` | `KeepAlive=true` | `RestartCount=3 RestartInterval=PT1M` |
 | Auto-start | `multi-user.target` | `RunAtLoad=true` | `AtLogOn` trigger |
@@ -103,7 +103,7 @@ powershell -ExecutionPolicy Bypass -File $srv install -ListenHost 0.0.0.0
 To pull the latest:
 
 ```powershell
-cd "$env:LOCALAPPDATA\Nova\src"
+cd "$env:LOCALAPPDATA\Phi\src"
 git pull --ff-only
 uv sync --extra desktop --group desktop-native
 ```
@@ -111,15 +111,15 @@ uv sync --extra desktop --group desktop-native
 Or re-run the installer with `-Force`:
 
 ```powershell
-irm https://github.com/nizaelneves/nova | iex
+irm https://github.com/nizaelneves/phi | iex
 # (then re-run with the file directly, passing -Force)
 ```
 
 ## Uninstall
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Nova\src\deploy\windows\nova-service.ps1" uninstall
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Nova"
+powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Phi\src\deploy\windows\phi-service.ps1" uninstall
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Phi"
 ```
 
 Uninstalling does NOT remove `uv` (it's a separate tool — you may have

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from nova.core.types import Message, Role, ToolCall
-from nova.engine._base import estimate_prompt_tokens
+from phi.core.types import Message, Role, ToolCall
+from phi.engine._base import estimate_prompt_tokens
 
 
 def test_estimate_prompt_tokens_handles_none_content_tool_call_turn() -> None:

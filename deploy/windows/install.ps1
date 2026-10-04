@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Nova native Windows installer.
+    Phi native Windows installer.
 
 .DESCRIPTION
     Phase-1 of the native-Windows-support RFC (#298). Mirrors the
@@ -14,18 +14,18 @@
          see #432).
       3. Check git on PATH.
       4. Install uv (https://astral.sh/uv) if absent.
-      5. Clone the Nova repository to $env:LOCALAPPDATA\Nova
-         (override with $env:NOVA_HOME).
+      5. Clone the Phi repository to $env:LOCALAPPDATA\Phi
+         (override with $env:PHI_HOME).
       6. Run `uv sync --extra desktop --group desktop-native` so the FastAPI
          server, speech backend, and native extension are importable.
       7. Optionally register the scheduled-task service (see
-         deploy/windows/nova-service.ps1).
+         deploy/windows/phi-service.ps1).
 
     Usage (one-liner):
-      irm https://github.com/nizaelneves/nova | iex
+      irm https://github.com/nizaelneves/phi | iex
 
     Usage (file invocation, supports flags):
-      irm https://github.com/nizaelneves/nova -OutFile install.ps1
+      irm https://github.com/nizaelneves/phi -OutFile install.ps1
       .\install.ps1 -SkipService
 
     Flags (when running the file directly):
@@ -36,14 +36,14 @@
     Under `irm | iex` the param block is unreachable (Invoke-Expression
     can't pass named args into a piped script string), so the same knobs
     are honored via env vars when the corresponding flag is absent:
-      $env:NOVA_SKIP_SERVICE = '1'
-      $env:NOVA_SERVICE      = '1'
-      $env:NOVA_FORCE        = '1'
+      $env:PHI_SKIP_SERVICE = '1'
+      $env:PHI_SERVICE      = '1'
+      $env:PHI_FORCE        = '1'
 
 .NOTES
     Loopback default: the scheduled-task service binds 127.0.0.1, so no
     API key is needed. To expose on the LAN, edit the registered task to
-    pass `--host 0.0.0.0` AND set $env:NOVA_API_KEY (an
+    pass `--host 0.0.0.0` AND set $env:PHI_API_KEY (an
     unauthenticated 0.0.0.0 server refuses to start). See
     deploy/windows/README.md.
 #>
@@ -60,9 +60,9 @@ $ErrorActionPreference = 'Stop'
 # Env-var fallback for the `irm | iex` path, where the param block is
 # unreachable (see header comment). Any explicit -switch wins; env vars
 # only fill in the gaps.
-if (-not $SkipService -and $env:NOVA_SKIP_SERVICE) { $SkipService = $true }
-if (-not $Service     -and $env:NOVA_SERVICE)      { $Service     = $true }
-if (-not $Force       -and $env:NOVA_FORCE)        { $Force       = $true }
+if (-not $SkipService -and $env:PHI_SKIP_SERVICE) { $SkipService = $true }
+if (-not $Service     -and $env:PHI_SERVICE)      { $Service     = $true }
+if (-not $Force       -and $env:PHI_FORCE)        { $Force       = $true }
 
 # ---------------------------------------------------------------------------
 # Output helpers - coloured but plain enough for Constrained Language Mode.
@@ -185,7 +185,7 @@ $pyMajor = [int]$verMatch.Groups[1].Value
 $pyMinor = [int]$verMatch.Groups[2].Value
 if ($pyMajor -ne 3 -or $pyMinor -lt 10 -or $pyMinor -gt 13) {
     Write-Fail @"
-Found Python $pyMajor.$pyMinor at $pythonExe, but Nova requires
+Found Python $pyMajor.$pyMinor at $pythonExe, but Phi requires
 3.10 - 3.13. Python 3.14 has no numpy Windows wheels yet (#432, will
 re-open once numpy ships cp314).
 "@
@@ -247,10 +247,10 @@ Write-Ok "uv ($uvExe)"
 # 5. Clone the repo
 # ---------------------------------------------------------------------------
 
-$installRoot = if ($env:NOVA_HOME) {
-    $env:NOVA_HOME
+$installRoot = if ($env:PHI_HOME) {
+    $env:PHI_HOME
 } else {
-    Join-Path $env:LOCALAPPDATA 'Nova'
+    Join-Path $env:LOCALAPPDATA 'Phi'
 }
 $srcDir = Join-Path $installRoot 'src'
 
@@ -260,10 +260,10 @@ if (-not (Test-Path $installRoot)) {
     New-Item -ItemType Directory -Path $installRoot | Out-Null
 }
 
-$repoUrl = if ($env:NOVA_REPO_URL) {
-    $env:NOVA_REPO_URL
+$repoUrl = if ($env:PHI_REPO_URL) {
+    $env:PHI_REPO_URL
 } else {
-    'https://github.com/nizaelneves/nova.git'
+    'https://github.com/nizaelneves/phi.git'
 }
 
 if (Test-Path (Join-Path $srcDir '.git')) {
@@ -377,7 +377,7 @@ if (-not $ollamaReady) {
 
 $modelPullOk = $false
 if ($ollamaReady) {
-    Write-Info "Pulling qwen3.5:2b (~1.5 GB) so 'nova' works on first run..."
+    Write-Info "Pulling qwen3.5:2b (~1.5 GB) so 'phi' works on first run..."
     & $ollamaExe pull 'qwen3.5:2b'
     if ($LASTEXITCODE -eq 0) {
         $modelPullOk = $true
@@ -390,18 +390,18 @@ if ($ollamaReady) {
 }
 
 # ---------------------------------------------------------------------------
-# 9. nova.cmd shim - so bare `nova` works in any new PowerShell
+# 9. phi.cmd shim - so bare `phi` works in any new PowerShell
 # ---------------------------------------------------------------------------
 
 $binDir = Join-Path $installRoot 'bin'
-$shimPath = Join-Path $binDir 'nova.cmd'
+$shimPath = Join-Path $binDir 'phi.cmd'
 
 if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Path $binDir | Out-Null
 }
 
 # %~dp0 in a .cmd file resolves to the directory containing the script,
-# so the shim is self-locating - moving %LOCALAPPDATA%\Nova won't
+# so the shim is self-locating - moving %LOCALAPPDATA%\Phi won't
 # break it as long as the user moves the whole tree. `uv` is resolved
 # from PATH at runtime (astral installer adds it to User PATH); avoids
 # pinning to the install-time uv.exe path which can shift on uv updates.
@@ -409,16 +409,16 @@ $shimContent = @"
 @echo off
 setlocal
 set "SRC=%~dp0..\src"
-uv run --project "%SRC%" nova %*
+uv run --project "%SRC%" phi %*
 "@
 Set-Content -Path $shimPath -Value $shimContent -Encoding ASCII
 
-# Add %LOCALAPPDATA%\Nova\bin to User PATH if it isn't already
+# Add %LOCALAPPDATA%\Phi\bin to User PATH if it isn't already
 # there. The current process won't see it until restart - handled in the
 # final banner.
 #
 # Compare against the EXPANDED form: a previous install may have written
-# the entry as `%LOCALAPPDATA%\Nova\bin` (unexpanded) into User
+# the entry as `%LOCALAPPDATA%\Phi\bin` (unexpanded) into User
 # PATH, and a literal `-ieq` against the expanded `$binDir` would miss
 # it and append a duplicate every re-run.
 $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
@@ -435,13 +435,13 @@ if (-not $pathOnUser) {
     [System.Environment]::SetEnvironmentVariable('Path', $newUserPath, 'User')
     $pathNeedsRefresh = $true
 }
-Write-Ok "nova shim installed at $shimPath"
+Write-Ok "phi shim installed at $shimPath"
 
 # ---------------------------------------------------------------------------
 # 10. Optional: register the scheduled-task service
 # ---------------------------------------------------------------------------
 
-$serviceScript = Join-Path $srcDir 'deploy\windows\nova-service.ps1'
+$serviceScript = Join-Path $srcDir 'deploy\windows\phi-service.ps1'
 $shouldInstallService = $false
 
 # Pre-check admin if the user wants the service - Register-ScheduledTask
@@ -475,7 +475,7 @@ if ($Service) {
     $isInteractive = [Environment]::UserInteractive `
         -and -not [System.Console]::IsInputRedirected
     if ($isInteractive) {
-        $reply = Read-Host "Register Nova as a Windows scheduled task (auto-start at logon, loopback only)? [y/N]"
+        $reply = Read-Host "Register Phi as a Windows scheduled task (auto-start at logon, loopback only)? [y/N]"
         $shouldInstallService = ($reply -match '^[yY]')
     } else {
         Write-Warn2 "Non-interactive install - skipping scheduled-task setup."
@@ -493,7 +493,7 @@ if ($shouldInstallService) {
     if ($LASTEXITCODE -ne 0) {
         Write-Fail "Scheduled task setup failed."
     }
-    Write-Ok "Scheduled task 'Nova' registered (loopback default)."
+    Write-Ok "Scheduled task 'Phi' registered (loopback default)."
 }
 
 # ---------------------------------------------------------------------------
@@ -502,7 +502,7 @@ if ($shouldInstallService) {
 
 Write-Host ""
 Write-Host "  +----------------------------------+" -ForegroundColor Green
-Write-Host "  |   Nova install complete    |" -ForegroundColor Green
+Write-Host "  |   Phi install complete    |" -ForegroundColor Green
 Write-Host "  +----------------------------------+" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Repo:    $srcDir"
@@ -510,12 +510,12 @@ Write-Host "  Repo:    $srcDir"
 # Tell the truth about what the user can run next, given (a) whether the
 # starter model finished pulling and (b) whether the User-PATH update
 # needs a fresh PowerShell to take effect.
-$nextCmd = if ($modelPullOk) { 'nova' } else { 'nova doctor' }
+$nextCmd = if ($modelPullOk) { 'phi' } else { 'phi doctor' }
 
 if ($pathNeedsRefresh) {
     Write-Host ""
     Write-Host "  Run it:  open a NEW PowerShell, then: $nextCmd" -ForegroundColor Yellow
-    Write-Host "           (the nova shim was added to your User PATH; the"
+    Write-Host "           (the phi shim was added to your User PATH; the"
     Write-Host "            current PowerShell won't see it until restart)"
 } else {
     Write-Host "  Run it:  $nextCmd"
@@ -525,14 +525,14 @@ if (-not $modelPullOk) {
     Write-Host ""
     Write-Host "  NOTE: the qwen3.5:2b model didn't finish downloading." -ForegroundColor Yellow
     Write-Host "        Chat will fail until the bg-orchestrator finishes the retry."
-    Write-Host "        'nova doctor' shows progress."
+    Write-Host "        'phi doctor' shows progress."
 }
 
 if ($shouldInstallService) {
     Write-Host ""
-    Write-Host "  Service: schtasks /Query /TN Nova     (status)"
+    Write-Host "  Service: schtasks /Query /TN Phi     (status)"
     Write-Host "           powershell -File `"$serviceScript`" uninstall    (remove)"
 }
 Write-Host ""
-Write-Host "  Docs:    https://github.com/nizaelneves/nova"
+Write-Host "  Docs:    https://github.com/nizaelneves/phi"
 Write-Host ""

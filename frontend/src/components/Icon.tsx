@@ -3,7 +3,7 @@ import { ICONS, type IconName } from '../icons/solar';
 export type { IconName };
 
 /**
- * One of Nova's icons (Solar, "linear" style). Icons are stored in the project,
+ * One of Phi's icons (Solar, "linear" style). Icons are stored in the project,
  * so nothing is downloaded at run time. They take the current text colour.
  */
 export function Icon({

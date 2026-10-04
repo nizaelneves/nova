@@ -7,9 +7,9 @@ from unittest import mock
 
 
 def test_optional_engine_import_errors_are_logged(caplog) -> None:
-    import nova.engine as engine_module
+    import phi.engine as engine_module
 
-    caplog.set_level(logging.DEBUG, logger="nova.engine")
+    caplog.set_level(logging.DEBUG, logger="phi.engine")
     with mock.patch.object(
         engine_module.importlib,
         "import_module",

@@ -7,17 +7,17 @@ from unittest import mock
 
 import pytest
 
-from nova.core.registry import EngineRegistry
-from nova.core.types import Message, Role
-from nova.engine._base import EngineConnectionError
-from nova.engine.cloud import (
+from phi.core.registry import EngineRegistry
+from phi.core.types import Message, Role
+from phi.engine._base import EngineConnectionError
+from phi.engine.cloud import (
     _MINIMAX_MODELS,
     PRICING,
     CloudEngine,
     _is_minimax_model,
     estimate_cost,
 )
-from nova.intelligence.model_catalog import BUILTIN_MODELS
+from phi.intelligence.model_catalog import BUILTIN_MODELS
 
 
 def _make_cloud_engine(monkeypatch: pytest.MonkeyPatch) -> CloudEngine:

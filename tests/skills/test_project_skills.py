@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.events import EventBus
-from nova.core.paths import get_project_skills_dir
-from nova.skills.manager import SkillManager
+from phi.core.events import EventBus
+from phi.core.paths import get_project_skills_dir
+from phi.skills.manager import SkillManager
 
 EXPECTED = {"marketing-data-analysis", "growth-marketing-strategy", "weekly-review"}
 

@@ -12,8 +12,8 @@ from unittest.mock import patch
 
 import pytest
 
-from nova.connectors._stubs import Document
-from nova.core.registry import ConnectorRegistry
+from phi.connectors._stubs import Document
+from phi.core.registry import ConnectorRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers — fake API payloads
@@ -51,7 +51,7 @@ _DOWNLOAD_RESPONSE = "# My Notes\n\nSome content here."
 @pytest.fixture()
 def connector(tmp_path: Path):
     """DropboxConnector pointing at a tmp credentials path (no file yet)."""
-    from nova.connectors.dropbox import DropboxConnector  # noqa: PLC0415
+    from phi.connectors.dropbox import DropboxConnector  # noqa: PLC0415
 
     creds_path = str(tmp_path / "dropbox.json")
     return DropboxConnector(credentials_path=creds_path)
@@ -84,8 +84,8 @@ def test_auth_url(connector) -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("nova.connectors.dropbox._dropbox_api_list_folder")
-@patch("nova.connectors.dropbox._dropbox_api_download")
+@patch("phi.connectors.dropbox._dropbox_api_list_folder")
+@patch("phi.connectors.dropbox._dropbox_api_download")
 def test_sync_yields_documents(
     mock_download,
     mock_list,
@@ -161,7 +161,7 @@ def test_mcp_tools(connector) -> None:
 
 def test_registry() -> None:
     """DropboxConnector can be registered and retrieved via ConnectorRegistry."""
-    from nova.connectors.dropbox import DropboxConnector  # noqa: PLC0415
+    from phi.connectors.dropbox import DropboxConnector  # noqa: PLC0415
 
     ConnectorRegistry.register_value("dropbox", DropboxConnector)
     assert ConnectorRegistry.contains("dropbox")

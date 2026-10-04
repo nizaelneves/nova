@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.config import NovaConfig, load_config
-from nova.core.registry import BenchmarkRegistry
+from phi.core.config import PhiConfig, load_config
+from phi.core.registry import BenchmarkRegistry
 
 
 class TestBenchmarkRegistry:
@@ -30,25 +30,25 @@ class TestBenchmarkRegistry:
 
 
 class TestConfigPhase5:
-    def test_nova_config_loads(self):
-        cfg = NovaConfig()
+    def test_phi_config_loads(self):
+        cfg = PhiConfig()
         assert cfg.engine is not None
         assert cfg.learning is not None
 
     def test_benchmark_registry_importable(self):
-        from nova.core.registry import BenchmarkRegistry
+        from phi.core.registry import BenchmarkRegistry
 
         assert BenchmarkRegistry is not None
 
     def test_registry_isolation(self):
         """BenchmarkRegistry entries don't leak into other registries."""
-        from nova.core.registry import ModelRegistry
+        from phi.core.registry import ModelRegistry
 
         BenchmarkRegistry.register_value("iso-test", "bench-value")
         with pytest.raises(KeyError):
             ModelRegistry.get("iso-test")
 
     def test_load_config_default(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("NOVA_HOME", str(tmp_path / "home"))
+        monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
         cfg = load_config(tmp_path / "missing-config.toml")
-        assert isinstance(cfg, NovaConfig)
+        assert isinstance(cfg, PhiConfig)

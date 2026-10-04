@@ -13,7 +13,8 @@ import type {
   TokenUsage,
 } from '../types';
 import type { ManagedAgent } from './api';
-import { isEmbedOnlyModel } from './model-capabilities';
+import { isCliModel, isEmbedOnlyModel } from './model-capabilities';
+import { CLI_ENGINES_ENABLED } from './features';
 import { serializeToolCallArguments } from './tool-call';
 
 export interface CachedConnector {
@@ -32,8 +33,8 @@ export interface AgentEvent {
 
 // ── localStorage persistence ──────────────────────────────────────────
 
-const CONVERSATIONS_KEY = 'nova-conversations';
-const SETTINGS_KEY = 'nova-settings';
+const CONVERSATIONS_KEY = 'phi-conversations';
+const SETTINGS_KEY = 'phi-settings';
 
 interface ConversationStore {
   version: 1;
@@ -89,22 +90,26 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 interface Settings {
   theme: ThemeMode;
   apiUrl: string;
-  // Local server API key (NOVA_API_KEY). Sent as a Bearer token on
-  // /v1 + /api requests so a key-protected `nova serve` doesn't 401 the
+  // Local server API key (PHI_API_KEY). Sent as a Bearer token on
+  // /v1 + /api requests so a key-protected `phi serve` doesn't 401 the
   // frontend (#266). Empty = no auth header (keyless local default).
   apiKey: string;
-  fontSize: 'small' | 'default' | 'large';
   defaultModel: string;
   defaultAgent: string;
   temperature: number;
   maxTokens: number;
   speechEnabled: boolean;
-  // When Nova speaks her replies: only after you spoke to her, always, or never.
+  // When Phi speaks her replies: only after you spoke to her, always, or never.
   voiceReplies: 'voice' | 'always' | 'off';
   // Reasoning effort for Claude CLI models (like the slider in the Claude app).
   cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   // Visual effects: full, balanced (lighter) or off (nothing animated in the background).
   effects: 'full' | 'balanced' | 'off';
+  // Clap twice near the mic to start a voice recording — only listens while
+  // the app window is open and this is on; never listens in the background.
+  clapToActivate: boolean;
+  // Phi's floating button: always within reach, draggable, can be hidden here or from the button.
+  floatingPhi: boolean;
 }
 
 function loadSettings(): Settings {
@@ -112,7 +117,6 @@ function loadSettings(): Settings {
     theme: 'system',
     apiUrl: '',
     apiKey: '',
-    fontSize: 'default',
     defaultModel: '',
     defaultAgent: '',
     temperature: 0.7,
@@ -121,6 +125,8 @@ function loadSettings(): Settings {
     voiceReplies: 'voice',
     cliEffort: 'medium',
     effects: 'full',
+    clapToActivate: false,
+    floatingPhi: true,
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -228,7 +234,7 @@ interface AppState {
   addAgentEvent: (event: AgentEvent) => void;
   clearAgentEvents: () => void;
 
-  // True while Nova's voice is playing (drives the orb)
+  // True while Phi's voice is playing (drives the orb)
   speaking: boolean;
   setSpeaking: (speaking: boolean) => void;
 
@@ -441,6 +447,8 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setModels: (models: ModelInfo[]) =>
       set((state) => {
+        // In builds with the CLI engines hidden, their short names never show up.
+        if (!CLI_ENGINES_ENABLED) models = models.filter((m) => !isCliModel(m.id));
         // Ollama returns embed-only models (e.g. nomic-embed-text) in the
         // same list as chat models. Auto-picking models[0] selected the
         // embedder and every chat failed with HTTP 400 "does not support

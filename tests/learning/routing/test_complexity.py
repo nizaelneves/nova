@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.learning.routing.complexity import (
+from phi.learning.routing.complexity import (
     ComplexityQueryAnalyzer,
     ComplexityResult,
     adjust_tokens_for_model,

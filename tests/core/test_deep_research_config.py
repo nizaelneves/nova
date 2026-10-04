@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from nova.core.config import (
+from phi.core.config import (
     DeepResearchConfig,
     HardwareInfo,
-    NovaConfig,
+    PhiConfig,
     generate_default_toml,
     load_config,
     validate_config_key,
@@ -17,7 +17,7 @@ from nova.core.config import (
 
 
 def test_deep_research_config_defaults_to_chat_selection() -> None:
-    cfg = NovaConfig()
+    cfg = PhiConfig()
 
     assert isinstance(cfg.deep_research, DeepResearchConfig)
     assert cfg.deep_research.engine == ""
@@ -27,7 +27,7 @@ def test_deep_research_config_defaults_to_chat_selection() -> None:
 def test_loads_deep_research_overrides(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
     config_file = tmp_path / "config.toml"
     config_file.write_text(
         "\n".join(

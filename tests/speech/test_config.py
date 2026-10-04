@@ -1,6 +1,6 @@
 """Tests for speech configuration."""
 
-from nova.core.config import NovaConfig, SpeechConfig
+from phi.core.config import PhiConfig, SpeechConfig
 
 
 def test_speech_config_defaults():
@@ -12,15 +12,15 @@ def test_speech_config_defaults():
     assert cfg.compute_type == "float16"
 
 
-def test_nova_config_has_speech():
-    cfg = NovaConfig()
+def test_phi_config_has_speech():
+    cfg = PhiConfig()
     assert hasattr(cfg, "speech")
     assert isinstance(cfg.speech, SpeechConfig)
     assert cfg.speech.backend == "auto"
 
 
-def test_nova_system_has_speech_backend():
-    """NovaSystem has a speech_backend attribute."""
-    from nova.system import NovaSystem
+def test_phi_system_has_speech_backend():
+    """PhiSystem has a speech_backend attribute."""
+    from phi.system import PhiSystem
 
-    assert "speech_backend" in NovaSystem.__dataclass_fields__
+    assert "speech_backend" in PhiSystem.__dataclass_fields__

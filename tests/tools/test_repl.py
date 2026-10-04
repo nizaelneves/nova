@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from nova.core.registry import ToolRegistry
-from nova.tools.repl import ReplTool
+from phi.core.registry import ToolRegistry
+from phi.tools.repl import ReplTool
 
 
 class TestReplSpec:

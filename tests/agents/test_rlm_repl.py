@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.agents.rlm_repl import RLMRepl
+from phi.agents.rlm_repl import RLMRepl
 
 
 class TestRLMReplBasics:

@@ -11,14 +11,14 @@ import importlib
 
 import pytest
 
-import nova.channels  # noqa: F401 — trigger registration
-from nova.channels._stubs import ChannelStatus
-from nova.core.registry import ChannelRegistry
+import phi.channels  # noqa: F401 — trigger registration
+from phi.channels._stubs import ChannelStatus
+from phi.core.registry import ChannelRegistry
 
 # Collect channel classes at import time (before registry gets cleared).
 # We store the actual class objects, not registry keys, so they survive
 # the autouse _clean_registries fixture.
-importlib.reload(nova.channels)
+importlib.reload(phi.channels)
 _ALL_CHANNELS = [(key, ChannelRegistry.get(key)) for key in ChannelRegistry.keys()]
 
 

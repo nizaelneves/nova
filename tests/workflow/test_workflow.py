@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.workflow.builder import WorkflowBuilder
-from nova.workflow.engine import WorkflowEngine
-from nova.workflow.graph import WorkflowGraph
-from nova.workflow.types import NodeType, WorkflowEdge, WorkflowNode
+from phi.core.events import EventBus, EventType
+from phi.workflow.builder import WorkflowBuilder
+from phi.workflow.engine import WorkflowEngine
+from phi.workflow.graph import WorkflowGraph
+from phi.workflow.types import NodeType, WorkflowEdge, WorkflowNode
 
 
 class TestWorkflowGraph:

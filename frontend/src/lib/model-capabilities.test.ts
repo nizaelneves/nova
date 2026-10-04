@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { isEmbedOnlyModel, EFFORT_LEVELS, isCliModel, thinkSupport } from './model-capabilities';
+import {
+  isEmbedOnlyModel,
+  EFFORT_LEVELS,
+  isCliModel,
+  isClaudeCliModel,
+  isCodexCliModel,
+  thinkSupport,
+} from './model-capabilities';
 
 describe('isEmbedOnlyModel', () => {
   it.each([
@@ -23,6 +30,15 @@ describe('Claude CLI models and Think support', () => {
     expect(['sonnet', 'opus', 'haiku'].every(isCliModel)).toBe(true);
     expect(isCliModel('claude-sonnet-5')).toBe(false); // the paid API, not the CLI
     expect(isCliModel('qwen3.5:2b')).toBe(false);
+  });
+
+  it('recognises the Codex CLI models by their "codex:" prefix', () => {
+    expect(['codex:default', 'codex:gpt-6-astra'].every(isCodexCliModel)).toBe(true);
+    expect(['codex:default', 'codex:gpt-6-astra'].every(isCliModel)).toBe(true);
+    expect(isClaudeCliModel('codex:default')).toBe(false);
+    expect(isCodexCliModel('sonnet')).toBe(false);
+    expect(isCodexCliModel('gpt-4o')).toBe(false); // the paid API, not the CLI
+    expect(isCodexCliModel('codex/gpt-4o')).toBe(false); // the API path of the cloud engine
   });
 
   it('rates Sonnet and Opus as the best for Think, Haiku as basic', () => {

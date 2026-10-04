@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.types import Message
-from nova.server import cloud_router
+from phi.core.types import Message
+from phi.server import cloud_router
 
 
 def test_get_provider_detects_bare_openrouter_id():

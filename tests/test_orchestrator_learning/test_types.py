@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.learning.intelligence.orchestrator.types import (
+from phi.learning.intelligence.orchestrator.types import (
     Episode,
     EpisodeState,
     OrchestratorAction,

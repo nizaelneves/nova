@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, List
 
-from nova.core.events import EventBus
-from nova.core.types import StepType, Trace, TraceStep
-from nova.skills.manager import SkillManager
+from phi.core.events import EventBus
+from phi.core.types import StepType, Trace, TraceStep
+from phi.skills.manager import SkillManager
 
 
 class _FakeTraceStore:

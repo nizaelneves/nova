@@ -1,11 +1,11 @@
-"""Tests for nova.cli._first_run.check_and_route."""
+"""Tests for phi.cli._first_run.check_and_route."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from nova.cli import _first_run
+from phi.cli import _first_run
 
 
 def _ctx_with_invocation(name: str | None) -> MagicMock:
@@ -14,16 +14,16 @@ def _ctx_with_invocation(name: str | None) -> MagicMock:
     return ctx
 
 
-def test_passes_through_when_subcommand_present(tmp_nova_home: Path) -> None:
-    """If user typed `nova ask ...`, guard is a no-op."""
+def test_passes_through_when_subcommand_present(tmp_phi_home: Path) -> None:
+    """If user typed `phi ask ...`, guard is a no-op."""
     ctx = _ctx_with_invocation("ask")
     result = _first_run.check_and_route(ctx)
     assert result is None
     ctx.invoke.assert_not_called()
 
 
-def test_routes_to_chat_when_config_exists(tmp_nova_home: Path) -> None:
-    (tmp_nova_home / "config.toml").write_text('[engine]\ndefault = "ollama"\n')
+def test_routes_to_chat_when_config_exists(tmp_phi_home: Path) -> None:
+    (tmp_phi_home / "config.toml").write_text('[engine]\ndefault = "ollama"\n')
     ctx = _ctx_with_invocation(None)
     _first_run.check_and_route(ctx)
     assert ctx.invoke.called
@@ -31,22 +31,22 @@ def test_routes_to_chat_when_config_exists(tmp_nova_home: Path) -> None:
     assert invoked_cmd.name == "chat"
 
 
-def test_routes_to_init_when_no_config(tmp_nova_home: Path) -> None:
+def test_routes_to_init_when_no_config(tmp_phi_home: Path) -> None:
     ctx = _ctx_with_invocation(None)
     _first_run.check_and_route(ctx)
     assert ctx.invoke.called
     invoked_cmd = ctx.invoke.call_args[0][0]
     assert invoked_cmd.name == "init"
-    # Cold-path init must run with the from-bare-nova flag set.
-    assert ctx.invoke.call_args.kwargs.get("from_bare_nova") is True
+    # Cold-path init must run with the from-bare-phi flag set.
+    assert ctx.invoke.call_args.kwargs.get("from_bare_phi") is True
 
 
 def test_handles_missing_state_dir(tmp_path: Path, monkeypatch) -> None:
-    """When ~/.nova doesn't exist at all, route to init."""
+    """When ~/.phi doesn't exist at all, route to init."""
     fresh_home = tmp_path / "fresh"
-    monkeypatch.setattr("nova.core.config.DEFAULT_CONFIG_DIR", fresh_home)
+    monkeypatch.setattr("phi.core.config.DEFAULT_CONFIG_DIR", fresh_home)
     monkeypatch.setattr(
-        "nova.core.config.DEFAULT_CONFIG_PATH", fresh_home / "config.toml"
+        "phi.core.config.DEFAULT_CONFIG_PATH", fresh_home / "config.toml"
     )
     ctx = _ctx_with_invocation(None)
     _first_run.check_and_route(ctx)
@@ -54,10 +54,10 @@ def test_handles_missing_state_dir(tmp_path: Path, monkeypatch) -> None:
     assert invoked_cmd.name == "init"
 
 
-def test_root_group_invokes_guard_on_bare_nova(
-    tmp_nova_home: Path, monkeypatch
+def test_root_group_invokes_guard_on_bare_phi(
+    tmp_phi_home: Path, monkeypatch
 ) -> None:
-    """End-to-end: bare `nova` invocation calls the first-run guard.
+    """End-to-end: bare `phi` invocation calls the first-run guard.
 
     We monkeypatch check_and_route to a recorder so we can verify it was
     called with a click.Context whose invoked_subcommand is None.
@@ -69,9 +69,9 @@ def test_root_group_invokes_guard_on_bare_nova(
     def _recorder(ctx) -> None:
         calls.append(ctx.invoked_subcommand)
 
-    monkeypatch.setattr("nova.cli._first_run.check_and_route", _recorder)
+    monkeypatch.setattr("phi.cli._first_run.check_and_route", _recorder)
 
-    from nova.cli import cli
+    from phi.cli import cli
 
     runner = CliRunner()
     runner.invoke(cli, [], catch_exceptions=False)
@@ -79,7 +79,7 @@ def test_root_group_invokes_guard_on_bare_nova(
 
 
 def test_root_group_does_not_invoke_guard_on_subcommand(
-    tmp_nova_home: Path, monkeypatch
+    tmp_phi_home: Path, monkeypatch
 ) -> None:
     """When a subcommand is given, the guard must NOT fire."""
     from click.testing import CliRunner
@@ -89,9 +89,9 @@ def test_root_group_does_not_invoke_guard_on_subcommand(
     def _recorder(ctx) -> None:
         calls.append(ctx.invoked_subcommand)
 
-    monkeypatch.setattr("nova.cli._first_run.check_and_route", _recorder)
+    monkeypatch.setattr("phi.cli._first_run.check_and_route", _recorder)
 
-    from nova.cli import cli
+    from phi.cli import cli
 
     runner = CliRunner()
     runner.invoke(cli, ["--help"], catch_exceptions=False)

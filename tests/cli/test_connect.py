@@ -1,4 +1,4 @@
-"""Tests for ``nova connect`` CLI command."""
+"""Tests for ``phi connect`` CLI command."""
 
 from __future__ import annotations
 
@@ -6,20 +6,20 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 
 def test_connect_list_no_connectors() -> None:
     """--list with an empty registry shows a 'no connectors' message."""
     runner = CliRunner()
     with mock.patch(
-        "nova.cli.connect_cmd.connect.__wrapped__"
+        "phi.cli.connect_cmd.connect.__wrapped__"
         if hasattr(cli, "__wrapped__")
-        else "nova.core.registry.ConnectorRegistry.items",
+        else "phi.core.registry.ConnectorRegistry.items",
         return_value=(),
     ):
         with mock.patch(
-            "nova.core.registry.ConnectorRegistry.items",
+            "phi.core.registry.ConnectorRegistry.items",
             return_value=(),
         ):
             result = runner.invoke(cli, ["connect", "--list"])
@@ -40,7 +40,7 @@ def test_connect_list_with_connector(tmp_path: object) -> None:
     mock_cls.return_value = mock_instance
 
     with mock.patch(
-        "nova.core.registry.ConnectorRegistry.items",
+        "phi.core.registry.ConnectorRegistry.items",
         return_value=(("obsidian", mock_cls),),
     ):
         result = runner.invoke(cli, ["connect", "--list"])
@@ -70,11 +70,11 @@ def test_connect_specific_source(tmp_path: object) -> None:
 
     with (
         mock.patch(
-            "nova.core.registry.ConnectorRegistry.contains",
+            "phi.core.registry.ConnectorRegistry.contains",
             return_value=True,
         ),
         mock.patch(
-            "nova.core.registry.ConnectorRegistry.get",
+            "phi.core.registry.ConnectorRegistry.get",
             return_value=mock_cls,
         ),
     ):
@@ -96,11 +96,11 @@ def test_connect_disconnect() -> None:
 
     with (
         mock.patch(
-            "nova.core.registry.ConnectorRegistry.contains",
+            "phi.core.registry.ConnectorRegistry.contains",
             return_value=True,
         ),
         mock.patch(
-            "nova.core.registry.ConnectorRegistry.get",
+            "phi.core.registry.ConnectorRegistry.get",
             return_value=mock_cls,
         ),
     ):

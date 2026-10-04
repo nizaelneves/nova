@@ -29,9 +29,9 @@ import pytest
 pytestmark = pytest.mark.hub
 
 PROVIDERS = [
-    ("nova.evals.datasets.adp", "ADPDataset"),
-    ("nova.evals.datasets.toolorchestra", "ToolOrchestraDataset"),
-    ("nova.evals.datasets.generalthoughts", "GeneralThoughtsDataset"),
+    ("phi.evals.datasets.adp", "ADPDataset"),
+    ("phi.evals.datasets.toolorchestra", "ToolOrchestraDataset"),
+    ("phi.evals.datasets.generalthoughts", "GeneralThoughtsDataset"),
 ]
 
 

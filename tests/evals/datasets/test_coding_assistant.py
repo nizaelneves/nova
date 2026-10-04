@@ -1,6 +1,6 @@
 """Tests for the coding_assistant dataset."""
 
-from nova.evals.datasets.coding_assistant import CodingAssistantDataset
+from phi.evals.datasets.coding_assistant import CodingAssistantDataset
 
 
 def test_dataset_loads():

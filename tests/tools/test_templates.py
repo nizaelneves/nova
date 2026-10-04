@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.tools.templates.loader import ToolTemplate, discover_templates
+from phi.tools.templates.loader import ToolTemplate, discover_templates
 
 
 class TestToolTemplate:

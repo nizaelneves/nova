@@ -2,9 +2,9 @@
 
 from unittest.mock import MagicMock
 
-from nova.evals.core.types import EvalRecord
-from nova.evals.datasets.deepplanning import DeepPlanningDataset
-from nova.evals.scorers.deepplanning_scorer import DeepPlanningScorer
+from phi.evals.core.types import EvalRecord
+from phi.evals.datasets.deepplanning import DeepPlanningDataset
+from phi.evals.scorers.deepplanning_scorer import DeepPlanningScorer
 
 
 def _mock_backend() -> MagicMock:
@@ -75,18 +75,18 @@ class TestDeepPlanningScorer:
 
 class TestDeepPlanningCLI:
     def test_in_benchmarks(self) -> None:
-        from nova.evals.cli import BENCHMARKS
+        from phi.evals.cli import BENCHMARKS
 
         assert "deepplanning" in BENCHMARKS
 
     def test_build_dataset(self) -> None:
-        from nova.evals.cli import _build_dataset
+        from phi.evals.cli import _build_dataset
 
         ds = _build_dataset("deepplanning")
         assert ds.dataset_id == "deepplanning"
 
     def test_build_scorer(self) -> None:
-        from nova.evals.cli import _build_scorer
+        from phi.evals.cli import _build_scorer
 
         s = _build_scorer("deepplanning", _mock_backend(), "test-model")
         assert s.scorer_id == "deepplanning"

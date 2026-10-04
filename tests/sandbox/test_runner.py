@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.agents._stubs import AgentResult, BaseAgent
-from nova.core.events import EventBus, EventType
-from nova.sandbox.runner import (
+from phi.agents._stubs import AgentResult, BaseAgent
+from phi.core.events import EventBus, EventType
+from phi.sandbox.runner import (
     _OUTPUT_END,
     _OUTPUT_START,
     ContainerRunner,

@@ -1,4 +1,4 @@
-"""Smoke tests for ``nova optimize`` and ``nova feedback`` CLI commands,
+"""Smoke tests for ``phi optimize`` and ``phi feedback`` CLI commands,
 plus unit tests for OptimizeConfig, new event types, and TraceStore.update_feedback.
 """
 
@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 
 class TestOptimizeCmd:
@@ -92,12 +92,12 @@ class TestFeedbackCmd:
 
 
 class TestOptimizeConfig:
-    """Tests for OptimizeConfig in NovaConfig."""
+    """Tests for OptimizeConfig in PhiConfig."""
 
-    def test_optimize_config_in_nova_config(self):
-        from nova.core.config import NovaConfig, OptimizeConfig
+    def test_optimize_config_in_phi_config(self):
+        from phi.core.config import PhiConfig, OptimizeConfig
 
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         assert isinstance(cfg.optimize, OptimizeConfig)
         assert cfg.optimize.max_trials == 20
         assert cfg.optimize.early_stop_patience == 5
@@ -107,7 +107,7 @@ class TestOptimizeConfig:
         assert cfg.optimize.max_samples == 50
 
     def test_optimize_config_defaults(self):
-        from nova.core.config import OptimizeConfig
+        from phi.core.config import OptimizeConfig
 
         cfg = OptimizeConfig()
         assert cfg.max_trials == 20
@@ -120,7 +120,7 @@ class TestNewEventTypes:
     """Tests for new event types added in Phase 25."""
 
     def test_optimize_event_types_exist(self):
-        from nova.core.events import EventType
+        from phi.core.events import EventType
 
         assert EventType.OPTIMIZE_RUN_START == "optimize_run_start"
         assert EventType.OPTIMIZE_TRIAL_START == "optimize_trial_start"
@@ -128,7 +128,7 @@ class TestNewEventTypes:
         assert EventType.OPTIMIZE_RUN_END == "optimize_run_end"
 
     def test_feedback_event_type_exists(self):
-        from nova.core.events import EventType
+        from phi.core.events import EventType
 
         assert EventType.FEEDBACK_RECEIVED == "feedback_received"
 
@@ -137,8 +137,8 @@ class TestTraceStoreUpdateFeedback:
     """Tests for TraceStore.update_feedback."""
 
     def test_update_feedback_success(self, tmp_path):
-        from nova.core.types import Trace
-        from nova.traces.store import TraceStore
+        from phi.core.types import Trace
+        from phi.traces.store import TraceStore
 
         store = TraceStore(tmp_path / "traces.db")
         trace = Trace(trace_id="test123", query="hello")
@@ -151,15 +151,15 @@ class TestTraceStoreUpdateFeedback:
         store.close()
 
     def test_update_feedback_nonexistent(self, tmp_path):
-        from nova.traces.store import TraceStore
+        from phi.traces.store import TraceStore
 
         store = TraceStore(tmp_path / "traces.db")
         assert not store.update_feedback("nonexistent", 0.5)
         store.close()
 
     def test_update_feedback_overwrite(self, tmp_path):
-        from nova.core.types import Trace
-        from nova.traces.store import TraceStore
+        from phi.core.types import Trace
+        from phi.traces.store import TraceStore
 
         store = TraceStore(tmp_path / "traces.db")
         trace = Trace(trace_id="test456", query="test", feedback=0.3)

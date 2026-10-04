@@ -8,16 +8,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.core.types import Trace
-from nova.evals.core.types import EvalRecord
-from nova.learning.optimize.personal.dataset import PersonalBenchmarkDataset
-from nova.learning.optimize.personal.scorer import PersonalBenchmarkScorer
-from nova.learning.optimize.personal.synthesizer import (
+from phi.core.types import Trace
+from phi.evals.core.types import EvalRecord
+from phi.learning.optimize.personal.dataset import PersonalBenchmarkDataset
+from phi.learning.optimize.personal.scorer import PersonalBenchmarkScorer
+from phi.learning.optimize.personal.synthesizer import (
     PersonalBenchmark,
     PersonalBenchmarkSample,
     PersonalBenchmarkSynthesizer,
 )
-from nova.traces.store import TraceStore
+from phi.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

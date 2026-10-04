@@ -7,7 +7,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::Mutex;
 
 const OLLAMA_PORT: u16 = 11434;
-const NOVA_PORT: u16 = 8000;
+const PHI_PORT: u16 = 8000;
 const DESKTOP_UV_SYNC_COMMAND: &str =
     "uv sync --extra desktop --extra inference-cloud --extra inference-google --group desktop-native";
 
@@ -110,9 +110,9 @@ struct BootPlan {
     model_to_pull: Option<String>,
     /// Optional `(engine_key, bare_host)` override for a custom endpoint,
     /// e.g. `("lmstudio", "http://localhost:1234")`. Written into
-    /// ~/.nova/config.toml so `nova serve` picks it up.
+    /// ~/.phi/config.toml so `phi serve` picks it up.
     engine_host: Option<(String, String)>,
-    /// Args appended after `uv run nova serve --port <port>`.
+    /// Args appended after `uv run phi serve --port <port>`.
     serve_args: Vec<String>,
 }
 
@@ -156,7 +156,7 @@ fn boot_plan(cfg: &InferenceConfig, ram_gb: f64) -> BootPlan {
                 .clone()
                 .filter(|h| !h.is_empty())
                 .map(|h| (engine.clone(), h));
-            // `model` may be empty if the config is malformed; `nova serve`
+            // `model` may be empty if the config is malformed; `phi serve`
             // surfaces a clear error then (there is no universal default model
             // for an arbitrary endpoint).
             let model = cfg.model.clone().unwrap_or_default();
@@ -266,12 +266,12 @@ fn resolve_bin(name: &str) -> String {
     name.to_string()
 }
 
-/// Find the Nova project root (contains pyproject.toml).
-/// Checks NOVA_ROOT env var, walks up from the executable, then
+/// Find the Phi project root (contains pyproject.toml).
+/// Checks PHI_ROOT env var, walks up from the executable, then
 /// probes common clone locations.
 fn find_project_root() -> Option<std::path::PathBuf> {
     // 1. Explicit env var override
-    if let Ok(root) = std::env::var("NOVA_ROOT") {
+    if let Ok(root) = std::env::var("PHI_ROOT") {
         let path = std::path::PathBuf::from(&root);
         if path.join("pyproject.toml").exists() {
             return Some(path);
@@ -294,18 +294,18 @@ fn find_project_root() -> Option<std::path::PathBuf> {
     // 3. Fallback: well-known direct paths
     let home = home_dir();
     let direct = [
-        format!("{home}/Nova"),
-        format!("{home}/projects/hazy/Nova"),
-        format!("{home}/projects/Nova"),
-        format!("{home}/src/Nova"),
-        format!("{home}/Documents/Nova"),
-        format!("{home}/Desktop/Nova"),
-        format!("{home}/Developer/Nova"),
-        format!("{home}/dev/Nova"),
-        format!("{home}/Code/Nova"),
-        format!("{home}/code/Nova"),
-        format!("{home}/repos/Nova"),
-        format!("{home}/github/Nova"),
+        format!("{home}/Phi"),
+        format!("{home}/projects/hazy/Phi"),
+        format!("{home}/projects/Phi"),
+        format!("{home}/src/Phi"),
+        format!("{home}/Documents/Phi"),
+        format!("{home}/Desktop/Phi"),
+        format!("{home}/Developer/Phi"),
+        format!("{home}/dev/Phi"),
+        format!("{home}/Code/Phi"),
+        format!("{home}/code/Phi"),
+        format!("{home}/repos/Phi"),
+        format!("{home}/github/Phi"),
     ];
     for p in &direct {
         let path = std::path::PathBuf::from(p);
@@ -314,8 +314,8 @@ fn find_project_root() -> Option<std::path::PathBuf> {
         }
     }
 
-    // 4. Shallow scan: look for Nova one level inside common parent dirs.
-    //    This catches clones like ~/Documents/my-stuff/Nova without
+    // 4. Shallow scan: look for Phi one level inside common parent dirs.
+    //    This catches clones like ~/Documents/my-stuff/Phi without
     //    needing to enumerate every possible intermediate folder.
     let scan_parents = [
         format!("{home}/Documents"),
@@ -333,13 +333,13 @@ fn find_project_root() -> Option<std::path::PathBuf> {
         let parent_path = std::path::PathBuf::from(parent);
         if let Ok(entries) = std::fs::read_dir(&parent_path) {
             for entry in entries.flatten() {
-                let candidate = entry.path().join("Nova");
+                let candidate = entry.path().join("Phi");
                 if candidate.join("pyproject.toml").exists() {
                     return Some(candidate);
                 }
-                // Also check if the entry itself is Nova (case-insensitive match)
+                // Also check if the entry itself is Phi (case-insensitive match)
                 if let Some(name) = entry.file_name().to_str() {
-                    if name.eq_ignore_ascii_case("nova")
+                    if name.eq_ignore_ascii_case("phi")
                         && entry.path().join("pyproject.toml").exists()
                     {
                         return Some(entry.path());
@@ -353,7 +353,7 @@ fn find_project_root() -> Option<std::path::PathBuf> {
 }
 
 // ---------------------------------------------------------------------------
-// BackendManager — owns the Ollama + Nova server child processes
+// BackendManager — owns the Ollama + Phi server child processes
 // ---------------------------------------------------------------------------
 
 struct ChildHandle {
@@ -378,10 +378,10 @@ fn spawn_owned_child(cmd: &mut tokio::process::Command) -> std::io::Result<tokio
     cmd.spawn()
 }
 
-/// Rolling buffer holding the most recent ~16 KB of nova stderr.
+/// Rolling buffer holding the most recent ~16 KB of phi stderr.
 ///
 /// Populated by a background drainer task spawned at boot so the pipe
-/// never fills and back-pressures `nova serve`; consumed by the boot
+/// never fills and back-pressures `phi serve`; consumed by the boot
 /// path when surfacing failure messages.
 type StderrTail = Arc<Mutex<Vec<u8>>>;
 
@@ -389,8 +389,8 @@ const STDERR_TAIL_LIMIT: usize = 16 * 1024;
 
 struct BackendManager {
     ollama: Option<ChildHandle>,
-    nova: Option<ChildHandle>,
-    nova_stderr_tail: StderrTail,
+    phi: Option<ChildHandle>,
+    phi_stderr_tail: StderrTail,
     boot_task: Option<tauri::async_runtime::JoinHandle<()>>,
 }
 
@@ -398,8 +398,8 @@ impl Default for BackendManager {
     fn default() -> Self {
         Self {
             ollama: None,
-            nova: None,
-            nova_stderr_tail: Arc::new(Mutex::new(Vec::new())),
+            phi: None,
+            phi_stderr_tail: Arc::new(Mutex::new(Vec::new())),
             boot_task: None,
         }
     }
@@ -414,10 +414,10 @@ impl BackendManager {
             // not-yet-registered child and cannot write config after reset.
             let _ = task.await;
         }
-        if let Some(ref mut h) = self.nova {
+        if let Some(ref mut h) = self.phi {
             h.kill().await;
         }
-        self.nova = None;
+        self.phi = None;
         if let Some(ref mut h) = self.ollama {
             h.kill().await;
         }
@@ -464,7 +464,7 @@ impl Default for SetupStatus {
     fn default() -> Self {
         Self {
             phase: "awaiting_source".into(),
-            detail: "Choose where Nova should run models.".into(),
+            detail: "Choose where Phi should run models.".into(),
             ollama_ready: false,
             server_ready: false,
             model_ready: false,
@@ -536,29 +536,29 @@ async fn endpoint_reachable(host: &str, timeout: Duration) -> bool {
     false
 }
 
-/// Outcome of waiting for `nova serve` to become healthy.
+/// Outcome of waiting for `phi serve` to become healthy.
 ///
 /// Unlike [`wait_for_url`] this differentiates "server is up but degraded"
 /// (HTTP 503 — usually inference engine failed to load) from "server never
 /// came up" and from "child process died before serving anything", because
 /// each needs a different user-facing message.
 #[derive(Debug)]
-enum NovaStartResult {
+enum PhiStartResult {
     /// `/health` returned 2xx.
     Ready,
     /// Server replied 503. The body is the actionable message (typically
     /// "engine not ready" or a model-load error).
     ServiceUnavailable(String),
-    /// The `nova serve` child exited before `/health` returned 2xx.
+    /// The `phi serve` child exited before `/health` returned 2xx.
     EarlyExit { code: Option<i32>, stderr: String },
     /// Deadline elapsed without ever seeing 2xx or an early exit.
     Timeout,
 }
 
-/// Spawn a detached task that continuously drains `nova serve`'s
+/// Spawn a detached task that continuously drains `phi serve`'s
 /// stderr into a rolling tail buffer.
 ///
-/// We MUST keep reading stderr for as long as the child runs — `nova
+/// We MUST keep reading stderr for as long as the child runs — `phi
 /// serve` is chatty (engine load progress, request logs), and the OS
 /// pipe buffer is small (4 KB on Windows, 64 KB on Linux). Once full,
 /// the child's next stderr write blocks indefinitely and the server
@@ -568,7 +568,7 @@ enum NovaStartResult {
 ///
 /// Returns immediately after spawning the task; the task ends naturally
 /// when the child closes stderr (i.e. exits).
-fn spawn_nova_stderr_drainer(mut stderr: tokio::process::ChildStderr, tail: StderrTail) {
+fn spawn_phi_stderr_drainer(mut stderr: tokio::process::ChildStderr, tail: StderrTail) {
     use tokio::io::AsyncReadExt;
     tokio::spawn(async move {
         let mut buf = vec![0u8; 4096];
@@ -593,25 +593,25 @@ fn spawn_nova_stderr_drainer(mut stderr: tokio::process::ChildStderr, tail: Stde
 ///
 /// Safe to call at any time; returns an empty string before the
 /// drainer has seen any bytes. Trimmed.
-async fn read_nova_stderr_tail(backend: &SharedBackend) -> String {
-    let tail = backend.lock().await.nova_stderr_tail.clone();
+async fn read_phi_stderr_tail(backend: &SharedBackend) -> String {
+    let tail = backend.lock().await.phi_stderr_tail.clone();
     let bytes = tail.lock().await.clone();
     String::from_utf8_lossy(&bytes).trim().to_string()
 }
 
-/// Poll `nova serve` health, watching the child process state so we
+/// Poll `phi serve` health, watching the child process state so we
 /// never wait 10 minutes for a process that crashed in the first second.
-async fn wait_for_nova_health(
+async fn wait_for_phi_health(
     url: &str,
     timeout: Duration,
     backend: &SharedBackend,
-) -> NovaStartResult {
+) -> PhiStartResult {
     let client = match reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
     {
         Ok(c) => c,
-        Err(_) => return NovaStartResult::Timeout,
+        Err(_) => return PhiStartResult::Timeout,
     };
     let deadline = tokio::time::Instant::now() + timeout;
     loop {
@@ -621,14 +621,14 @@ async fn wait_for_nova_health(
         // the full HTTP timeout window.
         let exit_status = {
             let mut mgr = backend.lock().await;
-            match mgr.nova.as_mut() {
+            match mgr.phi.as_mut() {
                 Some(h) => h.child.try_wait().ok().flatten(),
                 None => None,
             }
         };
         if let Some(status) = exit_status {
-            let stderr = read_nova_stderr_tail(backend).await;
-            return NovaStartResult::EarlyExit {
+            let stderr = read_phi_stderr_tail(backend).await;
+            return PhiStartResult::EarlyExit {
                 code: status.code(),
                 stderr,
             };
@@ -639,14 +639,14 @@ async fn wait_for_nova_health(
             Ok(resp) => {
                 let status = resp.status();
                 if status.is_success() {
-                    return NovaStartResult::Ready;
+                    return PhiStartResult::Ready;
                 }
                 if status == reqwest::StatusCode::SERVICE_UNAVAILABLE {
                     // Server is up but the inference engine is not. This
                     // is a terminal-for-us state — polling won't change
                     // anything; the user has to fix their engine config.
                     let body = resp.text().await.unwrap_or_default();
-                    return NovaStartResult::ServiceUnavailable(body);
+                    return PhiStartResult::ServiceUnavailable(body);
                 }
                 // Other non-2xx (e.g. 404 during a brief routing-table
                 // warmup window) — fall through and keep polling.
@@ -658,7 +658,7 @@ async fn wait_for_nova_health(
         }
 
         if tokio::time::Instant::now() >= deadline {
-            return NovaStartResult::Timeout;
+            return PhiStartResult::Timeout;
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
@@ -818,7 +818,7 @@ fn format_uv_sync_failure(root: &std::path::Path, exit_code: Option<i32>, stderr
 
 /// Strip AppImage-injected environment from a subprocess command (#455).
 ///
-/// When the Nova desktop binary is shipped as an AppImage, the AppImage
+/// When the Phi desktop binary is shipped as an AppImage, the AppImage
 /// runtime sets `LD_LIBRARY_PATH` (and friends) to the extracted-to-/tmp
 /// bundled lib dir. Any child we spawn inherits that env by default — but the
 /// children we spawn (`uv`, `ollama`, `git`) live outside the AppImage and
@@ -854,7 +854,7 @@ fn prepare_subprocess_for_appimage(cmd: &mut tokio::process::Command) {
 fn format_uv_sync_spawn_error(root: &std::path::Path, uv_bin: &str, err: &str) -> String {
     format!(
         "Could not run `uv sync`: {}. Verify uv is installed at \
-         `{}` and the Nova repo is at `{}`.",
+         `{}` and the Phi repo is at `{}`.",
         err,
         uv_bin,
         root.display(),
@@ -862,7 +862,7 @@ fn format_uv_sync_spawn_error(root: &std::path::Path, uv_bin: &str, err: &str) -
 }
 
 fn rust_toolchain_install_hint() -> &'static str {
-    "The desktop app needs the Rust toolchain to build `nova_rust`. \
+    "The desktop app needs the Rust toolchain to build `phi_rust`. \
      Install Rust from https://rustup.rs. On Windows, also install Visual Studio \
      Build Tools with the C++ workload, then relaunch."
 }
@@ -870,8 +870,8 @@ fn rust_toolchain_install_hint() -> &'static str {
 fn looks_like_rust_extension_build_error(stderr: &str) -> bool {
     let lower = stderr.to_ascii_lowercase();
     [
-        "nova-rust",
-        "nova_rust",
+        "phi-rust",
+        "phi_rust",
         "maturin",
         "cargo",
         "rustc",
@@ -894,11 +894,11 @@ fn format_missing_rust_toolchain() -> String {
 fn format_extension_import_failure(root: &std::path::Path, stderr: &str) -> String {
     let tail = uv_sync_stderr_tail(stderr, 4000);
     format!(
-        "`nova_rust` is still not importable after building. Last output:\n\n{}\n\n\
+        "`phi_rust` is still not importable after building. Last output:\n\n{}\n\n\
          Run these manually for the full build log:\n\n\
            cd {}\n\
            {}\n\
-           uv run python -c \"import nova_rust\"",
+           uv run python -c \"import phi_rust\"",
         if tail.is_empty() {
             "(no stderr output)"
         } else {
@@ -924,12 +924,12 @@ fn add_cargo_bin_to_path(cmd: &mut tokio::process::Command) {
     }
 }
 
-async fn verify_nova_rust_extension(
+async fn verify_phi_rust_extension(
     root: &std::path::Path,
     uv_bin: &str,
 ) -> Result<(), String> {
     let mut cmd = tokio::process::Command::new(uv_bin);
-    cmd.args(["run", "python", "-c", "import nova_rust"])
+    cmd.args(["run", "python", "-c", "import phi_rust"])
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
         .current_dir(root);
@@ -944,7 +944,7 @@ async fn verify_nova_rust_extension(
             Err(format_extension_import_failure(root, &stderr))
         }
         Err(e) => Err(format!(
-            "Could not verify `nova_rust`: {}. Verify uv is installed at `{}`.",
+            "Could not verify `phi_rust`: {}. Verify uv is installed at `{}`.",
             e, uv_bin
         )),
     }
@@ -952,29 +952,29 @@ async fn verify_nova_rust_extension(
 
 fn port_owner_hint() -> String {
     if cfg!(target_os = "windows") {
-        format!("netstat -ano | findstr :{}", NOVA_PORT)
+        format!("netstat -ano | findstr :{}", PHI_PORT)
     } else {
-        format!("lsof -i :{}", NOVA_PORT)
+        format!("lsof -i :{}", PHI_PORT)
     }
 }
 
 fn format_port_unavailable(port: u16, reason: &str) -> String {
     format!(
         "Port {} is not available: {}. Stop the process using that port or \
-         change the Nova port, then relaunch.\n\nTo identify it:\n  {}",
+         change the Phi port, then relaunch.\n\nTo identify it:\n  {}",
         port,
         reason,
         port_owner_hint(),
     )
 }
 
-fn check_nova_port_available() -> Result<(), String> {
-    match std::net::TcpListener::bind(("127.0.0.1", NOVA_PORT)) {
+fn check_phi_port_available() -> Result<(), String> {
+    match std::net::TcpListener::bind(("127.0.0.1", PHI_PORT)) {
         Ok(listener) => {
             drop(listener);
             Ok(())
         }
-        Err(err) => Err(format_port_unavailable(NOVA_PORT, &err.to_string())),
+        Err(err) => Err(format_port_unavailable(PHI_PORT, &err.to_string())),
     }
 }
 
@@ -1154,8 +1154,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             ));
             return;
         }
-        // Point `nova serve` at the user's endpoint by writing the engine
-        // host into ~/.nova/config.toml (the env var alone is shadowed by
+        // Point `phi serve` at the user's endpoint by writing the engine
+        // host into ~/.phi/config.toml (the env var alone is shadowed by
         // the engine's non-empty default host in the Python layer).
         if let Some((engine, host)) = &plan.engine_host {
             if let Err(e) = set_engine_host_in_config(engine, host) {
@@ -1172,7 +1172,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
         }
     }
 
-    // Phase 3: Start nova serve
+    // Phase 3: Start phi serve
     {
         let mut s = status.lock().await;
         s.phase = "server".into();
@@ -1228,15 +1228,15 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             return;
         }
 
-        let target_path = std::path::PathBuf::from(home_dir()).join("Nova");
+        let target_path = std::path::PathBuf::from(home_dir()).join("Phi");
         let clone_target = target_path.display().to_string();
 
         // If the directory exists but is not a valid project, don't overwrite
         if target_path.exists() && !target_path.join("pyproject.toml").exists() {
             let mut s = status.lock().await;
             s.error = Some(format!(
-                "{} exists but is not a valid Nova project. \
-                 Remove it and relaunch, or set NOVA_ROOT to the correct path.",
+                "{} exists but is not a valid Phi project. \
+                 Remove it and relaunch, or set PHI_ROOT to the correct path.",
                 clone_target,
             ));
             return;
@@ -1244,7 +1244,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
 
         {
             let mut s = status.lock().await;
-            s.detail = "Downloading Nova (first launch)...".into();
+            s.detail = "Downloading Phi (first launch)...".into();
         }
 
         let mut clone_cmd = tokio::process::Command::new(&git_bin);
@@ -1253,7 +1253,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 "clone",
                 "--depth",
                 "1",
-                "https://github.com/nizaelneves/nova.git",
+                "https://github.com/nizaelneves/phi.git",
                 &clone_target,
             ])
             .stdout(std::process::Stdio::null())
@@ -1270,8 +1270,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     let mut s = status.lock().await;
                     s.error = Some(format!(
-                        "Failed to download Nova: {}. \
-                         Clone manually: git clone https://github.com/nizaelneves/nova.git {}",
+                        "Failed to download Phi: {}. \
+                         Clone manually: git clone https://github.com/nizaelneves/phi.git {}",
                         stderr.trim(),
                         clone_target,
                     ));
@@ -1280,8 +1280,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 Err(e) => {
                     let mut s = status.lock().await;
                     s.error = Some(format!(
-                        "Failed to download Nova: {}. \
-                         Clone manually: git clone https://github.com/nizaelneves/nova.git {}",
+                        "Failed to download Phi: {}. \
+                         Clone manually: git clone https://github.com/nizaelneves/phi.git {}",
                         e, clone_target,
                     ));
                     return;
@@ -1304,16 +1304,16 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     //
     // The OLD behaviour was: any HTTP response (even 404) → `fuser -k 8000/tcp`
     // / `taskkill /PID /F`. That broke the legitimate case where a user had
-    // already started `nova serve` in a terminal and then launched the
+    // already started `phi serve` in a terminal and then launched the
     // desktop app — the app killed their server, then raced to spawn its
     // own, sometimes losing the race and hanging.
     //
     // New behaviour, by response shape:
-    //   * 2xx /health        — healthy nova serve. Attach to it; skip the
+    //   * 2xx /health        — healthy phi serve. Attach to it; skip the
     //                          uv-sync + spawn dance entirely. Done.
     //   * 503                — server is up but engine isn't ready. Surface
     //                          an actionable message; don't kill (matches
-    //                          our wait_for_nova_health 503 contract).
+    //                          our wait_for_phi_health 503 contract).
     //   * any other status   — something else is listening on the port. Tell
     //                          the user via the error banner instead of
     //                          force-killing a foreign service.
@@ -1321,14 +1321,14 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     //
     // TODO(#455 follow-up): validate /health response body before attaching
     // so a multi-user host can't trivially spoof us. Also accept a port
-    // override from config instead of hard-coding NOVA_PORT.
+    // override from config instead of hard-coding PHI_PORT.
     {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(2))
             .build()
             .unwrap();
         match client
-            .get(format!("http://127.0.0.1:{}/health", NOVA_PORT))
+            .get(format!("http://127.0.0.1:{}/health", PHI_PORT))
             .send()
             .await
         {
@@ -1339,7 +1339,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 // snapshot. Small sleep between to give the server room.
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 let confirm = client
-                    .get(format!("http://127.0.0.1:{}/health", NOVA_PORT))
+                    .get(format!("http://127.0.0.1:{}/health", PHI_PORT))
                     .send()
                     .await
                     .map(|r| r.status().is_success())
@@ -1358,8 +1358,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                         Ok(true) => {
                             let mut s = status.lock().await;
                             s.error = Some(format!(
-                                "An API server is already running on port {}, but Nova cannot securely apply your new inference API key to a server it did not start. Stop that server, then try setup again.",
-                                NOVA_PORT,
+                                "An API server is already running on port {}, but Phi cannot securely apply your new inference API key to a server it did not start. Stop that server, then try setup again.",
+                                PHI_PORT,
                             ));
                             return;
                         }
@@ -1385,7 +1385,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                     let mut s = status.lock().await;
                     s.phase = "ready".into();
                     s.detail =
-                        format!("Connected to existing API server on port {}.", NOVA_PORT,);
+                        format!("Connected to existing API server on port {}.", PHI_PORT,);
                     s.server_ready = true;
                     s.model_ready = true;
                     s.ollama_ready = true;
@@ -1397,9 +1397,9 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 s.error = Some(format!(
                     "An API server is already running on port {} but its \
                      inference engine isn't ready (HTTP 503). If this is your \
-                     `nova serve`, wait for it to finish loading and relaunch. \
+                     `phi serve`, wait for it to finish loading and relaunch. \
                      Otherwise, stop that service or change the port.",
-                    NOVA_PORT,
+                    PHI_PORT,
                 ));
                 return;
             }
@@ -1411,8 +1411,8 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 s.error = Some(format!(
                     "Port {} is already in use by another service (it answered \
                      /health with HTTP {}). Stop that service or change the \
-                     Nova port, then relaunch.\n\nTo identify it:\n  {}",
-                    NOVA_PORT,
+                     Phi port, then relaunch.\n\nTo identify it:\n  {}",
+                    PHI_PORT,
                     resp.status(),
                     port_owner_hint(),
                 ));
@@ -1424,7 +1424,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
         }
     }
 
-    if let Err(err) = check_nova_port_available() {
+    if let Err(err) = check_phi_port_available() {
         let mut s = status.lock().await;
         s.error = Some(err);
         return;
@@ -1444,9 +1444,9 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     // Previously we ran `uv sync` with both stdout AND stderr piped to
     // /dev/null and discarded the exit code (`let _ = …`). When `uv sync`
     // failed — Windows path issues, network problems, lockfile conflicts —
-    // the user saw no error, the boot continued, `uv run nova serve`
+    // the user saw no error, the boot continued, `uv run phi serve`
     // then ran in an under-provisioned venv, and the user waited the full
-    // 600s health-check window before getting "Nova server did not
+    // 600s health-check window before getting "Phi server did not
     // become healthy in time" with no actionable detail (issue #331).
     //
     // Now: capture stderr, check the exit status, surface a useful error
@@ -1467,7 +1467,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             "inference-cloud",
             "--extra",
             "inference-google",
-            // nova_rust lives in a uv dependency group (not the published
+            // phi_rust lives in a uv dependency group (not the published
             // `desktop` extra) so pip installs from PyPI don't require it (#584).
             "--group",
             "desktop-native",
@@ -1497,9 +1497,9 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
 
     {
         let mut s = status.lock().await;
-        s.detail = "Verifying Rust extension (nova_rust)...".into();
+        s.detail = "Verifying Rust extension (phi_rust)...".into();
     }
-    if let Err(err) = verify_nova_rust_extension(root, &uv_bin).await {
+    if let Err(err) = verify_phi_rust_extension(root, &uv_bin).await {
         let mut s = status.lock().await;
         s.error = Some(err);
         return;
@@ -1513,10 +1513,10 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     let mut cmd = tokio::process::Command::new(&uv_bin);
     let mut serve_argv: Vec<String> = vec![
         "run".into(),
-        "nova".into(),
+        "phi".into(),
         "serve".into(),
         "--port".into(),
-        NOVA_PORT.to_string(),
+        PHI_PORT.to_string(),
     ];
     serve_argv.extend(plan.serve_args.iter().cloned());
     // If the Ollama pull fell back to a different tag than planned, serve the
@@ -1545,9 +1545,9 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     for (key, value) in cloud_keys_for_inference(&cfg) {
         cmd.env(&key, &value);
     }
-    let nova_child = spawn_owned_child(&mut cmd);
+    let phi_child = spawn_owned_child(&mut cmd);
 
-    match nova_child {
+    match phi_child {
         Ok(mut child) => {
             // Start draining stderr immediately. If we wait until the
             // health check returns we risk filling the 4 KB Windows pipe
@@ -1555,18 +1555,18 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             // it can bind its HTTP port — exactly the symptom in #309.
             let stderr_handle = child.stderr.take();
             let mut mgr = backend.lock().await;
-            let tail = mgr.nova_stderr_tail.clone();
-            mgr.nova = Some(ChildHandle { child });
+            let tail = mgr.phi_stderr_tail.clone();
+            mgr.phi = Some(ChildHandle { child });
             drop(mgr);
             if let Some(stderr) = stderr_handle {
-                spawn_nova_stderr_drainer(stderr, tail);
+                spawn_phi_stderr_drainer(stderr, tail);
             }
         }
         Err(e) => {
             let mut s = status.lock().await;
             s.error = Some(format!(
-                "Could not start nova server: {}. \
-                 Make sure uv is installed (https://astral.sh/uv) and the Nova repo is cloned at {}",
+                "Could not start phi server: {}. \
+                 Make sure uv is installed (https://astral.sh/uv) and the Phi repo is cloned at {}",
                 e,
                 root.display(),
             ));
@@ -1574,18 +1574,18 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
         }
     }
 
-    let server_url = format!("http://127.0.0.1:{}/health", NOVA_PORT);
-    match wait_for_nova_health(&server_url, Duration::from_secs(600), &backend).await {
-        NovaStartResult::Ready => {}
-        NovaStartResult::ServiceUnavailable(body) => {
+    let server_url = format!("http://127.0.0.1:{}/health", PHI_PORT);
+    match wait_for_phi_health(&server_url, Duration::from_secs(600), &backend).await {
+        PhiStartResult::Ready => {}
+        PhiStartResult::ServiceUnavailable(body) => {
             let mut s = status.lock().await;
             s.error = Some(format!(
-                "Nova server is running but the inference engine is not available \
+                "Phi server is running but the inference engine is not available \
                  (HTTP 503). This usually means the configured model couldn't be loaded.\n\n\
-                 Check the server logs, or run 'uv run nova serve --port {}{}' \
+                 Check the server logs, or run 'uv run phi serve --port {}{}' \
                  from {} to see the engine error.\n\n\
                  Server response:\n{}",
-                NOVA_PORT,
+                PHI_PORT,
                 // Show the args actually passed (after `serve --port <port>`),
                 // including any post-fallback `--model` override.
                 match serve_argv.get(5..) {
@@ -1597,7 +1597,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             ));
             return;
         }
-        NovaStartResult::EarlyExit { code, stderr } => {
+        PhiStartResult::EarlyExit { code, stderr } => {
             // `None` here means the OS didn't expose an exit code — on
             // Unix that's a signal kill (SIGKILL/SIGSEGV/...), on Windows
             // it means the process was terminated externally (Task
@@ -1608,10 +1608,10 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             let mut s = status.lock().await;
             s.error = Some(if stderr.is_empty() {
                 format!(
-                    "Nova server exited (code {}) before becoming ready.\n\n\
+                    "Phi server exited (code {}) before becoming ready.\n\n\
                      No stderr output. Check that:\n\
                      1. uv is installed ({})\n\
-                     2. The Nova repo is at {}\n\
+                     2. The Phi repo is at {}\n\
                      3. 'uv sync' completes in that directory",
                     code_str,
                     uv_bin,
@@ -1619,27 +1619,27 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
                 )
             } else {
                 format!(
-                    "Nova server exited (code {}) before becoming ready.\n\nStderr:\n{}",
+                    "Phi server exited (code {}) before becoming ready.\n\nStderr:\n{}",
                     code_str, stderr,
                 )
             });
             return;
         }
-        NovaStartResult::Timeout => {
-            let stderr = read_nova_stderr_tail(&backend).await;
+        PhiStartResult::Timeout => {
+            let stderr = read_phi_stderr_tail(&backend).await;
             let mut s = status.lock().await;
             s.error = Some(if stderr.is_empty() {
                 format!(
-                    "Nova server did not become ready within 10 minutes. Check that:\n\
+                    "Phi server did not become ready within 10 minutes. Check that:\n\
                      1. uv is installed ({})\n\
-                     2. The Nova repo is at {}\n\
+                     2. The Phi repo is at {}\n\
                      3. Run 'uv sync' in that directory",
                     uv_bin,
                     root.display(),
                 )
             } else {
                 format!(
-                    "Nova server did not become ready within 10 minutes.\n\nStderr:\n{}",
+                    "Phi server did not become ready within 10 minutes.\n\nStderr:\n{}",
                     stderr,
                 )
             });
@@ -1675,7 +1675,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
 // ---------------------------------------------------------------------------
 
 fn api_base() -> String {
-    format!("http://127.0.0.1:{}", NOVA_PORT)
+    format!("http://127.0.0.1:{}", PHI_PORT)
 }
 
 #[tauri::command]
@@ -1695,7 +1695,7 @@ async fn start_backend(
 ) -> Result<(), String> {
     if read_configured_inference_config().is_none() {
         *status.lock().await = SetupStatus::default();
-        return Err("Choose an inference source before starting Nova.".into());
+        return Err("Choose an inference source before starting Phi.".into());
     }
     let b = backend.inner().clone();
     let s = status.inner().clone();
@@ -1899,17 +1899,17 @@ async fn fetch_models(api_url: String) -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
+async fn run_phi_command(args: Vec<String>) -> Result<String, String> {
     let uv_bin = resolve_bin("uv");
 
-    let mut cmd_args = vec!["run".to_string(), "nova".to_string()];
+    let mut cmd_args = vec!["run".to_string(), "phi".to_string()];
     cmd_args.extend(args.iter().cloned());
 
     let mut cmd = tokio::process::Command::new(&uv_bin);
     cmd.args(&cmd_args);
-    // Run from the project root so `uv run nova` resolves the Nova
+    // Run from the project root so `uv run phi` resolves the Phi
     // project regardless of the app's launch cwd. In a packaged install the
-    // cwd isn't the checkout, so without this `nova` isn't found and the
+    // cwd isn't the checkout, so without this `phi` isn't found and the
     // backend never starts — the UI then shows "Failed to get response"
     // (see #531).
     if let Some(ref root) = find_project_root() {
@@ -1924,7 +1924,7 @@ async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
         let output = cmd
             .output()
             .await
-            .map_err(|e| format!("Failed to launch nova: {}", e))?;
+            .map_err(|e| format!("Failed to launch phi: {}", e))?;
         return if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
@@ -1932,7 +1932,7 @@ async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
         };
     }
 
-    // `nova serve` is a long-running server that never exits. The old code
+    // `phi serve` is a long-running server that never exits. The old code
     // used `.output()`, which waits for the process to exit and so hung this
     // command forever — the "Start" button never resolved (#531). Spawn it
     // detached instead, drain stderr (a full 4 KB Windows pipe can otherwise
@@ -1941,18 +1941,18 @@ async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
         .stderr(std::process::Stdio::piped());
     let mut child = cmd
         .spawn()
-        .map_err(|e| format!("Failed to launch nova serve: {}", e))?;
+        .map_err(|e| format!("Failed to launch phi serve: {}", e))?;
 
     let tail: StderrTail = Arc::new(Mutex::new(Vec::new()));
     if let Some(stderr) = child.stderr.take() {
-        spawn_nova_stderr_drainer(stderr, tail.clone());
+        spawn_phi_stderr_drainer(stderr, tail.clone());
     }
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
-    let url = format!("http://127.0.0.1:{}/health", NOVA_PORT);
+    let url = format!("http://127.0.0.1:{}/health", PHI_PORT);
     let deadline = tokio::time::Instant::now() + Duration::from_secs(120);
 
     loop {
@@ -1961,7 +1961,7 @@ async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
         if let Ok(Some(status)) = child.try_wait() {
             let stderr = String::from_utf8_lossy(tail.lock().await.as_slice()).into_owned();
             return Err(format!(
-                "nova serve exited (code {:?}) before becoming healthy:\n{}",
+                "phi serve exited (code {:?}) before becoming healthy:\n{}",
                 status.code(),
                 stderr.trim()
             ));
@@ -1971,15 +1971,15 @@ async fn run_nova_command(args: Vec<String>) -> Result<String, String> {
                 // Leave the server running (the Child is detached on drop —
                 // kill_on_drop defaults to false); `stop` tears it down.
                 return Ok(format!(
-                    "nova serve is ready on http://127.0.0.1:{}",
-                    NOVA_PORT
+                    "phi serve is ready on http://127.0.0.1:{}",
+                    PHI_PORT
                 ));
             }
         }
         if tokio::time::Instant::now() >= deadline {
             return Err(format!(
-                "nova serve did not become healthy on port {} within 120s.",
-                NOVA_PORT
+                "phi serve did not become healthy on port {} within 120s.",
+                PHI_PORT
             ));
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -2053,11 +2053,11 @@ async fn transcribe_audio(
 // Cloud API key management
 // ---------------------------------------------------------------------------
 
-const SECURE_KEY_SERVICE: &str = "Nova Cloud Keys";
+const SECURE_KEY_SERVICE: &str = "Phi Cloud Keys";
 // A first-run custom credential is kept in its own secure-storage slot until
 // the managed backend has passed every readiness gate.  In particular, do not
 // overwrite an existing <ENGINE>_API_KEY while setup can still be cancelled.
-const PENDING_INFERENCE_API_KEY: &str = "NOVA_PENDING_INFERENCE_API_KEY";
+const PENDING_INFERENCE_API_KEY: &str = "PHI_PENDING_INFERENCE_API_KEY";
 const MANAGED_CLOUD_KEY_NAMES: &[&str] = &[
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
@@ -2072,7 +2072,7 @@ const MANAGED_CLOUD_KEY_NAMES: &[&str] = &[
 fn legacy_cloud_keys_path() -> std::path::PathBuf {
     let home = home_dir();
     std::path::PathBuf::from(home)
-        .join(".nova")
+        .join(".phi")
         .join("cloud-keys.env")
 }
 
@@ -2285,7 +2285,7 @@ async fn reload_cloud_keys_for_owned_backend(
     status: &SharedStatus,
     keys: Vec<(String, String)>,
 ) {
-    let reload_url = format!("http://127.0.0.1:{}/v1/cloud/reload", NOVA_PORT);
+    let reload_url = format!("http://127.0.0.1:{}/v1/cloud/reload", PHI_PORT);
     reload_cloud_keys_for_owned_backend_at(backend, status, keys, &reload_url).await;
 }
 
@@ -2303,7 +2303,7 @@ async fn reload_cloud_keys_for_owned_backend_at(
     // child and let an unrelated process claim the port between the ownership
     // check and the credential POST.
     let mut manager = backend.lock().await;
-    let Some(handle) = manager.nova.as_mut() else {
+    let Some(handle) = manager.phi.as_mut() else {
         return;
     };
     if !matches!(handle.child.try_wait(), Ok(None)) {
@@ -2429,7 +2429,7 @@ async fn delete_ollama_model(model_name: String) -> Result<serde_json::Value, St
 }
 
 // ---------------------------------------------------------------------------
-// Inference-source selection (~/.nova/inference.json)
+// Inference-source selection (~/.phi/inference.json)
 // ---------------------------------------------------------------------------
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -2467,10 +2467,10 @@ fn legacy_config_is_confirmed() -> bool {
     true
 }
 
-/// Path to the inference-source config (~/.nova/inference.json).
+/// Path to the inference-source config (~/.phi/inference.json).
 fn inference_config_path() -> std::path::PathBuf {
     std::path::PathBuf::from(home_dir())
-        .join(".nova")
+        .join(".phi")
         .join("inference.json")
 }
 
@@ -2793,13 +2793,13 @@ fn upsert_engine_host(existing: &str, engine: &str, host: &str) -> Result<String
     Ok(doc.to_string())
 }
 
-/// Write the custom-endpoint host into ~/.nova/config.toml so
-/// `nova serve` (which reads that file via load_config) points at it.
+/// Write the custom-endpoint host into ~/.phi/config.toml so
+/// `phi serve` (which reads that file via load_config) points at it.
 /// The `<ENGINE>_HOST` env var is unreliable — it is shadowed by the engine's
 /// non-empty default host in the Python layer — so config.toml is the override.
 fn set_engine_host_in_config(engine: &str, host: &str) -> Result<(), String> {
     let path = std::path::PathBuf::from(home_dir())
-        .join(".nova")
+        .join(".phi")
         .join("config.toml");
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -2888,7 +2888,7 @@ mod native_overlay {
 
     fn conversation_path() -> std::path::PathBuf {
         std::path::PathBuf::from(super::home_dir())
-            .join(".nova")
+            .join(".phi")
             .join("overlay-conversation.json")
     }
 
@@ -2951,9 +2951,9 @@ mod native_overlay {
     /// Build the native overlay panel.  Call once during app setup.
     pub unsafe fn create(html: &str, api_port: u16) {
         // --- Custom NSPanel subclass that accepts keyboard input ------
-        if Class::get("NovaOverlayPanel").is_none() {
+        if Class::get("PhiOverlayPanel").is_none() {
             let sup = Class::get("NSPanel").unwrap();
-            let mut decl = ClassDecl::new("NovaOverlayPanel", sup).unwrap();
+            let mut decl = ClassDecl::new("PhiOverlayPanel", sup).unwrap();
             extern "C" fn yes(_: &Object, _: Sel) -> BOOL {
                 YES
             }
@@ -2965,9 +2965,9 @@ mod native_overlay {
         }
 
         // --- WKNavigationDelegate — re-apply transparency after load --
-        if Class::get("NovaOverlayNavDelegate").is_none() {
+        if Class::get("PhiOverlayNavDelegate").is_none() {
             let sup = Class::get("NSObject").unwrap();
-            let mut decl = ClassDecl::new("NovaOverlayNavDelegate", sup).unwrap();
+            let mut decl = ClassDecl::new("PhiOverlayNavDelegate", sup).unwrap();
             extern "C" fn did_finish(_: &Object, _: Sel, wv: *mut Object, _nav: *mut Object) {
                 unsafe {
                     force_transparent(wv);
@@ -2981,9 +2981,9 @@ mod native_overlay {
         }
 
         // --- WKScriptMessageHandler so JS can call hide() ------------
-        if Class::get("NovaOverlayMsgHandler").is_none() {
+        if Class::get("PhiOverlayMsgHandler").is_none() {
             let sup = Class::get("NSObject").unwrap();
-            let mut decl = ClassDecl::new("NovaOverlayMsgHandler", sup).unwrap();
+            let mut decl = ClassDecl::new("PhiOverlayMsgHandler", sup).unwrap();
             extern "C" fn on_msg(_: &Object, _: Sel, _ctrl: *mut Object, msg: *mut Object) {
                 unsafe {
                     let body: *mut Object = msg_send![msg, body];
@@ -3023,7 +3023,7 @@ mod native_overlay {
         // NSWindowStyleMaskNonactivatingPanel = 1 << 7
         let style: u64 = 1 << 7;
 
-        let cls = Class::get("NovaOverlayPanel").unwrap();
+        let cls = Class::get("PhiOverlayPanel").unwrap();
         let panel: *mut Object = msg_send![cls, alloc];
         let panel: *mut Object = msg_send![panel,
             initWithContentRect: frame
@@ -3050,7 +3050,7 @@ mod native_overlay {
         let cfg: *mut Object = msg_send![cfg, init];
 
         // Attach message handler ("overlay" channel)
-        let hcls = Class::get("NovaOverlayMsgHandler").unwrap();
+        let hcls = Class::get("PhiOverlayMsgHandler").unwrap();
         let handler: *mut Object = msg_send![hcls, alloc];
         let handler: *mut Object = msg_send![handler, init];
         let uc: *mut Object = msg_send![cfg, userContentController];
@@ -3069,7 +3069,7 @@ mod native_overlay {
         force_transparent(wv);
 
         // Set navigation delegate so we re-apply after page loads
-        let nav_cls = Class::get("NovaOverlayNavDelegate").unwrap();
+        let nav_cls = Class::get("PhiOverlayNavDelegate").unwrap();
         let nav_del: *mut Object = msg_send![nav_cls, alloc];
         let nav_del: *mut Object = msg_send![nav_del, init];
         let _: () = msg_send![wv, setNavigationDelegate: nav_del];
@@ -3280,7 +3280,7 @@ pub fn run() {
             let health = MenuItemBuilder::with_id("health", "Health: starting...")
                 .enabled(false)
                 .build(app)?;
-            let quit = MenuItemBuilder::with_id("quit", "Quit Nova").build(app)?;
+            let quit = MenuItemBuilder::with_id("quit", "Quit PhiOS").build(app)?;
 
             let menu = MenuBuilder::new(app)
                 .item(&show)
@@ -3292,7 +3292,7 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::with_id("main")
                 .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("Nova")
+                .tooltip("PhiOS")
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {
@@ -3315,7 +3315,7 @@ pub fn run() {
             // Create native macOS overlay panel
             #[cfg(target_os = "macos")]
             unsafe {
-                native_overlay::create(include_str!("overlay.html"), NOVA_PORT);
+                native_overlay::create(include_str!("overlay.html"), PHI_PORT);
             }
 
             // Register Cmd+Shift+Space to toggle the overlay
@@ -3362,7 +3362,7 @@ pub fn run() {
             search_memory,
             fetch_agents,
             fetch_models,
-            run_nova_command,
+            run_phi_command,
             fetch_savings,
             transcribe_audio,
             speech_health,
@@ -3377,7 +3377,7 @@ pub fn run() {
             get_overlay_conversation,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Nova Desktop")
+        .expect("error while building PhiOS Desktop")
         .run(move |_app, event| {
             if let tauri::RunEvent::ExitRequested { .. } = event {
                 let b = backend.clone();
@@ -3450,7 +3450,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         std::env::temp_dir().join(format!(
-            "nova-{}-{}-{}",
+            "phi-{}-{}-{}",
             label,
             std::process::id(),
             nonce
@@ -3490,12 +3490,12 @@ mod tests {
     #[test]
     fn failure_message_includes_exit_code_and_tail_and_hint() {
         let msg = format_uv_sync_failure(
-            Path::new("/home/u/.nova/src"),
+            Path::new("/home/u/.phi/src"),
             Some(2),
             "error: failed to resolve numpy==2.1.3",
         );
         assert!(msg.contains("exit 2"));
-        assert!(msg.contains("/home/u/.nova/src"));
+        assert!(msg.contains("/home/u/.phi/src"));
         assert!(msg.contains("failed to resolve numpy==2.1.3"));
         assert!(msg.contains(DESKTOP_UV_SYNC_COMMAND)); // actionable next step
     }
@@ -3525,16 +3525,16 @@ mod tests {
         let msg = format_missing_rust_toolchain();
         assert!(msg.contains("cargo"));
         assert!(msg.contains("https://rustup.rs"));
-        assert!(msg.contains("nova_rust"));
+        assert!(msg.contains("phi_rust"));
         assert!(msg.contains("Visual Studio Build Tools"));
     }
 
     #[test]
     fn uv_sync_rust_failure_mentions_toolchain() {
         let msg = format_uv_sync_failure(
-            Path::new("C:\\Users\\me\\Nova"),
+            Path::new("C:\\Users\\me\\Phi"),
             Some(1),
-            "maturin failed: linker `link.exe` not found while building nova-rust",
+            "maturin failed: linker `link.exe` not found while building phi-rust",
         );
         assert!(msg.contains("exit 1"));
         assert!(msg.contains("link.exe"));
@@ -3545,12 +3545,12 @@ mod tests {
     #[test]
     fn extension_import_failure_names_verification_command() {
         let msg = format_extension_import_failure(
-            Path::new("C:\\Users\\me\\Nova"),
-            "ModuleNotFoundError: No module named 'nova_rust'",
+            Path::new("C:\\Users\\me\\Phi"),
+            "ModuleNotFoundError: No module named 'phi_rust'",
         );
-        assert!(msg.contains("nova_rust"));
+        assert!(msg.contains("phi_rust"));
         assert!(msg.contains(DESKTOP_UV_SYNC_COMMAND));
-        assert!(msg.contains("uv run python -c \"import nova_rust\""));
+        assert!(msg.contains("uv run python -c \"import phi_rust\""));
         assert!(msg.contains("ModuleNotFoundError"));
     }
 
@@ -3842,7 +3842,7 @@ mod tests {
     #[test]
     fn pending_config_rolls_back_unless_boot_confirms_it() {
         let root = std::env::temp_dir().join(format!(
-            "nova-pending-inference-{}",
+            "phi-pending-inference-{}",
             std::process::id()
         ));
         std::fs::create_dir_all(&root).unwrap();
@@ -4142,10 +4142,10 @@ mod tests {
 
     #[test]
     fn owned_child_process_helper() {
-        let Some(started) = std::env::var_os("NOVA_OWNED_CHILD_STARTED") else {
+        let Some(started) = std::env::var_os("PHI_OWNED_CHILD_STARTED") else {
             return;
         };
-        let completed = std::env::var_os("NOVA_OWNED_CHILD_COMPLETED").unwrap();
+        let completed = std::env::var_os("PHI_OWNED_CHILD_COMPLETED").unwrap();
         std::fs::write(started, "started").unwrap();
         std::thread::sleep(std::time::Duration::from_millis(500));
         std::fs::write(completed, "completed").unwrap();
@@ -4158,7 +4158,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let root = std::env::temp_dir().join(format!(
-            "nova-owned-child-{}-{unique}",
+            "phi-owned-child-{}-{unique}",
             std::process::id()
         ));
         std::fs::create_dir_all(&root).unwrap();
@@ -4175,8 +4175,8 @@ mod tests {
                 "tests::owned_child_process_helper",
                 "--nocapture",
             ])
-            .env("NOVA_OWNED_CHILD_STARTED", started_for_child)
-            .env("NOVA_OWNED_CHILD_COMPLETED", completed_for_child)
+            .env("PHI_OWNED_CHILD_STARTED", started_for_child)
+            .env("PHI_OWNED_CHILD_COMPLETED", completed_for_child)
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
             let child = spawn_owned_child(&mut cmd).unwrap();

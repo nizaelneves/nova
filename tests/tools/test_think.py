@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.tools.think import ThinkTool
+from phi.tools.think import ThinkTool
 
 
 class TestThinkTool:

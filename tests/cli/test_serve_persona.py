@@ -1,4 +1,4 @@
-"""Regression: ``nova serve`` must wire the ``SystemPromptBuilder`` into the
+"""Regression: ``phi serve`` must wire the ``SystemPromptBuilder`` into the
 agent it constructs, so SOUL.md / MEMORY.md / USER.md reach the model over HTTP.
 
 ``cli/ask.py`` (and ``cli/chat_cmd.py`` and the managed-agent executor) have
@@ -22,14 +22,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from nova.cli import cli
+from phi.cli import cli
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
 
-# ``nova.cli.serve`` as a package attribute resolves to the click
+# ``phi.cli.serve`` as a package attribute resolves to the click
 # *command* (re-exported); grab the real module to monkeypatch its globals.
-serve_mod = importlib.import_module("nova.cli.serve")
+serve_mod = importlib.import_module("phi.cli.serve")
 
 
 def _fake_engine() -> MagicMock:
@@ -51,12 +51,12 @@ def test_serve_wires_persona_builder_into_served_agent(
     """The agent built on the serve path must carry a SystemPromptBuilder whose
     assembled prompt includes SOUL.md content (regression for the HTTP persona
     loss)."""
-    from nova.agents.monitor_operative import MonitorOperativeAgent
-    from nova.agents.operative import OperativeAgent
-    from nova.agents.orchestrator import OrchestratorAgent
-    from nova.agents.simple import SimpleAgent
-    from nova.core.config import NovaConfig
-    from nova.core.registry import AgentRegistry
+    from phi.agents.monitor_operative import MonitorOperativeAgent
+    from phi.agents.operative import OperativeAgent
+    from phi.agents.orchestrator import OrchestratorAgent
+    from phi.agents.simple import SimpleAgent
+    from phi.core.config import PhiConfig
+    from phi.core.registry import AgentRegistry
 
     # Persona file with a unique sentinel we can grep for in the built prompt.
     soul = tmp_path / "SOUL.md"
@@ -72,7 +72,7 @@ def test_serve_wires_persona_builder_into_served_agent(
     if not AgentRegistry.contains(agent_name):
         AgentRegistry.register_value(agent_name, agent_classes[agent_name])
 
-    config = NovaConfig()
+    config = PhiConfig()
     config.server.host = "127.0.0.1"
     config.server.port = 8123
     config.intelligence.default_model = "test-model"
@@ -96,7 +96,7 @@ def test_serve_wires_persona_builder_into_served_agent(
     sec.engine = engine
     sec.capability_policy = None
     sec.audit_logger = None
-    monkeypatch.setattr("nova.security.setup_security", lambda *a, **k: sec)
+    monkeypatch.setattr("phi.security.setup_security", lambda *a, **k: sec)
 
     captured: dict = {}
 
@@ -105,8 +105,8 @@ def test_serve_wires_persona_builder_into_served_agent(
         return MagicMock(name="app")
 
     with (
-        patch("nova.server.app.create_app", side_effect=_capture_create_app),
-        patch("nova.server.daemon.run_server", lambda *a, **k: None),
+        patch("phi.server.app.create_app", side_effect=_capture_create_app),
+        patch("phi.server.daemon.run_server", lambda *a, **k: None),
     ):
         result = CliRunner().invoke(
             cli, ["serve", "--agent", agent_name], catch_exceptions=False

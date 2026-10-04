@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.agents._stubs import AgentResult, ToolUsingAgent
-from nova.core.config import (
+from phi.agents._stubs import AgentResult, ToolUsingAgent
+from phi.core.config import (
     CapabilitiesConfig,
-    NovaConfig,
+    PhiConfig,
     SecurityConfig,
 )
-from nova.core.events import EventBus
-from nova.core.registry import AgentRegistry
-from nova.core.types import ToolCall
-from nova.security import setup_security
-from nova.security.capabilities import CapabilityPolicy
-from nova.system import NovaSystem
-from nova.tools.repl import ReplTool
+from phi.core.events import EventBus
+from phi.core.registry import AgentRegistry
+from phi.core.types import ToolCall
+from phi.security import setup_security
+from phi.security.capabilities import CapabilityPolicy
+from phi.system import PhiSystem
+from phi.tools.repl import ReplTool
 
 
 class _ConcreteAgent(ToolUsingAgent):
@@ -67,7 +67,7 @@ def _make_mock_engine() -> MagicMock:
 
 def _has_rust() -> bool:
     try:
-        import nova_rust  # noqa: F401
+        import phi_rust  # noqa: F401
 
         return True
     except ImportError:
@@ -76,7 +76,7 @@ def _has_rust() -> bool:
 
 class TestCapabilityPolicyReachesExecutor:
     def test_no_policy_when_caps_disabled(self) -> None:
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.security = SecurityConfig(
             enabled=True,
             capabilities=CapabilitiesConfig(enabled=False),
@@ -94,7 +94,7 @@ class TestCapabilityPolicyReachesExecutor:
         assert agent._executor._capability_policy is None
 
     def test_no_policy_when_security_disabled(self) -> None:
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         cfg.security = SecurityConfig(enabled=False)
         engine = _make_mock_engine()
         sec = setup_security(cfg, engine)
@@ -117,10 +117,10 @@ class TestCapabilityPolicyReachesExecutor:
         policy.deny(key, "code:execute")
         limiter = _RecordingLimiter()
         repl = ReplTool()
-        config = NovaConfig()
+        config = PhiConfig()
         config.agent.context_from_memory = False
         config.traces.enabled = False
-        system = NovaSystem(
+        system = PhiSystem(
             config=config,
             bus=EventBus(),
             engine=_make_mock_engine(),
@@ -142,7 +142,7 @@ class TestCapabilityPolicyReachesExecutor:
     def test_cli_ask_propagates_runtime_identity_and_limiter(self, monkeypatch) -> None:
         import importlib
 
-        ask_module = importlib.import_module("nova.cli.ask")
+        ask_module = importlib.import_module("phi.cli.ask")
 
         key = "restricted-cli-ask-agent"
         AgentRegistry.register_value(key, _CallingAgent)
@@ -151,11 +151,11 @@ class TestCapabilityPolicyReachesExecutor:
         policy.deny(key, "code:execute")
         limiter = _RecordingLimiter()
         repl = ReplTool()
-        config = NovaConfig()
+        config = PhiConfig()
         config.agent.context_from_memory = False
         monkeypatch.setattr(ask_module, "_build_tools", lambda *args: [repl])
         monkeypatch.setattr(
-            "nova.mcp.loader.load_mcp_tools_from_config",
+            "phi.mcp.loader.load_mcp_tools_from_config",
             lambda *args, **kwargs: ([], []),
         )
 

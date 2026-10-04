@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from nova.bench._stubs import BaseBenchmark, BenchmarkResult, BenchmarkSuite
+from phi.bench._stubs import BaseBenchmark, BenchmarkResult, BenchmarkSuite
 
 
 class TestBenchmarkResult:

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from nova.core.config import (
+from phi.core.config import (
     AgentConfig,
     HardwareInfo,
-    NovaConfig,
+    PhiConfig,
     ServerConfig,
     generate_default_toml,
 )
@@ -49,14 +49,14 @@ class TestServerConfig:
         assert cfg.port == 9000
 
 
-class TestNovaConfig:
+class TestPhiConfig:
     def test_has_server(self):
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         assert hasattr(cfg, "server")
         assert isinstance(cfg.server, ServerConfig)
 
     def test_agent_config_expanded(self):
-        cfg = NovaConfig()
+        cfg = PhiConfig()
         assert hasattr(cfg.agent, "default_tools")  # backward-compat property
         assert hasattr(cfg.agent, "tools")
         assert hasattr(cfg.agent, "objective")

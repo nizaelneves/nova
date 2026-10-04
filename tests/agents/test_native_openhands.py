@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from nova.agents._stubs import AgentContext
-from nova.agents.native_openhands import NativeOpenHandsAgent
-from nova.core.events import EventBus, EventType
-from nova.core.registry import AgentRegistry
-from nova.core.types import Conversation, Message, Role, ToolCall, ToolResult
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents._stubs import AgentContext
+from phi.agents.native_openhands import NativeOpenHandsAgent
+from phi.core.events import EventBus, EventType
+from phi.core.registry import AgentRegistry
+from phi.core.types import Conversation, Message, Role, ToolCall, ToolResult
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -579,8 +579,8 @@ class TestUrlExpansion:
     ):
         import httpx
 
-        from nova.core.events import EventBus, EventType
-        from nova.security.capabilities import CapabilityPolicy
+        from phi.core.events import EventBus, EventType
+        from phi.security.capabilities import CapabilityPolicy
 
         class _RecordingLimiter:
             def __init__(self):

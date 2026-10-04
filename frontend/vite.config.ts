@@ -19,8 +19,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Nova',
-        short_name: 'Nova',
+        name: 'PhiOS',
+        short_name: 'Phi',
         description: 'On-device AI assistant',
         theme_color: '#161618',
         background_color: '#161618',
@@ -37,7 +37,7 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: '../src/nova/server/static',
+    outDir: '../src/phi/server/static',
     emptyOutDir: true,
     // Preserve the Vite 6 browser baseline for existing desktop webviews.
     target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],

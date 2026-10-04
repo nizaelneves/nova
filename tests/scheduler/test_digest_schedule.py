@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from click.testing import CliRunner
 
-from nova.cli.digest_cmd import digest
+from phi.cli.digest_cmd import digest
 
 # ---------------------------------------------------------------------------
 # CLI tests
@@ -17,7 +17,7 @@ from nova.cli.digest_cmd import digest
 
 
 class TestDigestScheduleCLI:
-    """Tests for the ``nova digest --schedule`` flag."""
+    """Tests for the ``phi digest --schedule`` flag."""
 
     def test_schedule_show_status(self):
         """``--schedule ""`` shows the current schedule from config."""
@@ -27,7 +27,7 @@ class TestDigestScheduleCLI:
         mock_cfg.digest.timezone = "America/Los_Angeles"
 
         runner = CliRunner()
-        with patch("nova.cli.digest_cmd.load_config", return_value=mock_cfg):
+        with patch("phi.cli.digest_cmd.load_config", return_value=mock_cfg):
             result = runner.invoke(digest, ["--schedule", ""])
 
         assert result.exit_code == 0
@@ -47,15 +47,15 @@ class TestDigestScheduleCLI:
         runner = CliRunner()
         with (
             patch(
-                "nova.cli.digest_cmd.load_config",
+                "phi.cli.digest_cmd.load_config",
                 return_value=mock_cfg,
             ),
             patch(
-                "nova.cli.digest_cmd.DEFAULT_CONFIG_PATH",
+                "phi.cli.digest_cmd.DEFAULT_CONFIG_PATH",
                 config_path,
             ),
             patch(
-                "nova.cli.digest_cmd._create_scheduler_task",
+                "phi.cli.digest_cmd._create_scheduler_task",
                 return_value="abc123",
             ) as mock_create,
         ):
@@ -81,12 +81,12 @@ class TestDigestScheduleCLI:
         runner = CliRunner()
         with (
             patch(
-                "nova.cli.digest_cmd.load_config",
+                "phi.cli.digest_cmd.load_config",
                 return_value=mock_cfg,
             ),
-            patch("nova.cli.digest_cmd._save_digest_schedule") as mock_save,
+            patch("phi.cli.digest_cmd._save_digest_schedule") as mock_save,
             patch(
-                "nova.cli.digest_cmd._cancel_scheduler_tasks",
+                "phi.cli.digest_cmd._cancel_scheduler_tasks",
                 return_value=1,
             ),
         ):
@@ -97,11 +97,11 @@ class TestDigestScheduleCLI:
         mock_save.assert_called_once_with(enabled=False, cron="0 6 * * *")
 
     def test_scheduler_task_persists_digest_timezone(self, tmp_path):
-        from nova.cli import digest_cmd
-        from nova.scheduler.store import SchedulerStore
+        from phi.cli import digest_cmd
+        from phi.scheduler.store import SchedulerStore
 
         config_path = tmp_path / "config.toml"
-        with patch("nova.cli.digest_cmd.DEFAULT_CONFIG_PATH", config_path):
+        with patch("phi.cli.digest_cmd.DEFAULT_CONFIG_PATH", config_path):
             task_id = digest_cmd._create_scheduler_task(
                 "0 6 * * *",
                 "America/Los_Angeles",
@@ -135,7 +135,7 @@ class TestDigestScheduleEndpoints:
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
 
-        from nova.server.digest_routes import create_digest_router
+        from phi.server.digest_routes import create_digest_router
 
         app = FastAPI()
         app.include_router(create_digest_router())
@@ -148,7 +148,7 @@ class TestDigestScheduleEndpoints:
         mock_cfg.digest.schedule = "0 6 * * *"
 
         with patch(
-            "nova.server.digest_routes.load_config",
+            "phi.server.digest_routes.load_config",
             return_value=mock_cfg,
         ):
             resp = client.get("/api/digest/schedule")
@@ -167,12 +167,12 @@ class TestDigestScheduleEndpoints:
 
         with (
             patch(
-                "nova.server.digest_routes.load_config",
+                "phi.server.digest_routes.load_config",
                 return_value=mock_cfg,
             ),
-            patch("nova.server.digest_routes._save_digest_schedule") as mock_save,
+            patch("phi.server.digest_routes._save_digest_schedule") as mock_save,
             patch(
-                "nova.server.digest_routes._create_scheduler_task",
+                "phi.server.digest_routes._create_scheduler_task",
                 return_value="task123",
             ) as mock_create,
         ):
@@ -199,12 +199,12 @@ class TestDigestScheduleEndpoints:
 
         with (
             patch(
-                "nova.server.digest_routes.load_config",
+                "phi.server.digest_routes.load_config",
                 return_value=mock_cfg,
             ),
-            patch("nova.server.digest_routes._save_digest_schedule") as mock_save,
+            patch("phi.server.digest_routes._save_digest_schedule") as mock_save,
             patch(
-                "nova.server.digest_routes._cancel_scheduler_tasks",
+                "phi.server.digest_routes._cancel_scheduler_tasks",
                 return_value=1,
             ) as mock_cancel,
         ):

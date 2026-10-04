@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nova.tools.file_read import FileReadTool
+from phi.tools.file_read import FileReadTool
 
 
 class TestFileReadTool:

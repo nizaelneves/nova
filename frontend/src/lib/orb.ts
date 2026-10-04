@@ -1,9 +1,9 @@
 /**
- * The Nova orb is a small round emoji face. Pure maths only, no drawing.
+ * The Phi orb is a small round emoji face. Pure maths only, no drawing.
  *
  * It does two things:
  *   1. while idle, its eyes look to the right and to the left, slowly;
- *   2. while Nova speaks, it looks straight ahead and blinks.
+ *   2. while Phi speaks, it looks straight ahead and blinks.
  */
 
 /** Moves `current` toward `target` smoothly. Rises a little faster than it falls. */

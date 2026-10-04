@@ -5,19 +5,19 @@ from __future__ import annotations
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from nova.connectors._stubs import Document
-from nova.core.registry import ConnectorRegistry, ToolRegistry
+from phi.connectors._stubs import Document
+from phi.core.registry import ConnectorRegistry, ToolRegistry
 
 
 def test_digest_collect_registered():
-    from nova.tools.digest_collect import DigestCollectTool
+    from phi.tools.digest_collect import DigestCollectTool
 
     ToolRegistry.register_value("digest_collect", DigestCollectTool)
     assert ToolRegistry.contains("digest_collect")
 
 
 def test_digest_collect_executes():
-    from nova.tools.digest_collect import DigestCollectTool
+    from phi.tools.digest_collect import DigestCollectTool
 
     tool = DigestCollectTool()
 
@@ -49,7 +49,7 @@ def test_digest_collect_executes():
 
 
 def test_digest_collect_missing_connector():
-    from nova.tools.digest_collect import DigestCollectTool
+    from phi.tools.digest_collect import DigestCollectTool
 
     tool = DigestCollectTool()
 

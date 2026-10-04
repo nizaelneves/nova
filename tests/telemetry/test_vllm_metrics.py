@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from nova.telemetry.vllm_metrics import (
+from phi.telemetry.vllm_metrics import (
     VLLMMetrics,
     VLLMMetricsScraper,
     _parse_gauge,
@@ -170,7 +170,7 @@ class TestVLLMMetricsScraper:
             def raise_for_status(self):
                 pass
 
-        target = "nova.telemetry.vllm_metrics.httpx.get"
+        target = "phi.telemetry.vllm_metrics.httpx.get"
         with patch(target, return_value=FakeResp()):
             metrics = scraper.scrape()
 
@@ -190,7 +190,7 @@ class TestVLLMMetricsScraper:
                 "Server Error", request=request, response=response
             )
 
-        target = "nova.telemetry.vllm_metrics.httpx.get"
+        target = "phi.telemetry.vllm_metrics.httpx.get"
         with patch(target, side_effect=raise_status_error):
             metrics = scraper.scrape()
 

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
-import { getBase } from '../../lib/api';
+import { getBase, fetchHomeSettings } from '../../lib/api';
 import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
 import {
@@ -12,10 +12,12 @@ import {
 import { MicButton } from './MicButton';
 import { AttachMenu } from './AttachMenu';
 import { EngineMenu } from './EngineMenu';
+import { CLI_ENGINES_ENABLED } from '../../lib/features';
 import { Icon } from '../Icon';
 import { SyncButton } from '../SyncButton';
 import { isCliModel, thinkSupport } from '../../lib/model-capabilities';
 import { useSpeech } from '../../hooks/useSpeech';
+import { useClapToActivate } from '../../hooks/useClapToActivate';
 import { speakReply, stopSpeaking } from '../../lib/voiceReply';
 import type {
   ChatMessage,
@@ -166,6 +168,37 @@ export function InputArea() {
       await startRecording();
     }
   }, [speechState, startRecording, stopRecording]);
+
+  const clapToActivate = useAppStore((s) => s.settings.clapToActivate);
+  const handleClapWake = useCallback(async () => {
+    let name = '';
+    try {
+      name = (await fetchHomeSettings()).display_name.trim();
+    } catch {
+      // No name available — greet without one rather than failing silently.
+    }
+    const greeting = name ? `Oi, ${name}! Como posso te ajudar?` : 'Oi! Como posso te ajudar?';
+    try {
+      await speakReply(greeting);
+      // speakReply resolves once playback *starts*, not once it ends — wait
+      // for it to actually finish before opening the mic, so Phi's own
+      // greeting is never picked up as the start of the user's recording.
+      await new Promise<void>((resolve) => {
+        if (!useAppStore.getState().speaking) { resolve(); return; }
+        const unsubscribe = useAppStore.subscribe((s) => {
+          if (!s.speaking) { unsubscribe(); resolve(); }
+        });
+      });
+    } catch {
+      // Voice backend unavailable — still open the mic so clapping isn't a dead end.
+    }
+    await startRecording();
+  }, [startRecording]);
+
+  useClapToActivate(
+    clapToActivate && speechState !== 'recording',
+    useCallback(() => { void handleClapWake(); }, [handleClapWake]),
+  );
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -502,7 +535,7 @@ export function InputArea() {
             if (spoke?.notice) toast.info(spoke.notice, { duration: 6000 });
           })
           .catch((err) => {
-            toast.error(err instanceof Error ? err.message : 'Nova could not speak', { duration: 8000 });
+            toast.error(err instanceof Error ? err.message : 'Phi could not speak', { duration: 8000 });
           });
       }
     }
@@ -555,7 +588,7 @@ export function InputArea() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={selectedModel ? 'Command Nova' : 'Pick a model first (Ctrl+K)...'}
+          placeholder={selectedModel ? 'How can I assist you today?' : 'Pick a model first (Ctrl+K)...'}
           rows={1}
           className="composer-text"
           disabled={streamState.isStreaming || modelLoading}
@@ -563,18 +596,6 @@ export function InputArea() {
         <div className="composer-bar">
           <div className="composer-group">
             <AttachMenu disabled={streamState.isStreaming} />
-            <button
-              type="button"
-              className="composer-chip"
-              data-active={deepResearch}
-              onClick={() => setDeepResearch(!deepResearch)}
-              disabled={streamState.isStreaming}
-              aria-pressed={deepResearch}
-              title={deepResearch ? 'Think: on (searches your synced data)' : 'Think: off'}
-            >
-              <Icon name="lightbulb-bolt" size={14} />
-              Think
-            </button>
             <button
               type="button"
               className="composer-chip max-w-[13rem]"
@@ -586,16 +607,28 @@ export function InputArea() {
               <span className="truncate">{selectedModel || 'Select model'}</span>
               <Icon name="alt-arrow-down" size={12} />
             </button>
-            <EngineMenu disabled={streamState.isStreaming} />
+            {CLI_ENGINES_ENABLED && <EngineMenu disabled={streamState.isStreaming} />}
           </div>
           <div className="composer-group">
+            <button
+              type="button"
+              className="composer-icon"
+              data-on={deepResearch}
+              onClick={() => setDeepResearch(!deepResearch)}
+              disabled={streamState.isStreaming}
+              aria-pressed={deepResearch}
+              aria-label="Think"
+              title={deepResearch ? 'Think: ON' : 'Think: OFF'}
+            >
+              <Icon name="lightbulb-bolt" size={20} />
+            </button>
             <button
               type="button"
               className="composer-icon"
               data-on={voiceReplies === 'always'}
               onClick={() => updateSettings({ voiceReplies: voiceReplies === 'always' ? 'off' : 'always' })}
               aria-pressed={voiceReplies === 'always'}
-              title={voiceReplies === 'always' ? 'Nova speaks every reply (click to mute)' : 'Make Nova speak every reply'}
+              title={voiceReplies === 'always' ? 'Voice Mode: ON' : 'Voice Mode: OFF'}
             >
               <Icon name="soundwave" size={20} />
             </button>

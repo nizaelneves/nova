@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import Message, Role
-from nova.security.guardrails import GuardrailsEngine, SecurityBlockError
-from nova.security.types import RedactionMode
+from phi.core.events import EventBus, EventType
+from phi.core.types import Message, Role
+from phi.security.guardrails import GuardrailsEngine, SecurityBlockError
+from phi.security.types import RedactionMode
 
 
 def _make_mock_engine(response_content: str = "Hello!") -> MagicMock:

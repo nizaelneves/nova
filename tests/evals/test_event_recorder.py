@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 
-from nova.evals.core.event_recorder import AgentEvent, EventRecorder, EventType
+from phi.evals.core.event_recorder import AgentEvent, EventRecorder, EventType
 
 
 class TestEventType:

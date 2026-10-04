@@ -5,13 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Iterator, Optional
 
-from nova.connectors._stubs import (
+from phi.connectors._stubs import (
     Attachment,
     BaseConnector,
     Document,
     SyncStatus,
 )
-from nova.core.registry import ConnectorRegistry
+from phi.core.registry import ConnectorRegistry
 
 
 class FakeConnector(BaseConnector):

@@ -9,16 +9,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-pytest.importorskip("fastapi", reason="nova[server] not installed")
+pytest.importorskip("fastapi", reason="phi[server] not installed")
 
-from nova.channels._stubs import (
+from phi.channels._stubs import (
     BaseChannel,
     ChannelHandler,
     ChannelStatus,
 )
-from nova.core.events import EventBus
-from nova.server.channel_bridge import ChannelBridge
-from nova.server.session_store import SessionStore
+from phi.core.events import EventBus
+from phi.server.channel_bridge import ChannelBridge
+from phi.server.session_store import SessionStore
 
 
 class FakeChannel(BaseChannel):
@@ -74,7 +74,7 @@ def bus():
 @pytest.fixture
 def mock_system():
     system = MagicMock()
-    system.ask.return_value = {"content": "Hello from Nova!"}
+    system.ask.return_value = {"content": "Hello from Phi!"}
     return system
 
 
@@ -153,7 +153,7 @@ class TestChatRouting:
         mock_system.ask.assert_called_once()
         call_kwargs = mock_system.ask.call_args
         assert "2+2" in str(call_kwargs)
-        assert reply == "Hello from Nova!"
+        assert reply == "Hello from Phi!"
 
     def test_stores_conversation_history(self, bridge, store, mock_system):
         bridge.handle_incoming("user1", "hello", "fake")

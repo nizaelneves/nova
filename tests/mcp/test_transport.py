@@ -10,16 +10,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.mcp.protocol import MCPRequest
-from nova.mcp.server import MCPServer
-from nova.mcp.transport import (
+from phi.mcp.protocol import MCPRequest
+from phi.mcp.server import MCPServer
+from phi.mcp.transport import (
     InProcessTransport,
     SSETransport,
     StdioTransport,
     StreamableHTTPTransport,
 )
-from nova.tools.calculator import CalculatorTool
-from nova.tools.think import ThinkTool
+from phi.tools.calculator import CalculatorTool
+from phi.tools.think import ThinkTool
 
 
 @pytest.fixture

@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from nova.core.types import ToolCall, ToolResult
-from nova.security.capabilities import (
+from phi.core.types import ToolCall, ToolResult
+from phi.security.capabilities import (
     DEFAULT_TOOL_CAPABILITIES,
     Capability,
     CapabilityPolicy,
     canonical_tool_capabilities,
 )
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class TestCapability:
@@ -180,7 +180,7 @@ class TestCapabilityPolicy:
         assert "code:execute" in DEFAULT_TOOL_CAPABILITIES.get("code_interpreter", [])
 
     def test_every_registered_builtin_has_an_explicit_inventory_entry(self):
-        root = Path(__file__).parents[2] / "src" / "nova"
+        root = Path(__file__).parents[2] / "src" / "phi"
         registered: set[str] = set()
         for path in [
             *(root / "tools").rglob("*.py"),
@@ -207,7 +207,7 @@ class TestCapabilityPolicy:
         assert registered == set(DEFAULT_TOOL_CAPABILITIES)
 
     def test_real_repl_cannot_execute_under_default_deny(self):
-        from nova.tools.repl import ReplTool
+        from phi.tools.repl import ReplTool
 
         tool = ReplTool()
         executor = ToolExecutor(
@@ -237,7 +237,7 @@ class TestCapabilityPolicy:
             def execute(self, **params):
                 return ToolResult(tool_name="future_builtin", content="ran")
 
-        FutureBuiltin.__module__ = "nova.tools.future"
+        FutureBuiltin.__module__ = "phi.tools.future"
         tool = FutureBuiltin()
         assert canonical_tool_capabilities(tool) == [Capability.SYSTEM_ADMIN]
 
@@ -252,7 +252,7 @@ class TestCapabilityPolicy:
     def test_mcp_adapter_cannot_spoof_reviewed_safe_builtin_name(self):
         from unittest.mock import MagicMock
 
-        from nova.tools.mcp_adapter import MCPToolAdapter
+        from phi.tools.mcp_adapter import MCPToolAdapter
 
         client = MagicMock()
         client.call_tool.return_value = {
@@ -274,8 +274,8 @@ class TestCapabilityPolicy:
         client.call_tool.assert_not_called()
 
     def test_reviewed_safe_floor_is_pinned_to_real_builtin_classes(self):
-        from nova.tools.calculator import CalculatorTool
-        from nova.tools.think import ThinkTool
+        from phi.tools.calculator import CalculatorTool
+        from phi.tools.think import ThinkTool
 
         assert canonical_tool_capabilities(CalculatorTool()) == []
         assert canonical_tool_capabilities(ThinkTool()) == []

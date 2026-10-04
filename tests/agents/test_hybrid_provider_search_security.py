@@ -6,14 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import nova.agents.hybrid.conductor as conductor_module
-import nova.agents.hybrid.minions as minions_module
-from nova.agents._stubs import AgentContext
-from nova.agents.hybrid.advisors import AdvisorsAgent
-from nova.agents.hybrid.conductor import ConductorAgent
-from nova.agents.hybrid.minions import MinionsAgent
-from nova.core.events import EventBus, EventType
-from nova.security.capabilities import CapabilityPolicy
+import phi.agents.hybrid.conductor as conductor_module
+import phi.agents.hybrid.minions as minions_module
+from phi.agents._stubs import AgentContext
+from phi.agents.hybrid.advisors import AdvisorsAgent
+from phi.agents.hybrid.conductor import ConductorAgent
+from phi.agents.hybrid.minions import MinionsAgent
+from phi.core.events import EventBus, EventType
+from phi.security.capabilities import CapabilityPolicy
 
 
 class _Limiter:

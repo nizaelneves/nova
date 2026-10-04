@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from nova.sandbox.mount_security import (
+from phi.sandbox.mount_security import (
     DEFAULT_BLOCKED_PATTERNS,
     AllowedRoot,
     MountAllowlist,

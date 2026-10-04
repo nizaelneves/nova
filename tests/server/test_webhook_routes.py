@@ -9,12 +9,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-pytest.importorskip("fastapi", reason="nova[server] not installed")
+pytest.importorskip("fastapi", reason="phi[server] not installed")
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from nova.server.webhook_routes import create_webhook_router
+from phi.server.webhook_routes import create_webhook_router
 
 
 @pytest.fixture

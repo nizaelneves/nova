@@ -1,4 +1,4 @@
-"""Tests for the ``nova channel`` CLI commands."""
+"""Tests for the ``phi channel`` CLI commands."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from nova.channels._stubs import ChannelStatus
-from nova.cli import cli
+from phi.channels._stubs import ChannelStatus
+from phi.cli import cli
 
 
 def _patch_channel(
@@ -25,11 +25,11 @@ def _patch_channel(
     bridge_instance.status.return_value = status_return
 
     config_patch = mock.patch(
-        "nova.core.config.load_config",
+        "phi.core.config.load_config",
         return_value=cfg,
     )
     get_channel_patch = mock.patch(
-        "nova.cli.channel_cmd._get_channel",
+        "phi.cli.channel_cmd._get_channel",
         return_value=bridge_instance,
     )
     return config_patch, get_channel_patch, bridge_instance

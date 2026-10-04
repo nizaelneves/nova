@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nova.evals.core.types import EvalRecord
-from nova.evals.datasets.loghub import LogHubDataset
-from nova.evals.scorers.loghub_scorer import LogHubScorer
+from phi.evals.core.types import EvalRecord
+from phi.evals.datasets.loghub import LogHubDataset
+from phi.evals.scorers.loghub_scorer import LogHubScorer
 
 
 class TestLogHubDataset:
@@ -147,20 +147,20 @@ class TestLogHubScorer:
 
 class TestLogHubCLI:
     def test_in_benchmarks_dict(self) -> None:
-        from nova.evals.cli import BENCHMARKS
+        from phi.evals.cli import BENCHMARKS
 
         assert "loghub" in BENCHMARKS
         assert BENCHMARKS["loghub"]["category"] == "agentic"
 
     def test_build_dataset(self) -> None:
-        from nova.evals.cli import _build_dataset
+        from phi.evals.cli import _build_dataset
 
         ds = _build_dataset("loghub")
         assert ds is not None
         assert ds.dataset_id == "loghub"
 
     def test_build_scorer(self) -> None:
-        from nova.evals.cli import _build_scorer
+        from phi.evals.cli import _build_scorer
 
         s = _build_scorer("loghub", _mock_backend(), "test-model")
         assert s is not None

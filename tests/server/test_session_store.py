@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from nova.server.session_store import SessionStore
+from phi.server.session_store import SessionStore
 
 
 @pytest.fixture

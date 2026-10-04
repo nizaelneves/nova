@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from nova.core.registry import ModelRegistry
-from nova.core.types import ModelSpec
-from nova.intelligence.model_catalog import (
+from phi.core.registry import ModelRegistry
+from phi.core.types import ModelSpec
+from phi.intelligence.model_catalog import (
     BUILTIN_MODELS,
     merge_discovered_models,
     register_builtin_models,

@@ -6,7 +6,7 @@ import builtins
 import sys
 from unittest.mock import MagicMock
 
-from nova.tools.audio_tool import AudioTranscribeTool
+from phi.tools.audio_tool import AudioTranscribeTool
 
 
 class TestAudioTranscribeTool:

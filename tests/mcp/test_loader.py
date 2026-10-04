@@ -1,7 +1,7 @@
-"""Regression tests for nova.mcp.loader.load_mcp_tools_from_config.
+"""Regression tests for phi.mcp.loader.load_mcp_tools_from_config.
 
 Closes the gap that #461 surfaced — MCP tools were silently dropped on
-`nova ask` and `nova serve` because neither path read
+`phi ask` and `phi serve` because neither path read
 `config.tools.mcp.servers`. The loader is the shared helper they now
 both call.
 """
@@ -32,10 +32,10 @@ def _fake_tool(name):
 def _mock_mcp_stack():
     """Patch MCPClient / transports / MCPToolProvider so no real I/O happens."""
     with (
-        patch("nova.mcp.client.MCPClient") as MockClient,
-        patch("nova.mcp.transport.StreamableHTTPTransport") as MockHttp,
-        patch("nova.mcp.transport.StdioTransport") as MockStdio,
-        patch("nova.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("phi.mcp.client.MCPClient") as MockClient,
+        patch("phi.mcp.transport.StreamableHTTPTransport") as MockHttp,
+        patch("phi.mcp.transport.StdioTransport") as MockStdio,
+        patch("phi.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         # Default: any provider discovers no tools (per-test overrides as needed)
         MockProvider.return_value.discover.return_value = []
@@ -50,7 +50,7 @@ def _mock_mcp_stack():
 
 class TestLoaderEarlyReturns:
     def test_disabled_returns_empty(self, _mock_mcp_stack):
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(enabled=False, servers=[{"url": "http://x"}])
         tools, clients = load_mcp_tools_from_config(cfg)
@@ -60,7 +60,7 @@ class TestLoaderEarlyReturns:
         _mock_mcp_stack["http"].assert_not_called()
 
     def test_empty_servers_returns_empty(self, _mock_mcp_stack):
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(enabled=True, servers=[])
         tools, clients = load_mcp_tools_from_config(cfg)
@@ -68,7 +68,7 @@ class TestLoaderEarlyReturns:
         assert clients == []
 
     def test_malformed_json_logs_warning_returns_empty(self, _mock_mcp_stack, caplog):
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = MagicMock()
         cfg.enabled = True
@@ -83,7 +83,7 @@ class TestLoaderEarlyReturns:
 class TestLoaderTokenPlumbing:
     def test_token_passed_to_streamable_http(self, _mock_mcp_stack):
         """Regression for #461 — token in cfg → StreamableHTTPTransport(token=...)."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(
             enabled=True,
@@ -103,7 +103,7 @@ class TestLoaderTokenPlumbing:
 
     def test_no_token_passes_none(self, _mock_mcp_stack):
         """Missing token in cfg → token=None (not 'undefined' or KeyError)."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(
             enabled=True,
@@ -117,7 +117,7 @@ class TestLoaderTokenPlumbing:
 
     def test_stdio_server_does_not_get_token_kwarg(self, _mock_mcp_stack):
         """StdioTransport doesn't take a token (unix-socket auth is OOB)."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(
             enabled=True,
@@ -134,7 +134,7 @@ class TestLoaderTokenPlumbing:
 class TestLoaderFiltering:
     def test_allowed_names_filter_applied(self, _mock_mcp_stack):
         """allowed_names limits the returned tools to that set."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         _mock_mcp_stack["provider"].return_value.discover.return_value = [
             _fake_tool("alpha"),
@@ -150,7 +150,7 @@ class TestLoaderFiltering:
 
     def test_include_tools_per_server(self, _mock_mcp_stack):
         """Per-server include_tools restricts to just those names."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         _mock_mcp_stack["provider"].return_value.discover.return_value = [
             _fake_tool("alpha"),
@@ -165,7 +165,7 @@ class TestLoaderFiltering:
 
     def test_exclude_tools_per_server(self, _mock_mcp_stack):
         """Per-server exclude_tools drops the named tools."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         _mock_mcp_stack["provider"].return_value.discover.return_value = [
             _fake_tool("alpha"),
@@ -185,7 +185,7 @@ class TestLoaderClientLifetime:
         the transports' httpx sessions stay open. (#461 adversarial
         review caught this.) The list returned MUST contain a client
         per successfully-initialized server."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         cfg = _make_mcp_cfg(
             enabled=True,
@@ -202,7 +202,7 @@ class TestLoaderFailureIsolation:
     def test_one_server_failure_doesnt_abort_others(self, _mock_mcp_stack, caplog):
         """When one server's initialize() raises, the loader logs and
         moves on — the remaining servers still contribute tools."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         # First initialize() raises, second succeeds
         bad_client = MagicMock()
@@ -237,7 +237,7 @@ class TestLoaderFailureIsolation:
         underlying StdioTransport subprocess or StreamableHTTPTransport
         connection pool.
         """
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         bad_client = MagicMock()
         bad_client.initialize.side_effect = RuntimeError("handshake failed")
@@ -257,7 +257,7 @@ class TestLoaderFailureIsolation:
         self, _mock_mcp_stack, caplog
     ):
         """The handshake remains the reported discovery failure if close fails."""
-        from nova.mcp.loader import load_mcp_tools_from_config
+        from phi.mcp.loader import load_mcp_tools_from_config
 
         bad_client = MagicMock()
         bad_client.initialize.side_effect = RuntimeError("handshake failed")

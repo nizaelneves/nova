@@ -7,8 +7,8 @@ export interface AgentEvent {
   data: Record<string, unknown>;
 }
 
-const WS_AUTH_PROTOCOL = 'nova.auth.v1';
-const WS_KEY_PROTOCOL_PREFIX = 'nova.key.b64url.';
+const WS_AUTH_PROTOCOL = 'phi.auth.v1';
+const WS_KEY_PROTOCOL_PREFIX = 'phi.key.b64url.';
 
 function utf8ToBase64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);

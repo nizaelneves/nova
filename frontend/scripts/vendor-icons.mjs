@@ -1,4 +1,4 @@
-// Downloads the icons Nova uses from Iconify (Solar, "linear" style) and saves
+// Downloads the icons Phi uses from Iconify (Solar, "linear" style) and saves
 // them inside the project, so the app never needs the internet to draw an icon.
 //
 //   node scripts/vendor-icons.mjs
@@ -20,10 +20,15 @@ const ICONS = [
   'pie-chart-2', 'transfer-horizontal', 'document-text', 'upload-minimalistic',
   'code', 'clock-circle', 'key-minimalistic', 'info-circle', 'danger-triangle',
   'eye', 'command', 'logout-2', 'play-circle',
+  // tasks board
+  'flag', 'repeat', 'widget-2', 'sort', 'hamburger-menu', 'menu-dots',
+  'list-check', 'inbox',
+  // finances
+  'arrow-down', 'card', 'wallet-money', 'buildings-2',
 ].map((name) => `${name}-linear`);
 
 const url = `https://api.iconify.design/${PREFIX}.json?icons=${ICONS.join(',')}`;
-const res = await fetch(url, { headers: { 'User-Agent': 'nova-vendor-icons' } });
+const res = await fetch(url, { headers: { 'User-Agent': 'phi-vendor-icons' } });
 if (!res.ok) throw new Error(`Iconify answered ${res.status}`);
 const data = await res.json();
 

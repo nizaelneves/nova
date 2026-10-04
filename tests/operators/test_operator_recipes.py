@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from nova.operators.loader import load_operator
+from phi.operators.loader import load_operator
 
 _OPERATORS_DIR = (
     Path(__file__).parent.parent.parent
     / "src"
-    / "nova"
+    / "phi"
     / "recipes"
     / "data"
     / "operators"

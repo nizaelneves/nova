@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from nova.core.events import EventBus, EventType
-from nova.core.types import ToolResult
-from nova.skills.executor import SkillExecutor
-from nova.skills.types import SkillManifest, SkillStep
-from nova.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phi.core.events import EventBus, EventType
+from phi.core.types import ToolResult
+from phi.skills.executor import SkillExecutor
+from phi.skills.types import SkillManifest, SkillStep
+from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class EchoTool(BaseTool):
@@ -270,7 +270,7 @@ class TestSkillExecutorSubSkills:
         )
 
         def resolve_skill(name, context):
-            from nova.skills.executor import SkillResult
+            from phi.skills.executor import SkillResult
 
             if name == "upper_skill":
                 return executor.run(child_manifest, initial_context=context)
@@ -303,7 +303,7 @@ class TestSkillExecutorSubSkills:
         executor = SkillExecutor(tool_executor)
 
         def resolve_skill(name, context):
-            from nova.skills.executor import SkillResult
+            from phi.skills.executor import SkillResult
 
             return SkillResult(skill_name=name, success=False)
 
@@ -323,7 +323,7 @@ class TestSkillExecutorSubSkills:
 
 class TestSkillTool:
     def test_skill_as_tool(self):
-        from nova.skills.tool_adapter import SkillTool
+        from phi.skills.tool_adapter import SkillTool
 
         tools = [EchoTool()]
         tool_executor = ToolExecutor(tools)

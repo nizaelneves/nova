@@ -3,7 +3,7 @@ name: growth-marketing-strategy
 description: Plan and prioritize growth marketing strategy and experiments (acquisition, activation, retention, revenue, referral, funnels, channels, tests). Use when the user asks how to grow a product or business, which channel or tactic to try, how to structure an experiment, or how to prioritize ideas.
 version: 0.1.0
 metadata:
-  nova:
+  phi:
     triggers:
       - growth
       - grow

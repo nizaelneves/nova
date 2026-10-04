@@ -9,10 +9,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nova.channels._stubs import ChannelMessage, ChannelStatus
-from nova.channels.whatsapp_baileys import WhatsAppBaileysChannel
-from nova.core.events import EventBus, EventType
-from nova.core.registry import ChannelRegistry
+from phi.channels._stubs import ChannelMessage, ChannelStatus
+from phi.channels.whatsapp_baileys import WhatsAppBaileysChannel
+from phi.core.events import EventBus, EventType
+from phi.core.registry import ChannelRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +45,7 @@ class TestInit:
     def test_defaults(self):
         ch = WhatsAppBaileysChannel()
         assert ch._auth_dir == ""
-        assert ch._assistant_name == "Nova"
+        assert ch._assistant_name == "Phi"
         assert ch._assistant_has_own_number is False
         assert ch._status == ChannelStatus.DISCONNECTED
         assert ch._process is None

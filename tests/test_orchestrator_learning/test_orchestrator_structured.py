@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from nova.agents.orchestrator import OrchestratorAgent
-from nova.core.types import ToolResult
-from nova.engine._stubs import InferenceEngine
-from nova.tools._stubs import BaseTool, ToolSpec
+from phi.agents.orchestrator import OrchestratorAgent
+from phi.core.types import ToolResult
+from phi.engine._stubs import InferenceEngine
+from phi.tools._stubs import BaseTool, ToolSpec
 
 # -- Mocks -------------------------------------------------------------------
 

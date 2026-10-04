@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from nova.connectors.hybrid_search import HybridSearch
-from nova.connectors.store import KnowledgeStore
+from phi.connectors.hybrid_search import HybridSearch
+from phi.connectors.store import KnowledgeStore
 
 
 def _store_doc(

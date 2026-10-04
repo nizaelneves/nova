@@ -8,11 +8,11 @@ from typing import Any, Dict, List
 import httpx
 import pytest
 
-from nova.connectors import anytype as module
-from nova.connectors.anytype import AnytypeConnector, AnytypeError, clean_markdown
-from nova.connectors.pipeline import IngestionPipeline
-from nova.connectors.store import KnowledgeStore
-from nova.connectors.sync_engine import SyncEngine
+from phi.connectors import anytype as module
+from phi.connectors.anytype import AnytypeConnector, AnytypeError, clean_markdown
+from phi.connectors.pipeline import IngestionPipeline
+from phi.connectors.store import KnowledgeStore
+from phi.connectors.sync_engine import SyncEngine
 
 OLD = "2020-01-01T10:00:00Z"
 
@@ -87,7 +87,7 @@ def api(monkeypatch) -> FakeAnytype:
 
 @pytest.fixture
 def connector(tmp_path, monkeypatch) -> AnytypeConnector:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path))
     monkeypatch.delenv("ANYTYPE_API_KEY", raising=False)
     return AnytypeConnector(api_key="k-123", credentials_path=str(tmp_path / "a.json"))
 
@@ -134,10 +134,10 @@ def test_lists_are_read_page_by_page_and_all_spaces(api, connector) -> None:
 
 def test_only_notes_changed_since_the_last_sync_are_downloaded(api, connector) -> None:
     api.add("old", "Antiga", "# Antiga\ncorpo", modified="2020-01-01T00:00:00Z")
-    api.add("new", "Nova", "# Nova\ncorpo", modified="2030-01-01T00:00:00Z")
+    api.add("new", "Phi", "# Phi\ncorpo", modified="2030-01-01T00:00:00Z")
     since = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
-    assert [d.title for d in connector.sync(since=since)] == ["Nova"]
+    assert [d.title for d in connector.sync(since=since)] == ["Phi"]
     assert api.content_fetches() == ["/v2/spaces/sp1/objects/new"]
 
 
@@ -153,7 +153,7 @@ def test_markdown_noise_is_removed() -> None:
 def test_no_key_means_not_connected_and_nothing_is_read(
     api, tmp_path, monkeypatch
 ) -> None:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path))
     monkeypatch.delenv("ANYTYPE_API_KEY", raising=False)
     bare = AnytypeConnector(credentials_path=str(tmp_path / "none.json"))
 
@@ -162,7 +162,7 @@ def test_no_key_means_not_connected_and_nothing_is_read(
 
 
 def test_key_can_come_from_credentials_toml(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path))
     monkeypatch.delenv("ANYTYPE_API_KEY", raising=False)
     (tmp_path / "credentials.toml").write_text(
         '[anytype]\nANYTYPE_API_KEY = "from-toml"\n', encoding="utf-8"
@@ -177,7 +177,7 @@ def test_key_can_come_from_credentials_toml(tmp_path, monkeypatch) -> None:
 def test_key_saved_from_the_screen_and_removed_on_disconnect(
     tmp_path, monkeypatch
 ) -> None:
-    monkeypatch.setenv("NOVA_HOME", str(tmp_path))
+    monkeypatch.setenv("PHI_HOME", str(tmp_path))
     monkeypatch.delenv("ANYTYPE_API_KEY", raising=False)
     conn = AnytypeConnector(credentials_path=str(tmp_path / "a.json"))
 
@@ -297,7 +297,7 @@ def test_an_edited_note_replaces_its_old_version(api, connector, engine) -> None
     sync.sync(connector)
 
     future = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
-    api.edit("o1", "# Plano\nversao nova sobre linkedin", future)
+    api.edit("o1", "# Plano\nversao phi sobre linkedin", future)
     sync.sync(connector)
 
     assert store.retrieve("tiktok", top_k=3) == []
@@ -332,7 +332,7 @@ def test_unchanged_notes_are_not_downloaded_again(api, connector, engine) -> Non
 
 
 def test_missing_embedding_model_means_text_only_indexing(monkeypatch) -> None:
-    from nova.connectors.embeddings import OllamaEmbedder, OptionalOllamaEmbedder
+    from phi.connectors.embeddings import OllamaEmbedder, OptionalOllamaEmbedder
 
     checked: List[int] = []
     monkeypatch.setattr(
@@ -345,7 +345,7 @@ def test_missing_embedding_model_means_text_only_indexing(monkeypatch) -> None:
 
 
 def test_installed_embedding_model_is_used(monkeypatch) -> None:
-    from nova.connectors.embeddings import OllamaEmbedder, OptionalOllamaEmbedder
+    from phi.connectors.embeddings import OllamaEmbedder, OptionalOllamaEmbedder
 
     monkeypatch.setattr(OllamaEmbedder, "is_available", lambda self: True)
     monkeypatch.setattr(OllamaEmbedder, "embed", lambda self, text: b"vec")

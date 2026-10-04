@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.skills.parser import SkillParseError, SkillParser
+from phi.skills.parser import SkillParseError, SkillParser
 
 
 class TestStrictRequiredFields:
@@ -155,14 +155,14 @@ class TestTolerantFieldMapping:
         )
         assert manifest.disable_model_invocation is True
 
-    def test_metadata_nova_namespace_used(self):
+    def test_metadata_phi_namespace_used(self):
         parser = SkillParser()
         manifest = parser.parse_frontmatter(
             {
                 "name": "test",
                 "description": "x",
                 "metadata": {
-                    "nova": {
+                    "phi": {
                         "version": "9.9.9",
                         "tags": ["already", "mapped"],
                     },
@@ -194,8 +194,8 @@ class TestTolerantFieldMapping:
             "weird_field": "preserved",
         }
         manifest = parser.parse_frontmatter(original)
-        # Stored under metadata.nova.original_frontmatter
-        oj = manifest.metadata.get("nova", {})
+        # Stored under metadata.phi.original_frontmatter
+        oj = manifest.metadata.get("phi", {})
         assert "original_frontmatter" in oj
         assert oj["original_frontmatter"]["weird_field"] == "preserved"
 
@@ -209,5 +209,5 @@ class TestTolerantFieldMapping:
             }
         )
         # Platforms get rendered into a compatibility string under metadata
-        oj = manifest.metadata.get("nova", {})
+        oj = manifest.metadata.get("phi", {})
         assert "platforms" in oj or "compatibility" in oj

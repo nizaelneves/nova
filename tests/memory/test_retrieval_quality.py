@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nova.core.registry import MemoryRegistry
-from nova.tools.storage.sqlite import SQLiteMemory
+from phi.core.registry import MemoryRegistry
+from phi.tools.storage.sqlite import SQLiteMemory
 
 # ---------------------------------------------------------------------------
 # Shared corpus
@@ -39,7 +39,7 @@ def _make_sqlite(tmp_path):
 
 def _make_bm25():
     bm25_mod = pytest.importorskip(
-        "nova.tools.storage.bm25",
+        "phi.tools.storage.bm25",
         exc_type=ImportError,
     )
     BM25Memory = bm25_mod.BM25Memory

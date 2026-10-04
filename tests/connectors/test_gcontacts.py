@@ -12,8 +12,8 @@ from unittest.mock import patch
 
 import pytest
 
-from nova.connectors._stubs import Document
-from nova.core.registry import ConnectorRegistry
+from phi.connectors._stubs import Document
+from phi.core.registry import ConnectorRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers — fake API payloads
@@ -55,7 +55,7 @@ def _make_credentials(tmp_path: Path) -> Path:
 @pytest.fixture()
 def connector(tmp_path: Path):
     """GContactsConnector pointing at a tmp credentials path (no file yet)."""
-    from nova.connectors.gcontacts import GContactsConnector  # noqa: PLC0415
+    from phi.connectors.gcontacts import GContactsConnector  # noqa: PLC0415
 
     creds_path = str(tmp_path / "gcontacts.json")
     return GContactsConnector(credentials_path=creds_path)
@@ -89,7 +89,7 @@ def test_auth_url(connector) -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("nova.connectors.gcontacts._gcontacts_api_list")
+@patch("phi.connectors.gcontacts._gcontacts_api_list")
 def test_sync_yields_contacts(
     mock_list,
     connector,
@@ -166,7 +166,7 @@ def test_mcp_tools(connector) -> None:
 
 def test_registry() -> None:
     """GContactsConnector can be registered and retrieved via ConnectorRegistry."""
-    from nova.connectors.gcontacts import GContactsConnector  # noqa: PLC0415
+    from phi.connectors.gcontacts import GContactsConnector  # noqa: PLC0415
 
     # The registry is cleared before each test by the autouse conftest fixture,
     # so we imperatively re-register here (same pattern as test_gcalendar.py).

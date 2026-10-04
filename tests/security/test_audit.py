@@ -6,9 +6,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from nova.core.events import EventBus, EventType
-from nova.security.audit import AuditLogger
-from nova.security.types import (
+from phi.core.events import EventBus, EventType
+from phi.security.audit import AuditLogger
+from phi.security.types import (
     ScanFinding,
     SecurityEvent,
     SecurityEventType,

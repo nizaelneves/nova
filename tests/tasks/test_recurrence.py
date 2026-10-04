@@ -6,7 +6,7 @@ from datetime import date, datetime
 
 import pytest
 
-from nova.tasks.recurrence import next_due, validate_rule
+from phi.tasks.recurrence import next_due, validate_rule
 
 
 def test_every_2_weeks_on_wednesday() -> None:

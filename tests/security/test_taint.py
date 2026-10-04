@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nova.security.taint import (
+from phi.security.taint import (
     SINK_POLICY,
     TaintLabel,
     TaintSet,

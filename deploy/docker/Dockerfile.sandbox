@@ -49,6 +49,6 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && 
 
 WORKDIR /app
 
-LABEL nova-sandbox=true
+LABEL phi-sandbox=true
 
-ENTRYPOINT ["python", "-m", "nova.sandbox.entrypoint"]
+ENTRYPOINT ["python", "-m", "phi.sandbox.entrypoint"]
