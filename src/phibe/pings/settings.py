@@ -1,10 +1,9 @@
 """How and where Phibe's Pings notify you.
 
 Stored in ``~/.phibe/pings_settings.json``. Deliberately small: only the
-channels and automatic-reminder options that ship in this pass. Telegram,
-WhatsApp, Projects and Habits are not represented here at all yet — the
-frontend renders those as static "coming soon" placeholders with no
-backend-backed toggle.
+channels that ship in this pass. Telegram and WhatsApp are not represented
+here at all yet — the frontend renders them as static "coming soon"
+placeholders with no backend-backed toggle.
 """
 
 from __future__ import annotations
@@ -23,23 +22,15 @@ logger = logging.getLogger(__name__)
 
 MIN_LEAD_MINUTES = 0
 MAX_LEAD_MINUTES = 24 * 60
-MIN_LEAD_DAYS = 0
-MAX_LEAD_DAYS = 90
 
 
 @dataclass
 class PingsSettings:
     notifications_enabled: bool = True
-    # "In app" is always-on/free in the UI; kept as a field for forward
-    # compatibility, but the frontend renders it locked on, not a real toggle.
-    in_app_enabled: bool = True
-    browser_enabled: bool = False
-    # Minutes before the due time to notify by default (0 = at the exact time).
-    default_lead_minutes: int = 0
-    tasks_reminders_enabled: bool = False
-    tasks_lead_minutes: int = 15
-    finances_reminders_enabled: bool = False
-    finances_lead_days: int = 3
+    floating_button_enabled: bool = True
+    # Notify ahead of the due time; when off, pings notify at the exact time.
+    lead_enabled: bool = False
+    default_lead_minutes: int = 15
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -76,25 +67,11 @@ def validate(data: Dict[str, Any]) -> PingsSettings:
 
     return PingsSettings(
         notifications_enabled=_bool(data, "notifications_enabled", defaults.notifications_enabled),
-        in_app_enabled=_bool(data, "in_app_enabled", defaults.in_app_enabled),
-        browser_enabled=_bool(data, "browser_enabled", defaults.browser_enabled),
+        floating_button_enabled=_bool(data, "floating_button_enabled", defaults.floating_button_enabled),
+        lead_enabled=_bool(data, "lead_enabled", defaults.lead_enabled),
         default_lead_minutes=_int_in_range(
             data, "default_lead_minutes", defaults.default_lead_minutes,
             MIN_LEAD_MINUTES, MAX_LEAD_MINUTES,
-        ),
-        tasks_reminders_enabled=_bool(
-            data, "tasks_reminders_enabled", defaults.tasks_reminders_enabled
-        ),
-        tasks_lead_minutes=_int_in_range(
-            data, "tasks_lead_minutes", defaults.tasks_lead_minutes,
-            MIN_LEAD_MINUTES, MAX_LEAD_MINUTES,
-        ),
-        finances_reminders_enabled=_bool(
-            data, "finances_reminders_enabled", defaults.finances_reminders_enabled
-        ),
-        finances_lead_days=_int_in_range(
-            data, "finances_lead_days", defaults.finances_lead_days,
-            MIN_LEAD_DAYS, MAX_LEAD_DAYS,
         ),
     )
 

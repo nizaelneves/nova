@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { ConversationList } from './ConversationList';
 import { Icon, type IconName } from '../Icon';
 import { useAppStore } from '../../lib/store';
 import { FX_WIDTH, useRailSurge } from '../../lib/railSurge';
@@ -14,10 +13,10 @@ interface Module {
 /** The main menu, in this order. Names are always English. */
 const MODULES: Module[] = [
   { path: '/', icon: 'chat-round-dots', label: 'Chat' },
-  { path: '/workspaces', icon: 'widget-2', label: 'Workspaces' },
-  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
-  { path: '/pings', icon: 'bell', label: 'Pings' },
+  { path: '/desk', icon: 'desk', label: 'Your Desk' },
+  { path: '/seeds', icon: 'sunflower', label: 'Seeds' },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
+  { path: '/tutor', icon: 'graduation-cap', label: 'Tutor Mod' },
   { path: '/approvals', icon: 'shield-check', label: 'Approvals' },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
@@ -53,7 +52,6 @@ function RailItem({
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
 
   const expanded = useAppStore((s) => s.sidebarOpen);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -91,7 +89,7 @@ export function Sidebar() {
       }}
     >
       <div className={`flex flex-col h-full ${expanded ? 'w-[260px] px-3' : 'w-[72px] items-center'}`}>
-        {/* Show / hide the names and the chat history */}
+        {/* Show / hide the names */}
         <div className={`pt-5 pb-3 flex items-center ${expanded ? 'justify-between' : 'justify-center'}`}>
           <button
             type="button"
@@ -115,7 +113,7 @@ export function Sidebar() {
           )}
         </div>
 
-        <nav ref={navRef} className={`relative flex flex-col gap-2 ${expanded ? '' : 'mt-14 items-center'}`}>
+        <nav ref={navRef} className={`relative flex flex-col gap-2 [@media(max-height:720px)]:gap-1 ${expanded ? '' : 'mt-14 [@media(max-height:720px)]:mt-8 items-center'}`}>
           <canvas ref={fxRef} aria-hidden="true" className="rail-fx" style={{ width: FX_WIDTH }} />
           <span ref={surgeRef} aria-hidden="true" className="rail-surge" />
           {MODULES.map((m) => (
@@ -130,31 +128,6 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {expanded && (
-          <div
-            className="flex-1 min-h-0 flex flex-col mt-4 pt-4"
-            style={{ borderTop: '1px solid var(--color-border)' }}
-          >
-            <div className="mb-2 px-1">
-              <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
-                style={{ background: 'var(--color-glass)', border: '1px solid var(--color-border)' }}
-              >
-                <input
-                  type="text"
-                  placeholder="Search chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-sm"
-                  style={{ color: 'var(--color-text)' }}
-                />
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ConversationList searchQuery={searchQuery} />
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

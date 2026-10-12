@@ -4,9 +4,9 @@ import { Layout } from './components/Layout';
 import { ChatPage } from './pages/ChatPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AgentsPage } from './pages/AgentsPage';
-import { TasksPage } from './pages/TasksPage';
-import { WorkspacesPage } from './pages/WorkspacesPage';
-import { PingsPage } from './pages/PingsPage';
+import { SeedsPage } from './pages/SeedsPage';
+import { TutorPage } from './pages/TutorPage';
+import { DeskPage } from './pages/DeskPage';
 import { FinancesPage } from './pages/FinancesPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
@@ -79,9 +79,13 @@ export default function App() {
           {/* Agents and Data Sources now live inside Settings. */}
           <Route path="data-sources" element={<Navigate to="/settings?tab=data-sources" replace />} />
           <Route path="agents" element={<Navigate to="/settings?tab=agents" replace />} />
-          <Route path="workspaces" element={<WorkspacesPage />} />
-          <Route path="tasks" element={<TasksPage />} />
-          <Route path="pings" element={<PingsPage />} />
+          <Route path="desk" element={<DeskPage />} />
+          <Route path="workspaces" element={<Navigate to="/desk?tab=workspaces" replace />} />
+          <Route path="seeds" element={<SeedsPage />} />
+          <Route path="tutor" element={<TutorPage />} />
+          <Route path="meeting-notes" element={<Navigate to="/desk?tab=meeting-notes" replace />} />
+          <Route path="tasks" element={<Navigate to="/desk?tab=tasks" replace />} />
+          <Route path="pings" element={<Navigate to="/desk?tab=pings" replace />} />
           <Route path="finances" element={<FinancesPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
         </Route>

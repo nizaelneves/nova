@@ -155,27 +155,23 @@ def test_settings_defaults(client) -> None:
     settings = client.get("/v1/pings/settings").json()
     assert settings == {
         "notifications_enabled": True,
-        "in_app_enabled": True,
-        "browser_enabled": False,
-        "default_lead_minutes": 0,
-        "tasks_reminders_enabled": False,
-        "tasks_lead_minutes": 15,
-        "finances_reminders_enabled": False,
-        "finances_lead_days": 3,
+        "floating_button_enabled": True,
+        "lead_enabled": False,
+        "default_lead_minutes": 15,
     }
 
 
 def test_settings_can_be_changed_and_partial_updates_keep_the_rest(client) -> None:
-    client.put("/v1/pings/settings", json={"browser_enabled": True})
-    changed = client.put("/v1/pings/settings", json={"default_lead_minutes": 15})
-    assert changed.json()["browser_enabled"] is True
-    assert changed.json()["default_lead_minutes"] == 15
+    client.put("/v1/pings/settings", json={"lead_enabled": True})
+    changed = client.put("/v1/pings/settings", json={"default_lead_minutes": 30})
+    assert changed.json()["lead_enabled"] is True
+    assert changed.json()["default_lead_minutes"] == 30
 
 
 def test_invalid_settings_are_a_422_and_change_nothing(client) -> None:
     bad = client.put("/v1/pings/settings", json={"default_lead_minutes": -1})
     assert bad.status_code == 422
-    assert client.get("/v1/pings/settings").json()["default_lead_minutes"] == 0
+    assert client.get("/v1/pings/settings").json()["default_lead_minutes"] == 15
 
 
 def test_unknown_setting_is_rejected(client) -> None:

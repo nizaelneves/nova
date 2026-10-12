@@ -1,6 +1,8 @@
-import { ICONS, type IconName } from '../icons/solar';
+import { ICONS as SOLAR } from '../icons/solar';
+import { PHIBE_ICONS } from '../icons/phibe';
 
-export type { IconName };
+const ICONS = { ...SOLAR, ...PHIBE_ICONS };
+export type IconName = keyof typeof ICONS;
 
 /**
  * One of Phibe's icons (Solar, "linear" style). Icons are stored in the project,

@@ -23,13 +23,9 @@ def test_defaults(home) -> None:
     settings = load_pings_settings()
     assert settings == PingsSettings(
         notifications_enabled=True,
-        in_app_enabled=True,
-        browser_enabled=False,
-        default_lead_minutes=0,
-        tasks_reminders_enabled=False,
-        tasks_lead_minutes=15,
-        finances_reminders_enabled=False,
-        finances_lead_days=3,
+        floating_button_enabled=True,
+        lead_enabled=False,
+        default_lead_minutes=15,
     )
 
 
@@ -37,22 +33,16 @@ def test_settings_survive_a_restart(home) -> None:
     save_pings_settings(
         PingsSettings(
             notifications_enabled=False,
-            browser_enabled=True,
+            lead_enabled=True,
             default_lead_minutes=30,
-            tasks_reminders_enabled=True,
-            tasks_lead_minutes=60,
-            finances_reminders_enabled=True,
-            finances_lead_days=7,
         )
     )
 
     loaded = load_pings_settings()
 
     assert loaded.notifications_enabled is False
-    assert loaded.browser_enabled is True
+    assert loaded.lead_enabled is True
     assert loaded.default_lead_minutes == 30
-    assert loaded.tasks_lead_minutes == 60
-    assert loaded.finances_lead_days == 7
     assert not list(home.glob("*.tmp"))
 
 
@@ -79,18 +69,15 @@ def test_a_field_from_an_older_version_is_dropped_not_treated_as_corrupt(home) -
     "bad",
     [
         {"notifications_enabled": "yes"},
-        {"in_app_enabled": 1},
-        {"browser_enabled": "on"},
+        {"floating_button_enabled": 1},
+        {"lead_enabled": "on"},
+        {"browser_enabled": True},  # removed,
         {"default_lead_minutes": -1},
         {"default_lead_minutes": 1441},
         {"default_lead_minutes": 1.5},
         {"default_lead_minutes": True},
-        {"tasks_reminders_enabled": "no"},
-        {"tasks_lead_minutes": -1},
-        {"tasks_lead_minutes": 99999},
-        {"finances_reminders_enabled": "no"},
-        {"finances_lead_days": -1},
-        {"finances_lead_days": 91},
+        {"tasks_reminders_enabled": True},  # automatic pings were removed
+        {"finances_lead_days": 3},
         {"telegram_enabled": True},
         {"colour": "red"},
     ],
@@ -98,3 +85,10 @@ def test_a_field_from_an_older_version_is_dropped_not_treated_as_corrupt(home) -
 def test_invalid_settings_are_refused(bad) -> None:
     with pytest.raises(PingsSettingsError):
         validate(bad)
+
+
+def test_keys_from_older_versions_are_dropped_not_fatal(home) -> None:
+    (home / "pings_settings.json").write_text(
+        '{"lead_enabled": true, "browser_enabled": true, "tasks_lead_minutes": 60}', encoding="utf-8"
+    )
+    assert load_pings_settings().lead_enabled is True

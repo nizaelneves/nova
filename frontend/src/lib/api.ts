@@ -948,15 +948,10 @@ export type PingUpdate = Partial<PingCreate>;
 
 export interface PingsSettings {
   notifications_enabled: boolean;
-  /** Always-on/free in this pass; not user-editable from the frontend. */
-  in_app_enabled: boolean;
-  browser_enabled: boolean;
-  /** Minutes before the due time to notify by default (0 = at the exact time). */
+  floating_button_enabled: boolean;
+  /** Notify ahead of the due time (off = at the exact time). */
+  lead_enabled: boolean;
   default_lead_minutes: number;
-  tasks_reminders_enabled: boolean;
-  tasks_lead_minutes: number;
-  finances_reminders_enabled: boolean;
-  finances_lead_days: number;
 }
 
 export const fetchPings = (upcoming = false): Promise<Ping[]> =>

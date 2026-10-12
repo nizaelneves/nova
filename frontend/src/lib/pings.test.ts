@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  backendDayToJsDay,
   formatCountdown,
+  occursOn,
   jsDayToBackendDay,
   ordinal,
   pingDueDate,
@@ -72,21 +72,11 @@ describe('repeatSummary', () => {
   });
 });
 
-describe('weekday conversion between JS (0=Sun) and backend (0=Mon)', () => {
+describe('weekday conversion from JS (0=Sun) to backend (0=Mon)', () => {
   it('converts JS getDay() values to the backend convention', () => {
     expect(jsDayToBackendDay(0)).toBe(6); // Sunday
     expect(jsDayToBackendDay(1)).toBe(0); // Monday
     expect(jsDayToBackendDay(6)).toBe(5); // Saturday
-  });
-  it('converts backend day values back to JS getDay()', () => {
-    expect(backendDayToJsDay(6)).toBe(0); // Sunday
-    expect(backendDayToJsDay(0)).toBe(1); // Monday
-    expect(backendDayToJsDay(5)).toBe(6); // Saturday
-  });
-  it('round-trips for every day', () => {
-    for (let d = 0; d < 7; d++) {
-      expect(backendDayToJsDay(jsDayToBackendDay(d))).toBe(d);
-    }
   });
 });
 
@@ -126,5 +116,31 @@ describe('progressPercent', () => {
     const due = new Date(2026, 9, 30, 14, 0);
     const late = new Date(2026, 9, 30, 20, 0);
     expect(progressPercent(start, due, late)).toBe(100);
+  });
+});
+
+describe('occursOn', () => {
+  const base = { repeat_interval: 1, repeat_days_of_week: [] as number[] };
+  const at = (iso: string) => pingDueDate(iso, '00:00');
+
+  it('matches a one-off only on its own day', () => {
+    const p = { ...base, date: '2026-10-14', repeat_type: 'none' };
+    expect(occursOn(p, at('2026-10-14'))).toBe(true);
+    expect(occursOn(p, at('2026-10-21'))).toBe(false);
+  });
+
+  it('repeats weekly on the chosen days and every N weeks, never before the saved date', () => {
+    const p = { date: '2026-10-12', repeat_type: 'weekly', repeat_interval: 2, repeat_days_of_week: [0, 2] }; // Mon, Wed
+    expect(occursOn(p, at('2026-10-14'))).toBe(true);
+    expect(occursOn(p, at('2026-10-19'))).toBe(false); // off week
+    expect(occursOn(p, at('2026-10-26'))).toBe(true);
+    expect(occursOn(p, at('2026-10-05'))).toBe(false);
+  });
+
+  it('repeats monthly on the same day, clamped on short months', () => {
+    const p = { ...base, date: '2026-01-31', repeat_type: 'monthly' };
+    expect(occursOn(p, at('2026-02-28'))).toBe(true);
+    expect(occursOn(p, at('2026-03-31'))).toBe(true);
+    expect(occursOn(p, at('2026-03-30'))).toBe(false);
   });
 });

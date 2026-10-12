@@ -37,12 +37,6 @@ export function jsDayToBackendDay(jsDay: number): number {
   return (jsDay + 6) % 7;
 }
 
-/** Converts a backend day (0=Mon..6=Sun) back to JS's `getDay()` convention
- * (0=Sun..6=Sat), e.g. for indexing into `WEEKDAY_CHIPS`. */
-export function backendDayToJsDay(backendDay: number): number {
-  return (backendDay + 1) % 7;
-}
-
 export interface RepeatRule {
   type: 'none' | 'weekly' | 'monthly';
   /** Every N week(s)/month(s). Defaults to 1 when omitted. */
@@ -122,4 +116,36 @@ export function progressPercent(start: Date, due: Date, now: Date = new Date()):
   if (total <= 0) return 100;
   const elapsed = now.getTime() - start.getTime();
   return Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+}
+
+const DAY_MS = 86_400_000;
+
+/** `YYYY-MM-DD` of a local date. */
+export function isoDay(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Whether a ping lands on *day*, counting the repeats the backend would
+ * generate (weekly on its chosen days every N weeks, monthly on the same day
+ * every N months; a month without that day uses its last day). The saved date
+ * is the next due one, so nothing earlier than it counts. */
+export function occursOn(
+  ping: { date: string; repeat_type: string; repeat_interval: number; repeat_days_of_week: number[] },
+  day: Date,
+): boolean {
+  const first = pingDueDate(ping.date, '00:00');
+  const d = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  if (d < first) return false;
+  if (ping.repeat_type === 'none') return +d === +first;
+  const every = Math.max(1, ping.repeat_interval);
+  if (ping.repeat_type === 'weekly') {
+    const days = ping.repeat_days_of_week.length ? ping.repeat_days_of_week : [jsDayToBackendDay(first.getDay())];
+    if (!days.includes(jsDayToBackendDay(d.getDay()))) return false;
+    const monday = (x: Date) => +x - jsDayToBackendDay(x.getDay()) * DAY_MS;
+    return Math.round((monday(d) - monday(first)) / (7 * DAY_MS)) % every === 0;
+  }
+  const months = (d.getFullYear() - first.getFullYear()) * 12 + d.getMonth() - first.getMonth();
+  if (months % every !== 0) return false;
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  return d.getDate() === Math.min(first.getDate(), last);
 }

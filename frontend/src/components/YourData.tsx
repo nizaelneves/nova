@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { apiFetch, getBase } from '../lib/api';
+import { ConversationList } from './Sidebar/ConversationList';
 import { Icon } from './Icon';
 
 interface VoiceEntry {
@@ -29,6 +30,7 @@ export function YourData() {
   const [retention, setRetention] = useState(30);
   const [playing, setPlaying] = useState<string | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +80,24 @@ export function YourData() {
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-4">
+        <div className="rounded-xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+          <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Chats</h3>
+          <p className="text-xs mt-1 mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
+            Every conversation you had with Phibe. Open one to continue it, or delete it.
+          </p>
+          <input
+            value={chatQuery}
+            onChange={(e) => setChatQuery(e.target.value)}
+            placeholder="Search chats"
+            aria-label="Search chats"
+            className="w-full text-sm px-3 py-2 rounded-lg outline-none mb-2"
+            style={FIELD}
+          />
+          <div className="max-h-80 overflow-y-auto">
+            <ConversationList searchQuery={chatQuery} />
+          </div>
+        </div>
+
         <div className="rounded-xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           <div className="flex items-start justify-between gap-4 mb-1">
             <div>

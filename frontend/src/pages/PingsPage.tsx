@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
 import { Popup } from '../components/Popup';
+import { ConfirmDelete } from '../components/finances/forms';
 import {
   Ping,
   PingCreate,
@@ -17,9 +18,10 @@ import {
 } from '../lib/api';
 import {
   WEEKDAY_CHIPS,
-  backendDayToJsDay,
   formatCountdown,
+  isoDay,
   jsDayToBackendDay,
+  occursOn,
   pingDueDate,
   progressPercent,
   repeatSummary,
@@ -28,12 +30,6 @@ import {
 function apiErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong';
 }
-
-/** Neutral marker for a ping's checkbox now that priority is not user-facing
- * (the field still exists on the backend, but nothing sets it to anything
- * other than "medium" from this UI, so a priority-colored dot would no
- * longer mean anything). */
-const MARKER_COLOR = 'var(--color-text-tertiary)';
 
 /** Plain-English recurrence label for a saved ping, e.g. "Repeats every 2
  * weeks on Mon, Wed, Fri" — reuses the same summary logic as the New Ping
@@ -56,27 +52,6 @@ function todayLocal(): string {
 // not exported there, so kept as small local copies with the same look).
 // ---------------------------------------------------------------------------
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-      <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--color-text)' }}>{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between py-3 gap-3" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-      <div>
-        <div className="text-sm" style={{ color: 'var(--color-text)' }}>{label}</div>
-        {description && <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>{description}</div>}
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-
 function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => void; label: string; disabled?: boolean }) {
   return (
     <button
@@ -87,7 +62,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
       aria-checked={on}
       aria-label={label}
       className="relative w-11 h-6 rounded-full transition-colors disabled:opacity-60"
-      style={{ background: on ? 'var(--color-accent)' : 'var(--color-bg-tertiary)', cursor: disabled ? 'default' : 'pointer' }}
+      style={{ background: on ? 'var(--color-accent)' : 'rgba(255,255,255,0.16)', cursor: disabled ? 'default' : 'pointer' }}
     >
       <span
         className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
@@ -119,45 +94,30 @@ function NumberInput({ value, onChange, suffix, min = 0, max = 1440 }: { value: 
   );
 }
 
-function ComingSoonRow({ label, description }: { label: string; description: string }) {
-  return (
-    <div className="flex items-center justify-between py-3 gap-3 opacity-60" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-      <div>
-        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text)' }}>
-          {label}
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)' }}>
-            Coming soon
-          </span>
-        </div>
-        <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>{description}</div>
-      </div>
-      <Switch on={false} onClick={() => {}} label={label} disabled />
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // New Ping modal
 // ---------------------------------------------------------------------------
 
 function NewPingModal({
-  presetRepeat,
+  presetDate,
+  presetTime,
   editPing,
   onClose,
   onCreated,
 }: {
-  presetRepeat: boolean;
+  presetDate?: string;
+  presetTime?: string;
   editPing?: Ping;
   onClose: () => void;
   onCreated: () => void;
 }) {
   const [text, setText] = useState(editPing?.text ?? '');
-  const [repeatOn, setRepeatOn] = useState(editPing ? editPing.repeat_type !== 'none' : presetRepeat);
+  const [repeatOn, setRepeatOn] = useState(editPing ? editPing.repeat_type !== 'none' : false);
   const [repeatMode, setRepeatMode] = useState<'weekly' | 'monthly'>(
     editPing?.repeat_type === 'monthly' ? 'monthly' : 'weekly',
   );
-  const [date, setDate] = useState(editPing?.date ?? todayLocal());
-  const [time, setTime] = useState(editPing?.time ?? '09:00');
+  const [date, setDate] = useState(editPing?.date ?? presetDate ?? todayLocal());
+  const [time, setTime] = useState(editPing?.time ?? presetTime ?? '09:00');
   const [interval, setInterval] = useState(editPing?.repeat_interval ?? 1);
   // Days of week in the backend's 0=Mon..6=Sun convention. Defaults to the
   // chosen date's own weekday, the same way Google Calendar pre-selects it.
@@ -320,17 +280,38 @@ function NewPingModal({
 }
 
 // ---------------------------------------------------------------------------
-// Up next hero card
+// Cards
 // ---------------------------------------------------------------------------
 
-function UpNextCard({ ping, onChanged }: { ping: Ping; onChanged: () => void }) {
-  const [open, setOpen] = useState(false);
+type Status = 'overdue' | 'today' | 'upcoming' | 'done';
+
+const STATUS: Record<Status, { label: string; icon: IconName }> = {
+  overdue: { label: 'Overdue', icon: 'danger-triangle' },
+  today: { label: 'Today', icon: 'bolt' },
+  upcoming: { label: 'Upcoming', icon: 'clock-circle' },
+  done: { label: 'Completed', icon: 'check-circle' },
+};
+
+function statusOf(ping: Ping, now: Date): Status {
+  if (ping.completed) return 'done';
+  const due = pingDueDate(ping.date, ping.time);
+  if (due < now) return 'overdue';
+  return isoDay(due) === isoDay(now) ? 'today' : 'upcoming';
+}
+
+function shortDate(d: Date): string {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+const PingCard = memo(function PingCard({ ping, now, onChanged, onEdit, onDelete }: {
+  ping: Ping; now: Date; onChanged: () => void; onEdit: (p: Ping) => void; onDelete: (p: Ping) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const due = pingDueDate(ping.date, ping.time);
-  const start = new Date(ping.created_at);
-  const now = new Date();
+  const status = statusOf(ping, now);
+  const done = status === 'done';
 
-  const act = async (fn: () => Promise<Ping>) => {
+  const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     try {
       await fn();
@@ -343,228 +324,290 @@ function UpNextCard({ ping, onChanged }: { ping: Ping; onChanged: () => void }) 
   };
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-strong, var(--color-border))' }}>
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent-light)' }}>Up next</span>
-        <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-          {due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, {ping.time}
-        </span>
+    <article className="pg-card" data-status={status}>
+      <div className="pg-card-top">
+        <span className="pg-status"><Icon name={STATUS[status].icon} size={14} />{STATUS[status].label}</span>
+        {ping.repeat_type !== 'none' && (
+          <span className="pg-rep" title={pingRepeatLabel(ping)}><Icon name="repeat" size={12} />{ping.repeat_type === 'weekly' ? 'Weekly' : 'Monthly'}</span>
+        )}
       </div>
-      <div className="flex items-baseline gap-2 mb-1">
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: MARKER_COLOR, flexShrink: 0 }} />
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>{ping.text}</h2>
-      </div>
-      <div className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>{formatCountdown(due, now)}</div>
-
-      <div className="h-1.5 rounded-full overflow-hidden mb-4" style={{ background: 'var(--color-bg-tertiary)' }}>
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${progressPercent(start, due, now)}%`, background: 'var(--color-accent)', transition: 'width 300ms ease' }}
-        />
-      </div>
-
-      {open && (
-        <div className="text-xs mb-3 flex flex-col gap-1" style={{ color: 'var(--color-text-tertiary)' }}>
-          <span>{ping.repeat_type === 'none' ? "Doesn't repeat" : pingRepeatLabel(ping)}</span>
+      <h4 className="pg-card-title">{ping.text}</h4>
+      {!done && (
+        <div className="pg-track">
+          <i /><b><u style={{ width: `${progressPercent(new Date(ping.created_at), due, now)}%` }} /></b><i />
         </div>
       )}
-
-      <div className="flex items-center gap-2">
-        <button type="button" disabled={busy} onClick={() => void act(() => completePing(ping.id))}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-          <Icon name="check-circle" size={15} /> Complete
-        </button>
-        <button type="button" disabled={busy} onClick={() => void act(() => snoozePing(ping.id))}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-          style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-          <Icon name="clock-circle" size={15} /> Snooze
-        </button>
-        <button type="button" onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-          style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-          <Icon name="eye" size={15} /> {open ? 'Close' : 'Open'}
-        </button>
+      <div className="pg-card-dates">
+        <span>{done ? 'Done' : formatCountdown(due, now)}</span>
+        <span>{shortDate(due)}, {ping.time}</span>
       </div>
-    </div>
+      <div className="pg-card-foot">
+        {done ? <span /> : (
+          <button type="button" className="pg-done" disabled={busy} onClick={() => void act(() => completePing(ping.id))}>
+            <Icon name="check-circle" size={15} /> Complete
+          </button>
+        )}
+        <div className="pg-icons">
+          {!done && <button type="button" aria-label="Snooze ping" title="Snooze" disabled={busy} onClick={() => void act(() => snoozePing(ping.id))}><Icon name="clock-circle" size={15} /></button>}
+          <button type="button" aria-label="Edit ping" title="Edit" onClick={() => onEdit(ping)}><Icon name="pen" size={15} /></button>
+          <button type="button" aria-label="Delete ping" title="Delete" disabled={busy} onClick={() => onDelete(ping)}><Icon name="trash-bin-minimalistic" size={15} /></button>
+        </div>
+      </div>
+    </article>
   );
+});
+
+// ---------------------------------------------------------------------------
+// Calendar (week, Sunday to Saturday, with an hour grid)
+// ---------------------------------------------------------------------------
+
+const HOUR = 64; // px per hour
+const EVENT_H = 54;
+const EVENT_MIN = (EVENT_H / HOUR) * 60; // minutes an event box covers, for overlap checks
+
+function sundayOf(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
 }
 
-// ---------------------------------------------------------------------------
-// Pings tab
-// ---------------------------------------------------------------------------
+function hourLabel(h: number): string {
+  return `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;
+}
 
-type ListFilter = 'all' | 'week' | 'month' | 'recurring';
+const minutesOf = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
 
-function PingsTab() {
-  const [pings, setPings] = useState<Ping[] | null>(null);
-  const [listFilter, setListFilter] = useState<ListFilter>('all');
-  const [showModal, setShowModal] = useState<false | 'plain'>(false);
-  const [editingPing, setEditingPing] = useState<Ping | null>(null);
+/** Side-by-side lanes for events that would overlap on screen. */
+function layoutDay(items: Ping[]): { ping: Ping; lane: number; lanes: number }[] {
+  const out: { ping: Ping; lane: number; lanes: number }[] = [];
+  let cluster: typeof out = [];
+  let laneEnds: number[] = [];
+  const close = () => { cluster.forEach((c) => { c.lanes = laneEnds.length; }); out.push(...cluster); cluster = []; laneEnds = []; };
+  for (const ping of [...items].sort((a, b) => a.time.localeCompare(b.time))) {
+    const start = minutesOf(ping.time);
+    if (laneEnds.length && Math.max(...laneEnds) <= start) close();
+    let lane = laneEnds.findIndex((end) => end <= start);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = start + EVENT_MIN;
+    cluster.push({ ping, lane, lanes: 1 });
+  }
+  close();
+  return out;
+}
 
-  const load = useCallback(() => {
-    fetchPings().then(setPings).catch(() => setPings([]));
+function WeekCalendar({ pings, now, onEdit, onDelete, onAdd }: {
+  pings: Ping[]; now: Date; onEdit: (p: Ping) => void; onDelete: (p: Ping) => void; onAdd: (day: string, time: string) => void;
+}) {
+  const [start, setStart] = useState(() => sundayOf(new Date()));
+  const scroller = useRef<HTMLDivElement>(null);
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)),
+    [start],
+  );
+  const columns = useMemo(
+    () => days.map((day) => ({ iso: isoDay(day), items: layoutDay(pings.filter((p) => occursOn(p, day))) })),
+    [days, pings],
+  );
+  const end = days[6];
+  const today = isoDay(now);
+  const shift = (weeks: number) => setStart(new Date(start.getFullYear(), start.getMonth(), start.getDate() + weeks * 7));
+  const endLabel = end.toLocaleDateString('en-US', start.getMonth() === end.getMonth() ? { day: 'numeric' } : { month: 'short', day: 'numeric' });
+
+  // open near the current hour, like Google Calendar
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = Math.max(0, (new Date().getHours() - 1) * HOUR);
   }, []);
-  useEffect(load, [load]);
 
-  const toggleComplete = async (ping: Ping) => {
-    try {
-      await completePing(ping.id);
-      load();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    }
+  const addAt = (iso: string, e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
+    const half = Math.min(47, Math.floor((y / HOUR) * 2));
+    onAdd(iso, `${String(Math.floor(half / 2)).padStart(2, '0')}:${half % 2 ? '30' : '00'}`);
   };
-
-  const remove = async (ping: Ping) => {
-    try {
-      await deletePing(ping.id);
-      load();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    }
-  };
-
-  const { open, nextUp } = useMemo(() => {
-    const all = pings ?? [];
-    const openPings = all.filter((p) => !p.completed);
-    const withDue = openPings.map((p) => ({ p, due: pingDueDate(p.date, p.time) }));
-    withDue.sort((a, b) => a.due.getTime() - b.due.getTime());
-    return { open: openPings, nextUp: withDue[0]?.p ?? null };
-  }, [pings]);
-
-  const visible = useMemo(() => {
-    const now = new Date();
-    let items = open;
-    if (listFilter === 'week') {
-      const limit = new Date(now.getTime() + 7 * 86_400_000);
-      items = items.filter((p) => pingDueDate(p.date, p.time) <= limit);
-    } else if (listFilter === 'month') {
-      const monthAhead = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-      items = items.filter((p) => pingDueDate(p.date, p.time) <= monthAhead);
-    } else if (listFilter === 'recurring') {
-      items = items.filter((p) => p.repeat_type !== 'none');
-    }
-    const groups = new Map<string, Ping[]>();
-    for (const p of [...items].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))) {
-      const list = groups.get(p.date) ?? [];
-      list.push(p);
-      groups.set(p.date, list);
-    }
-    return Array.from(groups.entries());
-  }, [open, listFilter]);
-
-  if (pings === null) {
-    return <div className="text-sm px-1" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>;
-  }
-
-  if (pings.length === 0) {
-    return (
-      <>
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
-            <Icon name="bell" size={30} style={{ color: 'var(--color-text-tertiary)' }} />
-          </div>
-          <button type="button" onClick={() => setShowModal('plain')}
-            className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg cursor-pointer"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-            <Icon name="add-circle" size={17} /> New Ping
-          </button>
-        </div>
-        {showModal && (
-          <NewPingModal presetRepeat={false} onClose={() => setShowModal(false)}
-            onCreated={() => { setShowModal(false); load(); }} />
-        )}
-      </>
-    );
-  }
-
-  const FILTERS: { id: ListFilter; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'week', label: 'Week' },
-    { id: 'month', label: 'Month' },
-    { id: 'recurring', label: 'Recurring' },
-  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end">
-        <button type="button" onClick={() => setShowModal('plain')}
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-          <Icon name="add-circle" size={16} /> New Ping
-        </button>
+    <div>
+      <div className="pg-weeknav">
+        <h3>{shortDate(start)} – {endLabel}, {end.getFullYear()}</h3>
+        <div className="pg-weeknav-btns">
+          <button type="button" aria-label="Previous week" onClick={() => shift(-1)}><Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(90deg)' }} /></button>
+          <button type="button" className="pg-today" disabled={isoDay(start) === isoDay(sundayOf(now))} onClick={() => setStart(sundayOf(new Date()))}>Today</button>
+          <button type="button" aria-label="Next week" onClick={() => shift(1)}><Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(-90deg)' }} /></button>
+        </div>
       </div>
 
-      {nextUp && <UpNextCard ping={nextUp} onChanged={load} />}
-
-      <div className="flex flex-col gap-3 min-w-0">
-        <div className="flex items-center gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setListFilter(f.id)}
-              className="composer-chip"
-              data-filled="true"
-              data-active={listFilter === f.id}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {visible.length === 0 && (
-            <div className="text-xs px-1 py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here.</div>
-          )}
-          {visible.map(([day, items]) => (
-            <div key={day} className="flex flex-col gap-1.5">
-              <div className="text-xs font-medium px-1" style={{ color: 'var(--color-text-tertiary)' }}>
-                {pingDueDate(day, '00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+      <div className="pg-cal" ref={scroller}>
+        <div className="pg-cal-inner">
+          <div className="pg-cal-head">
+            <span />
+            {days.map((day) => (
+              <div key={day.getTime()} className="pg-cal-dayhead" data-today={isoDay(day) === today}>
+                <span>{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                <b>{day.getDate()}</b>
               </div>
-              {items.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                  style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
-                  <button
-                    type="button"
-                    aria-label={p.completed ? 'Mark not done' : 'Mark done'}
-                    onClick={() => void toggleComplete(p)}
-                    className="w-4 h-4 rounded-full shrink-0 cursor-pointer"
-                    style={{ border: `2px solid ${MARKER_COLOR}`, background: p.completed ? MARKER_COLOR : 'transparent' }}
-                  />
-                  <span className="flex-1 text-sm truncate" style={{ color: 'var(--color-text)' }}>{p.text}</span>
-                  <span className="task-chip">{p.time}</span>
-                  <button type="button" aria-label="Edit ping" onClick={() => setEditingPing(p)}
-                    className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>
-                    <Icon name="pen" size={14} />
-                  </button>
-                  <button type="button" aria-label="Delete ping" onClick={() => void remove(p)}
-                    className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-error)' }}>
-                    <Icon name="trash-bin-minimalistic" size={14} />
-                  </button>
-                </div>
+            ))}
+          </div>
+
+          <div className="pg-cal-body" style={{ height: 24 * HOUR, '--hour': `${HOUR}px` } as React.CSSProperties}>
+            <div className="pg-cal-hours">
+              {Array.from({ length: 23 }, (_, i) => (
+                <span key={i} style={{ top: (i + 1) * HOUR }}>{hourLabel(i + 1)}</span>
               ))}
             </div>
-          ))}
+            {columns.map(({ iso, items }) => (
+              <div key={iso} className="pg-cal-col" onClick={(e) => addAt(iso, e)}>
+                {items.map(({ ping: p, lane, lanes }) => (
+                  <div key={p.id} className="pg-event-wrap" style={{
+                    top: (minutesOf(p.time) / 60) * HOUR, height: EVENT_H,
+                    left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 4px)`,
+                  }}>
+                    <button type="button" className="pg-event" data-done={p.completed}
+                      data-late={!p.completed && pingDueDate(iso, p.time) < now} onClick={() => onEdit(p)}>
+                      <span className="pg-event-time">{p.time}{p.repeat_type !== 'none' && <Icon name="repeat" size={11} />}</span>
+                      <span className="pg-event-text">{p.text}</span>
+                    </button>
+                    <button type="button" className="pg-event-del" aria-label="Delete ping" title="Delete" onClick={() => onDelete(p)}>
+                      <Icon name="trash-bin-minimalistic" size={13} />
+                    </button>
+                  </div>
+                ))}
+                {iso === today && <div className="pg-cal-now" style={{ top: ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR }} />}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-
-      {showModal && (
-        <NewPingModal presetRepeat={false} onClose={() => setShowModal(false)}
-          onCreated={() => { setShowModal(false); load(); }} />
-      )}
-      {editingPing && (
-        <NewPingModal presetRepeat={false} editPing={editingPing} onClose={() => setEditingPing(null)}
-          onCreated={() => { setEditingPing(null); load(); }} />
-      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Settings tab
+// Pings view
 // ---------------------------------------------------------------------------
+
+type ListFilter = 'all' | 'upcoming' | 'month' | 'overdue' | 'recurring' | 'completed';
+type View = 'cards' | 'calendar' | 'settings';
+type Adding = { date?: string; time?: string } | null;
+
+const FILTERS: { id: ListFilter; label: string; empty: string }[] = [
+  { id: 'all', label: 'All', empty: 'No open pings.' },
+  { id: 'upcoming', label: 'Upcoming', empty: 'No upcoming pings.' },
+  { id: 'month', label: 'Month', empty: 'No pings this month.' },
+  { id: 'overdue', label: 'Overdue', empty: "You're all caught up." },
+  { id: 'recurring', label: 'Recurring', empty: 'No recurring pings.' },
+  { id: 'completed', label: 'Completed', empty: 'No completed pings yet.' },
+];
+
+const VIEWS: { id: View; label: string; icon: IconName }[] = [
+  { id: 'cards', label: 'Cards', icon: 'layers' },
+  { id: 'calendar', label: 'Calendar', icon: 'calendar' },
+  { id: 'settings', label: 'Settings', icon: 'settings' },
+];
+
+function matches(p: Ping, filter: ListFilter, now: Date): boolean {
+  if (filter === 'completed') return p.completed;
+  if (p.completed) return false;
+  const due = pingDueDate(p.date, p.time);
+  switch (filter) {
+    case 'upcoming': return due >= now;
+    case 'month': return due.getFullYear() === now.getFullYear() && due.getMonth() === now.getMonth();
+    case 'overdue': return due < now;
+    case 'recurring': return p.repeat_type !== 'none';
+    default: return true;
+  }
+}
+
+function summarize(open: Ping[], now: Date): string {
+  if (open.length === 0) return 'Nothing scheduled.';
+  const late = open.filter((p) => pingDueDate(p.date, p.time) < now).length;
+  return late ? `${open.length - late} coming up · ${late} overdue` : `${open.length} coming up`;
+}
+
+function PingsView({ pings, now, view, adding, onAdd, onAddClose, reload }: {
+  pings: Ping[];
+  now: Date;
+  view: 'cards' | 'calendar';
+  adding: Adding;
+  onAdd: (day?: string, time?: string) => void;
+  onAddClose: () => void;
+  reload: () => void;
+}) {
+  const [filter, setFilter] = useState<ListFilter>('all');
+  const [editing, setEditing] = useState<Ping | null>(null);
+  const [deleting, setDeleting] = useState<Ping | null>(null);
+
+  const visible = useMemo(
+    () => pings.filter((p) => matches(p, filter, now)).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
+    [pings, filter, now],
+  );
+
+  const remove = async (p: Ping) => {
+    try {
+      await deletePing(p.id);
+      reload();
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    }
+  };
+
+  const created = () => { onAddClose(); reload(); };
+  const edited = () => { setEditing(null); reload(); };
+
+  return (
+    <>
+      {pings.length === 0 && view === 'cards' ? null : (
+        <>
+          {pings.length > 0 && <div className="pg-filters">
+            {FILTERS.map((f) => (
+              <button key={f.id} type="button" className="pg-filter" data-active={filter === f.id} onClick={() => setFilter(f.id)}>
+                {f.label}
+              </button>
+            ))}
+          </div>}
+          {view === 'cards' ? (
+            visible.length === 0 ? (
+              <div className="fin-empty">{FILTERS.find((f) => f.id === filter)?.empty}</div>
+            ) : (
+              <div className="pg-grid">
+                {visible.map((p) => (
+                  <PingCard key={p.id} ping={p} now={now} onChanged={reload} onEdit={setEditing} onDelete={setDeleting} />
+                ))}
+              </div>
+            )
+          ) : (
+            <WeekCalendar pings={visible} now={now} onEdit={setEditing} onDelete={setDeleting} onAdd={onAdd} />
+          )}
+        </>
+      )}
+
+      {adding && <NewPingModal presetDate={adding.date} presetTime={adding.time} onClose={onAddClose} onCreated={created} />}
+      {editing && <NewPingModal editPing={editing} onClose={() => setEditing(null)} onCreated={edited} />}
+      {deleting && (
+        <ConfirmDelete title="Delete Ping" message={`Delete "${deleting.text}"? This can't be undone.`}
+          onConfirm={() => void remove(deleting)} onClose={() => setDeleting(null)} />
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Settings view
+// ---------------------------------------------------------------------------
+
+const LEADS = [5, 15, 30, 60];
+
+function SetRow({ icon, title, text, soon, children }: { icon: IconName; title: string; text: string; soon?: boolean; children?: React.ReactNode }) {
+  return (
+    <div className="fin-acct pg-set" data-soon={soon}>
+      <div className="fin-acct-main">
+        <span className="pg-set-icon"><Icon name={icon} size={20} /></span>
+        <div className="fin-acct-name">
+          <h4>{title}{soon && <em className="pg-soon">Coming soon</em>}</h4>
+          <p>{text}</p>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function PingsSettingsTab() {
   const [settings, setSettings] = useState<PingsSettings | null>(null);
@@ -583,56 +626,49 @@ function PingsSettingsTab() {
     }
   };
 
-  if (!settings) {
-    return <div className="text-sm px-1" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>;
-  }
+  if (!settings) return <div className="fin-empty">Loading…</div>;
+
+  const off = !settings.notifications_enabled;
+  const lead = settings.lead_enabled && !off;
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl mx-auto">
-      <Section title="General">
-        <SettingRow label="Ping notifications" description="Master switch for every Ping reminder below.">
-          <Switch on={settings.notifications_enabled} label="Ping notifications"
-            onClick={() => void change({ notifications_enabled: !settings.notifications_enabled })} />
-        </SettingRow>
-      </Section>
-
-      <Section title="Where you receive them">
-        <SettingRow label="In app" description="Free · always on">
-          <Switch on={true} onClick={() => {}} label="In app" disabled />
-        </SettingRow>
-        <SettingRow label="Browser" description="Browser notifications while Phibe is open">
-          <Switch on={settings.browser_enabled} label="Browser"
-            onClick={() => void change({ browser_enabled: !settings.browser_enabled })} />
-        </SettingRow>
-        <SettingRow label="Notify before the time" description="How far ahead of the due time to notify by default">
-          <NumberInput value={settings.default_lead_minutes} suffix="min before"
-            onChange={(n) => void change({ default_lead_minutes: n })} min={0} max={1440} />
-        </SettingRow>
-        <ComingSoonRow label="Telegram" description="Get pinged in your Telegram chat with Phibe." />
-        <ComingSoonRow label="WhatsApp" description="Get pinged over WhatsApp." />
-      </Section>
-
-      <Section title="Automatic pings">
-        <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-          Phibe nudges you automatically when something's coming up. Each module has its own lead time.
-        </p>
-        <SettingRow label="Tasks" description="Nudge before a task's due time, however far ahead you choose.">
-          <div className="flex items-center gap-3">
-            <NumberInput value={settings.tasks_lead_minutes} suffix="min before"
-              onChange={(n) => void change({ tasks_lead_minutes: n })} min={0} max={1440} />
-            <Switch on={settings.tasks_reminders_enabled} label="Tasks reminders"
-              onClick={() => void change({ tasks_reminders_enabled: !settings.tasks_reminders_enabled })} />
+    <div className="fin-acct-list pg-settings">
+      <SetRow icon="bell" title="Ping Notifications" text="Turn every ping reminder on or off.">
+        <Switch on={!off} label="Ping Notifications" onClick={() => void change({ notifications_enabled: off })} />
+      </SetRow>
+      <SetRow icon="monitor-smartphone" title="Floating Button" text="Show pings on Phibe's floating button.">
+        <Switch on={settings.floating_button_enabled} label="Floating Button" disabled={off}
+          onClick={() => void change({ floating_button_enabled: !settings.floating_button_enabled })} />
+      </SetRow>
+      <div className="fin-acct pg-set">
+        <div className="fin-acct-main">
+          <span className="pg-set-icon"><Icon name="clock-circle" size={20} /></span>
+          <div className="fin-acct-name">
+            <h4>Notify Before</h4>
+            <p>Get a heads-up ahead of the due time.</p>
           </div>
-        </SettingRow>
-        <SettingRow label="Finances" description="Bill or invoice coming up? Get notified days ahead.">
-          <div className="flex items-center gap-3">
-            <NumberInput value={settings.finances_lead_days} suffix="days before"
-              onChange={(n) => void change({ finances_lead_days: n })} min={0} max={90} />
-            <Switch on={settings.finances_reminders_enabled} label="Finances reminders"
-              onClick={() => void change({ finances_reminders_enabled: !settings.finances_reminders_enabled })} />
+          <Switch on={settings.lead_enabled} label="Notify Before" disabled={off}
+            onClick={() => void change({ lead_enabled: !settings.lead_enabled })} />
+        </div>
+        {settings.lead_enabled && (
+          <div className="pg-lead" data-off={!lead}>
+            {LEADS.map((m) => (
+              <button key={m} type="button" className="pg-filter" data-active={settings.default_lead_minutes === m} disabled={!lead}
+                onClick={() => void change({ default_lead_minutes: m })}>
+                {m} min
+              </button>
+            ))}
+            <NumberInput value={settings.default_lead_minutes} suffix="min" min={1} max={1440}
+              onChange={(n) => void change({ default_lead_minutes: n })} />
           </div>
-        </SettingRow>
-      </Section>
+        )}
+      </div>
+      <SetRow icon="plain-2" title="Telegram" text="Get pinged over Telegram." soon>
+        <Switch on={false} onClick={() => {}} label="Telegram" disabled />
+      </SetRow>
+      <SetRow icon="phone-calling" title="WhatsApp" text="Get pinged over WhatsApp." soon>
+        <Switch on={false} onClick={() => {}} label="WhatsApp" disabled />
+      </SetRow>
     </div>
   );
 }
@@ -641,24 +677,73 @@ function PingsSettingsTab() {
 // Page
 // ---------------------------------------------------------------------------
 
-type PageTab = 'pings' | 'settings';
+function PingsIcon({ size = 48 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 84 84" role="img" aria-label="Pings">
+      <rect width="84" height="84" rx="22" fill="#14123f" />
+      <circle cx="40" cy="17" r="3.5" fill="#10c3d3" />
+      <path d="M40 20c-10 0-16 8-16 18v10l-5 8h42l-5-8V38c0-10-6-18-16-18z" fill="#10c3d3" />
+      <path d="M34 60a6 6 0 0 0 12 0z" fill="#ffe3bd" />
+      <circle cx="62" cy="24" r="9" fill="#ffe3bd" stroke="#14123f" stroke-width="4" />
+    </svg>
+  );
+}
+
+/** The current time, refreshed every minute so "overdue" and the now-line stay right. */
+function useNow(): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
 
 export function PingsPage() {
-  const [tab, setTab] = useState<PageTab>('pings');
+  const [view, setView] = useState<View>('cards');
+  const [adding, setAdding] = useState<Adding>(null);
+  const [pings, setPings] = useState<Ping[] | null>(null);
+  const now = useNow();
+
+  const reload = useCallback(() => {
+    fetchPings().then(setPings).catch(() => setPings([]));
+  }, []);
+  useEffect(reload, [reload]);
+
+  const open = useMemo(() => (pings ?? []).filter((p) => !p.completed), [pings]);
 
   return (
-    <div className="flex flex-col h-full px-6 py-5 gap-4 overflow-y-auto">
-      <div className="flex justify-center">
-        <div className="pings-tab-pill">
-          {([['pings', 'Pings'], ['settings', 'Settings']] as const).map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setTab(id)} className="pings-tab-pill-item" data-active={tab === id}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="fin-root pg-root h-full overflow-y-auto">
+      <div className="fin-wrap">
+        <header className="fin-header">
+          <div className="fin-hello">
+            <PingsIcon />
+            <div>
+              <h2>Pings</h2>
+              <p>{pings ? summarize(open, now) : ' '}</p>
+            </div>
+          </div>
+          <div className="fin-controls">
+            <div className="fin-actions" role="tablist" aria-label="Pings views">
+              {VIEWS.map((v) => (
+                <button key={v.id} type="button" role="tab" aria-selected={view === v.id} data-active={view === v.id}
+                  className="fin-act" aria-label={v.label} onClick={() => setView(v.id)}>
+                  <Icon name={v.icon} size={16} />
+                  <span>{v.label}</span>
+                </button>
+              ))}
+              <button type="button" className="fin-btn fin-add" onClick={() => setAdding({})}>
+                <Icon name="add-circle" size={16} /> New Ping
+              </button>
+            </div>
+          </div>
+        </header>
 
-      {tab === 'pings' ? <PingsTab /> : <PingsSettingsTab />}
+        {view === 'settings' ? <PingsSettingsTab />
+          : pings === null ? <div className="fin-empty">Loading…</div>
+          : <PingsView pings={pings} now={now} view={view} adding={adding} reload={reload}
+              onAdd={(date, time) => setAdding({ date, time })} onAddClose={() => setAdding(null)} />}
+      </div>
     </div>
   );
 }
