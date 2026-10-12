@@ -6,7 +6,7 @@ import pytest
 
 pydantic = pytest.importorskip("pydantic")
 
-from phi.server.models import (  # noqa: E402
+from phibe.server.models import (  # noqa: E402
     ChatCompletionChunk,
     ChatCompletionRequest,
     ChatCompletionResponse,

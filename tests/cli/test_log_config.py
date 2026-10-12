@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from phi.cli.log_config import setup_logging
+from phibe.cli.log_config import setup_logging
 
 
 class TestSetupLogging:
@@ -23,7 +23,7 @@ class TestSetupLogging:
     def test_returns_logger(self):
         logger = setup_logging(verbose=False, quiet=False)
         assert isinstance(logger, logging.Logger)
-        assert logger.name == "phi"
+        assert logger.name == "phibe"
 
     def test_log_file_handler_on_verbose(self, tmp_path):
         log_file = tmp_path / "cli.log"

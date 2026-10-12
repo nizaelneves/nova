@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from phi.core.events import EventBus, EventType
-from phi.core.registry import MemoryRegistry
-from phi.tools.storage.sqlite import SQLiteMemory
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import MemoryRegistry
+from phibe.tools.storage.sqlite import SQLiteMemory
 
 
 def _make_backend(tmp_path: Path) -> SQLiteMemory:
@@ -146,7 +146,7 @@ def test_event_bus_integration_store(tmp_path: Path):
     bus = EventBus(record_history=True)
     backend = _make_backend(tmp_path)
     # Monkey-patch the global bus for this test
-    import phi.tools.storage.sqlite as mod
+    import phibe.tools.storage.sqlite as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus
@@ -164,7 +164,7 @@ def test_event_bus_integration_retrieve(tmp_path: Path):
     bus = EventBus(record_history=True)
     backend = _make_backend(tmp_path)
     backend.store("searchable content for events")
-    import phi.tools.storage.sqlite as mod
+    import phibe.tools.storage.sqlite as mod
 
     original = mod.get_event_bus
     mod.get_event_bus = lambda: bus

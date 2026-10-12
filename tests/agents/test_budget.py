@@ -1,7 +1,7 @@
-from phi.agents._stubs import AgentResult
-from phi.agents.executor import AgentExecutor
-from phi.agents.manager import AgentManager
-from phi.core.events import EventBus, EventType
+from phibe.agents._stubs import AgentResult
+from phibe.agents.executor import AgentExecutor
+from phibe.agents.manager import AgentManager
+from phibe.core.events import EventBus, EventType
 
 
 def test_budget_exceeded_sets_status(tmp_path):

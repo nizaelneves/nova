@@ -6,11 +6,11 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-from phi.agents._stubs import AgentContext, AgentResult, BaseAgent
-from phi.core.events import EventBus, EventType
-from phi.core.types import StepType
-from phi.traces.collector import TraceCollector
-from phi.traces.store import TraceStore
+from phibe.agents._stubs import AgentContext, AgentResult, BaseAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import StepType
+from phibe.traces.collector import TraceCollector
+from phibe.traces.store import TraceStore
 
 
 class _FakeAgent(BaseAgent):
@@ -271,7 +271,7 @@ class _RichToolAgent(BaseAgent):
         context: Optional[AgentContext] = None,
         **kwargs: Any,
     ) -> AgentResult:
-        from phi.core.types import ToolResult
+        from phibe.core.types import ToolResult
 
         # Turn 1: inference with tool call request
         self._bus.publish(

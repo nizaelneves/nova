@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from phi.cli.serve import serve
+from phibe.cli.serve import serve
 
 RENDER_BLUEPRINT = Path(__file__).resolve().parents[2] / "render.yaml"
 DOCKERFILE = Path(__file__).resolve().parents[2] / "deploy/docker/Dockerfile"
@@ -38,16 +38,16 @@ def _docker_json_instruction(name: str) -> list[str]:
     return value
 
 
-def _run_fake_phi(tmp_path: Path, argv: list[str]) -> list[str]:
+def _run_fake_phibe(tmp_path: Path, argv: list[str]) -> list[str]:
     """Run an argv assembled with Docker's exec-form ENTRYPOINT semantics."""
-    fake_phi = tmp_path / "phi"
-    fake_phi.write_text(
+    fake_phibe = tmp_path / "phibe"
+    fake_phibe.write_text(
         "#!/bin/sh\nprintf '%s\\0' \"$@\"\n",
         encoding="utf-8",
     )
-    fake_phi.chmod(0o755)
+    fake_phibe.chmod(0o755)
     completed = subprocess.run(
-        [str(fake_phi), *argv[1:]],
+        [str(fake_phibe), *argv[1:]],
         check=True,
         capture_output=True,
     )
@@ -63,7 +63,7 @@ def test_render_selects_cloud_engine_through_the_serve_cli(tmp_path: Path) -> No
     # Render replaces CMD but preserves the image's exec-form ENTRYPOINT.
     # Exercise the resulting argv without starting a real server.
     argv = [*_docker_json_instruction("ENTRYPOINT"), *shlex.split(command)]
-    args = _run_fake_phi(tmp_path, argv)
+    args = _run_fake_phibe(tmp_path, argv)
 
     assert args == [
         "serve",
@@ -81,11 +81,11 @@ def test_render_selects_cloud_engine_through_the_serve_cli(tmp_path: Path) -> No
     assert parsed.params["port"] == 10000
     assert parsed.params["engine_key"] == "cloud"
     assert parsed.params["model_name"] == "gpt-4o-mini"
-    assert "PHI_ENGINE" not in _env_vars(service)
+    assert "PHIBE_ENGINE" not in _env_vars(service)
     assert _env_vars(service)["PORT"] == {"key": "PORT", "value": "10000"}
 
 
-def test_docker_and_compose_command_overrides_remain_phi_subcommands(
+def test_docker_and_compose_command_overrides_remain_phibe_subcommands(
     tmp_path: Path,
 ) -> None:
     entrypoint = _docker_json_instruction("ENTRYPOINT")
@@ -100,7 +100,7 @@ def test_docker_and_compose_command_overrides_remain_phi_subcommands(
         "qwen3:8b",
     ]
 
-    assert entrypoint == ["phi"]
+    assert entrypoint == ["phibe"]
     assert default_command == [
         "serve",
         "--host",
@@ -108,21 +108,21 @@ def test_docker_and_compose_command_overrides_remain_phi_subcommands(
         "--port",
         "8000",
     ]
-    assert _run_fake_phi(tmp_path, [*entrypoint, *default_command]) == default_command
+    assert _run_fake_phibe(tmp_path, [*entrypoint, *default_command]) == default_command
     assert (
-        _run_fake_phi(tmp_path, [*entrypoint, *compose_override]) == compose_override
+        _run_fake_phibe(tmp_path, [*entrypoint, *compose_override]) == compose_override
     )
 
 
 def test_render_does_not_advertise_an_unconsumed_cors_variable() -> None:
-    assert "PHI_CORS_ORIGINS" not in _env_vars(_service())
+    assert "PHIBE_CORS_ORIGINS" not in _env_vars(_service())
 
 
 def test_render_public_bind_generates_an_api_key() -> None:
     env = _env_vars(_service())
 
-    assert env["PHI_API_KEY"] == {
-        "key": "PHI_API_KEY",
+    assert env["PHIBE_API_KEY"] == {
+        "key": "PHIBE_API_KEY",
         "generateValue": True,
     }
 

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from phi.channels._stubs import (
+from phibe.channels._stubs import (
     BaseChannel,
     ChannelHandler,
     ChannelStatus,
 )
-from phi.mcp.server import MCPServer
-from phi.tools.channel_tools import (
+from phibe.mcp.server import MCPServer
+from phibe.tools.channel_tools import (
     ChannelListTool,
     ChannelSendTool,
     ChannelStatusTool,
@@ -198,7 +198,7 @@ class TestChannelToolsMCPDiscovery:
     def test_auto_discover_finds_channel_tools(self):
         """MCPServer auto-discovery finds channel tools."""
         server = MCPServer()
-        from phi.mcp.protocol import MCPRequest
+        from phibe.mcp.protocol import MCPRequest
 
         req = MCPRequest(method="tools/list", id=1)
         resp = server.handle(req)
@@ -210,7 +210,7 @@ class TestChannelToolsMCPDiscovery:
     def test_channel_tool_annotations(self):
         """Channel tools have correct MCP annotations."""
         server = MCPServer()
-        from phi.mcp.protocol import MCPRequest
+        from phibe.mcp.protocol import MCPRequest
 
         req = MCPRequest(method="tools/list", id=1)
         resp = server.handle(req)

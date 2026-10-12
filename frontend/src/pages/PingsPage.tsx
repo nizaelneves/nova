@@ -600,7 +600,7 @@ function PingsSettingsTab() {
         <SettingRow label="In app" description="Free · always on">
           <Switch on={true} onClick={() => {}} label="In app" disabled />
         </SettingRow>
-        <SettingRow label="Browser" description="Browser notifications while Phi is open">
+        <SettingRow label="Browser" description="Browser notifications while Phibe is open">
           <Switch on={settings.browser_enabled} label="Browser"
             onClick={() => void change({ browser_enabled: !settings.browser_enabled })} />
         </SettingRow>
@@ -608,13 +608,13 @@ function PingsSettingsTab() {
           <NumberInput value={settings.default_lead_minutes} suffix="min before"
             onChange={(n) => void change({ default_lead_minutes: n })} min={0} max={1440} />
         </SettingRow>
-        <ComingSoonRow label="Telegram" description="Get pinged in your Telegram chat with Phi." />
+        <ComingSoonRow label="Telegram" description="Get pinged in your Telegram chat with Phibe." />
         <ComingSoonRow label="WhatsApp" description="Get pinged over WhatsApp." />
       </Section>
 
       <Section title="Automatic pings">
         <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-          Phi nudges you automatically when something's coming up. Each module has its own lead time.
+          Phibe nudges you automatically when something's coming up. Each module has its own lead time.
         </p>
         <SettingRow label="Tasks" description="Nudge before a task's due time, however far ahead you choose.">
           <div className="flex items-center gap-3">

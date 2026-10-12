@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from phi.tasks.store import AreaNotEmpty, NotFound, TaskError, TaskStore
+from phibe.tasks.store import AreaNotEmpty, NotFound, TaskError, TaskStore
 
 NOW = datetime(2026, 10, 7, 12, 0)  # Wednesday, noon
 

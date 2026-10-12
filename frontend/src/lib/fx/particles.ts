@@ -1,5 +1,5 @@
 /**
- * Phi's particle toolkit: the shared base for "constant evolution" effects.
+ * Phibe's particle toolkit: the shared base for "constant evolution" effects.
  *
  * Idea: something never just disappears or appears. It disintegrates into small
  * Fibonacci numbers (1, 1, 2, 3, 5, 8, ...) that drift away like dust in the
@@ -31,8 +31,15 @@ export function pickFibonacci(rand: () => number): number {
 
 export type ParticleMode = 'out' | 'in';
 
+/** A Fibonacci number, or a square pixel (a piece of the surface itself). */
+export type Glyph = 'num' | 'px';
+
+/** Pixels sit on a grid this many px wide, like a dot-matrix. */
+export const PIXEL_GRID = 3;
+
 export interface Particle {
   mode: ParticleMode;
+  glyph: Glyph;
   /** The number drawn for this particle. */
   value: number;
   /** Seconds lived. Negative means "not born yet" (a staggered start). */
@@ -61,21 +68,30 @@ export interface Wind {
 export const DEFAULT_WIND: Wind = { angle: -0.45, speed: 70 };
 
 const blank = (mode: ParticleMode): Particle => ({
-  mode, value: 1, age: 0, life: 1, x: 0, y: 0, vx: 0, vy: 0, sx: 0, sy: 0, tx: 0, ty: 0, size: 9,
+  mode, glyph: 'num', value: 1, age: 0, life: 1, x: 0, y: 0, vx: 0, vy: 0, sx: 0, sy: 0, tx: 0, ty: 0, size: 9,
 });
 
 /** One particle breaking off a surface at (x, y). */
-export function disintegrate(rand: () => number, x: number, y: number, wind: Wind = DEFAULT_WIND): Particle {
+export function disintegrate(
+  rand: () => number,
+  x: number,
+  y: number,
+  wind: Wind = DEFAULT_WIND,
+  glyph: Glyph = 'num',
+  delay = 0,
+): Particle {
   const p = blank('out');
+  p.glyph = glyph;
+  p.age = -delay;
   const spread = (rand() - 0.5) * 1.1;
   const speed = wind.speed * (0.35 + rand() * 0.9);
-  p.value = pickFibonacci(rand);
+  p.value = glyph === 'px' ? 0 : pickFibonacci(rand);
   p.x = x;
   p.y = y;
   p.vx = Math.cos(wind.angle + spread) * speed;
   p.vy = Math.sin(wind.angle + spread) * speed;
-  p.life = 0.55 + rand() * 0.6;
-  p.size = 8 + Math.floor(rand() * 4);
+  p.life = glyph === 'px' ? 0.3 + rand() * 0.4 : 0.45 + rand() * 0.4;
+  p.size = glyph === 'px' ? 2 : 8 + Math.floor(rand() * 4);
   return p;
 }
 
@@ -90,20 +106,22 @@ export function reintegrate(
   distance: number,
   delay = 0,
   wind: Wind = DEFAULT_WIND,
+  glyph: Glyph = 'num',
 ): Particle {
   const p = blank('in');
+  p.glyph = glyph;
   const spread = (rand() - 0.5) * 1.3;
   const d = distance * (0.5 + rand() * 0.7);
-  p.value = pickFibonacci(rand);
+  p.value = glyph === 'px' ? 0 : pickFibonacci(rand);
   p.tx = tx;
   p.ty = ty;
   p.sx = tx + Math.cos(wind.angle + spread) * d;
   p.sy = ty + Math.sin(wind.angle + spread) * d;
   p.x = p.sx;
   p.y = p.sy;
-  p.life = 0.38 + rand() * 0.25;
+  p.life = glyph === 'px' ? 0.18 + rand() * 0.14 : 0.3 + rand() * 0.2;
   p.age = -delay;
-  p.size = 8 + Math.floor(rand() * 4);
+  p.size = glyph === 'px' ? 2 : 8 + Math.floor(rand() * 4);
   return p;
 }
 
@@ -141,7 +159,7 @@ export function stepAll(list: Particle[], dt: number): void {
   for (let i = list.length - 1; i >= 0; i--) if (!isAlive(list[i])) list.splice(i, 1);
 }
 
-/** Draws the numbers. The caller owns the canvas, its scale and the colour. */
+/** Draws the numbers and pixels. The caller owns the canvas, its scale and the colour. */
 export function drawParticles(ctx: CanvasRenderingContext2D, list: readonly Particle[], color: string): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -150,11 +168,15 @@ export function drawParticles(ctx: CanvasRenderingContext2D, list: readonly Part
   for (const p of list) {
     const a = alphaOf(p);
     if (a <= 0.01) continue;
+    ctx.globalAlpha = a;
+    if (p.glyph === 'px') {
+      ctx.fillRect(Math.round(p.x / PIXEL_GRID) * PIXEL_GRID, Math.round(p.y / PIXEL_GRID) * PIXEL_GRID, p.size, p.size);
+      continue;
+    }
     if (p.size !== font) {
       font = p.size;
       ctx.font = `600 ${font}px ui-monospace, "Cascadia Mono", Consolas, monospace`;
     }
-    ctx.globalAlpha = a;
     ctx.fillText(String(p.value), p.x, p.y);
   }
   ctx.globalAlpha = 1;

@@ -15,8 +15,8 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-import phi.evals.backends.terminalbench_native as tbn
-from phi.evals.backends.terminalbench_native import (
+import phibe.evals.backends.terminalbench_native as tbn
+from phibe.evals.backends.terminalbench_native import (
     summarize_benchmark_results,
 )
 
@@ -242,8 +242,8 @@ class TestRunTerminalbenchNativeWiring:
     def _run(self, fake_tb_backend, tmp_path, trials: List[Any], **config_kwargs):
         from rich.console import Console
 
-        from phi.evals.cli import _run_terminalbench_native
-        from phi.evals.core.types import RunConfig
+        from phibe.evals.cli import _run_terminalbench_native
+        from phibe.evals.core.types import RunConfig
 
         fake_tb_backend.results = SimpleNamespace(results=trials)
         config = RunConfig(

@@ -5,16 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from phi.agents.executor import AgentExecutor
-from phi.agents.manager import AgentManager
-from phi.agents.scheduler import AgentScheduler
-from phi.core.events import EventBus
+from phibe.agents.executor import AgentExecutor
+from phibe.agents.manager import AgentManager
+from phibe.agents.scheduler import AgentScheduler
+from phibe.core.events import EventBus
 from tests.agents.fake_engine import FakeEngine
 
 
 @dataclass(slots=True)
 class FakeSystem:
-    """Lightweight stand-in for PhiSystem — just engine + model."""
+    """Lightweight stand-in for PhibeSystem — just engine + model."""
 
     engine: FakeEngine
     model: str = "fake-model"

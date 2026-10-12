@@ -1,6 +1,6 @@
 """Tests for the doc_qa dataset."""
 
-from phi.evals.datasets.doc_qa import DocQADataset
+from phibe.evals.datasets.doc_qa import DocQADataset
 
 
 def test_dataset_loads():

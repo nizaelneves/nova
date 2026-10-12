@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from phi.security.scanner import PIIScanner, SecretScanner
-from phi.security.types import ThreatLevel
+from phibe.security.scanner import PIIScanner, SecretScanner
+from phibe.security.types import ThreatLevel
 
 # ---------------------------------------------------------------------------
 # SecretScanner tests

@@ -9,23 +9,23 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-from phi.core.config import PhiConfig
-from phi.core.events import EventBus, EventType
-from phi.security import SecurityContext
-from phi.security.capabilities import CapabilityPolicy
-from phi.server.app import create_app
+from phibe.core.config import PhibeConfig
+from phibe.core.events import EventBus, EventType
+from phibe.security import SecurityContext
+from phibe.security.capabilities import CapabilityPolicy
+from phibe.server.app import create_app
 
 
-def _config() -> PhiConfig:
-    config = PhiConfig()
+def _config() -> PhibeConfig:
+    config = PhibeConfig()
     config.traces.enabled = False
     config.security.enabled = True
     return config
 
 
-def _runtime_config() -> PhiConfig:
+def _runtime_config() -> PhibeConfig:
     """Factory config without derived security."""
-    config = PhiConfig()
+    config = PhibeConfig()
     config.traces.enabled = False
     config.security.enabled = False
     return config
@@ -47,7 +47,7 @@ def test_factory_derives_missing_security_and_secures_prebuilt_agent(
             audit_logger=audit,
         )
     )
-    monkeypatch.setattr("phi.security.setup_security", setup)
+    monkeypatch.setattr("phibe.security.setup_security", setup)
     agent = SimpleNamespace(
         agent_id="tool-agent",
         _engine=engine,
@@ -88,7 +88,7 @@ def test_factory_preserves_explicit_security_primitives(monkeypatch) -> None:
             audit_logger=derived_audit,
         )
     )
-    monkeypatch.setattr("phi.security.setup_security", setup)
+    monkeypatch.setattr("phibe.security.setup_security", setup)
 
     app = create_app(
         "raw",
@@ -106,7 +106,7 @@ def test_factory_preserves_explicit_security_primitives(monkeypatch) -> None:
 
 def test_factory_propagates_strict_security_setup_failure(monkeypatch) -> None:
     monkeypatch.setattr(
-        "phi.security.setup_security",
+        "phibe.security.setup_security",
         MagicMock(side_effect=RuntimeError("policy failed")),
     )
 
@@ -115,8 +115,8 @@ def test_factory_propagates_strict_security_setup_failure(monkeypatch) -> None:
 
 
 def test_factory_synchronizes_prebuilt_rlm_lazy_executor_runtime(monkeypatch) -> None:
-    from phi.agents.rlm import RLMAgent
-    from phi.agents.rlm_repl import RLMRepl
+    from phibe.agents.rlm import RLMAgent
+    from phibe.agents.rlm_repl import RLMRepl
 
     engine = MagicMock()
     engine.generate.side_effect = [
@@ -178,7 +178,7 @@ def test_factory_synchronizes_prebuilt_rlm_lazy_executor_runtime(monkeypatch) ->
 def test_factory_preserves_prebuilt_rlm_policy_and_limiter_while_reidentifying() -> (
     None
 ):
-    from phi.agents.rlm import RLMAgent
+    from phibe.agents.rlm import RLMAgent
 
     engine = MagicMock()
     agent_policy = CapabilityPolicy(default_deny=True)
@@ -211,9 +211,9 @@ def test_factory_preserves_prebuilt_rlm_policy_and_limiter_while_reidentifying()
 
 
 def test_factory_overrides_prebuilt_executor_identity_at_server_boundary() -> None:
-    from phi.agents.orchestrator import OrchestratorAgent
-    from phi.core.types import ToolCall, ToolResult
-    from phi.tools._stubs import BaseTool, ToolSpec
+    from phibe.agents.orchestrator import OrchestratorAgent
+    from phibe.core.types import ToolCall, ToolResult
+    from phibe.tools._stubs import BaseTool, ToolSpec
 
     class _AdminTool(BaseTool):
         @property

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.workflow.builder import WorkflowBuilder
-from phi.workflow.engine import WorkflowEngine
-from phi.workflow.graph import WorkflowGraph
-from phi.workflow.types import NodeType, WorkflowEdge, WorkflowNode
+from phibe.core.events import EventBus, EventType
+from phibe.workflow.builder import WorkflowBuilder
+from phibe.workflow.engine import WorkflowEngine
+from phibe.workflow.graph import WorkflowGraph
+from phibe.workflow.types import NodeType, WorkflowEdge, WorkflowNode
 
 
 class TestWorkflowGraph:

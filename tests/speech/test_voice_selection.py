@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from phi.cli._voice_chat import _BACKEND_DEFAULT_VOICE, VoiceSession
+from phibe.cli._voice_chat import _BACKEND_DEFAULT_VOICE, VoiceSession
 
 
 @dataclass
@@ -49,7 +49,7 @@ def test_kokoro_voice_never_leaks_to_other_backends(other):
 
 
 def test_openai_fallback_gets_a_voice_openai_accepts():
-    from phi.speech.openai_tts import OpenAITTSBackend
+    from phibe.speech.openai_tts import OpenAITTSBackend
 
     voice_id, _ = _session().voice_for_backend(_Backend("openai_tts"))
     assert voice_id in OpenAITTSBackend.__dict__["available_voices"](
@@ -83,8 +83,8 @@ def test_warning_emitted_once_per_backend():
 
 @pytest.mark.parametrize("preferred", ["kokoro", "openai_tts", "cartesia"])
 def test_configured_backend_is_tried_before_healthy_fallbacks(monkeypatch, preferred):
-    import phi.speech  # noqa: F401
-    from phi.core.registry import TTSRegistry
+    import phibe.speech  # noqa: F401
+    from phibe.core.registry import TTSRegistry
 
     checked = []
 
@@ -106,10 +106,10 @@ def test_configured_backend_is_tried_before_healthy_fallbacks(monkeypatch, prefe
 
 
 def test_synthesis_failure_falls_back_without_retrying_or_leaking_voice(monkeypatch):
-    import phi.speech  # noqa: F401
-    from phi.cli._voice_chat import speak
-    from phi.core.registry import TTSRegistry
-    from phi.speech.tts import TTSResult
+    import phibe.speech  # noqa: F401
+    from phibe.cli._voice_chat import speak
+    from phibe.core.registry import TTSRegistry
+    from phibe.speech.tts import TTSResult
 
     checked, spoken, played = [], [], []
 
@@ -131,17 +131,17 @@ def test_synthesis_failure_falls_back_without_retrying_or_leaking_voice(monkeypa
     monkeypatch.setattr(TTSRegistry, "contains", lambda key: True)
     monkeypatch.setattr(TTSRegistry, "get", lambda key: lambda: Backend(key))
     monkeypatch.setattr(
-        "phi.speech.voice_io.play_wav",
+        "phibe.speech.voice_io.play_wav",
         lambda audio, **kwargs: played.append(audio),
     )
-    session = _session(tts_backend="openai_tts", voice_id="phi")
+    session = _session(tts_backend="openai_tts", voice_id="phibe")
 
     speak("First reply", Console(), session)
     speak("Second reply", Console(), session)
 
     assert checked == ["openai_tts", "kokoro"]
     assert spoken == [
-        ("openai_tts", "phi"),
+        ("openai_tts", "phibe"),
         ("kokoro", "pf_dora"),
         ("kokoro", "pf_dora"),
     ]

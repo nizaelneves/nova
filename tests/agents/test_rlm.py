@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.agents._stubs import AgentContext
-from phi.agents.rlm import RLMAgent
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry
-from phi.core.types import ToolResult
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents._stubs import AgentContext
+from phibe.agents.rlm import RLMAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry
+from phibe.core.types import ToolResult
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -180,7 +180,7 @@ class TestRLMDirectAnswer:
         assert result.tool_results == []
 
     def test_default_deny_blocks_agent_before_generated_code(self):
-        from phi.security.capabilities import CapabilityPolicy
+        from phibe.security.capabilities import CapabilityPolicy
 
         class _RecordingLimiter:
             def __init__(self):

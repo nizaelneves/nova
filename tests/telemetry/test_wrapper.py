@@ -6,10 +6,10 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any, Dict, List
 from unittest import mock
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import Message, Role, TelemetryRecord
-from phi.engine._base import InferenceEngine
-from phi.telemetry.wrapper import instrumented_generate
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Message, Role, TelemetryRecord
+from phibe.engine._base import InferenceEngine
+from phibe.telemetry.wrapper import instrumented_generate
 
 
 class _StubEngine(InferenceEngine):

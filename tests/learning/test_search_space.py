@@ -1,12 +1,12 @@
-"""Tests for phi.optimize.search_space module."""
+"""Tests for phibe.optimize.search_space module."""
 
 from __future__ import annotations
 
-from phi.learning.optimize.search_space import (
+from phibe.learning.optimize.search_space import (
     DEFAULT_SEARCH_SPACE,
     build_search_space,
 )
-from phi.learning.optimize.types import SearchSpace
+from phibe.learning.optimize.types import SearchSpace
 
 # ---------------------------------------------------------------------------
 # build_search_space

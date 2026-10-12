@@ -1,4 +1,4 @@
-"""Tests for the Rich display helpers in phi.evals.core.display."""
+"""Tests for the Rich display helpers in phibe.evals.core.display."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rich.console import Console
 
-from phi.evals.core.display import (
+from phibe.evals.core.display import (
     print_banner,
     print_completion,
     print_metrics_table,
@@ -16,7 +16,7 @@ from phi.evals.core.display import (
     print_subject_table,
     print_suite_summary,
 )
-from phi.evals.core.types import MetricStats, RunSummary
+from phibe.evals.core.types import MetricStats, RunSummary
 
 
 def _make_console() -> tuple[Console, StringIO]:
@@ -29,7 +29,7 @@ def _make_summary(**overrides) -> RunSummary:
     defaults = dict(
         benchmark="supergpqa",
         category="reasoning",
-        backend="phi-direct",
+        backend="phibe-direct",
         model="qwen3:8b",
         total_samples=50,
         scored_samples=48,
@@ -63,7 +63,7 @@ class TestPrintBanner:
         console, buf = _make_console()
         print_banner(console)
         output = buf.getvalue()
-        assert "Phi" in output or "___" in output
+        assert "Phibe" in output or "___" in output
 
     def test_contains_version(self):
         console, buf = _make_console()
@@ -87,7 +87,7 @@ class TestPrintRunHeader:
             console,
             benchmark="supergpqa",
             model="qwen3:8b",
-            backend="phi-direct",
+            backend="phibe-direct",
             samples=50,
             workers=4,
         )
@@ -102,7 +102,7 @@ class TestPrintRunHeader:
             console,
             benchmark="supergpqa",
             model="qwen3:8b",
-            backend="phi-direct",
+            backend="phibe-direct",
             samples=50,
             workers=4,
             warmup=5,

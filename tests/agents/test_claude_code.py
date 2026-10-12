@@ -8,16 +8,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import phi.agents  # noqa: F401 -- trigger registration
-from phi.agents._stubs import AgentResult
-from phi.agents.claude_code import (
+import phibe.agents  # noqa: F401 -- trigger registration
+from phibe.agents._stubs import AgentResult
+from phibe.agents.claude_code import (
     _OUTPUT_END,
     _OUTPUT_START,
     _RUNNER_SRC,
     ClaudeCodeAgent,
 )
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -98,14 +98,14 @@ class TestEnsureRunner:
         agent = ClaudeCodeAgent(engine, "test-model")
 
         # _ensure_runner() resolves its destination via get_config_dir(),
-        # which checks $PHI_HOME before ever falling back to
+        # which checks $PHIBE_HOME before ever falling back to
         # Path.home() -- so that's the env var to control here, not a
         # Path.home() patch (which get_config_dir() never even calls once
-        # PHI_HOME is set, e.g. by conftest.py's session-wide
+        # PHIBE_HOME is set, e.g. by conftest.py's session-wide
         # isolation fixture).
         home_dir = tmp_path / "home"
         home_dir.mkdir()
-        monkeypatch.setenv("PHI_HOME", str(home_dir))
+        monkeypatch.setenv("PHIBE_HOME", str(home_dir))
 
         def which(executable):
             return f"/usr/bin/{executable}"
@@ -143,7 +143,7 @@ class TestEnsureRunner:
         )
         installed.parent.mkdir(parents=True)
         installed.write_text('{"version":"0.3.237"}')
-        monkeypatch.setenv("PHI_HOME", str(home_dir))
+        monkeypatch.setenv("PHIBE_HOME", str(home_dir))
 
         with (
             patch("shutil.which", side_effect=lambda name: f"/usr/bin/{name}"),
@@ -167,7 +167,7 @@ class TestEnsureRunner:
         )
         old_package.parent.mkdir(parents=True)
         old_package.write_text('{"version":"0.2.126"}')
-        monkeypatch.setenv("PHI_HOME", str(home_dir))
+        monkeypatch.setenv("PHIBE_HOME", str(home_dir))
 
         with (
             patch("shutil.which", side_effect=lambda name: f"/usr/bin/{name}"),

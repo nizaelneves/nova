@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from phi.core.config import (
+from phibe.core.config import (
     AgentConfig,
     HardwareInfo,
-    PhiConfig,
+    PhibeConfig,
     ServerConfig,
     generate_default_toml,
 )
@@ -49,14 +49,14 @@ class TestServerConfig:
         assert cfg.port == 9000
 
 
-class TestPhiConfig:
+class TestPhibeConfig:
     def test_has_server(self):
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         assert hasattr(cfg, "server")
         assert isinstance(cfg.server, ServerConfig)
 
     def test_agent_config_expanded(self):
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         assert hasattr(cfg.agent, "default_tools")  # backward-compat property
         assert hasattr(cfg.agent, "tools")
         assert hasattr(cfg.agent, "objective")

@@ -1,8 +1,8 @@
-"""Tests for the LLM-backed fact extractor (phi.memory.extractor)."""
+"""Tests for the LLM-backed fact extractor (phibe.memory.extractor)."""
 
 from __future__ import annotations
 
-from phi.memory.extractor import FactExtractor
+from phibe.memory.extractor import FactExtractor
 
 
 class FakeEngine:

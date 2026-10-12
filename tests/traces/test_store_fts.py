@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from phi.core.types import Trace
+from phibe.core.types import Trace
 
 
 @pytest.fixture
 def store():
-    from phi.traces.store import TraceStore
+    from phibe.traces.store import TraceStore
 
     with tempfile.TemporaryDirectory() as tmpdir:
         s = TraceStore(Path(tmpdir) / "traces.db")

@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.traces.analyzer import StepTypeStats, TraceAnalyzer
-from phi.traces.store import TraceStore
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.traces.analyzer import StepTypeStats, TraceAnalyzer
+from phibe.traces.store import TraceStore
 
 
 def _make_trace(steps: list[TraceStep]) -> Trace:

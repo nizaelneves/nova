@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from phi.sessions.session import (
+from phibe.sessions.session import (
     Session,
     SessionIdentity,
     SessionStore,

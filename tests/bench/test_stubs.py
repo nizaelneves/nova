@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from phi.bench._stubs import BaseBenchmark, BenchmarkResult, BenchmarkSuite
+from phibe.bench._stubs import BaseBenchmark, BenchmarkResult, BenchmarkSuite
 
 
 class TestBenchmarkResult:

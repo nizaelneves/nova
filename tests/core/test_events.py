@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 
-from phi.core.events import (
+from phibe.core.events import (
     Event,
     EventBus,
     EventType,
@@ -43,7 +43,7 @@ class TestEventBus:
         bus.subscribe(EventType.INFERENCE_END, fail)
         bus.subscribe(EventType.INFERENCE_END, received.append)
 
-        with caplog.at_level(logging.ERROR, logger="phi.core.events"):
+        with caplog.at_level(logging.ERROR, logger="phibe.core.events"):
             event = bus.publish(EventType.INFERENCE_END, {"model": "test"})
 
         assert received == [event]
@@ -127,14 +127,14 @@ class TestEventBus:
 
 class TestAgentEventTypes:
     def test_agent_tick_events_exist(self):
-        from phi.core.events import EventType
+        from phibe.core.events import EventType
 
         assert EventType.AGENT_TICK_START
         assert EventType.AGENT_TICK_END
         assert EventType.AGENT_TICK_ERROR
 
     def test_agent_operational_events_exist(self):
-        from phi.core.events import EventType
+        from phibe.core.events import EventType
 
         assert EventType.AGENT_BUDGET_EXCEEDED
         assert EventType.AGENT_STALL_DETECTED

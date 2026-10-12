@@ -1,0 +1,245 @@
+/* The voice card: shown in its own floating window and, card only, inside the app. */
+.vc-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 6px 10px 10px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Inside the app only the card appears, floating above the message box. */
+.vc-inapp {
+  position: absolute;
+  left: 50%;
+  bottom: max(7rem, 30%);
+  z-index: 60;
+  width: 360px;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+}
+
+/* The floating button alone (no card): centred in a small window with room for the rings. */
+.vc-wrap[data-cardless='true'] {
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.vc-wrap[data-cardless='true'] .vc-fab {
+  margin: 0;
+}
+
+/* In the card's own window the card sits at the bottom of the window, so the window's bottom
+   edge is the card's bottom edge (the same spot as the card shown inside the app). */
+#voice-root .vc-wrap[data-avatar='false'] {
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.vc-wrap[data-avatar='false'] {
+  height: auto;
+  padding: 0;
+}
+
+.vc-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  border-radius: 18px;
+  background: #0d141b;
+  border: 1px solid #1b2a33;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  animation: vc-in 0.16s var(--ease-out, ease-out);
+}
+
+.vc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.vc-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #d6e4e4;
+}
+
+.vc-timer {
+  font: 500 13px ui-monospace, Consolas, monospace;
+  color: #7f9999;
+}
+
+.vc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: #ef4444;
+  animation: vc-pulse 1.4s ease-in-out infinite;
+}
+
+.vc-detail {
+  margin: 4px 0 6px;
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.vc-wrap[data-tone='normal'] .vc-detail {
+  color: #d6e4e4;
+  font-style: italic;
+}
+
+.vc-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7f9999;
+}
+
+.vc-hint kbd {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font: 600 11px ui-monospace, Consolas, monospace;
+  color: #d6e4e4;
+  background: #111c24;
+  border: 1px solid #2a3d47;
+}
+
+.vc-sep {
+  margin: 0 3px;
+}
+
+.vc-fab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-right: 14px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 25%, #13262b, #0a1216);
+  border: 1px solid #1f3b40;
+  box-shadow: 0 8px 26px rgba(20, 184, 166, 0.28);
+}
+
+.vc-fab[data-ring='listen']::before,
+.vc-fab[data-ring='listen']::after,
+.phibe-fab[data-ring='listen']::before,
+.phibe-fab[data-ring='listen']::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 2.5px solid rgba(45, 212, 191, 0.75);
+  animation: vc-ring 1.6s ease-out infinite;
+}
+
+.vc-fab[data-ring='listen']::after,
+.phibe-fab[data-ring='listen']::after {
+  animation-delay: 0.8s;
+}
+
+.vc-fab[data-ring='send']::before,
+.phibe-fab[data-ring='send']::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 3px solid rgba(45, 212, 191, 0.25);
+  border-top-color: #2dd4bf;
+  animation: vc-spin 0.9s linear infinite;
+}
+
+.vc-fab[data-ring='count']::before,
+.phibe-fab[data-ring='count']::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 3px solid #2a3d47;
+  border-top-color: #94a3b8;
+  animation: vc-spin 5s linear 1;
+}
+
+.vc-badge {
+  position: absolute;
+  top: -14px;
+  right: -16px;
+  animation: vc-pop 0.35s var(--ease-out, ease-out);
+}
+
+.vc-action {
+  margin-top: 8px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #04201c;
+  background: #2dd4bf;
+  border: 0;
+}
+
+/* Sending: the first numbers of the sequence light up one after another, like the sketch. */
+.vc-fib {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  font: 700 15px ui-monospace, Consolas, monospace;
+  color: #2dd4bf;
+}
+
+.vc-fib span {
+  min-width: 1.1em;
+  text-align: center;
+  transition: opacity 0.25s;
+}
+
+.vc-fib span[data-new='true'] {
+  animation: vc-fib-in 0.3s ease-out;
+}
+
+@keyframes vc-fib-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to { transform: none; }
+}
+
+@keyframes vc-pop {
+  from { transform: scale(0.4); }
+  60% { transform: scale(1.2); }
+  to { transform: scale(1); }
+}
+
+.vc-wrap[data-tone='error'] .vc-card {
+  border-color: #7f1d1d;
+}
+
+@keyframes vc-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes vc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes vc-ring {
+  from { transform: scale(0.9); opacity: 0.9; }
+  to { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes vc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-card, .vc-dot, .vc-fib span, .vc-fab::before, .vc-fab::after, .phibe-fab::before, .phibe-fab::after { animation: none !important; }
+
+}

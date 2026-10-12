@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.learning._stubs import RoutingContext
+from phibe.learning._stubs import RoutingContext
 
 
 class TestRoutingContext:

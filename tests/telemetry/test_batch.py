@@ -9,7 +9,7 @@ from typing import Generator
 
 import pytest
 
-from phi.telemetry.batch import BatchMetrics, EnergyBatch
+from phibe.telemetry.batch import BatchMetrics, EnergyBatch
 
 # ---------------------------------------------------------------------------
 # BatchMetrics defaults

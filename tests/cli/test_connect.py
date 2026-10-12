@@ -1,4 +1,4 @@
-"""Tests for ``phi connect`` CLI command."""
+"""Tests for ``phibe connect`` CLI command."""
 
 from __future__ import annotations
 
@@ -6,20 +6,20 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
 def test_connect_list_no_connectors() -> None:
     """--list with an empty registry shows a 'no connectors' message."""
     runner = CliRunner()
     with mock.patch(
-        "phi.cli.connect_cmd.connect.__wrapped__"
+        "phibe.cli.connect_cmd.connect.__wrapped__"
         if hasattr(cli, "__wrapped__")
-        else "phi.core.registry.ConnectorRegistry.items",
+        else "phibe.core.registry.ConnectorRegistry.items",
         return_value=(),
     ):
         with mock.patch(
-            "phi.core.registry.ConnectorRegistry.items",
+            "phibe.core.registry.ConnectorRegistry.items",
             return_value=(),
         ):
             result = runner.invoke(cli, ["connect", "--list"])
@@ -40,7 +40,7 @@ def test_connect_list_with_connector(tmp_path: object) -> None:
     mock_cls.return_value = mock_instance
 
     with mock.patch(
-        "phi.core.registry.ConnectorRegistry.items",
+        "phibe.core.registry.ConnectorRegistry.items",
         return_value=(("obsidian", mock_cls),),
     ):
         result = runner.invoke(cli, ["connect", "--list"])
@@ -70,11 +70,11 @@ def test_connect_specific_source(tmp_path: object) -> None:
 
     with (
         mock.patch(
-            "phi.core.registry.ConnectorRegistry.contains",
+            "phibe.core.registry.ConnectorRegistry.contains",
             return_value=True,
         ),
         mock.patch(
-            "phi.core.registry.ConnectorRegistry.get",
+            "phibe.core.registry.ConnectorRegistry.get",
             return_value=mock_cls,
         ),
     ):
@@ -96,11 +96,11 @@ def test_connect_disconnect() -> None:
 
     with (
         mock.patch(
-            "phi.core.registry.ConnectorRegistry.contains",
+            "phibe.core.registry.ConnectorRegistry.contains",
             return_value=True,
         ),
         mock.patch(
-            "phi.core.registry.ConnectorRegistry.get",
+            "phibe.core.registry.ConnectorRegistry.get",
             return_value=mock_cls,
         ),
     ):

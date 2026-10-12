@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Galaxy } from './Galaxy';
-import { PhiBubble } from './PhiBubble';
+import { Island } from './Island';
+import { PhibeBubble } from './PhibeBubble';
+import { VoiceOverlay } from './VoiceOverlay';
 import { useAppStore } from '../lib/store';
-import { checkHealth } from '../lib/api';
+import { checkHealth, isTauri } from '../lib/api';
+import { useVoiceDelivery } from '../hooks/useVoiceDelivery';
 
 export function Layout() {
+  useVoiceDelivery();
+  const menuOpen = useAppStore((s) => s.sidebarOpen);
+  useEffect(() => {
+    if (!isTauri()) return;
+    void import('@tauri-apps/api/core').then(({ invoke }) => invoke('voice_set_sidebar', { width: menuOpen ? 260 : 72 }));
+  }, [menuOpen]);
   const sidebarOpen = useAppStore((s) => s.sidebarOpen);
   const [apiReachable, setApiReachable] = useState<boolean | null>(null);
 
@@ -44,7 +53,7 @@ export function Layout() {
             className="w-1.5 h-1.5 rounded-full shrink-0"
             style={{ background: 'var(--color-error)' }}
           />
-          <span>Cannot reach Phi backend</span>
+          <span>Cannot reach Phibe backend</span>
           <button
             onClick={() => navigate('/settings')}
             className="text-sm underline cursor-pointer ml-auto shrink-0"
@@ -64,12 +73,15 @@ export function Layout() {
           />
         )}
         <main className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden" style={{ background: 'transparent' }}>
-          <div className="flex-1 flex flex-col min-w-0 min-h-0 relative z-[2]">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0 relative z-[2]" style={{ paddingTop: 66 }}>
             <Outlet />
           </div>
+          {/* The voice card sits in the middle of the content area, above the message box. */}
+          <VoiceOverlay />
         </main>
       </div>
-      <PhiBubble />
+      <Island />
+      <PhibeBubble />
     </div>
   );
 }

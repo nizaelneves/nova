@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from phi.core.registry import ModelRegistry
-from phi.core.types import ModelSpec
-from phi.learning._stubs import RoutingContext
-from phi.learning.routing.router import (
+from phibe.core.registry import ModelRegistry
+from phibe.core.types import ModelSpec
+from phibe.learning._stubs import RoutingContext
+from phibe.learning.routing.router import (
     HeuristicRouter,
     build_routing_context,
 )

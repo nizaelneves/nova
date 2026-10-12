@@ -14,7 +14,7 @@ import pytest
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
-from phi.server.app import create_app  # noqa: E402
+from phibe.server.app import create_app  # noqa: E402
 
 
 def _make_engine():
@@ -26,9 +26,9 @@ def _make_engine():
 
 
 def _test_config():
-    from phi.core.config import PhiConfig
+    from phibe.core.config import PhibeConfig
 
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.traces.enabled = False
     return cfg
 
@@ -37,7 +37,7 @@ class TestCorsPreflightWithApiKey:
     def test_environment_origins_used_when_factory_argument_is_omitted(
         self, monkeypatch
     ):
-        monkeypatch.setenv("PHI_CORS_ORIGINS", "https://frontend.example")
+        monkeypatch.setenv("PHIBE_CORS_ORIGINS", "https://frontend.example")
         app = create_app(
             _make_engine(),
             "test-model",
@@ -60,7 +60,7 @@ class TestCorsPreflightWithApiKey:
         )
 
     def test_explicit_factory_origins_override_environment(self, monkeypatch):
-        monkeypatch.setenv("PHI_CORS_ORIGINS", "https://env.example")
+        monkeypatch.setenv("PHIBE_CORS_ORIGINS", "https://env.example")
         app = create_app(
             _make_engine(),
             "test-model",
@@ -89,7 +89,7 @@ class TestCorsPreflightWithApiKey:
         assert env.status_code == 400
 
     def test_wildcard_origin_is_removed(self, monkeypatch):
-        monkeypatch.setenv("PHI_CORS_ORIGINS", "*")
+        monkeypatch.setenv("PHIBE_CORS_ORIGINS", "*")
         app = create_app(
             _make_engine(),
             "test-model",

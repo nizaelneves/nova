@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.core.config import GpuInfo, HardwareInfo, recommend_model
+from phibe.core.config import GpuInfo, HardwareInfo, recommend_model
 
 
 class TestRecommendModelTiers:

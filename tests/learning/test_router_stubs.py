@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.types import RoutingContext
-from phi.learning._stubs import QueryAnalyzer, RouterPolicy
-from phi.learning.routing.router import DefaultQueryAnalyzer
+from phibe.core.types import RoutingContext
+from phibe.learning._stubs import QueryAnalyzer, RouterPolicy
+from phibe.learning.routing.router import DefaultQueryAnalyzer
 
 
 class _DummyRouter(RouterPolicy):

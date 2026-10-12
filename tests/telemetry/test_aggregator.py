@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 
-from phi.core.types import TelemetryRecord
-from phi.telemetry.aggregator import (
+from phibe.core.types import TelemetryRecord
+from phibe.telemetry.aggregator import (
     AggregatedStats,
     EngineStats,
     ModelStats,
     TelemetryAggregator,
 )
-from phi.telemetry.store import TelemetryStore
+from phibe.telemetry.store import TelemetryStore
 
 
 def _make_record(
@@ -279,7 +279,7 @@ class TestMethodologyFilter:
     still see the full history."""
 
     def test_default_includes_legacy_rows(self, tmp_path: Path) -> None:
-        from phi.core.types import TOKEN_COUNTING_VERSION
+        from phibe.core.types import TOKEN_COUNTING_VERSION
 
         legacy = _make_record(model_id="m1")
         legacy.token_counting_version = None  # pre-fix row
@@ -293,7 +293,7 @@ class TestMethodologyFilter:
         agg.close()
 
     def test_methodology_filter_drops_legacy_rows(self, tmp_path: Path) -> None:
-        from phi.core.types import TOKEN_COUNTING_VERSION
+        from phibe.core.types import TOKEN_COUNTING_VERSION
 
         legacy = _make_record(model_id="m1")
         legacy.token_counting_version = None
@@ -308,7 +308,7 @@ class TestMethodologyFilter:
         agg.close()
 
     def test_methodology_filter_drops_legacy_in_summary(self, tmp_path: Path) -> None:
-        from phi.core.types import TOKEN_COUNTING_VERSION
+        from phibe.core.types import TOKEN_COUNTING_VERSION
 
         legacy = _make_record(model_id="m1", completion_tokens=99)
         legacy.token_counting_version = None

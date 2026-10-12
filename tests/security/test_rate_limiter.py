@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from phi.security.rate_limiter import (
+from phibe.security.rate_limiter import (
     RateLimitConfig,
     RateLimiter,
     TokenBucket,

@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 
 import pytest
 
-from phi.evals.core.agentic_runner import AgenticRunner, _extract_patch
-from phi.evals.core.environment import TaskEnvironmentError
+from phibe.evals.core.agentic_runner import AgenticRunner, _extract_patch
+from phibe.evals.core.environment import TaskEnvironmentError
 
 # ---------------------------------------------------------------------------
 # Mock objects

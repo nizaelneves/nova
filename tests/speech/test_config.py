@@ -1,6 +1,6 @@
 """Tests for speech configuration."""
 
-from phi.core.config import PhiConfig, SpeechConfig
+from phibe.core.config import PhibeConfig, SpeechConfig
 
 
 def test_speech_config_defaults():
@@ -12,15 +12,15 @@ def test_speech_config_defaults():
     assert cfg.compute_type == "float16"
 
 
-def test_phi_config_has_speech():
-    cfg = PhiConfig()
+def test_phibe_config_has_speech():
+    cfg = PhibeConfig()
     assert hasattr(cfg, "speech")
     assert isinstance(cfg.speech, SpeechConfig)
     assert cfg.speech.backend == "auto"
 
 
-def test_phi_system_has_speech_backend():
-    """PhiSystem has a speech_backend attribute."""
-    from phi.system import PhiSystem
+def test_phibe_system_has_speech_backend():
+    """PhibeSystem has a speech_backend attribute."""
+    from phibe.system import PhibeSystem
 
-    assert "speech_backend" in PhiSystem.__dataclass_fields__
+    assert "speech_backend" in PhibeSystem.__dataclass_fields__

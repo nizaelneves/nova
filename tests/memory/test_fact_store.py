@@ -1,4 +1,4 @@
-"""Tests for the persistent fact store (phi.memory.store)."""
+"""Tests for the persistent fact store (phibe.memory.store)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ import time
 
 import pytest
 
-from phi.core.registry import FactStoreRegistry
-from phi.memory.store import (
+from phibe.core.registry import FactStoreRegistry
+from phibe.memory.store import (
     TRUST_AUTO,
     TRUST_TRUSTED,
     TRUST_UNTRUSTED,
@@ -440,8 +440,8 @@ def test_create_fact_store_uses_fact_store_registry(tmp_path):
     assert isinstance(store, CustomFactStore)
 
 
-def test_create_fact_store_default_path_uses_phi_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+def test_create_fact_store_default_path_uses_phibe_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
 
     store = create_fact_store("local")
 

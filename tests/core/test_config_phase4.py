@@ -1,13 +1,13 @@
-"""Tests for LearningConfig and its integration into PhiConfig."""
+"""Tests for LearningConfig and its integration into PhibeConfig."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from phi.core.config import (
+from phibe.core.config import (
     HardwareInfo,
     LearningConfig,
-    PhiConfig,
+    PhibeConfig,
     generate_default_toml,
     load_config,
 )
@@ -35,8 +35,8 @@ class TestLearningConfig:
         assert cfg.metrics.cost_weight == 0.3
         assert cfg.metrics.efficiency_weight == 0.3
 
-    def test_phi_config_has_learning(self) -> None:
-        cfg = PhiConfig()
+    def test_phibe_config_has_learning(self) -> None:
+        cfg = PhibeConfig()
         assert hasattr(cfg, "learning")
         assert isinstance(cfg.learning, LearningConfig)
         assert cfg.learning.routing.policy == "heuristic"

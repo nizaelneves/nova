@@ -23,14 +23,10 @@ import {
   todayLocal,
   updateTask,
 } from '../lib/tasks-api';
-import {
-  LIST_BUCKET_LABEL,
-  LIST_BUCKET_ORDER,
-  nowLinePercent,
-  shiftDateStr,
-  taskListBucket,
-  timePositionPercent,
-} from '../lib/tasks';
+import { RollNumber } from '../components/RollNumber';
+import { StrikeText } from '../components/StrikeText';
+import { TaskCheck } from '../components/TaskCheck';
+import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../lib/tasks';
 
 const COLUMNS: { status: Status; label: string }[] = [
   { status: 'todo', label: 'To Do' },
@@ -46,19 +42,13 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'all', label: 'All' },
 ];
 
-type View = 'calendar' | 'kanban' | 'list';
+type View = 'kanban' | 'list';
 const VIEWS: { id: View; label: string }[] = [
-  { id: 'calendar', label: 'Calendar' },
   { id: 'kanban', label: 'Kanban' },
   { id: 'list', label: 'List' },
 ];
 
-// Calendar day timeline: the full 24 hours, so a task due before 6 AM or
-// after 11 PM is never clipped out of view.
-const CAL_START_HOUR = 0;
-const CAL_END_HOUR = 24;
-
-const PRIORITY_COLOR: Record<Priority, string> = {
+export const PRIORITY_COLOR: Record<Priority, string> = {
   high: 'var(--color-error)',
   medium: '#d9a441',
   low: 'var(--color-text-tertiary)',
@@ -77,10 +67,6 @@ function formatDue(task: Task): string {
 
 function formatTimeShort(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-}
-
-function formatHourLabel(hour: number): string {
-  return new Date(2000, 0, 1, hour).toLocaleTimeString(undefined, { hour: 'numeric' });
 }
 
 // ---------------------------------------------------------------------------
@@ -150,7 +136,9 @@ function TaskCard({
       className="task-card"
       style={priorityStyle(task)}
     >
-      <div className="task-card-title">{task.title}</div>
+      <div className="task-card-title" style={{ opacity: task.status === 'done' ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
+        <StrikeText done={task.status === 'done'}>{task.title}</StrikeText>
+      </div>
       <div className="flex items-center gap-1.5 flex-wrap mt-2">
         <TaskMetaChips task={task} />
       </div>
@@ -173,20 +161,11 @@ function TaskListRow({
 }) {
   const done = task.status === 'done';
   return (
-    <div className="task-list-row" style={priorityStyle(task)} onClick={onOpen} role="button" tabIndex={0}
+    <div className="task-list-row" data-done={done} style={priorityStyle(task)} onClick={onOpen} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}>
-      <button
-        type="button"
-        aria-label={done ? 'Mark not done' : 'Mark done'}
-        data-done={done}
-        onClick={(e) => { e.stopPropagation(); onToggleDone(); }}
-        className="task-list-check"
-      />
-      <span
-        className="flex-1 text-sm truncate"
-        style={{ color: 'var(--color-text)', textDecoration: done ? 'line-through' : 'none', opacity: done ? 0.6 : 1 }}
-      >
-        {task.title}
+      <TaskCheck done={done} label={done ? 'Mark not done' : 'Mark done'} onClick={onToggleDone} />
+      <span className="task-list-title flex-1 text-sm truncate" style={{ color: 'var(--color-text)' }}>
+        <StrikeText done={done}>{task.title}</StrikeText>
       </span>
       <div className="flex items-center gap-1.5 flex-wrap shrink-0">
         <TaskMetaChips task={task} />
@@ -229,8 +208,22 @@ function TaskListView({
     return <div className="text-xs px-1 py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here.</div>;
   }
 
+  const doneCount = tasks.filter((t) => t.status === 'done').length;
+  const allDone = tasks.length > 0 && doneCount === tasks.length;
+
   return (
     <div className="flex flex-col gap-4">
+      <div className="task-progress" data-complete={allDone} aria-live="polite">
+        <TaskCheck done={allDone} label={allDone ? 'All tasks done' : 'Tasks in progress'} size={18} />
+        <span>{allDone ? 'All done' : 'Progress'}</span>
+        <span className="task-progress-count">
+          <span className="sr-only">{doneCount} of {tasks.length} tasks done</span>
+          <span aria-hidden="true" style={{ display: 'inline-flex' }}>
+            <RollNumber value={doneCount} />
+            <span>/{tasks.length}</span>
+          </span>
+        </span>
+      </div>
       {groups.map(([bucket, items]) => (
         <div key={bucket} className="flex flex-col gap-1.5">
           <div className="task-list-section-head">
@@ -249,122 +242,10 @@ function TaskListView({
 }
 
 // ---------------------------------------------------------------------------
-// Calendar (single-day timeline) view
-// ---------------------------------------------------------------------------
-
-function TaskCalendarView({
-  tasks,
-  viewedDate,
-  onNavigate,
-  onOpen,
-}: {
-  tasks: Task[];
-  viewedDate: string;
-  onNavigate: (date: string) => void;
-  onOpen: (task: Task) => void;
-}) {
-  const dayTasks = useMemo(() => tasks.filter((t) => t.due.slice(0, 10) === viewedDate), [tasks, viewedDate]);
-  const allDayTasks = dayTasks.filter((t) => t.all_day);
-  const timedTasks = dayTasks.filter((t) => !t.all_day);
-
-  const hours = useMemo(
-    () => Array.from({ length: CAL_END_HOUR - CAL_START_HOUR }, (_, i) => CAL_START_HOUR + i),
-    [],
-  );
-  const rowRem = 3.5;
-  const gridHeightRem = hours.length * rowRem;
-  const now = new Date();
-  const nowTop = nowLinePercent(now, viewedDate, CAL_START_HOUR, CAL_END_HOUR);
-
-  const isToday = viewedDate === todayLocal();
-  const dateLabelBase = (() => {
-    const [y, m, d] = viewedDate.split('-').map(Number);
-    const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
-    return dt.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  })();
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-center gap-3">
-        <button type="button" onClick={() => onNavigate(shiftDateStr(viewedDate, -1))} className="composer-icon" aria-label="Previous day">
-          <Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(90deg)' }} />
-        </button>
-        <span className="text-sm font-semibold" style={{ color: 'var(--color-text)', minWidth: '14rem', textAlign: 'center' }}>
-          {isToday && (
-            <span
-              className="text-xs font-semibold"
-              style={{
-                color: 'var(--color-accent-light)',
-                background: 'var(--color-accent-subtle)',
-                borderRadius: '9999px',
-                padding: '0.1rem 0.55rem',
-                marginRight: '0.5rem',
-              }}
-            >
-              Today
-            </span>
-          )}
-          {dateLabelBase}
-        </span>
-        <button type="button" onClick={() => onNavigate(shiftDateStr(viewedDate, 1))} className="composer-icon" aria-label="Next day">
-          <Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(-90deg)' }} />
-        </button>
-      </div>
-
-      {allDayTasks.length > 0 && (
-        <div className="task-calendar-allday-strip">
-          {allDayTasks.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => onOpen(t)}
-              className="task-chip"
-              style={{ cursor: 'pointer', ...priorityStyle(t), borderColor: 'var(--task-priority-color)' }}
-            >
-              {t.title}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="task-calendar-grid" style={{ height: `${gridHeightRem}rem` }}>
-        {hours.map((h) => (
-          <div key={h} className="task-calendar-hour-row" style={{ height: `${rowRem}rem` }}>
-            <div className="task-calendar-hour-label">{formatHourLabel(h)}</div>
-            <div className="task-calendar-hour-track" />
-          </div>
-        ))}
-        {timedTasks.map((t) => {
-          const due = new Date(t.due);
-          const top = timePositionPercent(due, CAL_START_HOUR, CAL_END_HOUR);
-          return (
-            <button
-              key={t.id}
-              type="button"
-              className="task-calendar-block"
-              style={{
-                top: `${top}%`,
-                ...(t.priority ? { background: PRIORITY_COLOR[t.priority] } : {}),
-              }}
-              onClick={() => onOpen(t)}
-              title={`${t.title}, ${formatTimeShort(due)}`}
-            >
-              <span className="task-calendar-block-dot" />
-              {t.title}, {formatTimeShort(due)}
-            </button>
-          );
-        })}
-        {nowTop !== null && <div className="task-calendar-now-line" style={{ top: `${nowTop}%` }} />}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Add / edit task pop-up
 // ---------------------------------------------------------------------------
 
-function TaskForm({
+export function TaskForm({
   areas,
   task,
   onClose,
@@ -679,7 +560,6 @@ export function TasksPage() {
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [tab, setTab] = useState<Tab>('all');
   const [view, setView] = useState<View>('kanban');
-  const [calDate, setCalDate] = useState<string>(todayLocal());
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [summary, setSummary] = useState<Record<'today' | 'upcoming' | 'overdue', number> | null>(null);
   const [editing, setEditing] = useState<Task | null | 'new'>(null);
@@ -762,10 +642,7 @@ export function TasksPage() {
         </div>
       </div>
 
-      {/* The day-navigation in Calendar view already scopes which tasks are
-          visible, so the Today/Upcoming/Overdue/All row would be redundant
-          there — hide it for that view only. */}
-      {view !== 'calendar' && (
+      {(
         <div className="flex items-center justify-center gap-2 flex-wrap">
           {TABS.map((t) => (
             <button
@@ -825,10 +702,8 @@ export function TasksPage() {
             </div>
           ))}
         </div>
-      ) : view === 'list' ? (
-        <TaskListView tasks={filteredTasks} onOpen={(t) => setEditing(t)} onToggleDone={toggleDone} />
       ) : (
-        <TaskCalendarView tasks={tasks} viewedDate={calDate} onNavigate={setCalDate} onOpen={(t) => setEditing(t)} />
+        <TaskListView tasks={filteredTasks} onOpen={(t) => setEditing(t)} onToggleDone={toggleDone} />
       )}
 
       {editing && (

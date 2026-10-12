@@ -1,7 +1,7 @@
 """Tests for the doc_qa scorer."""
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.scorers.doc_qa import DocQAScorer
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.scorers.doc_qa import DocQAScorer
 
 
 def _make_record(required_facts):

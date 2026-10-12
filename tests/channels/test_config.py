@@ -5,7 +5,7 @@ from __future__ import annotations
 import textwrap
 from pathlib import Path
 
-from phi.core.config import ChannelConfig, PhiConfig, load_config
+from phibe.core.config import ChannelConfig, PhibeConfig, load_config
 
 
 class TestChannelConfigDefaults:
@@ -23,14 +23,14 @@ class TestChannelConfigDefaults:
         assert cfg.default_agent == "orchestrator"
 
 
-class TestChannelConfigInPhiConfig:
-    def test_channel_config_in_phi_config(self) -> None:
-        cfg = PhiConfig()
+class TestChannelConfigInPhibeConfig:
+    def test_channel_config_in_phibe_config(self) -> None:
+        cfg = PhibeConfig()
         assert hasattr(cfg, "channel")
         assert isinstance(cfg.channel, ChannelConfig)
 
-    def test_phi_config_channel_defaults(self) -> None:
-        cfg = PhiConfig()
+    def test_phibe_config_channel_defaults(self) -> None:
+        cfg = PhibeConfig()
         assert cfg.channel.enabled is False
         assert cfg.channel.default_channel == ""
 

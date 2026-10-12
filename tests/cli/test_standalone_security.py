@@ -5,8 +5,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from phi.core.config import PhiConfig
-from phi.security import SecurityContext
+from phibe.core.config import PhibeConfig
+from phibe.security import SecurityContext
 
 
 def _security(raw_engine, wrapped_engine, policy, limiter):
@@ -20,7 +20,7 @@ def _security(raw_engine, wrapped_engine, policy, limiter):
 
 
 def test_deep_research_setup_chat_wires_security(monkeypatch):
-    from phi.cli.deep_research_setup_cmd import _launch_chat
+    from phibe.cli.deep_research_setup_cmd import _launch_chat
 
     raw_engine = MagicMock(name="raw-engine")
     wrapped_engine = MagicMock(name="wrapped-engine")
@@ -38,10 +38,10 @@ def test_deep_research_setup_chat_wires_security(monkeypatch):
         def run(self, text):
             return SimpleNamespace(content="done")
 
-    monkeypatch.setattr("phi.core.config.load_config", lambda: PhiConfig())
-    monkeypatch.setattr("phi.engine.ollama.OllamaEngine", lambda: raw_engine)
-    monkeypatch.setattr("phi.security.setup_security", setup)
-    monkeypatch.setattr("phi.agents.deep_research.DeepResearchAgent", _Agent)
+    monkeypatch.setattr("phibe.core.config.load_config", lambda: PhibeConfig())
+    monkeypatch.setattr("phibe.engine.ollama.OllamaEngine", lambda: raw_engine)
+    monkeypatch.setattr("phibe.security.setup_security", setup)
+    monkeypatch.setattr("phibe.agents.deep_research.DeepResearchAgent", _Agent)
     console = MagicMock()
     console.input.return_value = "/quit"
 

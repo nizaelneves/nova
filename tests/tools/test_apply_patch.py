@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.tools.apply_patch import ApplyPatchTool
+from phibe.tools.apply_patch import ApplyPatchTool
 
 
 class TestApplyPatchTool:

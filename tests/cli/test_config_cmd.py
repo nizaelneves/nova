@@ -1,4 +1,4 @@
-"""Tests for the ``phi config`` CLI commands."""
+"""Tests for the ``phibe config`` CLI commands."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
 class TestConfigCmd:
-    """Test cases for the phi config CLI group."""
+    """Test cases for the phibe config CLI group."""
 
     def test_config_group_help(self) -> None:
         """Test that the config group help displays correctly."""

@@ -8,12 +8,12 @@ from typing import Any, Dict, List
 
 import pytest
 
-from phi.core.events import EventBus
-from phi.core.types import Message, Role
-from phi.engine._stubs import InferenceEngine, StreamChunk
-from phi.engine.multi import MultiEngine
-from phi.security.guardrails import GuardrailsEngine
-from phi.telemetry.instrumented_engine import InstrumentedEngine
+from phibe.core.events import EventBus
+from phibe.core.types import Message, Role
+from phibe.engine._stubs import InferenceEngine, StreamChunk
+from phibe.engine.multi import MultiEngine
+from phibe.security.guardrails import GuardrailsEngine
+from phibe.telemetry.instrumented_engine import InstrumentedEngine
 
 # ---------------------------------------------------------------------------
 # Fake engine that yields predetermined StreamChunks via stream_full

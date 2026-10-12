@@ -8,10 +8,10 @@ import httpx
 import pytest
 import respx
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.ollama import OllamaEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.ollama import OllamaEngine
 
 OLLAMA_HOST = "http://testhost:11434"
 NEW_MODELS = ["gpt-oss:120b", "qwen3:8b", "glm-4.7-flash", "trinity-mini"]

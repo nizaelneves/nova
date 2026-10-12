@@ -1,7 +1,7 @@
 """Tests for PinchBench grading functions."""
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.scorers.pinchbench import (
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.scorers.pinchbench import (
     _grade_automated,
     _parse_judge_response,
     _summarize_transcript,

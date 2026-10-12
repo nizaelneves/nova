@@ -18,7 +18,7 @@ const model = (id: string): ModelInfo => ({
   id,
   object: 'model',
   created: 0,
-  owned_by: 'phi',
+  owned_by: 'phibe',
 });
 
 beforeEach(() => {

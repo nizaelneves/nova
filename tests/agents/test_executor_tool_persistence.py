@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from phi.agents._stubs import AgentResult
-from phi.agents.executor import AgentExecutor, _tool_calls_for_storage
-from phi.agents.manager import AgentManager
-from phi.core.events import EventBus
-from phi.core.types import ToolResult
+from phibe.agents._stubs import AgentResult
+from phibe.agents.executor import AgentExecutor, _tool_calls_for_storage
+from phibe.agents.manager import AgentManager
+from phibe.core.events import EventBus
+from phibe.core.types import ToolResult
 
 
 def test_tool_results_are_serialized_for_managed_messages() -> None:

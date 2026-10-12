@@ -10,11 +10,11 @@ import httpx
 import pytest
 import respx
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._stubs import ResponseFormat
-from phi.engine.cloud import CloudEngine
-from phi.engine.ollama import OllamaEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._stubs import ResponseFormat
+from phibe.engine.cloud import CloudEngine
+from phibe.engine.ollama import OllamaEngine
 
 # ---------------------------------------------------------------------------
 # ResponseFormat dataclass
@@ -252,7 +252,7 @@ class TestGoogleStructuredOutput:
             {"google": mock.MagicMock(), "google.genai": mock.MagicMock()},
         ):
             with mock.patch(
-                "phi.engine.cloud.genai_types", fake_genai_types, create=True
+                "phibe.engine.cloud.genai_types", fake_genai_types, create=True
             ):
                 # We need to actually test the config mutation. The simplest
                 # approach is to observe the config object passed to

@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.learning.learning_orchestrator import LearningOrchestrator
-from phi.traces.store import TraceStore
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.learning.learning_orchestrator import LearningOrchestrator
+from phibe.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

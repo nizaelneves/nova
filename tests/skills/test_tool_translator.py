@@ -1,8 +1,8 @@
-"""Tests for ToolTranslator — translate external tool names to Phi."""
+"""Tests for ToolTranslator — translate external tool names to Phibe."""
 
 from __future__ import annotations
 
-from phi.skills.tool_translator import TOOL_TRANSLATION, ToolTranslator
+from phibe.skills.tool_translator import TOOL_TRANSLATION, ToolTranslator
 
 
 class TestTranslationTable:

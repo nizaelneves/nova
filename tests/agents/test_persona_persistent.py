@@ -1,6 +1,6 @@
-"""Persona files reach persistent agents, not just one-shot `phi ask` (#376).
+"""Persona files reach persistent agents, not just one-shot `phibe ask` (#376).
 
-SOUL.md / MEMORY.md / USER.md are loaded by `phi ask` via SystemPromptBuilder.
+SOUL.md / MEMORY.md / USER.md are loaded by `phibe ask` via SystemPromptBuilder.
 Persistent agents (monitor_operative, operative) assemble their own system
 prompt and previously ignored these files entirely. These tests verify the
 persona is now appended to their prompt without replacing their specialized
@@ -9,8 +9,8 @@ instructions.
 
 from __future__ import annotations
 
-from phi.core.config import MemoryFilesConfig, SystemPromptConfig
-from phi.prompt.builder import SystemPromptBuilder
+from phibe.core.config import MemoryFilesConfig, SystemPromptConfig
+from phibe.prompt.builder import SystemPromptBuilder
 
 
 def _builder_with_soul(tmp_path, text="You are Kira."):
@@ -53,7 +53,7 @@ class TestPersonaSections:
 
 class TestApplyPersona:
     def test_appends_to_base_prompt(self, tmp_path):
-        from phi.agents.simple import SimpleAgent
+        from phibe.agents.simple import SimpleAgent
 
         agent = SimpleAgent(object(), "m", prompt_builder=_builder_with_soul(tmp_path))
         out = agent._apply_persona("MONITOR INSTRUCTIONS")
@@ -61,7 +61,7 @@ class TestApplyPersona:
         assert "You are Kira." in out
 
     def test_noop_without_builder(self):
-        from phi.agents.simple import SimpleAgent
+        from phibe.agents.simple import SimpleAgent
 
         agent = SimpleAgent(object(), "m")
         assert agent._apply_persona("BASE") == "BASE"
@@ -71,7 +71,7 @@ class TestPersistentAgentsReceivePromptBuilder:
     """The __init__ chain must forward prompt_builder through to BaseAgent."""
 
     def test_monitor_operative_forwards_prompt_builder(self, tmp_path):
-        from phi.agents.monitor_operative import MonitorOperativeAgent
+        from phibe.agents.monitor_operative import MonitorOperativeAgent
 
         builder = _builder_with_soul(tmp_path)
         agent = MonitorOperativeAgent(object(), "m", prompt_builder=builder)
@@ -81,7 +81,7 @@ class TestPersistentAgentsReceivePromptBuilder:
         assert "You are Kira." in applied
 
     def test_operative_forwards_prompt_builder(self, tmp_path):
-        from phi.agents.operative import OperativeAgent
+        from phibe.agents.operative import OperativeAgent
 
         builder = _builder_with_soul(tmp_path)
         agent = OperativeAgent(object(), "m", prompt_builder=builder)
@@ -89,7 +89,7 @@ class TestPersistentAgentsReceivePromptBuilder:
         assert "You are Kira." in agent._apply_persona("OP INSTRUCTIONS")
 
     def test_monitor_operative_without_builder_is_unaffected(self):
-        from phi.agents.monitor_operative import MonitorOperativeAgent
+        from phibe.agents.monitor_operative import MonitorOperativeAgent
 
         agent = MonitorOperativeAgent(object(), "m")
         assert agent._prompt_builder is None

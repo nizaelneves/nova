@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.connectors.retriever import ColBERTReranker, Reranker, TwoStageRetriever
-from phi.connectors.store import KnowledgeStore
-from phi.tools.storage._stubs import RetrievalResult
+from phibe.connectors.retriever import ColBERTReranker, Reranker, TwoStageRetriever
+from phibe.connectors.store import KnowledgeStore
+from phibe.tools.storage._stubs import RetrievalResult
 
 
 def _has_torch() -> bool:

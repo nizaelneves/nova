@@ -10,8 +10,8 @@ from typing import List
 
 import pytest
 
-from phi.connectors.autosync import start_auto_sync
-from phi.connectors.sync_settings import (
+from phibe.connectors.autosync import start_auto_sync
+from phibe.connectors.sync_settings import (
     SyncSettings,
     SyncSettingsError,
     load_sync_settings,
@@ -24,7 +24,7 @@ from phi.connectors.sync_settings import (
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     return tmp_path
 
 
@@ -57,7 +57,7 @@ def test_a_broken_settings_file_falls_back_to_defaults(home) -> None:
 def test_a_field_from_an_older_version_is_dropped_not_treated_as_corrupt(home) -> None:
     """Renaming a setting must never look like a broken file and wipe the rest."""
     (home / "sync_settings.json").write_text(
-        '{"auto_enabled": false, "interval_minutes": 30, "sync_when_phi_starts": true}',
+        '{"auto_enabled": false, "interval_minutes": 30, "sync_when_phibe_starts": true}',
         encoding="utf-8",
     )
 
@@ -208,7 +208,7 @@ def test_the_real_app_starts_and_stops_the_loop(home) -> None:
 
     from fastapi.testclient import TestClient
 
-    from phi.server.app import create_app
+    from phibe.server.app import create_app
 
     app = create_app(SimpleNamespace(engine_id="fake", health=lambda: True), "fake")
 
@@ -242,12 +242,12 @@ class FakeSource:
         self.connected = False
 
     def sync_status(self):
-        from phi.connectors._stubs import SyncStatus
+        from phibe.connectors._stubs import SyncStatus
 
         return SyncStatus()
 
     def sync(self, **kwargs):
-        from phi.connectors._stubs import Document
+        from phibe.connectors._stubs import Document
 
         self.synced.set()
         yield Document(
@@ -264,9 +264,9 @@ def api(home, monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    from phi.core.registry import ConnectorRegistry
-    from phi.server import connectors_router
-    from phi.server.connectors_router import create_connectors_router
+    from phibe.core.registry import ConnectorRegistry
+    from phibe.server import connectors_router
+    from phibe.server.connectors_router import create_connectors_router
 
     router = create_connectors_router()
     app = FastAPI()
@@ -304,7 +304,7 @@ def test_settings_endpoints_read_and_change_them(api) -> None:
 
 
 def open_settings() -> str:
-    from phi.connectors.sync_settings import settings_path
+    from phibe.connectors.sync_settings import settings_path
 
     return settings_path().read_text(encoding="utf-8")
 
@@ -318,7 +318,7 @@ def test_invalid_settings_are_a_422_and_change_nothing(api) -> None:
     assert client.get("/v1/connectors/sync-settings").json()["interval_minutes"] == 15
 
 
-def test_interval_zero_means_only_when_phi_starts(api) -> None:
+def test_interval_zero_means_only_when_phibe_starts(api) -> None:
     client, _, _ = api
 
     changed = client.put("/v1/connectors/sync-settings", json={"interval_minutes": 0})
@@ -441,7 +441,7 @@ def test_daily_sync_waits_for_the_chosen_time_then_runs_once(daily) -> None:
     assert len(h.runs) == 2
 
 
-def test_daily_sync_missed_while_off_runs_when_phi_opens_later_that_day(daily) -> None:
+def test_daily_sync_missed_while_off_runs_when_phibe_opens_later_that_day(daily) -> None:
     h = daily(datetime(2026, 10, 1, 8, 0), interval_minutes=1440, on_start=False, daily_time="03:00")
     # started at 08:00 after 03:00 already passed: today counts as done, tomorrow it runs
     assert h.runs == []
@@ -455,7 +455,7 @@ def test_daily_time_is_ignored_for_other_intervals(daily) -> None:
     assert h.runs == []
 
 
-# -- once, only when Phi starts -------------------------------------------------
+# -- once, only when Phibe starts -------------------------------------------------
 
 
 def test_only_on_start_runs_exactly_once_then_stops(loop) -> None:
@@ -470,7 +470,7 @@ def test_only_on_start_runs_exactly_once_then_stops(loop) -> None:
 
 
 def test_only_on_start_does_not_repeat_just_from_toggling_the_switch(loop) -> None:
-    """"Only when Phi starts" means the process start, not flipping the switch."""
+    """"Only when Phibe starts" means the process start, not flipping the switch."""
     h = loop(interval_minutes=0)
     h.advance(21)
     assert len(h.runs) == 1

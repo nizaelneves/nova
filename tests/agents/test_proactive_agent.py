@@ -6,14 +6,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.agents.proactive_agent import (
+from phibe.agents.proactive_agent import (
     _PROACTIVE_CRON_PROMPT,
     _build_notification_channel,
     register_cron,
 )
-from phi.core.registry import ChannelRegistry
-from phi.scheduler.scheduler import TaskScheduler
-from phi.scheduler.store import SchedulerStore
+from phibe.core.registry import ChannelRegistry
+from phibe.scheduler.scheduler import TaskScheduler
+from phibe.scheduler.store import SchedulerStore
 
 
 @pytest.fixture()
@@ -91,7 +91,7 @@ class TestRegisterCron:
         current = _register(scheduler)
 
         assert current.id != legacy.id
-        assert current.metadata["phi_task_key"] == "proactive-daily"
+        assert current.metadata["phibe_task_key"] == "proactive-daily"
         assert scheduler.list_tasks(status="cancelled")[0].id == legacy.id
 
 
@@ -106,9 +106,9 @@ class TestNotificationChannel:
         with (
             patch.object(ChannelRegistry, "contains", return_value=True),
             patch.object(ChannelRegistry, "get", return_value=FakeTelegram),
-            patch("phi.core.config.load_config", return_value=config),
+            patch("phibe.core.config.load_config", return_value=config),
             patch(
-                "phi.system._channel_kwargs.build_channel_kwargs",
+                "phibe.system._channel_kwargs.build_channel_kwargs",
                 return_value={"bot_token": "configured-token"},
             ),
         ):

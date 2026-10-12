@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import textwrap
 
-from phi.evals.core.config import expand_suite, load_eval_config
+from phibe.evals.core.config import expand_suite, load_eval_config
 
 
 def _write(tmp_path, body: str):

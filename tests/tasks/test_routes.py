@@ -8,8 +8,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server.tasks_routes import create_tasks_router
-from phi.tasks.store import TaskStore
+from phibe.server.tasks_routes import create_tasks_router
+from phibe.tasks.store import TaskStore
 
 
 @pytest.fixture

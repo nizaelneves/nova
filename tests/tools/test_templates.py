@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.tools.templates.loader import ToolTemplate, discover_templates
+from phibe.tools.templates.loader import ToolTemplate, discover_templates
 
 
 class TestToolTemplate:

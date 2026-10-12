@@ -1,15 +1,15 @@
-"""Default persona files seeded for a fresh Phi home."""
+"""Default persona files seeded for a fresh Phibe home."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from phi.prompt.defaults import default_memory, default_soul, default_user
+from phibe.prompt.defaults import default_memory, default_soul, default_user
 
 
-def test_default_soul_defines_phi_and_how_to_address_the_user() -> None:
+def test_default_soul_defines_phibe_and_how_to_address_the_user() -> None:
     soul = default_soul()
-    assert "You are Phi" in soul
+    assert "You are Phibe" in soul
     assert '"Senhor"' in soul and '"Nizael"' in soul
     assert "Portuguese" in soul and "English" in soul
 
@@ -23,7 +23,7 @@ def test_default_memory_is_empty_template() -> None:
 
 
 def test_seed_memory_files_writes_persona_files(tmp_path: Path, monkeypatch) -> None:
-    from phi.cli import _bootstrap
+    from phibe.cli import _bootstrap
 
     monkeypatch.setattr(_bootstrap._cfg, "DEFAULT_CONFIG_DIR", tmp_path)
 

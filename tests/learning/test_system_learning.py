@@ -4,28 +4,28 @@
 class TestSystemLearningIntegration:
     def test_learning_orchestrator_not_created_when_disabled(self):
         """Default config has training_enabled=False, so no orchestrator."""
-        from phi.core.config import PhiConfig
-        from phi.system import SystemBuilder
+        from phibe.core.config import PhibeConfig
+        from phibe.system import SystemBuilder
 
-        config = PhiConfig()
+        config = PhibeConfig()
         assert config.learning.training_enabled is False
         result = SystemBuilder._setup_learning_orchestrator(config)
         assert result is None
 
     def test_learning_orchestrator_created_when_enabled(self):
         """When training_enabled=True, orchestrator is created."""
-        from phi.core.config import PhiConfig
-        from phi.learning.learning_orchestrator import LearningOrchestrator
-        from phi.system import SystemBuilder
+        from phibe.core.config import PhibeConfig
+        from phibe.learning.learning_orchestrator import LearningOrchestrator
+        from phibe.system import SystemBuilder
 
-        config = PhiConfig()
+        config = PhibeConfig()
         config.learning.training_enabled = True
         result = SystemBuilder._setup_learning_orchestrator(config)
         assert isinstance(result, LearningOrchestrator)
 
     def test_config_has_training_fields(self):
         """LearningConfig has the training pipeline fields."""
-        from phi.core.config import LearningConfig
+        from phibe.core.config import LearningConfig
 
         config = LearningConfig()
         assert config.training_enabled is False
@@ -37,7 +37,7 @@ class TestSystemLearningIntegration:
 
     def test_training_components_exported(self):
         """Learning package exports all training components."""
-        from phi.learning import (
+        from phibe.learning import (
             AgentConfigEvolver,
             LearningOrchestrator,
             LoRATrainer,

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from phi.intelligence.model_catalog import register_builtin_models
-from phi.learning._stubs import RoutingContext
-from phi.learning.routing.router import (
+from phibe.intelligence.model_catalog import register_builtin_models
+from phibe.learning._stubs import RoutingContext
+from phibe.learning.routing.router import (
     HeuristicRouter,
     build_routing_context,
 )

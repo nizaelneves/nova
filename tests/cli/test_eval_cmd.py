@@ -1,17 +1,17 @@
-"""Tests for the ``phi eval`` CLI commands."""
+"""Tests for the ``phibe eval`` CLI commands."""
 
 from __future__ import annotations
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
 class TestEvalCLI:
     """Tests for the eval command group."""
 
     def test_eval_group_exists(self):
-        """``phi eval --help`` shows run/compare/report/list subcommands."""
+        """``phibe eval --help`` shows run/compare/report/list subcommands."""
         result = CliRunner().invoke(cli, ["eval", "--help"])
         assert result.exit_code == 0
         assert "run" in result.output
@@ -20,7 +20,7 @@ class TestEvalCLI:
         assert "list" in result.output
 
     def test_eval_list_benchmarks(self):
-        """``phi eval list`` exits 0 and outputs benchmark names."""
+        """``phibe eval list`` exits 0 and outputs benchmark names."""
         result = CliRunner().invoke(cli, ["eval", "list"])
         assert result.exit_code == 0
         assert "supergpqa" in result.output
@@ -28,11 +28,11 @@ class TestEvalCLI:
         assert "frames" in result.output
         assert "wildchat" in result.output
         # Should also show backends
-        assert "phi-direct" in result.output
-        assert "phi-agent" in result.output
+        assert "phibe-direct" in result.output
+        assert "phibe-agent" in result.output
 
     def test_eval_run_missing_args(self):
-        """``phi eval run`` without required args fails gracefully."""
+        """``phibe eval run`` without required args fails gracefully."""
         result = CliRunner().invoke(cli, ["eval", "run"])
         # Should fail because neither --config nor --benchmark/--model given
         assert result.exit_code != 0

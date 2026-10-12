@@ -1,15 +1,15 @@
-"""Tests for the ``phi tool`` CLI commands."""
+"""Tests for the ``phibe tool`` CLI commands."""
 
 from __future__ import annotations
 
 from click.testing import CliRunner
 
-from phi.cli import cli
-from phi.core.registry import ToolRegistry
+from phibe.cli import cli
+from phibe.core.registry import ToolRegistry
 
 
 class TestToolCmd:
-    """Test cases for the phi tool CLI group."""
+    """Test cases for the phibe tool CLI group."""
 
     def test_tool_group_help(self) -> None:
         """Test that the tool group help displays correctly."""
@@ -47,7 +47,7 @@ class TestToolCmd:
     def test_tool_inspect_known_tool(self) -> None:
         """Test that inspecting a known tool shows details."""
         # First, trigger tool registration
-        import phi.tools  # noqa: F401
+        import phibe.tools  # noqa: F401
 
         # Get a known tool name
         registered_tools = ToolRegistry.keys()
@@ -73,7 +73,7 @@ class TestToolCmd:
     def test_tool_list_with_registered_tools(self) -> None:
         """Test that tool list shows details for registered tools."""
         # Trigger tool registration
-        import phi.tools  # noqa: F401
+        import phibe.tools  # noqa: F401
 
         result = CliRunner().invoke(cli, ["tool", "list"])
         assert result.exit_code == 0
@@ -99,7 +99,7 @@ class TestToolCmd:
 
     def test_tool_inspect_with_spec_details(self) -> None:
         """Test that inspect shows full spec details for tools with specs."""
-        import phi.tools  # noqa: F401
+        import phibe.tools  # noqa: F401
 
         registered_tools = ToolRegistry.keys()
         if registered_tools:

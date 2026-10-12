@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.evals.scorers._checklist import (
+from phibe.evals.scorers._checklist import (
     ChecklistScorer,
     contains_key_phrases,
     normalize_str,

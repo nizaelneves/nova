@@ -1,8 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useAppStore, generateId } from '../../lib/store';
 import { streamChat, streamResearch } from '../../lib/sse';
-import { getBase, fetchHomeSettings } from '../../lib/api';
+import { getBase, fetchHomeSettings, isTauri } from '../../lib/api';
+import { VoiceCardView } from '../../voice/VoiceCard';
+import { INITIAL_VOICE_STATE, type VoiceState } from '../../voice/voiceCardModel';
+import '../../voice/voice.css';
 import { listConnectors, getSyncStatus } from '../../lib/connectors-api';
 import { serializeToolCallArguments } from '../../lib/tool-call';
 import {
@@ -19,6 +22,7 @@ import { isCliModel, thinkSupport } from '../../lib/model-capabilities';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useClapToActivate } from '../../hooks/useClapToActivate';
 import { speakReply, stopSpeaking } from '../../lib/voiceReply';
+import { dismissPhibeEventsOfKind } from '../../lib/phibePresence';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -98,8 +102,6 @@ export function InputArea() {
   const selectedModel = useAppStore((s) => s.selectedModel);
   const streamState = useAppStore((s) => s.streamState);
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
-  const voiceReplies = useAppStore((s) => s.settings.voiceReplies);
-  const updateSettings = useAppStore((s) => s.updateSettings);
   const maxTokens = useAppStore((s) => s.settings.maxTokens);
   const temperature = useAppStore((s) => s.settings.temperature);
   const createConversation = useAppStore((s) => s.createConversation);
@@ -119,6 +121,8 @@ export function InputArea() {
     available: speechAvailable,
     startRecording,
     stopRecording,
+    cancelRecording,
+    levelRef: speechLevelRef,
   } = useSpeech();
 
   // Abort in-flight stream when the user switches models mid-generation.
@@ -169,6 +173,49 @@ export function InputArea() {
     }
   }, [speechState, startRecording, stopRecording]);
 
+  // The Voice Mode icon: opens the voice card and starts listening. On the desktop app the
+  // global voice engine does it (the card shows inside the app, card only); in a browser the
+  // page records by itself and the same card shows while it does.
+  const setPendingVoice = useAppStore((s) => s.setPendingVoice);
+  const handleVoiceMode = useCallback(async () => {
+    if (isTauri()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      void invoke('voice_toggle');
+      return;
+    }
+    if (!speechEnabled || !speechAvailable) {
+      toast.error(!speechEnabled ? 'Enable speech in Settings first' : 'Speech backend not configured');
+      return;
+    }
+    if (speechState === 'recording') {
+      try {
+        const text = await stopRecording();
+        if (text) setPendingVoice({ id: Date.now(), text, mode: 'send' });
+      } catch {
+        // The error is shown by the speech hook.
+      }
+    } else if (speechState === 'idle') {
+      stopSpeaking();
+      await startRecording();
+    }
+  }, [speechEnabled, speechAvailable, speechState, startRecording, stopRecording, setPendingVoice]);
+
+  const browserVoiceCard = useMemo<VoiceState>(
+    () => ({
+      ...INITIAL_VOICE_STATE,
+      phase: speechState === 'recording' ? 'listening' : speechState === 'transcribing' ? 'sending' : 'idle',
+      ready: true,
+      shortcut: 'Click',
+    }),
+    [speechState],
+  );
+  useEffect(() => {
+    if (isTauri() || speechState !== 'recording') return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && cancelRecording();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [speechState, cancelRecording]);
+
   const clapToActivate = useAppStore((s) => s.settings.clapToActivate);
   const handleClapWake = useCallback(async () => {
     let name = '';
@@ -181,7 +228,7 @@ export function InputArea() {
     try {
       await speakReply(greeting);
       // speakReply resolves once playback *starts*, not once it ends — wait
-      // for it to actually finish before opening the mic, so Phi's own
+      // for it to actually finish before opening the mic, so Phibe's own
       // greeting is never picked up as the start of the user's recording.
       await new Promise<void>((resolve) => {
         if (!useAppStore.getState().speaking) { resolve(); return; }
@@ -535,7 +582,7 @@ export function InputArea() {
             if (spoke?.notice) toast.info(spoke.notice, { duration: 6000 });
           })
           .catch((err) => {
-            toast.error(err instanceof Error ? err.message : 'Phi could not speak', { duration: 8000 });
+            toast.error(err instanceof Error ? err.message : 'Phibe could not speak', { duration: 8000 });
           });
       }
     }
@@ -553,6 +600,25 @@ export function InputArea() {
     temperature,
     maxTokens,
   ]);
+
+  // A message spoken with the global voice shortcut: take it when the chat is idle, and
+  // send it (or leave it as a draft) as if it had been dictated here.
+  const pendingVoice = useAppStore((s) => s.pendingVoice);
+  const [autoSend, setAutoSend] = useState(false);
+  useEffect(() => {
+    if (!pendingVoice || streamState.isStreaming || modelLoading) return;
+    setInput((prev) => (prev.trim() ? `${prev.trim()} ${pendingVoice.text}` : pendingVoice.text));
+    dictatedRef.current = true;
+    setAutoSend(pendingVoice.mode === 'send');
+    setPendingVoice(null);
+    // The draft is in the message box now: the "draft waiting" notice has done its job.
+    if (pendingVoice.mode === 'draft') dismissPhibeEventsOfKind('draft');
+  }, [pendingVoice, streamState.isStreaming, modelLoading, setPendingVoice]);
+  useEffect(() => {
+    if (!autoSend || !input.trim()) return;
+    setAutoSend(false);
+    void sendMessage();
+  }, [autoSend, input, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -625,10 +691,10 @@ export function InputArea() {
             <button
               type="button"
               className="composer-icon"
-              data-on={voiceReplies === 'always'}
-              onClick={() => updateSettings({ voiceReplies: voiceReplies === 'always' ? 'off' : 'always' })}
-              aria-pressed={voiceReplies === 'always'}
-              title={voiceReplies === 'always' ? 'Voice Mode: ON' : 'Voice Mode: OFF'}
+              data-on={speechState === 'recording'}
+              onClick={() => void handleVoiceMode()}
+              aria-label="Voice Mode"
+              title="Voice Mode"
             >
               <Icon name="soundwave" size={20} />
             </button>
@@ -656,6 +722,11 @@ export function InputArea() {
           </div>
         </div>
       </div>
+      {!isTauri() && (
+        <div className="vc-inapp">
+          <VoiceCardView state={browserVoiceCard} levelRef={speechLevelRef} avatar={false} />
+        </div>
+      )}
       <div className="mt-3">
         <SyncButton />
       </div>

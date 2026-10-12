@@ -15,11 +15,11 @@ except ImportError:  # respx is an optional test-only dep; MockTransport tests
     respx = None  # type: ignore[assignment]  # still run without it.
     _HAS_RESPX = False
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine._openai_compat import EngineContextLengthError
-from phi.engine.openai_compat_engines import MLXEngine, VLLMEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine._openai_compat import EngineContextLengthError
+from phibe.engine.openai_compat_engines import MLXEngine, VLLMEngine
 
 # respx-backed tests exercise the SYNC client paths (generate/list_models/health)
 # and skip cleanly when respx is absent; the async stream/timeout/disconnect tests

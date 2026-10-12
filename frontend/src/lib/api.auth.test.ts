@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Regression for #266: the frontend must send the local API key as a Bearer
-// token on /v1 + /api requests, or `phi serve` with a key configured 401s
+// token on /v1 + /api requests, or `phibe serve` with a key configured 401s
 // every data-plane call. These tests cover the pure helpers (getApiKey,
 // authHeaders) that source the key and build the header.
 
-const SETTINGS_KEY = 'phi-settings';
+const SETTINGS_KEY = 'phibe-settings';
 const fetchMock = vi.fn<typeof fetch>();
 
 // Minimal in-memory localStorage stub so the helpers can run under node
@@ -51,7 +51,7 @@ describe('getApiKey', () => {
     expect(getApiKey()).toBe('');
   });
 
-  it('reads apiKey from the phi-settings localStorage blob', async () => {
+  it('reads apiKey from the phibe-settings localStorage blob', async () => {
     localStorage.setItem(
       SETTINGS_KEY,
       JSON.stringify({ apiUrl: 'http://x', apiKey: 'sk-local-123' }),

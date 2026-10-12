@@ -8,11 +8,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import Message, Role, TelemetryRecord
-from phi.telemetry.aggregator import TelemetryAggregator
-from phi.telemetry.instrumented_engine import InstrumentedEngine
-from phi.telemetry.store import TelemetryStore
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Message, Role, TelemetryRecord
+from phibe.telemetry.aggregator import TelemetryAggregator
+from phibe.telemetry.instrumented_engine import InstrumentedEngine
+from phibe.telemetry.store import TelemetryStore
 
 # ---------------------------------------------------------------------------
 # Helpers

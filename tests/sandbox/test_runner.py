@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.agents._stubs import AgentResult, BaseAgent
-from phi.core.events import EventBus, EventType
-from phi.sandbox.runner import (
+from phibe.agents._stubs import AgentResult, BaseAgent
+from phibe.core.events import EventBus, EventType
+from phibe.sandbox.runner import (
     _OUTPUT_END,
     _OUTPUT_START,
     ContainerRunner,

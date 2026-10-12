@@ -1,10 +1,10 @@
-"""Tests for phi.cli._bootstrap.detect_cloud_keys."""
+"""Tests for phibe.cli._bootstrap.detect_cloud_keys."""
 
 from __future__ import annotations
 
 import pytest
 
-from phi.cli import _bootstrap
+from phibe.cli import _bootstrap
 
 ALL_KEYS = (
     "OPENROUTER_API_KEY",

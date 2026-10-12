@@ -8,13 +8,13 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from phi.agents.digest_store import DigestStore
-from phi.core.types import ToolResult
+from phibe.agents.digest_store import DigestStore
+from phibe.core.types import ToolResult
 
 
 def test_full_digest_pipeline(tmp_path):
     """Verify collect -> synthesize -> TTS -> store -> retrieve."""
-    from phi.agents.morning_digest import MorningDigestAgent
+    from phibe.agents.morning_digest import MorningDigestAgent
 
     # Mock engine returns a narrative
     mock_engine = MagicMock()

@@ -1,11 +1,11 @@
-"""Tests for phi.optimize.feedback.judge module."""
+"""Tests for phibe.optimize.feedback.judge module."""
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.learning.optimize.feedback.judge import TraceJudge, _parse_score
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.learning.optimize.feedback.judge import TraceJudge, _parse_score
 
 # ---------------------------------------------------------------------------
 # _parse_score unit tests

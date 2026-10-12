@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import AgentResult
-from phi.agents.deep_research import DeepResearchAgent
-from phi.connectors.store import KnowledgeStore
-from phi.core.registry import AgentRegistry
-from phi.tools.knowledge_search import KnowledgeSearchTool
+from phibe.agents._stubs import AgentResult
+from phibe.agents.deep_research import DeepResearchAgent
+from phibe.connectors.store import KnowledgeStore
+from phibe.core.registry import AgentRegistry
+from phibe.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Fixtures

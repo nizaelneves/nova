@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import BaseAgent
-from phi.agents.openhands import OpenHandsAgent
-from phi.core.registry import AgentRegistry
+from phibe.agents._stubs import BaseAgent
+from phibe.agents.openhands import OpenHandsAgent
+from phibe.core.registry import AgentRegistry
 
 
 class TestOpenHandsAgentRegistration:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from phi.connectors.hybrid_search import HybridSearch
-from phi.connectors.store import KnowledgeStore
+from phibe.connectors.hybrid_search import HybridSearch
+from phibe.connectors.store import KnowledgeStore
 
 
 def _store_doc(

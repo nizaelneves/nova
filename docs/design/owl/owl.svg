@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560" width="1100" height="560"><defs>
+<linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8bf2de"/><stop offset=".5" stop-color="#2dd4bf"/><stop offset="1" stop-color="#0f9488"/></linearGradient>
+<linearGradient id="wingG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#20c4b0"/><stop offset="1" stop-color="#0b6f66"/></linearGradient>
+<linearGradient id="faceG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e3fbf5"/></linearGradient>
+<linearGradient id="bellyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9cc"/><stop offset="1" stop-color="#f6c38f"/></linearGradient>
+<radialGradient id="eyeG" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#2c2a78"/><stop offset="1" stop-color="#0d0b2e"/></radialGradient>
+<radialGradient id="fabG" cx=".3" cy=".25" r="1"><stop offset="0" stop-color="#13262b"/><stop offset="1" stop-color="#0a1216"/></radialGradient>
+</defs><rect width="1100" height="560" rx="20" fill="#070b10"/><text x="40" y="50" font-size="18" font-weight="700" fill="#2dd4bf" text-anchor="start" font-family="system-ui,Segoe UI,sans-serif">Phibe owl: floating-button avatar (sketch for approval)</text><text x="40" y="72" font-size="12.5" font-weight="500" fill="#7f9999" text-anchor="start" font-family="system-ui,Segoe UI,sans-serif">Phibe brand colours: teal body, white face, peach belly and feet, mint-ringed eyes, tiny teal glasses. Same ink outline as the snail. Nothing is wired into the app yet.</text><g transform="translate(40,96) scale(2.1)">
+<ellipse cx="100" cy="184" rx="52" ry="6" fill="#20e7aa" fill-opacity=".22"/>
+<!-- feet -->
+<g fill="#f6bd8a" stroke="#14123f" stroke-width="3" stroke-linejoin="round">
+  <path d="M64,178 Q64,170 76,170 Q92,170 92,178 Q92,184 64,184 Z"/><path d="M108,178 Q108,170 124,170 Q136,170 136,178 Q136,184 108,184 Z"/>
+</g>
+<g stroke="#14123f" stroke-width="2.6" stroke-linecap="round"><path d="M70,184 v3 M78,184 v3 M86,184 v3 M114,184 v3 M122,184 v3 M130,184 v3"/></g>
+<!-- wings, behind the body -->
+<path d="M46,96 C26,112 24,148 40,166 C46,172 54,170 56,160 C60,140 58,118 56,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M154,96 C174,112 176,148 160,166 C154,172 146,170 144,160 C140,140 142,118 144,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<g fill="none" stroke="#0b3b38" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"><path d="M36,132 Q44,138 50,152 M33,118 Q42,124 48,136"/><path d="M164,132 Q156,138 150,152 M167,118 Q158,124 152,136"/></g>
+<!-- body and head in one -->
+<path d="M100,20 C150,20 172,58 170,100 C168,150 142,178 100,178 C58,178 32,150 30,100 C28,58 50,20 100,20 Z" fill="url(#bodyG)" stroke="#14123f" stroke-width="3.6" stroke-linejoin="round"/>
+<!-- ear tufts -->
+<path d="M52,34 L44,12 L72,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M148,34 L156,12 L128,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<!-- belly with feather scallops -->
+<path d="M62,116 Q72,106 84,112 Q100,102 116,112 Q128,106 138,116 C146,134 138,164 100,170 C62,164 54,134 62,116 Z" fill="url(#bellyG)"/>
+<g fill="none" stroke="#e8a064" stroke-width="2.2" stroke-linecap="round"><path d="M72,124 Q80,132 88,124"/><path d="M92,128 Q100,136 108,128"/><path d="M112,124 Q120,132 128,124"/></g>
+<ellipse cx="86" cy="146" rx="3.1" ry="4.6" transform="rotate(-20 86 146)" fill="#be7846" fill-opacity=".5"/><ellipse cx="106" cy="152" rx="3.1" ry="4.6" transform="rotate(18 106 152)" fill="#be7846" fill-opacity=".5"/><ellipse cx="97" cy="131" rx="3.1" ry="4.6" transform="rotate(6 97 131)" fill="#be7846" fill-opacity=".5"/><ellipse cx="118" cy="139" rx="3.1" ry="4.6" transform="rotate(24 118 139)" fill="#be7846" fill-opacity=".5"/><ellipse cx="78" cy="128" rx="3.1" ry="4.6" transform="rotate(-26 78 128)" fill="#be7846" fill-opacity=".5"/>
+<!-- face mask: two discs joined -->
+<g fill="url(#faceG)"><circle cx="72" cy="78" r="33"/><circle cx="128" cy="78" r="33"/><ellipse cx="100" cy="84" rx="38" ry="28"/></g>
+<!-- eyes -->
+<circle cx="72" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="72" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="66.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="78.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="74" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/><circle cx="128" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="128" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="122.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="134.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="130" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/>
+<!-- golden glasses -->
+<g fill="none" stroke="#0b6f66" stroke-width="2.6"><circle cx="72" cy="78" r="26"/><circle cx="128" cy="78" r="26"/><path d="M96,74 Q100,70 104,74" stroke-linecap="round"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M56,64 Q62,57 70,54"/><path d="M112,64 Q118,57 126,54"/></g>
+<!-- beak -->
+<path d="M92,92 Q100,87 108,92 Q104,104 100,108 Q96,104 92,92 Z" fill="#7a5230" stroke="#14123f" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M95,95 Q100,93 105,95" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+</g><text x="230" y="530" font-size="13" font-weight="600" fill="#7f9999" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif">Idle</text><g transform="translate(470,176) scale(1)">
+<ellipse cx="100" cy="184" rx="52" ry="6" fill="#20e7aa" fill-opacity=".22"/>
+<!-- feet -->
+<g fill="#f6bd8a" stroke="#14123f" stroke-width="3" stroke-linejoin="round">
+  <path d="M64,178 Q64,170 76,170 Q92,170 92,178 Q92,184 64,184 Z"/><path d="M108,178 Q108,170 124,170 Q136,170 136,178 Q136,184 108,184 Z"/>
+</g>
+<g stroke="#14123f" stroke-width="2.6" stroke-linecap="round"><path d="M70,184 v3 M78,184 v3 M86,184 v3 M114,184 v3 M122,184 v3 M130,184 v3"/></g>
+<!-- wings, behind the body -->
+<path d="M46,96 C26,112 24,148 40,166 C46,172 54,170 56,160 C60,140 58,118 56,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M154,96 C174,112 176,148 160,166 C154,172 146,170 144,160 C140,140 142,118 144,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<g fill="none" stroke="#0b3b38" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"><path d="M36,132 Q44,138 50,152 M33,118 Q42,124 48,136"/><path d="M164,132 Q156,138 150,152 M167,118 Q158,124 152,136"/></g>
+<!-- body and head in one -->
+<path d="M100,20 C150,20 172,58 170,100 C168,150 142,178 100,178 C58,178 32,150 30,100 C28,58 50,20 100,20 Z" fill="url(#bodyG)" stroke="#14123f" stroke-width="3.6" stroke-linejoin="round"/>
+<!-- ear tufts -->
+<path d="M52,34 L44,12 L72,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M148,34 L156,12 L128,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<!-- belly with feather scallops -->
+<path d="M62,116 Q72,106 84,112 Q100,102 116,112 Q128,106 138,116 C146,134 138,164 100,170 C62,164 54,134 62,116 Z" fill="url(#bellyG)"/>
+<g fill="none" stroke="#e8a064" stroke-width="2.2" stroke-linecap="round"><path d="M72,124 Q80,132 88,124"/><path d="M92,128 Q100,136 108,128"/><path d="M112,124 Q120,132 128,124"/></g>
+<ellipse cx="86" cy="146" rx="3.1" ry="4.6" transform="rotate(-20 86 146)" fill="#be7846" fill-opacity=".5"/><ellipse cx="106" cy="152" rx="3.1" ry="4.6" transform="rotate(18 106 152)" fill="#be7846" fill-opacity=".5"/><ellipse cx="97" cy="131" rx="3.1" ry="4.6" transform="rotate(6 97 131)" fill="#be7846" fill-opacity=".5"/><ellipse cx="118" cy="139" rx="3.1" ry="4.6" transform="rotate(24 118 139)" fill="#be7846" fill-opacity=".5"/><ellipse cx="78" cy="128" rx="3.1" ry="4.6" transform="rotate(-26 78 128)" fill="#be7846" fill-opacity=".5"/>
+<!-- face mask: two discs joined -->
+<g fill="url(#faceG)"><circle cx="72" cy="78" r="33"/><circle cx="128" cy="78" r="33"/><ellipse cx="100" cy="84" rx="38" ry="28"/></g>
+<!-- eyes -->
+<path d="M55,80 Q72,94 89,80" fill="none" stroke="#14123f" stroke-width="4.5" stroke-linecap="round"/><path d="M111,80 Q128,94 145,80" fill="none" stroke="#14123f" stroke-width="4.5" stroke-linecap="round"/>
+<!-- golden glasses -->
+<g fill="none" stroke="#0b6f66" stroke-width="2.6"><circle cx="72" cy="78" r="26"/><circle cx="128" cy="78" r="26"/><path d="M96,74 Q100,70 104,74" stroke-linecap="round"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M56,64 Q62,57 70,54"/><path d="M112,64 Q118,57 126,54"/></g>
+<!-- beak -->
+<path d="M92,92 Q100,87 108,92 Q104,104 100,108 Q96,104 92,92 Z" fill="#7a5230" stroke="#14123f" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M95,95 Q100,93 105,95" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+</g><text x="570" y="400" font-size="13" font-weight="600" fill="#7f9999" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif">Blink / asleep (tucked at the edge)</text><g transform="translate(760,110)"><circle cx="64" cy="64" r="64" fill="url(#fabG)" stroke="#1f3b40"/><g transform="translate(10,12) scale(.54)">
+<ellipse cx="100" cy="184" rx="52" ry="6" fill="#20e7aa" fill-opacity=".22"/>
+<!-- feet -->
+<g fill="#f6bd8a" stroke="#14123f" stroke-width="3" stroke-linejoin="round">
+  <path d="M64,178 Q64,170 76,170 Q92,170 92,178 Q92,184 64,184 Z"/><path d="M108,178 Q108,170 124,170 Q136,170 136,178 Q136,184 108,184 Z"/>
+</g>
+<g stroke="#14123f" stroke-width="2.6" stroke-linecap="round"><path d="M70,184 v3 M78,184 v3 M86,184 v3 M114,184 v3 M122,184 v3 M130,184 v3"/></g>
+<!-- wings, behind the body -->
+<path d="M46,96 C26,112 24,148 40,166 C46,172 54,170 56,160 C60,140 58,118 56,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M154,96 C174,112 176,148 160,166 C154,172 146,170 144,160 C140,140 142,118 144,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<g fill="none" stroke="#0b3b38" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"><path d="M36,132 Q44,138 50,152 M33,118 Q42,124 48,136"/><path d="M164,132 Q156,138 150,152 M167,118 Q158,124 152,136"/></g>
+<!-- body and head in one -->
+<path d="M100,20 C150,20 172,58 170,100 C168,150 142,178 100,178 C58,178 32,150 30,100 C28,58 50,20 100,20 Z" fill="url(#bodyG)" stroke="#14123f" stroke-width="3.6" stroke-linejoin="round"/>
+<!-- ear tufts -->
+<path d="M52,34 L44,12 L72,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M148,34 L156,12 L128,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<!-- belly with feather scallops -->
+<path d="M62,116 Q72,106 84,112 Q100,102 116,112 Q128,106 138,116 C146,134 138,164 100,170 C62,164 54,134 62,116 Z" fill="url(#bellyG)"/>
+<g fill="none" stroke="#e8a064" stroke-width="2.2" stroke-linecap="round"><path d="M72,124 Q80,132 88,124"/><path d="M92,128 Q100,136 108,128"/><path d="M112,124 Q120,132 128,124"/></g>
+<ellipse cx="86" cy="146" rx="3.1" ry="4.6" transform="rotate(-20 86 146)" fill="#be7846" fill-opacity=".5"/><ellipse cx="106" cy="152" rx="3.1" ry="4.6" transform="rotate(18 106 152)" fill="#be7846" fill-opacity=".5"/><ellipse cx="97" cy="131" rx="3.1" ry="4.6" transform="rotate(6 97 131)" fill="#be7846" fill-opacity=".5"/><ellipse cx="118" cy="139" rx="3.1" ry="4.6" transform="rotate(24 118 139)" fill="#be7846" fill-opacity=".5"/><ellipse cx="78" cy="128" rx="3.1" ry="4.6" transform="rotate(-26 78 128)" fill="#be7846" fill-opacity=".5"/>
+<!-- face mask: two discs joined -->
+<g fill="url(#faceG)"><circle cx="72" cy="78" r="33"/><circle cx="128" cy="78" r="33"/><ellipse cx="100" cy="84" rx="38" ry="28"/></g>
+<!-- eyes -->
+<circle cx="72" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="72" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="66.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="78.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="74" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/><circle cx="128" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="128" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="122.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="134.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="130" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/>
+<!-- golden glasses -->
+<g fill="none" stroke="#0b6f66" stroke-width="2.6"><circle cx="72" cy="78" r="26"/><circle cx="128" cy="78" r="26"/><path d="M96,74 Q100,70 104,74" stroke-linecap="round"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M56,64 Q62,57 70,54"/><path d="M112,64 Q118,57 126,54"/></g>
+<!-- beak -->
+<path d="M92,92 Q100,87 108,92 Q104,104 100,108 Q96,104 92,92 Z" fill="#7a5230" stroke="#14123f" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M95,95 Q100,93 105,95" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+</g></g><text x="824" y="270" font-size="13" font-weight="600" fill="#7f9999" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif">Floating button, large</text><g transform="translate(790,310)"><circle cx="32" cy="32" r="32" fill="url(#fabG)" stroke="#1f3b40"/><g transform="translate(5,6) scale(.27)">
+<ellipse cx="100" cy="184" rx="52" ry="6" fill="#20e7aa" fill-opacity=".22"/>
+<!-- feet -->
+<g fill="#f6bd8a" stroke="#14123f" stroke-width="3" stroke-linejoin="round">
+  <path d="M64,178 Q64,170 76,170 Q92,170 92,178 Q92,184 64,184 Z"/><path d="M108,178 Q108,170 124,170 Q136,170 136,178 Q136,184 108,184 Z"/>
+</g>
+<g stroke="#14123f" stroke-width="2.6" stroke-linecap="round"><path d="M70,184 v3 M78,184 v3 M86,184 v3 M114,184 v3 M122,184 v3 M130,184 v3"/></g>
+<!-- wings, behind the body -->
+<path d="M46,96 C26,112 24,148 40,166 C46,172 54,170 56,160 C60,140 58,118 56,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M154,96 C174,112 176,148 160,166 C154,172 146,170 144,160 C140,140 142,118 144,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<g fill="none" stroke="#0b3b38" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"><path d="M36,132 Q44,138 50,152 M33,118 Q42,124 48,136"/><path d="M164,132 Q156,138 150,152 M167,118 Q158,124 152,136"/></g>
+<!-- body and head in one -->
+<path d="M100,20 C150,20 172,58 170,100 C168,150 142,178 100,178 C58,178 32,150 30,100 C28,58 50,20 100,20 Z" fill="url(#bodyG)" stroke="#14123f" stroke-width="3.6" stroke-linejoin="round"/>
+<!-- ear tufts -->
+<path d="M52,34 L44,12 L72,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M148,34 L156,12 L128,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<!-- belly with feather scallops -->
+<path d="M62,116 Q72,106 84,112 Q100,102 116,112 Q128,106 138,116 C146,134 138,164 100,170 C62,164 54,134 62,116 Z" fill="url(#bellyG)"/>
+<g fill="none" stroke="#e8a064" stroke-width="2.2" stroke-linecap="round"><path d="M72,124 Q80,132 88,124"/><path d="M92,128 Q100,136 108,128"/><path d="M112,124 Q120,132 128,124"/></g>
+<ellipse cx="86" cy="146" rx="3.1" ry="4.6" transform="rotate(-20 86 146)" fill="#be7846" fill-opacity=".5"/><ellipse cx="106" cy="152" rx="3.1" ry="4.6" transform="rotate(18 106 152)" fill="#be7846" fill-opacity=".5"/><ellipse cx="97" cy="131" rx="3.1" ry="4.6" transform="rotate(6 97 131)" fill="#be7846" fill-opacity=".5"/><ellipse cx="118" cy="139" rx="3.1" ry="4.6" transform="rotate(24 118 139)" fill="#be7846" fill-opacity=".5"/><ellipse cx="78" cy="128" rx="3.1" ry="4.6" transform="rotate(-26 78 128)" fill="#be7846" fill-opacity=".5"/>
+<!-- face mask: two discs joined -->
+<g fill="url(#faceG)"><circle cx="72" cy="78" r="33"/><circle cx="128" cy="78" r="33"/><ellipse cx="100" cy="84" rx="38" ry="28"/></g>
+<!-- eyes -->
+<circle cx="72" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="72" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="66.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="78.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="74" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/><circle cx="128" cy="78" r="21" fill="#20e7aa" stroke="#14123f" stroke-width="3"/><circle cx="128" cy="78" r="16.5" fill="url(#eyeG)"/><circle cx="122.5" cy="71.5" r="5.6" fill="#fff"/><circle cx="134.5" cy="84" r="2.4" fill="#fff" fill-opacity=".9"/><circle cx="130" cy="87" r="5" fill="#6078eb" fill-opacity=".55"/>
+<!-- golden glasses -->
+<g fill="none" stroke="#0b6f66" stroke-width="2.6"><circle cx="72" cy="78" r="26"/><circle cx="128" cy="78" r="26"/><path d="M96,74 Q100,70 104,74" stroke-linecap="round"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M56,64 Q62,57 70,54"/><path d="M112,64 Q118,57 126,54"/></g>
+<!-- beak -->
+<path d="M92,92 Q100,87 108,92 Q104,104 100,108 Q96,104 92,92 Z" fill="#7a5230" stroke="#14123f" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M95,95 Q100,93 105,95" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+</g></g><circle cx="1000" cy="342" r="32" fill="url(#fabG)" stroke="#1f3b40"/><g transform="translate(973,314) scale(.27)">
+<ellipse cx="100" cy="184" rx="52" ry="6" fill="#20e7aa" fill-opacity=".22"/>
+<!-- feet -->
+<g fill="#f6bd8a" stroke="#14123f" stroke-width="3" stroke-linejoin="round">
+  <path d="M64,178 Q64,170 76,170 Q92,170 92,178 Q92,184 64,184 Z"/><path d="M108,178 Q108,170 124,170 Q136,170 136,178 Q136,184 108,184 Z"/>
+</g>
+<g stroke="#14123f" stroke-width="2.6" stroke-linecap="round"><path d="M70,184 v3 M78,184 v3 M86,184 v3 M114,184 v3 M122,184 v3 M130,184 v3"/></g>
+<!-- wings, behind the body -->
+<path d="M46,96 C26,112 24,148 40,166 C46,172 54,170 56,160 C60,140 58,118 56,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M154,96 C174,112 176,148 160,166 C154,172 146,170 144,160 C140,140 142,118 144,100 Z" fill="url(#wingG)" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<g fill="none" stroke="#0b3b38" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round"><path d="M36,132 Q44,138 50,152 M33,118 Q42,124 48,136"/><path d="M164,132 Q156,138 150,152 M167,118 Q158,124 152,136"/></g>
+<!-- body and head in one -->
+<path d="M100,20 C150,20 172,58 170,100 C168,150 142,178 100,178 C58,178 32,150 30,100 C28,58 50,20 100,20 Z" fill="url(#bodyG)" stroke="#14123f" stroke-width="3.6" stroke-linejoin="round"/>
+<!-- ear tufts -->
+<path d="M52,34 L44,12 L72,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<path d="M148,34 L156,12 L128,26 Z" fill="#2dd4bf" stroke="#14123f" stroke-width="3.2" stroke-linejoin="round"/>
+<!-- belly with feather scallops -->
+<path d="M62,116 Q72,106 84,112 Q100,102 116,112 Q128,106 138,116 C146,134 138,164 100,170 C62,164 54,134 62,116 Z" fill="url(#bellyG)"/>
+<g fill="none" stroke="#e8a064" stroke-width="2.2" stroke-linecap="round"><path d="M72,124 Q80,132 88,124"/><path d="M92,128 Q100,136 108,128"/><path d="M112,124 Q120,132 128,124"/></g>
+<ellipse cx="86" cy="146" rx="3.1" ry="4.6" transform="rotate(-20 86 146)" fill="#be7846" fill-opacity=".5"/><ellipse cx="106" cy="152" rx="3.1" ry="4.6" transform="rotate(18 106 152)" fill="#be7846" fill-opacity=".5"/><ellipse cx="97" cy="131" rx="3.1" ry="4.6" transform="rotate(6 97 131)" fill="#be7846" fill-opacity=".5"/><ellipse cx="118" cy="139" rx="3.1" ry="4.6" transform="rotate(24 118 139)" fill="#be7846" fill-opacity=".5"/><ellipse cx="78" cy="128" rx="3.1" ry="4.6" transform="rotate(-26 78 128)" fill="#be7846" fill-opacity=".5"/>
+<!-- face mask: two discs joined -->
+<g fill="url(#faceG)"><circle cx="72" cy="78" r="33"/><circle cx="128" cy="78" r="33"/><ellipse cx="100" cy="84" rx="38" ry="28"/></g>
+<!-- eyes -->
+<path d="M55,80 Q72,94 89,80" fill="none" stroke="#14123f" stroke-width="4.5" stroke-linecap="round"/><path d="M111,80 Q128,94 145,80" fill="none" stroke="#14123f" stroke-width="4.5" stroke-linecap="round"/>
+<!-- golden glasses -->
+<g fill="none" stroke="#0b6f66" stroke-width="2.6"><circle cx="72" cy="78" r="26"/><circle cx="128" cy="78" r="26"/><path d="M96,74 Q100,70 104,74" stroke-linecap="round"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M56,64 Q62,57 70,54"/><path d="M112,64 Q118,57 126,54"/></g>
+<!-- beak -->
+<path d="M92,92 Q100,87 108,92 Q104,104 100,108 Q96,104 92,92 Z" fill="#7a5230" stroke="#14123f" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M95,95 Q100,93 105,95" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+</g><text x="822" y="400" font-size="13" font-weight="600" fill="#7f9999" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif">At real size (64 px)</text><text x="1002" y="400" font-size="13" font-weight="600" fill="#7f9999" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif">Tucked</text></svg>

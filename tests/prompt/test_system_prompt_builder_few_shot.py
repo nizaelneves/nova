@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.prompt.builder import SystemPromptBuilder
+from phibe.prompt.builder import SystemPromptBuilder
 
 
 class TestSystemPromptBuilderFewShot:

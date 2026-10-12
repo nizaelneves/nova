@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from phi.core.registry import ToolRegistry
-from phi.tools.code_interpreter import CodeInterpreterTool
+from phibe.core.registry import ToolRegistry
+from phibe.tools.code_interpreter import CodeInterpreterTool
 
 
 class TestCodeInterpreterTool:

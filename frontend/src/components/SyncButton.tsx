@@ -69,7 +69,7 @@ export function SyncButton() {
       if (problems.length) toast.error(problems.map(([id, why]) => `${id}: ${why}`).join('; '));
       if (result.started.length + result.already_syncing.length === 0 && problems.length === 0) {
         toast.info('No connected sources yet. Connect one in Data Sources.', {
-          action: { label: 'Open', onClick: () => navigate('/data-sources') },
+          action: { label: 'Open', onClick: () => navigate('/settings?tab=data-sources') },
         });
         return;
       }

@@ -6,7 +6,7 @@ import builtins
 import sys
 from unittest.mock import MagicMock
 
-from phi.tools.image_tool import ImageGenerateTool
+from phibe.tools.image_tool import ImageGenerateTool
 
 
 class TestImageGenerateTool:

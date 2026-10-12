@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from phi.learning.intelligence.orchestrator.policy_model import (
+from phibe.learning.intelligence.orchestrator.policy_model import (
     OrchestratorPolicyModel,
 )
-from phi.learning.intelligence.orchestrator.types import (
+from phibe.learning.intelligence.orchestrator.types import (
     EpisodeState,
     OrchestratorAction,
     OrchestratorObservation,

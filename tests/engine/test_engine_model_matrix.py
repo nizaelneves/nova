@@ -5,11 +5,11 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.ollama import OllamaEngine
-from phi.engine.openai_compat_engines import (
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.ollama import OllamaEngine
+from phibe.engine.openai_compat_engines import (
     AppleFmEngine,
     ExoEngine,
     LemonadeEngine,

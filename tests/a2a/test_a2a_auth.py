@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from phi.a2a.protocol import AgentCard
-from phi.a2a.server import A2AServer
+from phibe.a2a.protocol import AgentCard
+from phibe.a2a.server import A2AServer
 
 
 def _request():

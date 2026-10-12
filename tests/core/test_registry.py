@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.registry import (
+from phibe.core.registry import (
     EngineRegistry,
     ModelRegistry,
     RouterPolicyRegistry,

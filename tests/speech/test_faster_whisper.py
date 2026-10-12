@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.core.registry import SpeechRegistry
-from phi.speech.faster_whisper import FasterWhisperBackend
+from phibe.core.registry import SpeechRegistry
+from phibe.speech.faster_whisper import FasterWhisperBackend
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +22,7 @@ def test_faster_whisper_backend_registers():
 
 def test_faster_whisper_transcribe():
     """Transcribe returns a TranscriptionResult."""
-    from phi.speech._stubs import TranscriptionResult
+    from phibe.speech._stubs import TranscriptionResult
 
     mock_model = MagicMock()
     mock_segment = MagicMock()
@@ -39,10 +39,10 @@ def test_faster_whisper_transcribe():
     mock_model.transcribe.return_value = ([mock_segment], mock_info)
 
     with patch(
-        "phi.speech.faster_whisper.WhisperModel",
+        "phibe.speech.faster_whisper.WhisperModel",
         return_value=mock_model,
     ):
-        from phi.speech.faster_whisper import FasterWhisperBackend
+        from phibe.speech.faster_whisper import FasterWhisperBackend
 
         backend = FasterWhisperBackend(model_size="base", device="cpu")
         result = backend.transcribe(b"fake audio bytes")
@@ -80,7 +80,7 @@ def test_faster_whisper_transcribe_temp_file_reopenable_and_removed():
     mock_model.transcribe.side_effect = fake_transcribe
 
     with patch(
-        "phi.speech.faster_whisper.WhisperModel",
+        "phibe.speech.faster_whisper.WhisperModel",
         return_value=mock_model,
     ):
         backend = FasterWhisperBackend(model_size="base", device="cpu")
@@ -104,7 +104,7 @@ def test_faster_whisper_transcribe_removes_temp_file_on_error():
     mock_model.transcribe.side_effect = fake_transcribe
 
     with patch(
-        "phi.speech.faster_whisper.WhisperModel",
+        "phibe.speech.faster_whisper.WhisperModel",
         return_value=mock_model,
     ):
         backend = FasterWhisperBackend(model_size="base", device="cpu")
@@ -121,11 +121,11 @@ def test_faster_whisper_falls_back_from_unsupported_float16():
 
     with (
         patch(
-            "phi.speech.faster_whisper.WhisperModel",
+            "phibe.speech.faster_whisper.WhisperModel",
             return_value=mock_model,
         ) as mock_whisper,
         patch(
-            "phi.speech.faster_whisper.ctranslate2",
+            "phibe.speech.faster_whisper.ctranslate2",
             MagicMock(
                 get_supported_compute_types=MagicMock(return_value={"float32", "int8"})
             ),
@@ -142,7 +142,7 @@ def test_faster_whisper_falls_back_from_unsupported_float16():
 
 
 def test_faster_whisper_missing_dependency_hint_uses_desktop_extra():
-    with patch("phi.speech.faster_whisper.WhisperModel", new=None):
+    with patch("phibe.speech.faster_whisper.WhisperModel", new=None):
         backend = FasterWhisperBackend()
 
         with pytest.raises(ImportError) as excinfo:
@@ -155,7 +155,7 @@ def test_faster_whisper_missing_dependency_hint_uses_desktop_extra():
 def test_faster_whisper_health_no_model():
     """Health returns False before model is loaded."""
     with patch(
-        "phi.speech.faster_whisper.WhisperModel",
+        "phibe.speech.faster_whisper.WhisperModel",
         new=None,
     ):
         backend = FasterWhisperBackend()
@@ -165,7 +165,7 @@ def test_faster_whisper_health_no_model():
 
 def test_faster_whisper_health_captures_load_error():
     with patch(
-        "phi.speech.faster_whisper.WhisperModel",
+        "phibe.speech.faster_whisper.WhisperModel",
         side_effect=RuntimeError("missing cublas64_12.dll"),
     ):
         backend = FasterWhisperBackend()
@@ -175,11 +175,47 @@ def test_faster_whisper_health_captures_load_error():
 
 def test_faster_whisper_supported_formats():
     """Backend supports standard audio formats."""
-    with patch("phi.speech.faster_whisper.WhisperModel"):
-        from phi.speech.faster_whisper import FasterWhisperBackend
+    with patch("phibe.speech.faster_whisper.WhisperModel"):
+        from phibe.speech.faster_whisper import FasterWhisperBackend
 
         backend = FasterWhisperBackend.__new__(FasterWhisperBackend)
         formats = backend.supported_formats()
         assert "wav" in formats
         assert "mp3" in formats
         assert "webm" in formats
+
+
+def _transcribing_model():
+    model = MagicMock()
+    info = MagicMock(language="pt", language_probability=1.0, duration=1.0)
+    model.transcribe.return_value = ([], info)
+    return model
+
+
+def test_a_single_configured_language_is_forced():
+    model = _transcribing_model()
+    with patch("phibe.speech.faster_whisper.WhisperModel", return_value=model):
+        FasterWhisperBackend(model_size="base", device="cpu", languages="pt").transcribe(b"x")
+    assert model.transcribe.call_args.kwargs["language"] == "pt"
+    model.detect_language.assert_not_called()
+
+
+def test_detection_is_limited_to_the_configured_languages():
+    model = _transcribing_model()
+    # Whisper's overall favourite (fr) is not allowed; en beats pt among the allowed ones.
+    model.detect_language.return_value = ("fr", 0.6, [("fr", 0.6), ("en", 0.3), ("pt", 0.1)])
+    with (
+        patch("phibe.speech.faster_whisper.WhisperModel", return_value=model),
+        patch("faster_whisper.decode_audio", return_value=[0.0]),
+    ):
+        FasterWhisperBackend(model_size="base", device="cpu", languages="pt,en").transcribe(b"x")
+    assert model.transcribe.call_args.kwargs["language"] == "en"
+
+
+def test_an_explicit_language_wins_and_no_setting_means_auto():
+    model = _transcribing_model()
+    with patch("phibe.speech.faster_whisper.WhisperModel", return_value=model):
+        FasterWhisperBackend(model_size="base", device="cpu", languages="pt,en").transcribe(b"x", language="es")
+        assert model.transcribe.call_args.kwargs["language"] == "es"
+        FasterWhisperBackend(model_size="base", device="cpu").transcribe(b"x")
+    assert "language" not in model.transcribe.call_args.kwargs

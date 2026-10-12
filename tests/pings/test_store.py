@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from phi.pings.store import NotFound, PingError, PingStore, next_occurrence
+from phibe.pings.store import NotFound, PingError, PingStore, next_occurrence
 from datetime import date
 
 NOW = datetime(2026, 10, 7, 12, 0)  # Wednesday

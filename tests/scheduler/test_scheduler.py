@@ -8,8 +8,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.scheduler.scheduler import ScheduledTask, TaskScheduler
-from phi.scheduler.store import SchedulerStore
+from phibe.scheduler.scheduler import ScheduledTask, TaskScheduler
+from phibe.scheduler.store import SchedulerStore
 
 
 @pytest.fixture()
@@ -209,7 +209,7 @@ class TestComputeNextRun:
             schedule_value="0 5 * * *",
             metadata={"timezone": "America/Los_Angeles"},
         )
-        monkeypatch.setattr("phi.scheduler.scheduler.datetime", FixedDatetime)
+        monkeypatch.setattr("phibe.scheduler.scheduler.datetime", FixedDatetime)
 
         next_run = scheduler._compute_next_run(task)
 

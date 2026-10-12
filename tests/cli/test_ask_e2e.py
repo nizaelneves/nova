@@ -1,4 +1,4 @@
-"""End-to-end tests for ``phi ask``."""
+"""End-to-end tests for ``phibe ask``."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from phi.cli import cli
-from phi.core.config import PhiConfig
+from phibe.cli import cli
+from phibe.core.config import PhibeConfig
 
 # Import the actual module (not the Click command attribute)
-_ask_mod = importlib.import_module("phi.cli.ask")
+_ask_mod = importlib.import_module("phibe.cli.ask")
 
 
 def _mock_engine_response():
@@ -33,15 +33,15 @@ def _mock_engine_response():
 def _patch_ask(monkeypatch, tmp_path, *, engine_result=None, no_engine=False):
     """Set up common mocks for ask tests."""
     # Re-register SimpleAgent after the autouse `_clean_registries` conftest
-    # fixture clears it. ``PhiConfig().agent.default_agent`` defaults to
-    # ``"simple"``, so ``phi ask "..."`` (no --agent) routes through it.
-    from phi.agents.simple import SimpleAgent
-    from phi.core.registry import AgentRegistry
+    # fixture clears it. ``PhibeConfig().agent.default_agent`` defaults to
+    # ``"simple"``, so ``phibe ask "..."`` (no --agent) routes through it.
+    from phibe.agents.simple import SimpleAgent
+    from phibe.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
 
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
     cfg.traces.enabled = False
 

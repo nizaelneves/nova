@@ -1,7 +1,7 @@
 """Smoke test: every shipped preset config must load cleanly.
 
-Presets are installed via `phi init --preset <name>`, which copies
-`configs/phi/examples/<name>.toml` to `~/.phi/config.toml`.
+Presets are installed via `phibe init --preset <name>`, which copies
+`configs/phibe/examples/<name>.toml` to `~/.phibe/config.toml`.
 A preset that fails to parse via `load_config()` would break first-time
 setup, so we validate the whole set on every commit.
 """
@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from phi.core.config import PhiConfig, load_config
+from phibe.core.config import PhibeConfig, load_config
 
-PRESETS_DIR = Path(__file__).resolve().parents[2] / "configs" / "phi" / "examples"
+PRESETS_DIR = Path(__file__).resolve().parents[2] / "configs" / "phibe" / "examples"
 
 
 def _preset_paths() -> list[Path]:
@@ -36,8 +36,8 @@ def test_at_least_one_preset_ships() -> None:
 )
 def test_preset_loads(preset_path: Path) -> None:
     cfg = load_config(path=preset_path)
-    assert isinstance(cfg, PhiConfig)
+    assert isinstance(cfg, PhibeConfig)
     # A preset must at least name an engine and an agent — those are the two
-    # slots `phi init` expects to be populated for a working first run.
+    # slots `phibe init` expects to be populated for a working first run.
     assert cfg.engine.default, f"{preset_path.stem}: engine.default is empty"
     assert cfg.agent.default_agent, f"{preset_path.stem}: agent.default_agent is empty"

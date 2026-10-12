@@ -1,4 +1,4 @@
-"""Tests for phi.learning.spec_search.storage.paths module."""
+"""Tests for phibe.learning.spec_search.storage.paths module."""
 
 from __future__ import annotations
 
@@ -15,21 +15,21 @@ class TestResolveSpecSearchRoot:
     """Tests for resolve_spec_search_root()."""
 
     def test_default_is_under_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
-        monkeypatch.delenv("PHI_HOME", raising=False)
+        monkeypatch.delenv("PHIBE_HOME", raising=False)
         result = paths.resolve_spec_search_root()
-        assert result == Path.home() / ".phi" / "learning"
+        assert result == Path.home() / ".phibe" / "learning"
 
-    def test_respects_phi_home_env_var(
+    def test_respects_phibe_home_env_var(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
         custom = tmp_path / "custom_oj"
-        monkeypatch.setenv("PHI_HOME", str(custom))
+        monkeypatch.setenv("PHIBE_HOME", str(custom))
         result = paths.resolve_spec_search_root()
         assert result == custom / "learning"
 
@@ -38,9 +38,9 @@ class TestResolveSpecSearchRoot:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "rel"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "rel"))
         result = paths.resolve_spec_search_root()
         assert result.is_absolute()
 
@@ -48,20 +48,20 @@ class TestResolveSpecSearchRoot:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
-        # Find the Phi source root by walking up from the paths module.
+        # Find the Phibe source root by walking up from the paths module.
         source_root = paths._find_source_root()
         assert source_root is not None  # We must be running inside the repo.
 
-        # Force PHI_HOME to point inside the source tree.
-        monkeypatch.setenv("PHI_HOME", str(source_root / "junk_dir"))
+        # Force PHIBE_HOME to point inside the source tree.
+        monkeypatch.setenv("PHIBE_HOME", str(source_root / "junk_dir"))
 
         with pytest.raises(paths.ConfigurationError, match="inside the source tree"):
             paths.resolve_spec_search_root()
 
     def test_find_source_root_returns_repo_root(self) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
         result = paths._find_source_root()
         assert result is not None
@@ -81,9 +81,9 @@ class TestEnsureSpecSearchDirs:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         root = paths.ensure_spec_search_dirs()
 
         assert root.exists()
@@ -97,9 +97,9 @@ class TestEnsureSpecSearchDirs:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from phi.learning.spec_search.storage import paths
+        from phibe.learning.spec_search.storage import paths
 
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         first = paths.ensure_spec_search_dirs()
         second = paths.ensure_spec_search_dirs()
 

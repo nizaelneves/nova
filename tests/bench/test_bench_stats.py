@@ -7,14 +7,14 @@ from unittest.mock import MagicMock
 
 from rich.console import Console
 
-from phi.bench._stubs import BenchmarkResult
-from phi.cli.bench_cmd import _render_stats_table
+from phibe.bench._stubs import BenchmarkResult
+from phibe.cli.bench_cmd import _render_stats_table
 
 
 class TestLatencyBenchmarkStats:
     def test_latency_includes_std(self):
         """LatencyBenchmark should include std_latency in metrics."""
-        from phi.bench.latency import LatencyBenchmark
+        from phibe.bench.latency import LatencyBenchmark
 
         bench = LatencyBenchmark()
         engine = MagicMock()

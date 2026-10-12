@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.telemetry.session import (
+from phibe.telemetry.session import (
     TelemetrySample,
     TelemetrySession,
     _PythonRingBuffer,

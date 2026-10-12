@@ -1,10 +1,10 @@
-"""Tests for the ``phi workflow`` CLI commands."""
+"""Tests for the ``phibe workflow`` CLI commands."""
 
 from __future__ import annotations
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
 class TestWorkflowCmd:

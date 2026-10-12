@@ -13,9 +13,9 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib  # type: ignore[no-redef]
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.learning.agents.agent_evolver import AgentConfigEvolver
-from phi.traces.store import TraceStore
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.learning.agents.agent_evolver import AgentConfigEvolver
+from phibe.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.tools.think import ThinkTool
+from phibe.tools.think import ThinkTool
 
 
 class TestThinkTool:

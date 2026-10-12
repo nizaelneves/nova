@@ -1,8 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default permissions for Phi Desktop",
-  "windows": ["main"],
+  "description": "Default permissions for Phibe Desktop",
+  "windows": ["main", "voice"],
   "permissions": [
     "core:default",
     "notification:default",

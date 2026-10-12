@@ -6,7 +6,7 @@ import struct
 import sys
 from types import SimpleNamespace
 
-from phi.speech.voice_io import record_until_silence
+from phibe.speech.voice_io import record_until_silence
 
 
 class _FakeStream:

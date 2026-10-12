@@ -8,10 +8,10 @@ from typing import Iterator, List, Optional
 
 import pytest
 
-from phi.connectors._stubs import BaseConnector, Document, SyncStatus
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.store import KnowledgeStore
-from phi.connectors.sync_engine import SyncEngine
+from phibe.connectors._stubs import BaseConnector, Document, SyncStatus
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.store import KnowledgeStore
+from phibe.connectors.sync_engine import SyncEngine
 
 # ---------------------------------------------------------------------------
 # TimestampConnector — records the `since` value it receives

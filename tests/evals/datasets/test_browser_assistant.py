@@ -1,6 +1,6 @@
 """Tests for the browser_assistant dataset."""
 
-from phi.evals.datasets.browser_assistant import (
+from phibe.evals.datasets.browser_assistant import (
     BrowserAssistantDataset,
 )
 

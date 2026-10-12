@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.skills.parser import SkillParseError, SkillParser
+from phibe.skills.parser import SkillParseError, SkillParser
 
 
 class TestStrictRequiredFields:
@@ -155,14 +155,14 @@ class TestTolerantFieldMapping:
         )
         assert manifest.disable_model_invocation is True
 
-    def test_metadata_phi_namespace_used(self):
+    def test_metadata_phibe_namespace_used(self):
         parser = SkillParser()
         manifest = parser.parse_frontmatter(
             {
                 "name": "test",
                 "description": "x",
                 "metadata": {
-                    "phi": {
+                    "phibe": {
                         "version": "9.9.9",
                         "tags": ["already", "mapped"],
                     },
@@ -194,8 +194,8 @@ class TestTolerantFieldMapping:
             "weird_field": "preserved",
         }
         manifest = parser.parse_frontmatter(original)
-        # Stored under metadata.phi.original_frontmatter
-        oj = manifest.metadata.get("phi", {})
+        # Stored under metadata.phibe.original_frontmatter
+        oj = manifest.metadata.get("phibe", {})
         assert "original_frontmatter" in oj
         assert oj["original_frontmatter"]["weird_field"] == "preserved"
 
@@ -209,5 +209,5 @@ class TestTolerantFieldMapping:
             }
         )
         # Platforms get rendered into a compatibility string under metadata
-        oj = manifest.metadata.get("phi", {})
+        oj = manifest.metadata.get("phibe", {})
         assert "platforms" in oj or "compatibility" in oj

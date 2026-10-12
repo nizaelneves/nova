@@ -36,7 +36,7 @@ export async function saveCloudKey(keyName: string, keyValue: string): Promise<v
 
 // Cached API base URL fetched from the Tauri backend at startup.
 // This avoids hardcoding the port — the Rust backend is the single
-// source of truth for PHI_PORT.
+// source of truth for PHIBE_PORT.
 let _tauriApiBase: string | null = null;
 
 /** Pre-fetch the API base URL from the Tauri backend (call once at init). */
@@ -54,7 +54,7 @@ const DESKTOP_API_FALLBACK = 'http://127.0.0.1:8000';
 
 const getSettingsApiUrl = (): string => {
   try {
-    const raw = localStorage.getItem('phi-settings');
+    const raw = localStorage.getItem('phibe-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.apiUrl) return parsed.apiUrl.replace(/\/+$/, '');
@@ -71,21 +71,21 @@ export const getBase = (): string => {
   return '';
 };
 
-// Resolve the local server API key (PHI_API_KEY). When `phi serve`
+// Resolve the local server API key (PHIBE_API_KEY). When `phibe serve`
 // is started with a key, AuthMiddleware 401s every /v1 and /api request that
 // lacks a Bearer token — so the frontend must send it (#266). Sourced from the
 // same settings blob as the API URL, with an optional build-time env override.
 // Returns '' when unset, so a keyless local server keeps working unchanged.
 export const getApiKey = (): string => {
   try {
-    const raw = localStorage.getItem('phi-settings');
+    const raw = localStorage.getItem('phibe-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.apiKey) return String(parsed.apiKey);
     }
   } catch {}
-  if (import.meta.env.VITE_PHI_API_KEY) {
-    return import.meta.env.VITE_PHI_API_KEY as string;
+  if (import.meta.env.VITE_PHIBE_API_KEY) {
+    return import.meta.env.VITE_PHIBE_API_KEY as string;
   }
   return '';
 };
@@ -210,7 +210,7 @@ export async function preloadModel(modelName: string, owner?: string): Promise<v
   if (owner === 'litellm' || isCliModel(modelName) || _CLOUD_PREFIXES.some(p => modelName.startsWith(p))) {
     return;
   }
-  // Ask the Phi server to warm the model up (the browser cannot reach Ollama itself).
+  // Ask the Phibe server to warm the model up (the browser cannot reach Ollama itself).
   const res = await apiFetch(`/v1/models/preload`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -884,7 +884,7 @@ export interface DataFolder {
 
 export const fetchDataFolder = (): Promise<DataFolder> => syncJson('/v1/data-folder');
 
-/** Opens the Phi data folder in the computer's file explorer. */
+/** Opens the Phibe data folder in the computer's file explorer. */
 export const openDataFolder = (): Promise<{ opened: string }> =>
   syncJson('/v1/data-folder/open', { method: 'POST' });
 
@@ -998,10 +998,10 @@ export const savePingsSettings = (changes: Partial<PingsSettings>): Promise<Ping
     body: JSON.stringify(changes),
   });
 
-/** File types Phi can read when you add them with the "+" button. */
+/** File types Phibe can read when you add them with the "+" button. */
 export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx', '.xlsx'];
 
-/** Adds files to Phi's knowledge, so it can use them in answers. Returns how many chunks were added. */
+/** Adds files to Phibe's knowledge, so it can use them in answers. Returns how many chunks were added. */
 export async function addFilesToKnowledge(files: File[]): Promise<number> {
   const form = new FormData();
   for (const f of files) form.append('files', f);

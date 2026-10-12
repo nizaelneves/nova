@@ -11,9 +11,9 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.codex_cli import CodexCLIEngine
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.codex_cli import CodexCLIEngine
 
 FAKE = textwrap.dedent(
     """
@@ -76,7 +76,7 @@ def _call(fake: dict) -> dict:
 
 def _messages() -> list[Message]:
     return [
-        Message(role=Role.SYSTEM, content="You are Phi."),
+        Message(role=Role.SYSTEM, content="You are Phibe."),
         Message(role=Role.USER, content="Oi, tudo bem?"),
     ]
 
@@ -125,7 +125,7 @@ def test_system_prompt_and_plain_chat_rules_go_in_the_prompt(fake: dict) -> None
     fake["engine"].generate(_messages(), model="codex:default")
     stdin = _call(fake)["stdin"]
 
-    assert "You are Phi." in stdin
+    assert "You are Phibe." in stdin
     assert "do not run commands" in stdin
     assert stdin.rstrip().endswith("Oi, tudo bem?")
 
@@ -213,7 +213,7 @@ def test_health_requires_a_logged_in_cli(fake: dict, monkeypatch) -> None:
 
 
 def test_health_is_false_when_the_binary_is_missing() -> None:
-    with patch("phi.engine.codex_cli.shutil.which", return_value=None):
+    with patch("phibe.engine.codex_cli.shutil.which", return_value=None):
         assert CodexCLIEngine().health() is False
 
 
@@ -231,7 +231,7 @@ def test_models_and_serving_rules() -> None:
 
 
 def test_model_ids_never_look_like_cloud_api_models() -> None:
-    from phi.server.cloud_router import is_cloud_model
+    from phibe.server.cloud_router import is_cloud_model
 
     assert not any(is_cloud_model(m) for m in CodexCLIEngine().list_models())
 
@@ -239,8 +239,8 @@ def test_model_ids_never_look_like_cloud_api_models() -> None:
 def test_engine_is_registered() -> None:
     import importlib
 
-    import phi.engine.codex_cli as module
-    from phi.core.registry import EngineRegistry
+    import phibe.engine.codex_cli as module
+    from phibe.core.registry import EngineRegistry
 
     # The test suite clears registries between tests; re-import to register.
     importlib.reload(module)
@@ -277,8 +277,8 @@ def test_unknown_effort_is_refused(fake: dict) -> None:
 
 
 def test_server_sends_effort_to_both_cli_engines_only() -> None:
-    from phi.server import routes
-    from phi.server.models import ChatCompletionRequest
+    from phibe.server import routes
+    from phibe.server.models import ChatCompletionRequest
 
     req = ChatCompletionRequest(model="codex:default", messages=[], effort="high")
     for key in ("codex_cli", "claude_cli"):

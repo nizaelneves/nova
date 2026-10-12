@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 def test_handle_chat_uses_deep_research_agent() -> None:
     """When a DeepResearch agent is configured, route through it."""
-    from phi.server.channel_bridge import ChannelBridge
-    from phi.server.session_store import SessionStore
+    from phibe.server.channel_bridge import ChannelBridge
+    from phibe.server.session_store import SessionStore
 
     mock_agent = MagicMock()
     mock_agent.run.return_value = MagicMock(content="Found 3 results about Spain.")
@@ -32,8 +32,8 @@ def test_handle_chat_uses_deep_research_agent() -> None:
 
 def test_handle_chat_falls_back_to_system() -> None:
     """When no DeepResearch agent, fall back to system.ask()."""
-    from phi.server.channel_bridge import ChannelBridge
-    from phi.server.session_store import SessionStore
+    from phibe.server.channel_bridge import ChannelBridge
+    from phibe.server.session_store import SessionStore
 
     mock_system = MagicMock()
     mock_system.ask.return_value = {"content": "Generic response"}

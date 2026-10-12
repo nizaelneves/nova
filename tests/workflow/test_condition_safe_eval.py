@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.tools.templates.loader import safe_eval_expr
+from phibe.tools.templates.loader import safe_eval_expr
 
 
 class TestWorkflowSafeEval:

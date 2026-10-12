@@ -3,10 +3,10 @@
 import time
 from unittest.mock import patch
 
-from phi.agents._stubs import AgentResult
-from phi.agents.executor import AgentExecutor
-from phi.agents.manager import AgentManager
-from phi.core.events import EventBus, EventType
+from phibe.agents._stubs import AgentResult
+from phibe.agents.executor import AgentExecutor
+from phibe.agents.manager import AgentManager
+from phibe.core.events import EventBus, EventType
 
 
 def test_activity_tracking_updates_last_activity_at(tmp_path):
@@ -69,7 +69,7 @@ def test_reconcile_detects_stalled_agent(tmp_path):
     mgr = AgentManager(str(tmp_path / "test.db"))
     bus = EventBus(record_history=True)
     executor = AgentExecutor(mgr, bus)
-    from phi.agents.scheduler import AgentScheduler
+    from phibe.agents.scheduler import AgentScheduler
 
     scheduler = AgentScheduler(mgr, executor, event_bus=bus)
 
@@ -99,7 +99,7 @@ def test_reconcile_skips_active_agent(tmp_path):
     mgr = AgentManager(str(tmp_path / "test.db"))
     bus = EventBus(record_history=True)
     executor = AgentExecutor(mgr, bus)
-    from phi.agents.scheduler import AgentScheduler
+    from phibe.agents.scheduler import AgentScheduler
 
     scheduler = AgentScheduler(mgr, executor, event_bus=bus)
 
@@ -118,7 +118,7 @@ def test_reconcile_retries_exhausted_sets_error(tmp_path):
     mgr = AgentManager(str(tmp_path / "test.db"))
     bus = EventBus()
     executor = AgentExecutor(mgr, bus)
-    from phi.agents.scheduler import AgentScheduler
+    from phibe.agents.scheduler import AgentScheduler
 
     scheduler = AgentScheduler(mgr, executor, event_bus=bus)
 

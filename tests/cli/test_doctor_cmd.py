@@ -1,4 +1,4 @@
-"""Tests for ``phi doctor`` CLI command."""
+"""Tests for ``phibe doctor`` CLI command."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from phi.cli import cli
-from phi.cli.doctor_cmd import (
+from phibe.cli import cli
+from phibe.cli.doctor_cmd import (
     CheckResult,
     _check_config_exists,
     _check_default_model,
@@ -18,7 +18,7 @@ from phi.cli.doctor_cmd import (
     _check_speech_backend,
     _run_all_checks,
 )
-from phi.core.registry import EngineRegistry
+from phibe.core.registry import EngineRegistry
 
 
 class TestDoctorHelp:
@@ -36,15 +36,15 @@ class TestDoctorRuns:
         mock_config.intelligence.default_model = ""
 
         with (
-            patch("phi.cli.doctor_cmd.load_config", return_value=mock_config),
+            patch("phibe.cli.doctor_cmd.load_config", return_value=mock_config),
             patch(
-                "phi.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
+                "phibe.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
                 Path("/tmp/nonexistent/config.toml"),
             ),
-            patch("phi.cli.doctor_cmd._check_engines", return_value=[]),
-            patch("phi.cli.doctor_cmd._check_models", return_value=[]),
+            patch("phibe.cli.doctor_cmd._check_engines", return_value=[]),
+            patch("phibe.cli.doctor_cmd._check_models", return_value=[]),
             patch(
-                "phi.cli.doctor_cmd._check_speech_backend",
+                "phibe.cli.doctor_cmd._check_speech_backend",
                 return_value=CheckResult("Speech backend", "ok", "mock ready"),
             ),
         ):
@@ -60,15 +60,15 @@ class TestDoctorJsonOutput:
         mock_config.intelligence.default_model = ""
 
         with (
-            patch("phi.cli.doctor_cmd.load_config", return_value=mock_config),
+            patch("phibe.cli.doctor_cmd.load_config", return_value=mock_config),
             patch(
-                "phi.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
+                "phibe.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
                 Path("/tmp/nonexistent/config.toml"),
             ),
-            patch("phi.cli.doctor_cmd._check_engines", return_value=[]),
-            patch("phi.cli.doctor_cmd._check_models", return_value=[]),
+            patch("phibe.cli.doctor_cmd._check_engines", return_value=[]),
+            patch("phibe.cli.doctor_cmd._check_models", return_value=[]),
             patch(
-                "phi.cli.doctor_cmd._check_speech_backend",
+                "phibe.cli.doctor_cmd._check_speech_backend",
                 return_value=CheckResult("Speech backend", "ok", "mock ready"),
             ),
         ):
@@ -96,7 +96,7 @@ class TestCheckConfigMissing:
     def test_check_config_missing(self) -> None:
         """Warning when config file does not exist."""
         with patch(
-            "phi.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
+            "phibe.cli.doctor_cmd.DEFAULT_CONFIG_PATH",
             Path("/tmp/nonexistent/config.toml"),
         ):
             result = _check_config_exists()
@@ -107,7 +107,7 @@ class TestCheckConfigMissing:
 class TestCheckEngineProbing:
     def test_check_engine_probing(self) -> None:
         """Engine health check reports reachable/unreachable engines."""
-        from phi.cli.doctor_cmd import CheckResult
+        from phibe.cli.doctor_cmd import CheckResult
 
         mock_engine_healthy = MagicMock()
         mock_engine_healthy.health.return_value = True
@@ -160,24 +160,24 @@ class TestCheckEngineProbing:
 
         ok = CheckResult("other", "ok", "ok")
         with (
-            patch("phi.cli.doctor_cmd._ensure_engines_imported"),
-            patch("phi.cli.doctor_cmd._get_config", return_value=config),
-            patch("phi.cli.doctor_cmd.load_config", return_value=config),
+            patch("phibe.cli.doctor_cmd._ensure_engines_imported"),
+            patch("phibe.cli.doctor_cmd._get_config", return_value=config),
+            patch("phibe.cli.doctor_cmd.load_config", return_value=config),
             patch(
-                "phi.core.registry.EngineRegistry.keys",
+                "phibe.core.registry.EngineRegistry.keys",
                 return_value=["beta", "alpha"],
             ),
             patch(
-                "phi.engine._discovery._make_engine",
+                "phibe.engine._discovery._make_engine",
                 side_effect=make_engine,
             ) as make,
-            patch("phi.cli.doctor_cmd._check_python_version", return_value=ok),
-            patch("phi.cli.doctor_cmd._check_config_exists", return_value=ok),
-            patch("phi.cli.doctor_cmd._check_config_parses", return_value=ok),
-            patch("phi.cli.doctor_cmd._check_optional_deps", return_value=[]),
-            patch("phi.cli.doctor_cmd._check_speech_backend", return_value=ok),
-            patch("phi.cli.doctor_cmd._check_nodejs", return_value=ok),
-            patch("phi.cli.doctor_cmd._check_security_profile", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_python_version", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_config_exists", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_config_parses", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_optional_deps", return_value=[]),
+            patch("phibe.cli.doctor_cmd._check_speech_backend", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_nodejs", return_value=ok),
+            patch("phibe.cli.doctor_cmd._check_security_profile", return_value=ok),
         ):
             results = _run_all_checks()
 
@@ -195,7 +195,7 @@ class TestCheckDefaultModel:
         """Leaving default model empty should be treated as valid auto-routing."""
         mock_config = MagicMock()
         mock_config.intelligence.default_model = ""
-        with patch("phi.cli.doctor_cmd.load_config", return_value=mock_config):
+        with patch("phibe.cli.doctor_cmd.load_config", return_value=mock_config):
             result = _check_default_model()
         assert result.status == "ok"
         assert "auto" in result.message.lower()
@@ -210,11 +210,11 @@ class TestCheckDefaultModel:
         mock_engine.list_models.return_value = ["mlx-community/Qwen3.5-4B-OptiQ-4bit"]
 
         with (
-            patch("phi.cli.doctor_cmd.load_config", return_value=mock_config),
-            patch("phi.cli.doctor_cmd._ensure_engines_imported"),
+            patch("phibe.cli.doctor_cmd.load_config", return_value=mock_config),
+            patch("phibe.cli.doctor_cmd._ensure_engines_imported"),
             patch.object(EngineRegistry, "keys", return_value=["mlx"]),
             patch(
-                "phi.engine._discovery._make_engine",
+                "phibe.engine._discovery._make_engine",
                 return_value=mock_engine,
             ),
         ):
@@ -232,7 +232,7 @@ class TestCheckSpeechBackend:
         backend.health.return_value = True
 
         with patch(
-            "phi.speech._discovery.get_speech_backend",
+            "phibe.speech._discovery.get_speech_backend",
             return_value=backend,
         ):
             result = _check_speech_backend()
@@ -247,7 +247,7 @@ class TestCheckSpeechBackend:
         backend.last_error.return_value = "missing cublas64_12.dll"
 
         with patch(
-            "phi.speech._discovery.get_speech_backend",
+            "phibe.speech._discovery.get_speech_backend",
             return_value=backend,
         ):
             result = _check_speech_backend()
@@ -258,7 +258,7 @@ class TestCheckSpeechBackend:
 
     def test_check_speech_backend_missing_uses_desktop_hint(self) -> None:
         with patch(
-            "phi.speech._discovery.get_speech_backend",
+            "phibe.speech._discovery.get_speech_backend",
             return_value=None,
         ):
             result = _check_speech_backend()

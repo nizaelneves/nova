@@ -1,10 +1,10 @@
-"""Tests for resolve_mcp_servers in phi.core.config."""
+"""Tests for resolve_mcp_servers in phibe.core.config."""
 
 from pathlib import Path
 
 import pytest
 
-from phi.core.config import resolve_mcp_servers
+from phibe.core.config import resolve_mcp_servers
 
 
 class TestResolveMcpServers:

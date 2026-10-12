@@ -9,13 +9,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.mcp.client import MCPClient
-from phi.mcp.protocol import MCPError, MCPResponse
-from phi.mcp.server import MCPServer
-from phi.mcp.transport import InProcessTransport
-from phi.tools._stubs import ToolSpec
-from phi.tools.calculator import CalculatorTool
-from phi.tools.think import ThinkTool
+from phibe.mcp.client import MCPClient
+from phibe.mcp.protocol import MCPError, MCPResponse
+from phibe.mcp.server import MCPServer
+from phibe.mcp.transport import InProcessTransport
+from phibe.tools._stubs import ToolSpec
+from phibe.tools.calculator import CalculatorTool
+from phibe.tools.think import ThinkTool
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ class TestMCPClient:
         result = client.initialize()
         assert "protocolVersion" in result
         assert "serverInfo" in result
-        assert result["serverInfo"]["name"] == "phi"
+        assert result["serverInfo"]["name"] == "phibe"
         assert client._initialized is True
 
     def test_initialize_sets_capabilities(self, client):

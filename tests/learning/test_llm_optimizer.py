@@ -1,4 +1,4 @@
-"""Tests for phi.optimize.llm_optimizer module."""
+"""Tests for phibe.optimize.llm_optimizer module."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.evals.core.backend import InferenceBackend
-from phi.evals.core.types import RunSummary
-from phi.learning.optimize.llm_optimizer import LLMOptimizer
-from phi.learning.optimize.types import (
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.evals.core.backend import InferenceBackend
+from phibe.evals.core.types import RunSummary
+from phibe.learning.optimize.llm_optimizer import LLMOptimizer
+from phibe.learning.optimize.types import (
     SampleScore,
     SearchDimension,
     SearchSpace,

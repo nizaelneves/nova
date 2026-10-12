@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from phi.core.types import ToolResult
-from phi.tools._stubs import (
+from phibe.core.types import ToolResult
+from phibe.tools._stubs import (
     BaseTool,
     ToolSpec,
     build_tool_descriptions,

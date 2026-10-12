@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from phi.server.session_store import SessionStore
+from phibe.server.session_store import SessionStore
 
 
 @pytest.fixture

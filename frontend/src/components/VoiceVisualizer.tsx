@@ -10,8 +10,8 @@ const WIDTH = BARS * (BAR_WIDTH + GAP) - GAP;
 const HEIGHT = 40;
 
 /**
- * "Speaking" label over a row of bars that move with Phi's voice (a
- * voice-reactive audio visualizer). Fades in while Phi talks and rests as a
+ * "Speaking" label over a row of bars that move with Phibe's voice (a
+ * voice-reactive audio visualizer). Fades in while Phibe talks and rests as a
  * thin line otherwise. With effects off, or reduced motion, the bars stay still.
  */
 export function VoiceVisualizer() {

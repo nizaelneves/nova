@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, AsyncIterator, Dict, List
 
-from phi.engine._stubs import InferenceEngine
+from phibe.engine._stubs import InferenceEngine
 
 
 class FakeEngine(InferenceEngine):

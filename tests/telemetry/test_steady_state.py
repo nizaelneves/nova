@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.telemetry.steady_state import (
+from phibe.telemetry.steady_state import (
     SteadyStateConfig,
     SteadyStateDetector,
     SteadyStateResult,

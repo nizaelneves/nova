@@ -6,7 +6,7 @@ from pathlib import Path
 
 import tomllib
 
-from phi.core.config import (
+from phibe.core.config import (
     AgentConfig,
     ChannelConfig,
     EngineConfig,
@@ -14,7 +14,7 @@ from phi.core.config import (
     HardwareInfo,
     IntelligenceConfig,
     LearningConfig,
-    PhiConfig,
+    PhibeConfig,
     SandboxConfig,
     SchedulerConfig,
     SecurityConfig,
@@ -26,8 +26,8 @@ from phi.core.config import (
 
 
 class TestDefaults:
-    def test_phi_config_defaults(self) -> None:
-        cfg = PhiConfig()
+    def test_phibe_config_defaults(self) -> None:
+        cfg = PhibeConfig()
         assert cfg.engine.default == "ollama"
         assert cfg.memory.default_backend == "sqlite"
         assert cfg.telemetry.enabled is True
@@ -84,7 +84,7 @@ class TestRecommendEngine:
 class TestTomlLoading:
     def test_load_missing_file_uses_defaults(self, tmp_path: Path) -> None:
         cfg = load_config(tmp_path / "nonexistent.toml")
-        assert isinstance(cfg, PhiConfig)
+        assert isinstance(cfg, PhibeConfig)
         # engine default is derived from detected hardware — just ensure it's a string
         assert isinstance(cfg.engine.default, str)
 
@@ -113,10 +113,10 @@ class TestTomlLoading:
         must reach the runtime config, not be dropped by load_config()."""
         toml_file = tmp_path / "config.toml"
         toml_file.write_text(
-            '[system_prompt]\nprefix = "You are Phi."\nsoul_max_chars = 999\n'
+            '[system_prompt]\nprefix = "You are Phibe."\nsoul_max_chars = 999\n'
         )
         cfg = load_config(toml_file)
-        assert cfg.system_prompt.prefix == "You are Phi."
+        assert cfg.system_prompt.prefix == "You are Phibe."
         assert cfg.system_prompt.soul_max_chars == 999
 
     def test_config_without_system_prompt_block_defaults(self, tmp_path: Path) -> None:
@@ -161,8 +161,8 @@ class TestSecurityConfig:
         assert sc.pii_scanner is True
         assert sc.enforce_tool_confirmation is True
 
-    def test_security_config_on_phi_config(self) -> None:
-        cfg = PhiConfig()
+    def test_security_config_on_phibe_config(self) -> None:
+        cfg = PhibeConfig()
         assert isinstance(cfg.security, SecurityConfig)
 
     def test_security_config_loads_from_toml(self, tmp_path: Path) -> None:
@@ -183,8 +183,8 @@ class TestChannelConfig:
         assert cc.enabled is False
         assert cc.default_agent == "simple"
 
-    def test_channel_config_on_phi_config(self) -> None:
-        cfg = PhiConfig()
+    def test_channel_config_on_phibe_config(self) -> None:
+        cfg = PhibeConfig()
         assert isinstance(cfg.channel, ChannelConfig)
 
     def test_channel_config_loads_from_toml(self, tmp_path: Path) -> None:
@@ -247,11 +247,11 @@ class TestAgentConfigNew:
         )
 
     def test_default_system_prompt_anchors_identity(self) -> None:
-        """#540: the hardened wording must name Phi and explicitly
+        """#540: the hardened wording must name Phibe and explicitly
         deny the model's training identity so distilled models stop
         claiming to be Claude/ChatGPT/etc."""
         prompt = AgentConfig().default_system_prompt
-        assert "Phi" in prompt
+        assert "Phibe" in prompt
         assert "not Claude" in prompt
 
 
@@ -433,7 +433,7 @@ class TestSandboxConfig:
     def test_defaults(self) -> None:
         sc = SandboxConfig()
         assert sc.enabled is False
-        assert sc.image == "phi-sandbox:latest"
+        assert sc.image == "phibe-sandbox:latest"
         assert sc.timeout == 300
         assert sc.workspace == ""
         assert sc.mount_allowlist_path == ""
@@ -452,8 +452,8 @@ class TestSandboxConfig:
         assert sc.timeout == 600
         assert sc.runtime == "podman"
 
-    def test_on_phi_config(self) -> None:
-        cfg = PhiConfig()
+    def test_on_phibe_config(self) -> None:
+        cfg = PhibeConfig()
         assert isinstance(cfg.sandbox, SandboxConfig)
         assert cfg.sandbox.enabled is False
 
@@ -486,8 +486,8 @@ class TestSchedulerConfig:
         assert sc.poll_interval == 30
         assert sc.db_path == "/tmp/sched.db"
 
-    def test_on_phi_config(self) -> None:
-        cfg = PhiConfig()
+    def test_on_phibe_config(self) -> None:
+        cfg = PhibeConfig()
         assert isinstance(cfg.scheduler, SchedulerConfig)
         assert cfg.scheduler.enabled is False
 
@@ -511,7 +511,7 @@ class TestSchedulerConfig:
 class TestApplyTomlSectionListNormalization:
     def test_apply_toml_section_list_to_str_field(self) -> None:
         """TOML arrays assigned to str-typed fields should be joined with ','."""
-        from phi.core.config import ToolsConfig, _apply_toml_section
+        from phibe.core.config import ToolsConfig, _apply_toml_section
 
         target = ToolsConfig()
         tools = ["code_interpreter", "web_search", "file_read"]
@@ -522,7 +522,7 @@ class TestApplyTomlSectionListNormalization:
     def test_apply_toml_section_list_to_property_setter(self) -> None:
         """TOML arrays passed to backward-compat property setters should be
         normalized to comma-separated strings, not passed as raw lists."""
-        from phi.core.config import _apply_toml_section
+        from phibe.core.config import _apply_toml_section
 
         target = LearningConfig()
         _apply_toml_section(
@@ -536,7 +536,7 @@ class TestApplyTomlSectionListNormalization:
 
     def test_apply_toml_section_agent_tools_list(self) -> None:
         """Agent tools should work as a TOML array."""
-        from phi.core.config import _apply_toml_section
+        from phibe.core.config import _apply_toml_section
 
         target = AgentConfig()
         _apply_toml_section(
@@ -553,7 +553,7 @@ class TestWhatsAppBaileysChannelConfig:
     def test_defaults(self) -> None:
         wc = WhatsAppBaileysChannelConfig()
         assert wc.auth_dir == ""
-        assert wc.assistant_name == "Phi"
+        assert wc.assistant_name == "Phibe"
         assert wc.assistant_has_own_number is False
 
     def test_custom_values(self) -> None:

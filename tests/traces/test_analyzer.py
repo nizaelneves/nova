@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.traces.analyzer import TraceAnalyzer
-from phi.traces.store import TraceStore
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.traces.analyzer import TraceAnalyzer
+from phibe.traces.store import TraceStore
 
 
 def _make_trace(

@@ -14,7 +14,7 @@ import {
  * to catch up. The bar stretches mid-trip and shrinks back at the end.
  * (Inspired by the "Electric Nav" animation; the maths here is our own.)
  *
- * Phi's twist is "constant evolution": the part of the bar that is left behind
+ * Phibe's twist is "constant evolution": the part of the bar that is left behind
  * disintegrates into small Fibonacci numbers that drift away, and at the new
  * item numbers gather and re-integrate into the bar (see lib/fx/particles.ts
  * and docs/design/DESIGN.md).
@@ -22,20 +22,19 @@ import {
 
 /** Width of the canvas the numbers fly over, in px (the bar sits at x = 1). */
 export const FX_WIDTH = 150;
-const DUST_PER_SECOND = 70;
-const DUST_BURST = 12;
-const GATHER_COUNT = 14;
-const GATHER_DISTANCE = 46;
-const MAX_PARTICLES = 160;
-const GATHER_AT = 0.55; // fraction of the trip when the numbers start gathering
+const MAX_PIXELS = 90;
+const GATHER_DISTANCE = 40;
 
 
 export const BAR_LENGTH = 20;
-const TAIL_PEAK = 0.26; // most seconds the tail lags behind the head
+const TAIL_PEAK = 0.1; // most seconds the tail lags behind the head
 
-/** Seconds the head takes to travel `distance` px: short hops stay snappy. */
+/**
+ * Seconds the head takes to travel `distance` px. The screen changes instantly when a
+ * section is clicked, so the bar keeps pace with it: a quick streak, never a slow glide.
+ */
 export function travelTime(distance: number): number {
-  return Math.min(0.625, Math.max(0.32, 0.32 + distance / 1200));
+  return Math.min(0.24, Math.max(0.14, 0.14 + distance / 3000));
 }
 
 /** How long (seconds) the tail trails the head at time `t` of a trip lasting `total`. */
@@ -152,44 +151,34 @@ export function useRailSurge(
     const rand = makeRng(Math.floor(performance.now()) & 0xffffff);
     const list = particles.current;
     const down = to > from;
-    const tailOf = (s: Span) => (down ? s.top : s.top + s.height);
-
-    // The old bar breaks up where it stood.
-    for (let i = 0; i < DUST_BURST; i++) {
-      list.push(disintegrate(rand, 1, from - BAR_LENGTH / 2 + rand() * BAR_LENGTH));
-    }
 
     const total = travelTime(Math.abs(to - from));
+    const pixels = Math.min(MAX_PIXELS, Math.round(14 + Math.abs(to - from) / 5));
+    const numbers = Math.round(pixels / 5);
+
+    // The old bar and the stretch it crosses break into pixels and a few numbers; the tail
+    // leaves them behind as it passes (later along the trip means born later).
+    for (let i = 0; i < pixels + numbers; i++) {
+      const u = i < 6 ? 0 : rand();
+      const y = from + (to - from) * u + (rand() - 0.5) * BAR_LENGTH;
+      const glyph = i < pixels ? 'px' : 'num';
+      list.push(disintegrate(rand, 1 + rand() * 3, y, undefined, glyph, u * total * 0.8));
+    }
+    // At the new item pixels and numbers gather and fuse into the bar as the head lands.
+    for (let i = 0; i < pixels + numbers; i++) {
+      const y = to - BAR_LENGTH / 2 + rand() * BAR_LENGTH;
+      const glyph = i < pixels ? 'px' : 'num';
+      list.push(reintegrate(rand, 1, y, GATHER_DISTANCE, total * 0.35 + rand() * total * 0.3, undefined, glyph));
+    }
+
     const start = performance.now();
     let last = start;
-    let tailBefore = tailOf(surgeSpan(from, to, 0));
-    let owed = 0;
-    let gathered = false;
 
     const step = (now: number) => {
       const t = (now - start) / 1000;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      const span = surgeSpan(from, to, t);
-      paint(bar, span, down);
-
-      // What the tail leaves behind turns to dust.
-      const tailNow = tailOf(span);
-      owed += DUST_PER_SECOND * dt;
-      while (owed >= 1 && list.length < MAX_PARTICLES && t < total) {
-        owed -= 1;
-        list.push(disintegrate(rand, 1, tailBefore + (tailNow - tailBefore) * rand()));
-      }
-      tailBefore = tailNow;
-
-      // Near the end, numbers gather where the bar will settle.
-      if (!gathered && t >= total * GATHER_AT) {
-        gathered = true;
-        for (let i = 0; i < GATHER_COUNT; i++) {
-          list.push(reintegrate(rand, 1, to - BAR_LENGTH / 2 + rand() * BAR_LENGTH, GATHER_DISTANCE, rand() * 0.18));
-        }
-      }
-
+      paint(bar, surgeSpan(from, to, t), down);
       stepAll(list, dt);
       if (canvas && ctx) {
         ctx.clearRect(0, 0, FX_WIDTH, canvas.height / ratio);

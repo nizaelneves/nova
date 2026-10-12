@@ -3,9 +3,9 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "phi"
+name = "phibe"
 dynamic = ["version"]
-description = "Phi — modular AI assistant backend with composable intelligence primitives"
+description = "Phibe — modular AI assistant backend with composable intelligence primitives"
 readme = "README.md"
 # Upper bound: numpy 2.2.x (pinned transitively via datasets/pandas) ships no
 # cp314 Windows wheel, so under Python 3.14 uv would compile numpy from source
@@ -14,7 +14,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "Phi Contributors"},
+    {name = "Phibe Contributors"},
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -160,14 +160,14 @@ eval-sheets = ["gspread>=6.0", "google-auth>=2.0"]
 framework-comparison = ["polars>=1.0"]
 
 [project.urls]
-Homepage = "https://github.com/nizaelneves/phi"
-Documentation = "https://github.com/nizaelneves/phi"
-Repository = "https://github.com/nizaelneves/phi"
-Issues = "https://github.com/nizaelneves/phi/issues"
+Homepage = "https://github.com/nizaelneves/phibe"
+Documentation = "https://github.com/nizaelneves/phibe"
+Repository = "https://github.com/nizaelneves/phibe"
+Issues = "https://github.com/nizaelneves/phibe/issues"
 
 [project.scripts]
-phi = "phi.cli:main"
-phi-eval = "phi.evals.cli:main"
+phibe = "phibe.cli:main"
+phibe-eval = "phibe.evals.cli:main"
 
 # Version is derived from git tags by hatch-vcs (see #526). For source/editable
 # checkouts this yields the true `git describe` version (e.g. 1.0.3.dev109+g<sha>)
@@ -189,7 +189,7 @@ git_describe_command = [
 ]
 # Builds without a git checkout (e.g. the `COPY src/ src/` Docker stages, which
 # never include .git) can't run `git describe`. Without a fallback that would
-# hard-fail the build. Mirror the runtime sentinel in src/phi/__init__.py.
+# hard-fail the build. Mirror the runtime sentinel in src/phibe/__init__.py.
 # Such builds can inject the real version via SETUPTOOLS_SCM_PRETEND_VERSION.
 fallback_version = "0.0.0+unknown"
 
@@ -202,19 +202,19 @@ exclude = [
 ]
 # The publishing workflow builds this UI before packaging. Keep its generated
 # files even though the directory is intentionally ignored by Git.
-artifacts = ["/src/phi/server/static/**"]
+artifacts = ["/src/phibe/server/static/**"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/phi"]
-artifacts = ["/src/phi/server/static/**"]
+packages = ["src/phibe"]
+artifacts = ["/src/phibe/server/static/**"]
 exclude = [
-    "/src/phi/agents/claude_code_runner",
+    "/src/phibe/agents/claude_code_runner",
 ]
 
 [tool.hatch.build.targets.wheel.force-include]
-"src/phi/agents/claude_code_runner/index.mjs" = "_node_modules/claude_code_runner/index.mjs"
-"src/phi/agents/claude_code_runner/package.json" = "_node_modules/claude_code_runner/package.json"
-"src/phi/channels/whatsapp_baileys_bridge" = "_node_modules/whatsapp_baileys_bridge"
+"src/phibe/agents/claude_code_runner/index.mjs" = "_node_modules/claude_code_runner/index.mjs"
+"src/phibe/agents/claude_code_runner/package.json" = "_node_modules/claude_code_runner/package.json"
+"src/phibe/channels/whatsapp_baileys_bridge" = "_node_modules/whatsapp_baileys_bridge"
 "deploy/windows" = "_deploy/windows"
 
 [tool.pytest.ini_options]
@@ -242,13 +242,13 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/phi/evals/datasets/*.py" = ["E501"]
-"src/phi/evals/scorers/*.py" = ["E501"]
+"src/phibe/evals/datasets/*.py" = ["E501"]
+"src/phibe/evals/scorers/*.py" = ["E501"]
 # hybrid/ is research code with long prompt strings and paradigm-specific
 # config dicts — same relaxation as evals research code above. The ``**`` glob
 # also covers subpackages (e.g. hybrid/skillorchestra/), which the prior
 # ``hybrid/*.py`` glob missed.
-"src/phi/agents/hybrid/**/*.py" = ["E501"]
+"src/phibe/agents/hybrid/**/*.py" = ["E501"]
 # research_loop.py carries long prompt strings too (documented in CLAUDE.md);
 # the ignore was missing here.
-"src/phi/agents/research_loop.py" = ["E501"]
+"src/phibe/agents/research_loop.py" = ["E501"]

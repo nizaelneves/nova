@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.learning.intelligence.orchestrator.types import (
+from phibe.learning.intelligence.orchestrator.types import (
     Episode,
     EpisodeState,
     OrchestratorAction,

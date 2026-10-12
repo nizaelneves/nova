@@ -1,6 +1,6 @@
 # Inference Engines
 
-Phi supports several inference backends.
+Phibe supports several inference backends.
 
 ## Ollama
 
@@ -16,4 +16,4 @@ Pure C++ inference. Runs on CPU, Metal, CUDA, or ROCm. Ideal for laptops without
 
 ## Picking an Engine
 
-Run `phi init` — it detects your hardware and recommends the best fit. You can override with `--engine <name>`.
+Run `phibe init` — it detects your hardware and recommends the best fit. You can override with `--engine <name>`.

@@ -1,6 +1,6 @@
 """Tests for speech ABC and data types."""
 
-from phi.speech._stubs import Segment, SpeechBackend, TranscriptionResult
+from phibe.speech._stubs import Segment, SpeechBackend, TranscriptionResult
 
 
 def test_transcription_result():

@@ -8,16 +8,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.types import Trace
-from phi.evals.core.types import EvalRecord
-from phi.learning.optimize.personal.dataset import PersonalBenchmarkDataset
-from phi.learning.optimize.personal.scorer import PersonalBenchmarkScorer
-from phi.learning.optimize.personal.synthesizer import (
+from phibe.core.types import Trace
+from phibe.evals.core.types import EvalRecord
+from phibe.learning.optimize.personal.dataset import PersonalBenchmarkDataset
+from phibe.learning.optimize.personal.scorer import PersonalBenchmarkScorer
+from phibe.learning.optimize.personal.synthesizer import (
     PersonalBenchmark,
     PersonalBenchmarkSample,
     PersonalBenchmarkSynthesizer,
 )
-from phi.traces.store import TraceStore
+from phibe.traces.store import TraceStore
 
 # ---------------------------------------------------------------------------
 # Helpers

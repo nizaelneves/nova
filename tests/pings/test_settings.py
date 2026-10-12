@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.pings.settings import (
+from phibe.pings.settings import (
     PingsSettings,
     PingsSettingsError,
     load_pings_settings,
@@ -15,7 +15,7 @@ from phi.pings.settings import (
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     return tmp_path
 
 

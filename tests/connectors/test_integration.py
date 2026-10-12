@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from phi.connectors.obsidian import ObsidianConnector
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.store import KnowledgeStore
-from phi.connectors.sync_engine import SyncEngine
-from phi.tools.knowledge_search import KnowledgeSearchTool
+from phibe.connectors.obsidian import ObsidianConnector
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.store import KnowledgeStore
+from phibe.connectors.sync_engine import SyncEngine
+from phibe.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Fixtures

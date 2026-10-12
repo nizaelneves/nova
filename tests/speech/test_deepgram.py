@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.core.registry import SpeechRegistry
-from phi.speech._stubs import TranscriptionResult
-from phi.speech.deepgram import DeepgramSpeechBackend
+from phibe.core.registry import SpeechRegistry
+from phibe.speech._stubs import TranscriptionResult
+from phibe.speech.deepgram import DeepgramSpeechBackend
 
 
 @pytest.fixture(autouse=True)
@@ -33,8 +33,8 @@ def test_deepgram_transcribe():
     mock_result.metadata.duration = 1.8
     mock_client.listen.rest.v.return_value.transcribe_file.return_value = mock_result
 
-    with patch("phi.speech.deepgram.DeepgramClient", return_value=mock_client):
-        from phi.speech.deepgram import DeepgramSpeechBackend
+    with patch("phibe.speech.deepgram.DeepgramClient", return_value=mock_client):
+        from phibe.speech.deepgram import DeepgramSpeechBackend
 
         backend = DeepgramSpeechBackend(api_key="test-key")
         result = backend.transcribe(b"fake audio", format="wav")
@@ -44,16 +44,16 @@ def test_deepgram_transcribe():
 
 
 def test_deepgram_health():
-    with patch("phi.speech.deepgram.DeepgramClient"):
-        from phi.speech.deepgram import DeepgramSpeechBackend
+    with patch("phibe.speech.deepgram.DeepgramClient"):
+        from phibe.speech.deepgram import DeepgramSpeechBackend
 
         backend = DeepgramSpeechBackend(api_key="test-key")
         assert backend.health() is True
 
 
 def test_deepgram_health_no_key():
-    with patch("phi.speech.deepgram.DeepgramClient"):
-        from phi.speech.deepgram import DeepgramSpeechBackend
+    with patch("phibe.speech.deepgram.DeepgramClient"):
+        from phibe.speech.deepgram import DeepgramSpeechBackend
 
         backend = DeepgramSpeechBackend.__new__(DeepgramSpeechBackend)
         backend._client = None

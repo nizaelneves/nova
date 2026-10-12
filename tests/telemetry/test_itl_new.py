@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.telemetry.itl import compute_itl_stats
+from phibe.telemetry.itl import compute_itl_stats
 
 
 class TestComputeItlStats:

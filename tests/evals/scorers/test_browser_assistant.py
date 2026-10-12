@@ -1,7 +1,7 @@
 """Tests for the browser_assistant scorer."""
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.scorers.browser_assistant import (
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.scorers.browser_assistant import (
     BrowserAssistantScorer,
 )
 

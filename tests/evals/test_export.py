@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 
-from phi.evals.core.export import (
+from phibe.evals.core.export import (
     _compute_efficiency,
     _compute_normalized,
     export_artifacts_manifest,
     export_jsonl,
     export_summary_json,
 )
-from phi.evals.core.trace import QueryTrace, TurnTrace
+from phibe.evals.core.trace import QueryTrace, TurnTrace
 
 
 def _make_traces(n=3):

@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.skills.manager import SkillManager
-from phi.skills.tool_adapter import SkillTool
-from phi.system import SystemBuilder
+from phibe.core.events import EventBus, EventType
+from phibe.skills.manager import SkillManager
+from phibe.skills.tool_adapter import SkillTool
+from phibe.system import SystemBuilder
 
 
 @pytest.mark.live
@@ -44,7 +44,7 @@ class TestSkillSystemIntegration:
         mgr = SkillManager(bus=bus)
         from pathlib import Path
 
-        mgr.discover(paths=[Path("~/.phi/skills/").expanduser()])
+        mgr.discover(paths=[Path("~/.phibe/skills/").expanduser()])
 
         catalog = mgr.get_catalog_xml()
         assert "<available_skills>" in catalog
@@ -59,7 +59,7 @@ class TestSkillSystemIntegration:
         mgr = SkillManager(bus=bus)
         from pathlib import Path
 
-        mgr.discover(paths=[Path("~/.phi/skills/").expanduser()])
+        mgr.discover(paths=[Path("~/.phibe/skills/").expanduser()])
 
         # Test instruction-only skill
         tools = mgr.get_skill_tools()
@@ -126,10 +126,10 @@ class TestSkillEventsAndTracing:
 
     def test_skill_execution_emits_events(self):
         """Running a structured skill emits SKILL_EXECUTE_START/END events."""
-        from phi.core.types import ToolResult
-        from phi.skills.executor import SkillExecutor
-        from phi.skills.types import SkillManifest, SkillStep
-        from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+        from phibe.core.types import ToolResult
+        from phibe.skills.executor import SkillExecutor
+        from phibe.skills.types import SkillManifest, SkillStep
+        from phibe.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
         class EchoTool(BaseTool):
             tool_id = "echo"

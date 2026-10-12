@@ -7,9 +7,9 @@ from unittest import mock
 
 
 def test_optional_engine_import_errors_are_logged(caplog) -> None:
-    import phi.engine as engine_module
+    import phibe.engine as engine_module
 
-    caplog.set_level(logging.DEBUG, logger="phi.engine")
+    caplog.set_level(logging.DEBUG, logger="phibe.engine")
     with mock.patch.object(
         engine_module.importlib,
         "import_module",

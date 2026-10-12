@@ -4796,7 +4796,7 @@ wheels = [
 ]
 
 [[package]]
-name = "phi"
+name = "phibe"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, List
 
-from phi.core.events import EventBus
-from phi.core.types import StepType, Trace, TraceStep
-from phi.skills.manager import SkillManager
+from phibe.core.events import EventBus
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.skills.manager import SkillManager
 
 
 class _FakeTraceStore:

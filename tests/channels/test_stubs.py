@@ -6,7 +6,7 @@ from typing import Optional
 
 import pytest
 
-from phi.channels._stubs import (
+from phibe.channels._stubs import (
     BaseChannel,
     ChannelMessage,
     ChannelStatus,

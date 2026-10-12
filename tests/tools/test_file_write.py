@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.tools.file_write import FileWriteTool
+from phibe.tools.file_write import FileWriteTool
 
 
 class TestFileWriteTool:

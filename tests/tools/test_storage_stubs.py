@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.tools.storage._stubs import MemoryBackend, RetrievalResult
+from phibe.tools.storage._stubs import MemoryBackend, RetrievalResult
 
 
 class _DummyStorage(MemoryBackend):
@@ -67,20 +67,20 @@ class TestStorageStubs:
 
     def test_backward_compat_import(self) -> None:
         """Memory imports should still work via shim."""
-        from phi.tools.storage._stubs import MemoryBackend as MB
-        from phi.tools.storage._stubs import RetrievalResult as RR
+        from phibe.tools.storage._stubs import MemoryBackend as MB
+        from phibe.tools.storage._stubs import RetrievalResult as RR
 
         assert MB is MemoryBackend
         assert RR is RetrievalResult
 
     def test_canonical_import(self) -> None:
         """Canonical import from tools.storage should work."""
-        from phi.tools.storage._stubs import MemoryBackend as MB
+        from phibe.tools.storage._stubs import MemoryBackend as MB
 
         assert MB is MemoryBackend
 
     def test_sqlite_backward_compat(self) -> None:
         """SQLiteMemory should be importable from the canonical location."""
-        from phi.tools.storage.sqlite import SQLiteMemory as S1
+        from phibe.tools.storage.sqlite import SQLiteMemory as S1
 
         assert S1 is not None

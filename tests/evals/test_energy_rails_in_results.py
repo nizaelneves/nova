@@ -10,7 +10,7 @@ the trip from the monitor to the JSONL file.
 
 from __future__ import annotations
 
-from phi.evals.core.types import EvalResult
+from phibe.evals.core.types import EvalResult
 
 
 def _apple_result() -> EvalResult:
@@ -72,7 +72,7 @@ class TestSerializedRow:
         """
         import inspect
 
-        from phi.evals.core import runner as runner_mod
+        from phibe.evals.core import runner as runner_mod
 
         source = inspect.getsource(runner_mod)
         for key in (

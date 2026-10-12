@@ -8,11 +8,11 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from phi.cli import cli
-from phi.core.config import PhiConfig, SkillSourceConfig
-from phi.skills.sources.github import GitHubResolver
-from phi.skills.sources.hermes import HermesResolver
-from phi.skills.sources.openclaw import OpenClawResolver
+from phibe.cli import cli
+from phibe.core.config import PhibeConfig, SkillSourceConfig
+from phibe.skills.sources.github import GitHubResolver
+from phibe.skills.sources.hermes import HermesResolver
+from phibe.skills.sources.openclaw import OpenClawResolver
 
 
 @pytest.fixture(params=["hermes", "openclaw", "github"])
@@ -81,10 +81,10 @@ def test_install_uses_cached_skill_and_displays_warning(
     resolver, tmp_path, monkeypatch
 ):
     cached_skill(resolver)
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "installed"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "installed"))
     with (
         patch("subprocess.run", side_effect=failed_pull),
-        patch("phi.cli.skill_cmd._get_resolver", return_value=resolver),
+        patch("phibe.cli.skill_cmd._get_resolver", return_value=resolver),
     ):
         result = CliRunner().invoke(
             cli, ["skill", "install", f"{resolver.name}:cached"]
@@ -99,10 +99,10 @@ def test_install_uses_cached_skill_and_displays_warning(
 
 def test_cache_cannot_satisfy_missing_skill(resolver, tmp_path, monkeypatch):
     cached_skill(resolver)
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "installed"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "installed"))
     with (
         patch("subprocess.run", side_effect=failed_pull),
-        patch("phi.cli.skill_cmd._get_resolver", return_value=resolver),
+        patch("phibe.cli.skill_cmd._get_resolver", return_value=resolver),
     ):
         result = CliRunner().invoke(
             cli, ["skill", "install", f"{resolver.name}:missing"]
@@ -113,12 +113,12 @@ def test_cache_cannot_satisfy_missing_skill(resolver, tmp_path, monkeypatch):
 
 def test_update_does_not_claim_refresh_succeeded(resolver):
     cached_skill(resolver)
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.skills.sources = [SkillSourceConfig(source=resolver.name)]
     with (
         patch("subprocess.run", side_effect=failed_pull),
-        patch("phi.cli.skill_cmd._get_resolver", return_value=resolver),
-        patch("phi.cli.skill_cmd.load_config", return_value=cfg),
+        patch("phibe.cli.skill_cmd._get_resolver", return_value=resolver),
+        patch("phibe.cli.skill_cmd.load_config", return_value=cfg),
     ):
         result = CliRunner().invoke(cli, ["skill", "update"])
     assert "may be stale" in result.output

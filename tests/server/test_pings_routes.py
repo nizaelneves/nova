@@ -8,13 +8,13 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server.pings_router import create_pings_router
-from phi.pings.store import PingStore
+from phibe.server.pings_router import create_pings_router
+from phibe.pings.store import PingStore
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     store = PingStore(tmp_path / "p.db", now=lambda: datetime(2026, 10, 7, 12, 0))
     app = FastAPI()
     app.include_router(create_pings_router(lambda: store))

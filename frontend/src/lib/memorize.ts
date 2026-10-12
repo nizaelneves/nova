@@ -1,6 +1,6 @@
 /**
- * What the user wants Phi to help them memorize. Only the choices live here;
- * when and how Phi brings them up (a ping, out loud, on command) is decided
+ * What the user wants Phibe to help them memorize. Only the choices live here;
+ * when and how Phibe brings them up (a ping, out loud, on command) is decided
  * elsewhere. Kept in this browser, like the other client-side settings.
  */
 
@@ -27,7 +27,7 @@ export interface MemorizeData {
   items: MemorizeItem[];
 }
 
-const STORAGE_KEY = 'phi-memorize';
+const STORAGE_KEY = 'phibe-memorize';
 const CATEGORY_IDS = new Set<string>(MEMORIZE_CATEGORIES.map((c) => c.id));
 
 export const EMPTY_MEMORIZE: MemorizeData = { enabled: [], items: [] };

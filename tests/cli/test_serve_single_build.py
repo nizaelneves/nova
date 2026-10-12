@@ -1,4 +1,4 @@
-"""Regression tests for #263 — ``phi serve`` must build the system once.
+"""Regression tests for #263 — ``phibe serve`` must build the system once.
 
 serve.py used to construct all heavy components inline and then call
 ``SystemBuilder(config).build()`` a second time inside the scheduler block,
@@ -7,7 +7,7 @@ the channel and re-creating the agent manager — ~30-40s of redundant work.
 
 These tests pin the fix:
 
-1. ``SystemBuilder.build`` is never called during ``phi serve`` startup
+1. ``SystemBuilder.build`` is never called during ``phibe serve`` startup
    (the duplicate build is gone).
 2. The ``AgentExecutor`` still receives a system exposing the attributes it
    actually reads: ``tool_executor``, ``session_store``, ``memory_backend``,
@@ -22,14 +22,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 pytest.importorskip("fastapi")
 pytest.importorskip("uvicorn")
 
-# ``phi.cli.serve`` as an attribute resolves to the click *command*
+# ``phibe.cli.serve`` as an attribute resolves to the click *command*
 # (re-exported on the package); grab the real module to monkeypatch its globals.
-serve_mod = importlib.import_module("phi.cli.serve")
+serve_mod = importlib.import_module("phibe.cli.serve")
 
 
 def _fake_engine() -> MagicMock:
@@ -52,10 +52,10 @@ def _repopulate_registries() -> None:
     import importlib
     import sys
 
-    import phi.agents  # noqa: F401
-    import phi.tools  # noqa: F401
-    import phi.tools.storage  # noqa: F401
-    from phi.core.registry import (
+    import phibe.agents  # noqa: F401
+    import phibe.tools  # noqa: F401
+    import phibe.tools.storage  # noqa: F401
+    from phibe.core.registry import (
         AgentRegistry,
         MemoryRegistry,
         ToolRegistry,
@@ -63,7 +63,7 @@ def _repopulate_registries() -> None:
 
     if not AgentRegistry.keys():
         for mod_name in list(sys.modules):
-            if mod_name.startswith("phi.agents.") and not mod_name.endswith("_stubs"):
+            if mod_name.startswith("phibe.agents.") and not mod_name.endswith("_stubs"):
                 try:
                     importlib.reload(sys.modules[mod_name])
                 except Exception:
@@ -72,7 +72,7 @@ def _repopulate_registries() -> None:
     if not ToolRegistry.keys():
         for mod_name in list(sys.modules):
             if (
-                mod_name.startswith("phi.tools.")
+                mod_name.startswith("phibe.tools.")
                 and not mod_name.endswith("_stubs")
                 and not mod_name.endswith("agent_tools")
             ):
@@ -83,7 +83,7 @@ def _repopulate_registries() -> None:
 
     if not MemoryRegistry.keys():
         for mod_name in list(sys.modules):
-            if mod_name.startswith("phi.tools.storage.") and not mod_name.endswith(
+            if mod_name.startswith("phibe.tools.storage.") and not mod_name.endswith(
                 "_stubs"
             ):
                 try:
@@ -101,17 +101,17 @@ def _run_serve(
     security_primitives=None,
     channel_backend=None,
 ):
-    """Invoke ``phi serve`` with all heavy/blocking pieces stubbed out.
+    """Invoke ``phibe serve`` with all heavy/blocking pieces stubbed out.
 
     Returns the CliRunner result. The server is never actually started
     (``run_server`` is a no-op) and no real engine is contacted.
     """
-    from phi.core.config import PhiConfig
-    from phi.core.registry import MemoryRegistry
+    from phibe.core.config import PhibeConfig
+    from phibe.core.registry import MemoryRegistry
 
     _repopulate_registries()
 
-    config = PhiConfig()
+    config = PhibeConfig()
     # Keep the scheduler block alive (it owns the executor wiring under test)
     # while pointing every store at the temp dir.
     config.agent_manager.enabled = True
@@ -151,7 +151,7 @@ def _run_serve(
     monkeypatch.setattr(serve_mod, "discover_models", lambda *a, **k: {})
     if channel_backend is not None:
         monkeypatch.setattr(
-            "phi.system.builder.SystemBuilder._resolve_channel",
+            "phibe.system.builder.SystemBuilder._resolve_channel",
             lambda *args, **kwargs: channel_backend,
         )
 
@@ -162,18 +162,18 @@ def _run_serve(
     if security_primitives is None:
         security_primitives = (None, None, None)
     sec.capability_policy, sec.rate_limiter, sec.audit_logger = security_primitives
-    monkeypatch.setattr("phi.security.setup_security", lambda *a, **k: sec)
+    monkeypatch.setattr("phibe.security.setup_security", lambda *a, **k: sec)
 
     with (
         patch(
-            "phi.system.builder.SystemBuilder.build",
+            "phibe.system.builder.SystemBuilder.build",
             build_spy,
         ),
         patch(
-            "phi.agents.executor.AgentExecutor.set_system",
+            "phibe.agents.executor.AgentExecutor.set_system",
             set_system_spy,
         ),
-        patch("phi.server.daemon.run_server", lambda *a, **k: None),
+        patch("phibe.server.daemon.run_server", lambda *a, **k: None),
     ):
         return CliRunner().invoke(cli, ["serve"], catch_exceptions=False)
 
@@ -182,7 +182,7 @@ def test_serve_does_not_call_systembuilder_build(tmp_path, monkeypatch):
     """The redundant second full build is gone (#263)."""
     build_spy = MagicMock(
         side_effect=AssertionError(
-            "SystemBuilder.build() must not run during `phi serve` startup "
+            "SystemBuilder.build() must not run during `phibe serve` startup "
             "— it is the duplicate build #263 removed."
         )
     )
@@ -205,12 +205,12 @@ def test_serve_does_not_call_systembuilder_build(tmp_path, monkeypatch):
 def test_serve_passes_environment_cors_origins(tmp_path, monkeypatch):
     """The normal CLI path must not mask the environment override."""
     monkeypatch.setenv(
-        "PHI_CORS_ORIGINS",
+        "PHIBE_CORS_ORIGINS",
         "https://frontend.example,https://admin.example",
     )
     create_app = MagicMock(return_value=MagicMock())
 
-    with patch("phi.server.app.create_app", create_app):
+    with patch("phibe.server.app.create_app", create_app):
         result = _run_serve(
             tmp_path,
             monkeypatch,
@@ -275,14 +275,14 @@ def test_executor_receives_required_system_attrs(tmp_path, monkeypatch):
 
 
 def test_channel_system_receives_remote_security_primitives(tmp_path, monkeypatch):
-    from phi.system import PhiSystem
+    from phibe.system import PhibeSystem
 
     captured = {}
 
     def _capture_wire(self, channel):
         captured["system"] = self
 
-    monkeypatch.setattr(PhiSystem, "wire_channel", _capture_wire)
+    monkeypatch.setattr(PhibeSystem, "wire_channel", _capture_wire)
     policy = object()
     limiter = object()
     audit = object()

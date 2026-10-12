@@ -1,7 +1,7 @@
 [package]
-name = "phi-desktop"
+name = "phibe-desktop"
 version = "1.0.1"
-description = "PhiOS Desktop — Native AI assistant with energy monitoring, trace debugging, and learning visualization"
+description = "Phibe Desktop — Native AI assistant with energy monitoring, trace debugging, and learning visualization"
 edition = "2021"
 license = "MIT"
 
@@ -22,6 +22,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.13", features = ["json", "multipart"] }
 tokio = { version = "1", features = ["full"] }
+# Microphone capture for the global voice feature (src/voice).
+cpal = "0.16"
 
 # Cloud API keys are stored in the OS credential store via `keyring`. keyring v3
 # enables NO backend by default — without an explicit per-platform feature it
@@ -34,6 +36,8 @@ keyring = { version = "3", features = ["apple-native"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
+# Window styles so the voice card never steals focus (same version tauri uses).
+windows = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Blocking Secret Service backend (no internal async runtime, so it is safe to

@@ -2,9 +2,9 @@
 
 from unittest.mock import MagicMock
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.datasets.ama_bench import AMABenchDataset
-from phi.evals.scorers.ama_bench_judge import (
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.datasets.ama_bench import AMABenchDataset
+from phibe.evals.scorers.ama_bench_judge import (
     AMABenchScorer,
     _compute_token_f1,
     _parse_judge_label,
@@ -90,7 +90,7 @@ class TestAMABenchDataset:
         assert len(result) <= 1000
 
     def test_question_types_mapped(self) -> None:
-        from phi.evals.datasets.ama_bench import _QUESTION_TYPE_TO_SUBJECT
+        from phibe.evals.datasets.ama_bench import _QUESTION_TYPE_TO_SUBJECT
 
         assert _QUESTION_TYPE_TO_SUBJECT["A"] == "recall"
         assert _QUESTION_TYPE_TO_SUBJECT["B"] == "causal_inference"
@@ -214,18 +214,18 @@ class TestTokenF1:
 
 class TestAMABenchCLI:
     def test_in_benchmarks_dict(self) -> None:
-        from phi.evals.cli import BENCHMARKS
+        from phibe.evals.cli import BENCHMARKS
 
         assert "ama-bench" in BENCHMARKS
 
     def test_build_dataset(self) -> None:
-        from phi.evals.cli import _build_dataset
+        from phibe.evals.cli import _build_dataset
 
         ds = _build_dataset("ama-bench")
         assert ds.dataset_id == "ama-bench"
 
     def test_build_scorer(self) -> None:
-        from phi.evals.cli import _build_scorer
+        from phibe.evals.cli import _build_scorer
 
         s = _build_scorer("ama-bench", _mock_backend(), "test-model")
         assert s.scorer_id == "ama-bench"

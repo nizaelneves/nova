@@ -9,9 +9,9 @@ import threading
 import time
 from pathlib import Path
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import ToolCall, ToolResult
-from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import ToolCall, ToolResult
+from phibe.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class SlowTool(BaseTool):
@@ -154,7 +154,7 @@ class TestToolTimeout:
         workers = [
             thread
             for thread in threading.enumerate()
-            if thread.name.startswith("phi-tool-")
+            if thread.name.startswith("phibe-tool-")
         ]
         assert len(workers) <= 8
         assert all(not result.success for result in results)
@@ -166,8 +166,8 @@ class TestToolTimeout:
         env = {**os.environ, "PYTHONPATH": str(source_root)}
         script = """
 import threading
-from phi.core.types import ToolCall, ToolResult
-from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phibe.core.types import ToolCall, ToolResult
+from phibe.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 block = threading.Event()
 class BlockingTool(BaseTool):

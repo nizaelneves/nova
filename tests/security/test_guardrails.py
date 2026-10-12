@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import Message, Role
-from phi.security.guardrails import GuardrailsEngine, SecurityBlockError
-from phi.security.types import RedactionMode
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Message, Role
+from phibe.security.guardrails import GuardrailsEngine, SecurityBlockError
+from phibe.security.types import RedactionMode
 
 
 def _make_mock_engine(response_content: str = "Hello!") -> MagicMock:

@@ -1,4 +1,4 @@
-"""The Data settings show where Phi keeps its files and can open that folder."""
+"""The Data settings show where Phibe keeps its files and can open that folder."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server import data_folder_router as mod
+from phibe.server import data_folder_router as mod
 
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     opened = []
     monkeypatch.setattr(mod, "_open_folder", lambda path: opened.append(path))
     monkeypatch.setattr(mod, "_is_local_request", lambda request: True)
@@ -39,7 +39,7 @@ def test_it_refuses_requests_from_other_computers(setup, monkeypatch) -> None:
 
 
 def test_a_missing_folder_is_a_404(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "not-there"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "not-there"))
     monkeypatch.setattr(mod, "_is_local_request", lambda request: True)
     app = FastAPI()
     app.include_router(mod.create_data_folder_router())

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 import { Layout } from './components/Layout';
 import { ChatPage } from './pages/ChatPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -14,10 +14,10 @@ import { CommandPalette } from './components/CommandPalette';
 import { Toaster } from './components/ui/sonner';
 import { useAppStore } from './lib/store';
 import { fetchModels, fetchServerInfo, isTauri } from './lib/api';
-import { notifyPhi } from './lib/phiPresence';
+import { notifyPhibe } from './lib/phibePresence';
 
-// While developing, `__phi.notify('done', 'text')` in the console previews the floating button's badges.
-if (import.meta.env.DEV) (window as unknown as { __phi?: unknown }).__phi = { notify: notifyPhi };
+// While developing, `__phibe.notify('done', 'text')` in the console previews the floating button's badges.
+if (import.meta.env.DEV) (window as unknown as { __phibe?: unknown }).__phibe = { notify: notifyPhibe };
 
 export default function App() {
   const setModels = useAppStore((s) => s.setModels);
@@ -26,7 +26,7 @@ export default function App() {
   const commandPaletteOpen = useAppStore((s) => s.commandPaletteOpen);
   const setCommandPaletteOpen = useAppStore((s) => s.setCommandPaletteOpen);
 
-  // Phi is dark only: the official palette has no light variant.
+  // Phibe is dark only: the official palette has no light variant.
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove('light');
@@ -76,8 +76,9 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<ChatPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="data-sources" element={<DataSourcesPage />} />
-          <Route path="agents" element={<AgentsPage />} />
+          {/* Agents and Data Sources now live inside Settings. */}
+          <Route path="data-sources" element={<Navigate to="/settings?tab=data-sources" replace />} />
+          <Route path="agents" element={<Navigate to="/settings?tab=agents" replace />} />
           <Route path="workspaces" element={<WorkspacesPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="pings" element={<PingsPage />} />

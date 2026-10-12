@@ -1,11 +1,11 @@
-# Coucou: what we learned, and how to build Phi's floating emoji
+# Coucou: what we learned, and how to build Phibe's floating emoji
 
 Source studied: https://github.com/Louis-CFM/coucou (cloned at `C:\Projects\coucou`, release v0.1.4, Windows/Linux Tauri app in `windows/`, native Mac app in `NotchBuddy/`).
-Purpose of this file: backup of the learning, so the Phi "island" can be built later without re-reading the repo.
+Purpose of this file: backup of the learning, so the Phibe "island" can be built later without re-reading the repo.
 
 ## 1. Licence (read before reusing anything)
 - Code: MIT (we may learn from it and reuse ideas or code with the notice kept).
-- **Character, name, icon and the 28 sounds are proprietary** (LICENSE-ASSETS.md, (c) Louis Raille). Phi must use its own emoji, name and sounds. Do not copy Mochi, its drawing, its sounds or its outfits.
+- **Character, name, icon and the 28 sounds are proprietary** (LICENSE-ASSETS.md, (c) Louis Raille). Phibe must use its own emoji, name and sounds. Do not copy Mochi, its drawing, its sounds or its outfits.
 - Prefer re-implementing the techniques; do not paste its files.
 
 ## 2. What Coucou is
@@ -73,12 +73,12 @@ Everything is drawn in code, no images/Lottie/Rive.
 - Particles (heart, star, spark, sweat, z) with simple physics; mouth "slot" spring used for the swallow animation; halo behind the character in the state colour.
 - Blink on expand, hover = tiny scale-up and a sound; sounds are mapped state -> sound (`STATE_SOUND`) and emote -> sound.
 - Mini versions of the same engine (solid body colour) act as integration pills.
-- Seasonal wardrobe system (hats/glasses) with presence tween 0->1 in 350 ms and rigid roll when worn (not needed for Phi v1).
+- Seasonal wardrobe system (hats/glasses) with presence tween 0->1 in 350 ms and rigid roll when worn (not needed for Phibe v1).
 
 ## 8. Sound
-WebAudio: one AudioContext, master GainNode, buffers decoded at startup from `/sounds/<name>.wav`, several can overlap, default volume 0.12 (slider 0-0.2), a missing file must never break the island, `resume()` on user input because WebView2 can suspend the context. 28 short WAVs (peek, open, close, hover, blip, slap, annoyed, dizzy, greet, work, finish, error, approval, question, approve, gulp, tick, send, love, pop, proud, wink, yawn, attach, think, search, rate, sleep). Phi needs its own set.
+WebAudio: one AudioContext, master GainNode, buffers decoded at startup from `/sounds/<name>.wav`, several can overlap, default volume 0.12 (slider 0-0.2), a missing file must never break the island, `resume()` on user input because WebView2 can suspend the context. 28 short WAVs (peek, open, close, hover, blip, slap, annoyed, dizzy, greet, work, finish, error, approval, question, approve, gulp, tick, send, love, pop, proud, wink, yawn, attach, think, search, rate, sleep). Phibe needs its own set.
 
-## 9. Claude Code integration (for reference; optional for Phi)
+## 9. Claude Code integration (for reference; optional for Phibe)
 - Hooks: for these events Claude Code runs a command: SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest (timeout 120 s, waits for a human), Notification, Stop, StopFailure, SubagentStart, SubagentStop.
 - The command is a tiny exe (`coucou-hook.exe`, copied to `%LOCALAPPDATA%\Coucou\bin`) that sends the event over a named pipe whose name includes the user's SID (and verifies the server process is the app) and exits within 300 ms if nobody answers. A session is never blocked.
 - Install flow is the safety model: read `~/.claude/settings.json`, take a dated backup, merge without touching other hooks (entries identified by the marker `coucou-hook`), show the exact diff, write only after an explicit click, and only if the file still matches the previewed fingerprint. Uninstall removes only its own entries. On Windows hook commands run through Git Bash, so the command is a quoted exe path with forward slashes.
@@ -93,17 +93,17 @@ WebAudio: one AudioContext, master GainNode, buffers decoded at startup from `/s
 - A browser-only preview mode (`IS_TAURI` guard) so the visuals can be iterated without the shell.
 - Tray icon with Open, Settings, Pause, Quit; no taskbar entry.
 
-## 11. How to build the equivalent for Phi (plan)
-Phi already has: Tauri 2 shell (`frontend/src-tauri`, `overlay.html`), a Canvas 2D Orb with voice level (`getVoiceLevel()`), a voice visualizer, Zustand store, backend SSE chat, approvals page, pings, tasks.
+## 11. How to build the equivalent for Phibe (plan)
+Phibe already has: Tauri 2 shell (`frontend/src-tauri`, `overlay.html`), a Canvas 2D Orb with voice level (`getVoiceLevel()`), a voice visualizer, Zustand store, backend SSE chat, approvals page, pings, tasks.
 
 Proposed stages:
-1. **Floating window (Rust):** add a second Tauri window `phi-island` (transparent, no decorations, always on top, skip taskbar, no focus), top-centre, fixed ~720x320 with a 240x6 wake strip when collapsed. Port the pattern from `island.rs`: poll thread parked on a Condvar, global cursor read, click-through toggle from a pushed rect, `screen-changed` handling, `set_activating` for typing. Windows first (`windows` crate: GetCursorPos, GetAsyncKeyState, SetWindowLongPtrW); Linux/Mac later behind `platform/`.
+1. **Floating window (Rust):** add a second Tauri window `phibe-island` (transparent, no decorations, always on top, skip taskbar, no focus), top-centre, fixed ~720x320 with a 240x6 wake strip when collapsed. Port the pattern from `island.rs`: poll thread parked on a Condvar, global cursor read, click-through toggle from a pushed rect, `screen-changed` handling, `set_activating` for typing. Windows first (`windows` crate: GetCursorPos, GetAsyncKeyState, SetWindowLongPtrW); Linux/Mac later behind `platform/`.
 2. **Front end entry:** a separate Vite entry (island.html) so it does not load the whole app; share `Orb`'s drawing code (extract to a module) and the `Spring/Tracked/Ease` helpers (write our own, same maths).
 3. **FSM:** hidden / peek / expanded with timers as in `fsm.ts`; alerts pin it open.
-4. **Phi's own character:** keep our emoji face; add states mapped to Phi events: idle, listening (mic/clap), thinking (streaming), speaking (voice level drives mouth/eyes), approval pending, ping/reminder, error, done. Reuse eye-shape + tween ideas, not Mochi's art. Eyes follow cursor via the Rust `cursor` event.
+4. **Phibe's own character:** keep our emoji face; add states mapped to Phibe events: idle, listening (mic/clap), thinking (streaming), speaking (voice level drives mouth/eyes), approval pending, ping/reminder, error, done. Reuse eye-shape + tween ideas, not Mochi's art. Eyes follow cursor via the Rust `cursor` event.
 5. **Content views:** compact status line, quick chat input, approvals (Allow/Deny), Ping/Task reminders, drop a file to ingest (reuse `upload_router`). Start with 3 views: status, quick chat, approval.
 6. **Sound:** WebAudio engine as above with our own generated sounds (no paid generators without asking).
-7. **Settings:** toggle "Floating Phi", screen choice (primary/cursor), auto-hide delays, sound volume, launch at login.
+7. **Settings:** toggle "Floating Phibe", screen choice (primary/cursor), auto-hide delays, sound volume, launch at login.
 8. **Optional later:** Claude Code/Codex hook relay with the same diff + backup + explicit-click safety.
 
 Risks: Windows Defender flagged Coucou's unsigned NSIS installer as a false positive (Wacatac.H!ml), so plan code signing for distribution; Wayland has no global cursor; always-on-top over fullscreen apps is limited on Windows; transparent windows + WebView2 need `additionalBrowserArgs` care; per-monitor DPI scaling bugs when moving between displays.
@@ -114,7 +114,7 @@ Risks: Windows Defender flagged Coucou's unsigned NSIS installer as a false posi
 - Usage: move the mouse to the top-centre of the screen to make it peek, click to open, Esc closes, tray icon has Open / Settings / Pause / Quit; Settings -> Claude Code -> Install hooks (shows the diff first); Settings -> Claude takes an Anthropic API key (optional).
 
 ## 13. Decision update (2026-10-03): no persistent island
-After testing Coucou, the user found a persistent top-of-screen window intrusive. Direction instead: a small draggable floating Phi button (avatar instead of the chat icon) that can be sent to the system tray, opening a chat bubble with notifications/approvals; inside the app, the avatar moves per page. Always-low CPU. Avatar to change from emoji to nautilus, butterfly or octopus. Items 3-8 of section 11 are on hold.
+After testing Coucou, the user found a persistent top-of-screen window intrusive. Direction instead: a small draggable floating Phibe button (avatar instead of the chat icon) that can be sent to the system tray, opening a chat bubble with notifications/approvals; inside the app, the avatar moves per page. Always-low CPU. Avatar to change from emoji to nautilus, butterfly or octopus. Items 3-8 of section 11 are on hold.
 
 Risks to remember:
 - Windows Defender may flag unsigned apps: code signing needed to distribute.

@@ -11,9 +11,9 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.claude_cli import ClaudeCLIEngine
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.claude_cli import ClaudeCLIEngine
 
 FAKE = textwrap.dedent(
     """
@@ -68,7 +68,7 @@ def _call(fake: dict) -> dict:
 
 def _messages() -> list[Message]:
     return [
-        Message(role=Role.SYSTEM, content="You are Phi."),
+        Message(role=Role.SYSTEM, content="You are Phibe."),
         Message(role=Role.USER, content="Oi, tudo bem?"),
     ]
 
@@ -96,7 +96,7 @@ def test_cli_runs_as_a_plain_model_with_no_tools_or_connectors(fake: dict) -> No
     assert args[args.index("--setting-sources") + 1] == ""
     assert "--no-session-persistence" in args
     assert args[args.index("--model") + 1] == "sonnet"
-    assert args[args.index("--system-prompt") + 1] == "You are Phi."
+    assert args[args.index("--system-prompt") + 1] == "You are Phibe."
     joined = " ".join(args).lower()
     assert "bypass" not in joined and "dangerously" not in joined
 
@@ -170,7 +170,7 @@ def test_health_requires_a_logged_in_cli(fake: dict, monkeypatch) -> None:
 
 
 def test_health_is_false_when_the_binary_is_missing() -> None:
-    with patch("phi.engine.claude_cli.shutil.which", return_value=None):
+    with patch("phibe.engine.claude_cli.shutil.which", return_value=None):
         assert ClaudeCLIEngine().health() is False
 
 
@@ -185,8 +185,8 @@ def test_models_and_serving_rules() -> None:
 def test_engine_is_registered() -> None:
     import importlib
 
-    import phi.engine.claude_cli as module
-    from phi.core.registry import EngineRegistry
+    import phibe.engine.claude_cli as module
+    from phibe.core.registry import EngineRegistry
 
     # The test suite clears registries between tests; re-import to register.
     importlib.reload(module)
@@ -206,10 +206,10 @@ class _FakeEngine:
 
 
 def _select(default_local: bool, others: list[tuple[str, _FakeEngine]]):
-    from phi.core.config import PhiConfig
-    from phi.engine import _discovery
+    from phibe.core.config import PhibeConfig
+    from phibe.engine import _discovery
 
-    config = PhiConfig()
+    config = PhibeConfig()
     config.engine.default = "ollama"
     default = _FakeEngine(healthy=False, is_cloud=not default_local)
     with (
@@ -267,8 +267,8 @@ def test_unknown_effort_is_refused(fake: dict) -> None:
 def test_server_only_sends_effort_to_the_claude_cli_engine() -> None:
     from unittest.mock import patch
 
-    from phi.server import routes
-    from phi.server.models import ChatCompletionRequest
+    from phibe.server import routes
+    from phibe.server.models import ChatCompletionRequest
 
     req = ChatCompletionRequest(model="opus", messages=[], effort="high")
     with patch.object(routes, "_engine_key_for_model", return_value="claude_cli"):

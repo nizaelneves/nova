@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import phi.agents.hybrid.toolorchestra as toolorchestra_module
-from phi.agents.hybrid.toolorchestra import ToolOrchestraAgent
-from phi.core.events import EventBus, EventType
-from phi.security.capabilities import CapabilityPolicy
+import phibe.agents.hybrid.toolorchestra as toolorchestra_module
+from phibe.agents.hybrid.toolorchestra import ToolOrchestraAgent
+from phibe.core.events import EventBus, EventType
+from phibe.security.capabilities import CapabilityPolicy
 
 
 class _Limiter:

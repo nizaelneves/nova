@@ -5,8 +5,8 @@ from __future__ import annotations
 import threading
 import time
 
-from phi.security.audit import AuditLogger
-from phi.security.types import (
+from phibe.security.audit import AuditLogger
+from phibe.security.types import (
     ScanFinding,
     SecurityEvent,
     SecurityEventType,

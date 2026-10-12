@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from phi.skills.loader import load_skill
+from phibe.skills.loader import load_skill
 
 # Resolve the skills/builtin/ directory relative to the project root.
-BUILTIN_DIR = Path(__file__).resolve().parents[2] / "src" / "phi" / "skills" / "data"
+BUILTIN_DIR = Path(__file__).resolve().parents[2] / "src" / "phibe" / "skills" / "data"
 
 # Collect all TOML files once so parametrized IDs are readable.
 _toml_files = sorted(BUILTIN_DIR.glob("*.toml")) if BUILTIN_DIR.is_dir() else []

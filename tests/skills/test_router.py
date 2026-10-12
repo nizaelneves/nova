@@ -6,15 +6,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from phi.core.types import Message, Role
-from phi.skills.router import (
+from phibe.core.types import Message, Role
+from phibe.skills.router import (
     SkillRouter,
     active_skill_prompt,
     get_router,
     normalize,
     render_active_skill,
 )
-from phi.skills.types import SkillManifest
+from phibe.skills.types import SkillManifest
 
 
 def _skill(
@@ -24,7 +24,7 @@ def _skill(
         name=name,
         description=f"Use when {name}",
         markdown_content=body,
-        metadata={"phi": {"triggers": triggers}},
+        metadata={"phibe": {"triggers": triggers}},
     )
 
 
@@ -96,7 +96,7 @@ def test_render_includes_name_and_instructions() -> None:
 
 
 def test_project_skills_route_for_real_sentences() -> None:
-    from phi.core.config import load_config
+    from phibe.core.config import load_config
 
     router = get_router(load_config())
     assert router.match("Vamos fazer minha revisão semanal").name == "weekly-review"
@@ -111,7 +111,7 @@ def test_project_skills_route_for_real_sentences() -> None:
 
 
 def test_active_skill_prompt_respects_disabled_skills() -> None:
-    from phi.core.config import load_config
+    from phibe.core.config import load_config
 
     config = load_config()
     disabled = SimpleNamespace(skills=SimpleNamespace(enabled=False))
@@ -122,20 +122,20 @@ def test_active_skill_prompt_respects_disabled_skills() -> None:
 
 
 def test_server_prompt_includes_the_matching_skill() -> None:
-    from phi.core.config import load_config
-    from phi.server.routes import _ensure_identity_prompt
+    from phibe.core.config import load_config
+    from phibe.server.routes import _ensure_identity_prompt
 
     messages = [Message(role=Role.USER, content="Vamos fazer minha revisão semanal.")]
     result = _ensure_identity_prompt(messages, load_config())
 
     assert result[0].role == Role.SYSTEM
     assert "Active Skill: weekly-review" in result[0].content
-    assert "You are Phi" in result[0].content
+    assert "You are Phibe" in result[0].content
 
 
 def test_server_prompt_has_no_skill_when_nothing_matches() -> None:
-    from phi.core.config import load_config
-    from phi.server.routes import _ensure_identity_prompt
+    from phibe.core.config import load_config
+    from phibe.server.routes import _ensure_identity_prompt
 
     messages = [Message(role=Role.USER, content="Qual a capital da França?")]
     result = _ensure_identity_prompt(messages, load_config())
@@ -149,7 +149,7 @@ def _no_tools_skill() -> SkillManifest:
         description="Use when data",
         markdown_content="Analyze.",
         metadata={
-            "phi": {
+            "phibe": {
                 "triggers": ["csv"],
                 "tools": "none",
                 "tools_allowed_when": [r"\.(csv|xlsx)\b", r"[a-z]:[\\/]"],
@@ -159,13 +159,13 @@ def _no_tools_skill() -> SkillManifest:
 
 
 def test_tool_free_skill_disables_tools_for_pasted_data() -> None:
-    from phi.skills.router import _tools_disabled_for
+    from phibe.skills.router import _tools_disabled_for
 
     assert _tools_disabled_for(_no_tools_skill(), "analise este CSV:\na,b\n1,2")
 
 
 def test_tool_free_skill_keeps_tools_when_a_file_is_named() -> None:
-    from phi.skills.router import _tools_disabled_for
+    from phibe.skills.router import _tools_disabled_for
 
     skill = _no_tools_skill()
     assert not _tools_disabled_for(skill, "analise o arquivo campanhas.csv")
@@ -173,14 +173,14 @@ def test_tool_free_skill_keeps_tools_when_a_file_is_named() -> None:
 
 
 def test_skill_without_a_tool_policy_never_disables_tools() -> None:
-    from phi.skills.router import _tools_disabled_for
+    from phibe.skills.router import _tools_disabled_for
 
     assert not _tools_disabled_for(_skill("growth", ["growth"]), "growth")
 
 
 def test_real_data_skill_turns_tools_off_only_for_pasted_data() -> None:
-    from phi.core.config import load_config
-    from phi.skills.router import skill_disables_tools
+    from phibe.core.config import load_config
+    from phibe.skills.router import skill_disables_tools
 
     config = load_config()
     assert skill_disables_tools(["Analise esta planilha em CSV:\na,b\n1,2"], config)

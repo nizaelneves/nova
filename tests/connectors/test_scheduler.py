@@ -8,11 +8,11 @@ from typing import Iterator, Optional
 
 import pytest
 
-from phi.connectors._stubs import BaseConnector, Document, SyncStatus
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.scheduler import SyncScheduler
-from phi.connectors.store import KnowledgeStore
-from phi.connectors.sync_engine import SyncEngine
+from phibe.connectors._stubs import BaseConnector, Document, SyncStatus
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.scheduler import SyncScheduler
+from phibe.connectors.store import KnowledgeStore
+from phibe.connectors.sync_engine import SyncEngine
 
 # ---------------------------------------------------------------------------
 # Fixtures and helpers

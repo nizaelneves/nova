@@ -7,15 +7,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.bench.energy import EnergyBenchmark
-from phi.core.registry import BenchmarkRegistry
-from phi.telemetry.energy_monitor import EnergySample
+from phibe.bench.energy import EnergyBenchmark
+from phibe.core.registry import BenchmarkRegistry
+from phibe.telemetry.energy_monitor import EnergySample
 
 
 @pytest.fixture(autouse=True)
 def _register_energy():
     """Re-register energy benchmark after registry clear."""
-    from phi.bench.energy import ensure_registered
+    from phibe.bench.energy import ensure_registered
 
     ensure_registered()
 
@@ -114,7 +114,7 @@ class TestEnergyBenchmark:
         assert result.metrics.get("total_energy_joules", 0.0) == 0.0
 
     def test_ensure_registered(self):
-        from phi.bench.energy import ensure_registered
+        from phibe.bench.energy import ensure_registered
 
         ensure_registered()  # should not raise
         assert BenchmarkRegistry.contains("energy")

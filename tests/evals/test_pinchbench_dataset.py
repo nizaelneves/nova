@@ -2,7 +2,7 @@
 
 import textwrap
 
-from phi.evals.datasets.pinchbench import _parse_task_markdown
+from phibe.evals.datasets.pinchbench import _parse_task_markdown
 
 
 def test_parse_task_markdown_basic():

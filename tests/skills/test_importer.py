@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from phi.skills.importer import SkillImporter
-from phi.skills.parser import SkillParser
-from phi.skills.sources.base import ResolvedSkill
-from phi.skills.tool_translator import ToolTranslator
+from phibe.skills.importer import SkillImporter
+from phibe.skills.parser import SkillParser
+from phibe.skills.sources.base import ResolvedSkill
+from phibe.skills.tool_translator import ToolTranslator
 
 
 def _make_resolved(tmp_path: Path, body: str = "Body") -> ResolvedSkill:

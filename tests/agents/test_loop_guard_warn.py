@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from phi.agents.loop_guard import LoopGuard, LoopGuardConfig
+from phibe.agents.loop_guard import LoopGuard, LoopGuardConfig
 
 _ARGS = '{"q": "test"}'
 

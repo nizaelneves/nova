@@ -5,7 +5,7 @@ import { useAppStore } from './store';
 // listener: long answers are spoken up to a natural break.
 const MAX_SPOKEN_CHARS = 1500;
 
-// Live loudness of Phi's voice (0 to 1), read by the orb on every frame.
+// Live loudness of Phibe's voice (0 to 1), read by the orb on every frame.
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 let meter: Uint8Array | null = null;
@@ -63,7 +63,7 @@ export function cleanForSpeech(markdown: string): string {
   return text;
 }
 
-/** Stop whatever Phi is saying right now (and cancel a request in flight). */
+/** Stop whatever Phibe is saying right now (and cancel a request in flight). */
 export function stopSpeaking(): void {
   requestId += 1;
   useAppStore.getState().setSpeaking(false);
@@ -85,7 +85,7 @@ export interface SpeakResult {
 }
 
 /**
- * Ask the server for Phi's voice and play it. Resolves with which voice spoke
+ * Ask the server for Phibe's voice and play it. Resolves with which voice spoke
  * (`elevenlabs`, or `kokoro` when the reserve voice took over) and a notice
  * explaining a fallback. Rejects with a readable message if nothing could speak.
  */
@@ -124,7 +124,7 @@ export async function speakReply(markdown: string): Promise<SpeakResult | null> 
   await audio.play();
   useAppStore.getState().setSpeaking(true);
   return {
-    backend: res.headers.get('X-Phi-Voice') ?? '',
-    notice: res.headers.get('X-Phi-Voice-Notice') ?? '',
+    backend: res.headers.get('X-Phibe-Voice') ?? '',
+    notice: res.headers.get('X-Phibe-Voice-Notice') ?? '',
   };
 }

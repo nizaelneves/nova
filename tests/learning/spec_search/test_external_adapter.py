@@ -1,4 +1,4 @@
-"""Tests for phi.learning.spec_search.external_adapter."""
+"""Tests for phibe.learning.spec_search.external_adapter."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from phi.evals.core.types import EvalRecord
-from phi.learning.spec_search.external_adapter import (
+from phibe.evals.core.types import EvalRecord
+from phibe.learning.spec_search.external_adapter import (
     write_external_records_as_traces,
 )
-from phi.traces.store import TraceStore
+from phibe.traces.store import TraceStore
 
 
 def _fake_records(n: int) -> list[EvalRecord]:

@@ -3,11 +3,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-REGISTRY_PATH = "phi.core.registry.AgentRegistry.get"
+REGISTRY_PATH = "phibe.core.registry.AgentRegistry.get"
 
 
 def test_run_ephemeral_creates_and_runs_agent():
-    from phi.agents.executor import AgentExecutor
+    from phibe.agents.executor import AgentExecutor
 
     manager = MagicMock()
     executor = AgentExecutor(manager=manager, event_bus=MagicMock())
@@ -27,7 +27,7 @@ def test_run_ephemeral_creates_and_runs_agent():
 
 
 def test_run_ephemeral_passes_input():
-    from phi.agents.executor import AgentExecutor
+    from phibe.agents.executor import AgentExecutor
 
     manager = MagicMock()
     executor = AgentExecutor(manager=manager, event_bus=MagicMock())
@@ -47,13 +47,13 @@ def test_run_ephemeral_passes_input():
 
 
 def test_run_ephemeral_resolves_tools_and_preserves_security():
-    from phi.agents.executor import AgentExecutor
-    from phi.agents.simple import SimpleAgent
-    from phi.core.events import EventBus
-    from phi.core.registry import AgentRegistry, ToolRegistry
-    from phi.core.types import ToolResult
-    from phi.security.capabilities import CapabilityPolicy
-    from phi.tools._stubs import BaseTool, ToolSpec
+    from phibe.agents.executor import AgentExecutor
+    from phibe.agents.simple import SimpleAgent
+    from phibe.core.events import EventBus
+    from phibe.core.registry import AgentRegistry, ToolRegistry
+    from phibe.core.types import ToolResult
+    from phibe.security.capabilities import CapabilityPolicy
+    from phibe.tools._stubs import BaseTool, ToolSpec
 
     class _FlushProbe(BaseTool):
         calls = 0

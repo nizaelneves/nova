@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.scheduler.scheduler import ScheduledTask
-from phi.scheduler.tools import (
+from phibe.scheduler.scheduler import ScheduledTask
+from phibe.scheduler.tools import (
     CancelScheduledTaskTool,
     ListScheduledTasksTool,
     PauseScheduledTaskTool,

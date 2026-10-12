@@ -15,6 +15,7 @@ import type {
 import type { ManagedAgent } from './api';
 import { isCliModel, isEmbedOnlyModel } from './model-capabilities';
 import { CLI_ENGINES_ENABLED } from './features';
+import { DEFAULT_AVATAR, type AvatarId } from './avatar/registry';
 import { serializeToolCallArguments } from './tool-call';
 
 export interface CachedConnector {
@@ -33,8 +34,8 @@ export interface AgentEvent {
 
 // ── localStorage persistence ──────────────────────────────────────────
 
-const CONVERSATIONS_KEY = 'phi-conversations';
-const SETTINGS_KEY = 'phi-settings';
+const CONVERSATIONS_KEY = 'phibe-conversations';
+const SETTINGS_KEY = 'phibe-settings';
 
 interface ConversationStore {
   version: 1;
@@ -90,8 +91,8 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 interface Settings {
   theme: ThemeMode;
   apiUrl: string;
-  // Local server API key (PHI_API_KEY). Sent as a Bearer token on
-  // /v1 + /api requests so a key-protected `phi serve` doesn't 401 the
+  // Local server API key (PHIBE_API_KEY). Sent as a Bearer token on
+  // /v1 + /api requests so a key-protected `phibe serve` doesn't 401 the
   // frontend (#266). Empty = no auth header (keyless local default).
   apiKey: string;
   defaultModel: string;
@@ -99,7 +100,7 @@ interface Settings {
   temperature: number;
   maxTokens: number;
   speechEnabled: boolean;
-  // When Phi speaks her replies: only after you spoke to her, always, or never.
+  // When Phibe speaks her replies: only after you spoke to her, always, or never.
   voiceReplies: 'voice' | 'always' | 'off';
   // Reasoning effort for Claude CLI models (like the slider in the Claude app).
   cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
@@ -108,9 +109,15 @@ interface Settings {
   // Clap twice near the mic to start a voice recording — only listens while
   // the app window is open and this is on; never listens in the background.
   clapToActivate: boolean;
-  // Phi's floating button: always within reach, draggable, can be hidden here or from the button.
-  floatingPhi: boolean;
+  // Phibe's floating button: always within reach, draggable, can be hidden here or from the button.
+  floatingPhibe: boolean;
+  // Which avatar Phibe wears.
+  avatar: AvatarId;
+  // Bumped when the default avatar changes, so the new default reaches everyone once.
+  avatarV?: number;
 }
+
+const AVATAR_VERSION = 2;
 
 function loadSettings(): Settings {
   const defaults: Settings = {
@@ -126,12 +133,20 @@ function loadSettings(): Settings {
     cliEffort: 'medium',
     effects: 'full',
     clapToActivate: false,
-    floatingPhi: true,
+    floatingPhibe: true,
+    avatar: DEFAULT_AVATAR,
+    avatarV: AVATAR_VERSION,
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaults;
-    return { ...defaults, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const saved = { ...defaults, ...parsed };
+    if (parsed.avatarV !== AVATAR_VERSION) {
+      saved.avatar = DEFAULT_AVATAR;
+      saved.avatarV = AVATAR_VERSION;
+    }
+    return saved;
   } catch {
     return defaults;
   }
@@ -174,6 +189,11 @@ interface AppState {
 
   // Sidebar
   sidebarOpen: boolean;
+
+  // A message spoken with the global voice shortcut, waiting for the chat to take it
+  // ("send" posts it, "draft" leaves it in the message box).
+  pendingVoice: { id: number; text: string; mode: 'send' | 'draft' } | null;
+  setPendingVoice: (voice: { id: number; text: string; mode: 'send' | 'draft' } | null) => void;
 
   // Actions: conversations
   loadConversations: () => void;
@@ -234,7 +254,7 @@ interface AppState {
   addAgentEvent: (event: AgentEvent) => void;
   clearAgentEvents: () => void;
 
-  // True while Phi's voice is playing (drives the orb)
+  // True while Phibe's voice is playing (drives the orb)
   speaking: boolean;
   setSpeaking: (speaking: boolean) => void;
 
@@ -499,6 +519,8 @@ export const useAppStore = create<AppState>((set, get) => {
     setCommandPaletteOpen: (open: boolean) => set({ commandPaletteOpen: open }),
     toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
     setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
+    pendingVoice: null,
+    setPendingVoice: (voice) => set({ pendingVoice: voice }),
 
     // ── Agents ─────────────────────────────────────────────────────
 

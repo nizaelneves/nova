@@ -6,14 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import phi.agents.hybrid.conductor as conductor_module
-import phi.agents.hybrid.minions as minions_module
-from phi.agents._stubs import AgentContext
-from phi.agents.hybrid.advisors import AdvisorsAgent
-from phi.agents.hybrid.conductor import ConductorAgent
-from phi.agents.hybrid.minions import MinionsAgent
-from phi.core.events import EventBus, EventType
-from phi.security.capabilities import CapabilityPolicy
+import phibe.agents.hybrid.conductor as conductor_module
+import phibe.agents.hybrid.minions as minions_module
+from phibe.agents._stubs import AgentContext
+from phibe.agents.hybrid.advisors import AdvisorsAgent
+from phibe.agents.hybrid.conductor import ConductorAgent
+from phibe.agents.hybrid.minions import MinionsAgent
+from phibe.core.events import EventBus, EventType
+from phibe.security.capabilities import CapabilityPolicy
 
 
 class _Limiter:

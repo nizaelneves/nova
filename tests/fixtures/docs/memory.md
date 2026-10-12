@@ -1,6 +1,6 @@
 # Memory and Retrieval
 
-Phi stores facts the agent has learned so it can retrieve them later.
+Phibe stores facts the agent has learned so it can retrieve them later.
 
 ## Backends
 

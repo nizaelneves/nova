@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.agents._stubs import AgentContext, AgentResult
-from phi.agents.simple import SimpleAgent
-from phi.core.events import EventBus, EventType
-from phi.core.types import Conversation, Message, Role
+from phibe.agents._stubs import AgentContext, AgentResult
+from phibe.agents.simple import SimpleAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Conversation, Message, Role
 
 
 def _make_mock_engine(content: str = "Hello there!") -> MagicMock:

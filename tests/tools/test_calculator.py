@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from phi.tools.calculator import CalculatorTool, safe_eval
+from phibe.tools.calculator import CalculatorTool, safe_eval
 
 
 class TestSafeEval:

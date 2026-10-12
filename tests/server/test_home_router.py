@@ -6,7 +6,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server.home_router import (
+from phibe.server.home_router import (
     HomeSettings,
     HomeSettingsError,
     create_home_router,
@@ -18,7 +18,7 @@ from phi.server.home_router import (
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     app = FastAPI()
     app.include_router(create_home_router())
     return TestClient(app)

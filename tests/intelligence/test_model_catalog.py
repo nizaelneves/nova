@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from phi.core.registry import ModelRegistry
-from phi.core.types import ModelSpec
-from phi.intelligence.model_catalog import (
+from phibe.core.registry import ModelRegistry
+from phibe.core.types import ModelSpec
+from phibe.intelligence.model_catalog import (
     BUILTIN_MODELS,
     merge_discovered_models,
     register_builtin_models,

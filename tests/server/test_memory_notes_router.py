@@ -1,4 +1,4 @@
-"""The memory notes: what Phi remembers about you, editable as plain text."""
+"""The memory notes: what Phibe remembers about you, editable as plain text."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server.memory_notes_router import MAX_NOTE_CHARS, create_memory_notes_router
+from phibe.server.memory_notes_router import MAX_NOTE_CHARS, create_memory_notes_router
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     app = FastAPI()
     app.include_router(create_memory_notes_router())
     return TestClient(app)

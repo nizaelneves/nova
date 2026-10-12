@@ -102,7 +102,7 @@ export function thinkSupport(modelId: string): ThinkSupport {
       hint: 'Small local model: it reasons, but makes mistakes in maths and logic. Prefer Sonnet or Opus for important work.',
     };
   }
-  if (/^(llama|mistral|gemma|phi)/.test(name.slice(name.lastIndexOf('/') + 1))) {
+  if (/^(llama|mistral|gemma|phibe)/.test(name.slice(name.lastIndexOf('/') + 1))) {
     return { level: 'none', label: 'No reasoning', hint: 'This model has no reasoning mode. Think will not work well here.' };
   }
   return { level: 'unknown', label: '', hint: '' };

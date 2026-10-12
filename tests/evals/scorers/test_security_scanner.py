@@ -1,7 +1,7 @@
 """Tests for the security_scanner scorer."""
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.scorers.security_scanner import SecurityScannerScorer
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.scorers.security_scanner import SecurityScannerScorer
 
 
 def _make_record(vulnerabilities, safe_patterns=None):

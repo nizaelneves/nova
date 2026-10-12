@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.evals.core.trace import QueryTrace, TurnTrace
+from phibe.evals.core.trace import QueryTrace, TurnTrace
 
 
 class TestTurnTrace:

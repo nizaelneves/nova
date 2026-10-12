@@ -9,16 +9,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-pytest.importorskip("fastapi", reason="phi[server] not installed")
+pytest.importorskip("fastapi", reason="phibe[server] not installed")
 
-from phi.channels._stubs import (
+from phibe.channels._stubs import (
     BaseChannel,
     ChannelHandler,
     ChannelStatus,
 )
-from phi.core.events import EventBus
-from phi.server.channel_bridge import ChannelBridge
-from phi.server.session_store import SessionStore
+from phibe.core.events import EventBus
+from phibe.server.channel_bridge import ChannelBridge
+from phibe.server.session_store import SessionStore
 
 
 class FakeChannel(BaseChannel):
@@ -74,7 +74,7 @@ def bus():
 @pytest.fixture
 def mock_system():
     system = MagicMock()
-    system.ask.return_value = {"content": "Hello from Phi!"}
+    system.ask.return_value = {"content": "Hello from Phibe!"}
     return system
 
 
@@ -153,7 +153,7 @@ class TestChatRouting:
         mock_system.ask.assert_called_once()
         call_kwargs = mock_system.ask.call_args
         assert "2+2" in str(call_kwargs)
-        assert reply == "Hello from Phi!"
+        assert reply == "Hello from Phibe!"
 
     def test_stores_conversation_history(self, bridge, store, mock_system):
         bridge.handle_incoming("user1", "hello", "fake")

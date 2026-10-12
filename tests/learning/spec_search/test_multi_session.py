@@ -7,14 +7,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.learning.spec_search.models import (
+from phibe.learning.spec_search.models import (
     AutonomyMode,
     BenchmarkSnapshot,
     LearningSession,
     SessionStatus,
     TriggerKind,
 )
-from phi.learning.spec_search.multi_session import (
+from phibe.learning.spec_search.multi_session import (
     SpecSearchLoop,
 )
 

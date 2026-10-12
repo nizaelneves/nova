@@ -5,8 +5,8 @@ from __future__ import annotations
 import time
 from typing import Any, List
 
-from phi.core.types import StepType, Trace, TraceStep
-from phi.learning.training.data import TrainingDataMiner
+from phibe.core.types import StepType, Trace, TraceStep
+from phibe.learning.training.data import TrainingDataMiner
 
 # ---------------------------------------------------------------------------
 # Helpers

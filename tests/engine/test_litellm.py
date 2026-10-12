@@ -5,9 +5,9 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest import mock
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine.litellm import LiteLLMEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine.litellm import LiteLLMEngine
 
 
 class TestLiteLLMEngineHealth:

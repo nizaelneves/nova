@@ -5,11 +5,14 @@ export function Popup({
   title,
   onClose,
   wide,
+  hideTitle,
   children,
 }: {
   title: string;
   onClose: () => void;
   wide?: boolean;
+  /** Keep `title` for screen readers but do not draw it. */
+  hideTitle?: boolean;
   children: React.ReactNode;
 }) {
   useEffect(() => {
@@ -26,10 +29,21 @@ export function Popup({
       <div
         role="dialog"
         aria-label={title}
-        className={wide ? 'w-full max-w-lg rounded-2xl p-5' : 'w-full max-w-md rounded-2xl p-5'}
+        className={wide ? 'relative w-full max-w-lg rounded-2xl p-5' : 'relative w-full max-w-md rounded-2xl p-5'}
         style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
       >
-        <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-heading)' }}>{title}</h4>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 flex items-center justify-center rounded-md cursor-pointer"
+          style={{ width: 28, height: 28, color: 'var(--color-text-secondary)', background: 'transparent', border: 'none' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" /></svg>
+        </button>
+        {hideTitle ? <div style={{ height: 8 }} /> : <h4 className="text-sm font-semibold mb-3 pr-8" style={{ color: 'var(--color-heading)' }}>{title}</h4>}
         {children}
       </div>
     </div>

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from phi.core.config import PhiConfig
-from phi.core.types import ToolCall
-from phi.security.capabilities import CapabilityPolicy
-from phi.skills.executor import SkillExecutor
-from phi.skills.tool_adapter import SkillTool
-from phi.skills.types import SkillManifest, SkillStep
-from phi.system import SystemBuilder
-from phi.tools.repl import ReplTool
+from phibe.core.config import PhibeConfig
+from phibe.core.types import ToolCall
+from phibe.security.capabilities import CapabilityPolicy
+from phibe.skills.executor import SkillExecutor
+from phibe.skills.tool_adapter import SkillTool
+from phibe.skills.types import SkillManifest, SkillStep
+from phibe.system import SystemBuilder
+from phibe.tools.repl import ReplTool
 
 
 class _HealthyEngine:
@@ -52,7 +52,7 @@ class _PipelineSkillManager:
 def test_builder_nested_skill_cannot_fall_back_to_default_identity(
     tmp_path, monkeypatch
 ) -> None:
-    config = PhiConfig()
+    config = PhibeConfig()
     config.telemetry.enabled = False
     config.traces.enabled = False
     config.skills.enabled = True
@@ -68,7 +68,7 @@ def test_builder_nested_skill_cannot_fall_back_to_default_identity(
     repl = ReplTool()
 
     monkeypatch.setattr(
-        "phi.security.setup_security",
+        "phibe.security.setup_security",
         lambda config, engine, bus: SimpleNamespace(
             engine=engine,
             capability_policy=policy,
@@ -76,7 +76,7 @@ def test_builder_nested_skill_cannot_fall_back_to_default_identity(
             audit_logger=None,
         ),
     )
-    monkeypatch.setattr("phi.skills.manager.SkillManager", _PipelineSkillManager)
+    monkeypatch.setattr("phibe.skills.manager.SkillManager", _PipelineSkillManager)
 
     builder = (
         SystemBuilder(config)

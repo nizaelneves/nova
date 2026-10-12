@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from phi.mcp.client import MCPClient
-from phi.mcp.server import MCPServer
-from phi.mcp.transport import InProcessTransport
-from phi.tools._stubs import ToolSpec
-from phi.tools.calculator import CalculatorTool
-from phi.tools.mcp_adapter import MCPToolAdapter, MCPToolProvider
-from phi.tools.think import ThinkTool
+from phibe.mcp.client import MCPClient
+from phibe.mcp.server import MCPServer
+from phibe.mcp.transport import InProcessTransport
+from phibe.tools._stubs import ToolSpec
+from phibe.tools.calculator import CalculatorTool
+from phibe.tools.mcp_adapter import MCPToolAdapter, MCPToolProvider
+from phibe.tools.think import ThinkTool
 
 
 @pytest.fixture
@@ -103,7 +103,7 @@ class TestMCPToolProvider:
         assert "think" in names
 
     def test_discovered_tools_are_base_tool(self, client):
-        from phi.tools._stubs import BaseTool
+        from phibe.tools._stubs import BaseTool
 
         provider = MCPToolProvider(client)
         tools = provider.discover()

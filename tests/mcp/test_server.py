@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import ToolResult
-from phi.mcp.protocol import (
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import ToolResult
+from phibe.mcp.protocol import (
     INVALID_PARAMS,
     METHOD_NOT_FOUND,
     MCPRequest,
 )
-from phi.mcp.server import MCPServer
-from phi.tools._stubs import BaseTool, ToolSpec
-from phi.tools.calculator import CalculatorTool
-from phi.tools.think import ThinkTool
+from phibe.mcp.server import MCPServer
+from phibe.tools._stubs import BaseTool, ToolSpec
+from phibe.tools.calculator import CalculatorTool
+from phibe.tools.think import ThinkTool
 
 
 class _ProbeTool(BaseTool):
@@ -141,7 +141,7 @@ class TestMCPServer:
         assert "protocolVersion" in result
         assert "capabilities" in result
         assert "serverInfo" in result
-        assert result["serverInfo"]["name"] == "phi"
+        assert result["serverInfo"]["name"] == "phibe"
 
     def test_initialize_capabilities(self, server):
         req = MCPRequest(method="initialize", id=1)

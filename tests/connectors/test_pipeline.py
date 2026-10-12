@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from phi.connectors._stubs import Document
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.store import KnowledgeStore
+from phibe.connectors._stubs import Document
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.store import KnowledgeStore
 
 # ---------------------------------------------------------------------------
 # Helpers

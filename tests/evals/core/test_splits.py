@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.evals.core.splits import apply_split
+from phibe.evals.core.splits import apply_split
 
 
 def test_train_is_first_20_percent():

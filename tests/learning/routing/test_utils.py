@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.learning.routing._utils import classify_query
+from phibe.learning.routing._utils import classify_query
 
 
 class TestClassifyQuery:

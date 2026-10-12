@@ -1,4 +1,4 @@
-// Downloads the icons Phi uses from Iconify (Solar, "linear" style) and saves
+// Downloads the icons Phibe uses from Iconify (Solar, "linear" style) and saves
 // them inside the project, so the app never needs the internet to draw an icon.
 //
 //   node scripts/vendor-icons.mjs
@@ -25,12 +25,29 @@ const ICONS = [
   'list-check', 'inbox',
   // finances
   'arrow-down', 'card', 'wallet-money', 'buildings-2',
+  // finance categories
+  'cart-large-2', 'bag-smile', 'home-2', 'heart-pulse', 'bus', 'car',
+  'gamepad-minimalistic', 'tv', 'plain-2', 'book-2', 'gift', 'cup-hot', 'shop-2',
+  'bill-list', 'safe-square', 'pills', 'dumbbell-large-minimalistic', 'paw', 'tag',
+  'banknote-2', 'bolt', 'phone-calling', 'fuel', 't-shirt',
+  'monitor-smartphone', 'hand-money', 'case-minimalistic', 'star-shine',
+  'magnifer', 'card-2', 'hand-heart',
+  'music-note-2', 'clapperboard-play', 
 ].map((name) => `${name}-linear`);
 
-const url = `https://api.iconify.design/${PREFIX}.json?icons=${ICONS.join(',')}`;
-const res = await fetch(url, { headers: { 'User-Agent': 'phi-vendor-icons' } });
-if (!res.ok) throw new Error(`Iconify answered ${res.status}`);
-const data = await res.json();
+// Asked in batches: one long URL gets cut off by the API.
+const data = { icons: {} };
+const aliases = {};
+for (let i = 0; i < ICONS.length; i += 30) {
+  const url = `https://api.iconify.design/${PREFIX}.json?icons=${ICONS.slice(i, i + 30).join(',')}`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'phibe-vendor-icons' } });
+  if (!res.ok) throw new Error(`Iconify answered ${res.status}`);
+  const part = await res.json();
+  Object.assign(data.icons, part.icons);
+  Object.assign(aliases, part.aliases);
+}
+// An alias (a renamed icon) draws the same shape as its parent.
+for (const [name, a] of Object.entries(aliases)) data.icons[name] ??= data.icons[a.parent];
 
 const missing = ICONS.filter((name) => !data.icons?.[name]);
 if (missing.length) throw new Error(`Not found in ${PREFIX}: ${missing.join(', ')}`);

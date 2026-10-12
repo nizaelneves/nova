@@ -1,4 +1,4 @@
-"""Tests for the ``phi channel`` CLI commands."""
+"""Tests for the ``phibe channel`` CLI commands."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from phi.channels._stubs import ChannelStatus
-from phi.cli import cli
+from phibe.channels._stubs import ChannelStatus
+from phibe.cli import cli
 
 
 def _patch_channel(
@@ -25,11 +25,11 @@ def _patch_channel(
     bridge_instance.status.return_value = status_return
 
     config_patch = mock.patch(
-        "phi.core.config.load_config",
+        "phibe.core.config.load_config",
         return_value=cfg,
     )
     get_channel_patch = mock.patch(
-        "phi.cli.channel_cmd._get_channel",
+        "phibe.cli.channel_cmd._get_channel",
         return_value=bridge_instance,
     )
     return config_patch, get_channel_patch, bridge_instance

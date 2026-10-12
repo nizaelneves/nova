@@ -9,16 +9,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import AgentResult
-from phi.agents.executor import AgentExecutor
-from phi.agents.manager import AgentManager
-from phi.agents.tool_resolver import ResolvedAgentTools
-from phi.connectors.store import KnowledgeStore
-from phi.core.config import MemoryFilesConfig, SystemPromptConfig
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry, ToolRegistry
-from phi.core.types import Role, ToolResult
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents._stubs import AgentResult
+from phibe.agents.executor import AgentExecutor
+from phibe.agents.manager import AgentManager
+from phibe.agents.tool_resolver import ResolvedAgentTools
+from phibe.connectors.store import KnowledgeStore
+from phibe.core.config import MemoryFilesConfig, SystemPromptConfig
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry, ToolRegistry
+from phibe.core.types import Role, ToolResult
+from phibe.tools._stubs import BaseTool, ToolSpec
 from tests.agents.fake_engine import FakeEngine
 from tests.agents.scenario_harness import FakeSystem
 
@@ -106,8 +106,8 @@ class _PrivilegedExecutorProbeTool(BaseTool):
 
 def _register_agent():
     """Re-register MonitorOperativeAgent (cleared by autouse fixture)."""
-    from phi.agents.monitor_operative import MonitorOperativeAgent
-    from phi.core.registry import AgentRegistry
+    from phibe.agents.monitor_operative import MonitorOperativeAgent
+    from phibe.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("monitor_operative"):
         AgentRegistry.register("monitor_operative")(MonitorOperativeAgent)
@@ -340,7 +340,7 @@ def test_executor_enforces_managed_agent_capability_denial(tmp_path):
 def test_simple_agent_uses_global_mcp_tools_without_native_tool_config(tmp_path):
     """Fallback-compatible simple agents preserve SSE/global-MCP parity."""
 
-    from phi.agents.simple import SimpleAgent
+    from phibe.agents.simple import SimpleAgent
 
     AgentRegistry.register_value("simple", SimpleAgent)
     _ExecutorProbeTool.calls = 0
@@ -395,7 +395,7 @@ def test_simple_agent_uses_global_mcp_tools_without_native_tool_config(tmp_path)
 def test_simple_agent_without_tools_keeps_its_custom_system_prompt(tmp_path):
     """Signature filtering must not discard prompt-builder state on retry."""
 
-    from phi.agents.simple import SimpleAgent
+    from phibe.agents.simple import SimpleAgent
 
     AgentRegistry.register_value("simple", SimpleAgent)
     engine = FakeEngine([{"content": "custom prompt response"}])
@@ -574,7 +574,7 @@ def test_executor_mcp_opt_out_does_not_call_lazy_provider(tmp_path):
 def test_executor_preserves_custom_dict_tool_schema(tmp_path):
     """Executor-based agents see the same custom schema advertised by SSE."""
 
-    from phi.tools.think import ThinkTool
+    from phibe.tools.think import ThinkTool
 
     AgentRegistry.register_value("capturing", _CapturingToolAgent)
     ToolRegistry.register_value("think", ThinkTool)
@@ -632,7 +632,7 @@ def test_executor_closes_resolver_resources_when_pre_run_setup_fails(
     def _resolve(*args, **kwargs):
         return ResolvedAgentTools(owned_resources=[resource])
 
-    monkeypatch.setattr("phi.agents.executor.resolve_agent_tools", _resolve)
+    monkeypatch.setattr("phibe.agents.executor.resolve_agent_tools", _resolve)
     system = SimpleNamespace(
         engine=FakeEngine([{"content": "unused"}]),
         model="test-model",

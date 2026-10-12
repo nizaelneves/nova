@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.agents.manager import AgentManager
+from phibe.agents.manager import AgentManager
 
 
 def test_create_from_template_expands_system_prompt(tmp_path):

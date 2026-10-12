@@ -16,12 +16,12 @@ try:
 except ImportError:
     HAS_FASTAPI = False
 
-from phi.connectors.store import KnowledgeStore
-from phi.core.events import EventBus
-from phi.core.registry import ToolRegistry
-from phi.core.types import Role, ToolResult
-from phi.security.capabilities import CapabilityPolicy
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.connectors.store import KnowledgeStore
+from phibe.core.events import EventBus
+from phibe.core.registry import ToolRegistry
+from phibe.core.types import Role, ToolResult
+from phibe.security.capabilities import CapabilityPolicy
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 
 class _ConfiguredResearchProbe(BaseTool):
@@ -114,7 +114,7 @@ def test_deep_research_agent_gets_tools(tmp_path: Path) -> None:
     store = KnowledgeStore(str(db_path))
     store.store("test content", source="test", doc_type="note")
 
-    from phi.server.agent_manager_routes import _build_deep_research_tools
+    from phibe.server.agent_manager_routes import _build_deep_research_tools
 
     tools = _build_deep_research_tools(
         engine=MagicMock(),
@@ -134,7 +134,7 @@ def test_deep_research_agent_gets_tools(tmp_path: Path) -> None:
 @pytest.mark.skipif(not HAS_FASTAPI, reason="fastapi not installed")
 def test_deep_research_tools_returns_empty_when_no_db() -> None:
     """When knowledge.db doesn't exist, returns empty list."""
-    from phi.server.agent_manager_routes import _build_deep_research_tools
+    from phibe.server.agent_manager_routes import _build_deep_research_tools
 
     tools = _build_deep_research_tools(
         engine=MagicMock(),
@@ -160,7 +160,7 @@ async def test_server_deep_research_merges_and_executes_all_tool_sources(
 ) -> None:
     """Configured and MCP tools reach Deep Research with or without its DB."""
 
-    from phi.server import agent_manager_routes as routes
+    from phibe.server import agent_manager_routes as routes
 
     start_worker = MagicMock(wraps=routes._start_managed_worker)
     monkeypatch.setattr(routes, "_start_managed_worker", start_worker)
@@ -289,9 +289,9 @@ async def test_disconnected_research_stream_keeps_tick_until_worker_finishes(
     import asyncio
     import threading
 
-    from phi.agents._stubs import AgentResult
-    from phi.agents.manager import AgentManager
-    from phi.server import agent_manager_routes as routes
+    from phibe.agents._stubs import AgentResult
+    from phibe.agents.manager import AgentManager
+    from phibe.server import agent_manager_routes as routes
 
     started = threading.Event()
     release = threading.Event()
@@ -311,7 +311,7 @@ async def test_disconnected_research_stream_keeps_tick_until_worker_finishes(
 
     monkeypatch.setattr(routes, "resolve_agent_tools", lambda *args, **kwargs: toolkit)
     monkeypatch.setattr(
-        "phi.agents.deep_research.DeepResearchAgent",
+        "phibe.agents.deep_research.DeepResearchAgent",
         BlockedResearchAgent,
     )
     manager = AgentManager(str(tmp_path / "agents.db"))

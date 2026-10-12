@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from phi.core.registry import RouterPolicyRegistry
-from phi.learning.routing.heuristic_policy import ensure_registered
-from phi.learning.routing.router import HeuristicRouter
+from phibe.core.registry import RouterPolicyRegistry
+from phibe.learning.routing.heuristic_policy import ensure_registered
+from phibe.learning.routing.router import HeuristicRouter
 
 
 class TestHeuristicPolicy:

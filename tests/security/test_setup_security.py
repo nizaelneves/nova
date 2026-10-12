@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.config import CapabilitiesConfig, PhiConfig, SecurityConfig
-from phi.core.events import EventBus
-from phi.security import SecurityContext, setup_security
+from phibe.core.config import CapabilitiesConfig, PhibeConfig, SecurityConfig
+from phibe.core.events import EventBus
+from phibe.security import SecurityContext, setup_security
 
 
 def _make_mock_engine() -> MagicMock:
@@ -20,8 +20,8 @@ def _make_mock_engine() -> MagicMock:
     return engine
 
 
-def _make_config(*, enabled: bool = True, caps_enabled: bool = False) -> PhiConfig:
-    cfg = PhiConfig()
+def _make_config(*, enabled: bool = True, caps_enabled: bool = False) -> PhibeConfig:
+    cfg = PhibeConfig()
     cfg.security = SecurityConfig(
         enabled=enabled,
         secret_scanner=True,
@@ -34,7 +34,7 @@ def _make_config(*, enabled: bool = True, caps_enabled: bool = False) -> PhiConf
 
 def _has_rust() -> bool:
     try:
-        import phi_rust  # noqa: F401
+        import phibe_rust  # noqa: F401
 
         return True
     except ImportError:
@@ -44,7 +44,7 @@ def _has_rust() -> bool:
 class TestSetupSecurityEnabled:
     @pytest.mark.skipif(not _has_rust(), reason="Rust extension not compiled")
     def test_returns_wrapped_engine(self) -> None:
-        from phi.security.guardrails import GuardrailsEngine
+        from phibe.security.guardrails import GuardrailsEngine
 
         engine = _make_mock_engine()
         bus = EventBus()
@@ -82,7 +82,7 @@ class TestSetupSecurityEnabled:
             raise RuntimeError("policy unavailable")
 
         monkeypatch.setattr(
-            "phi.security.capabilities.CapabilityPolicy",
+            "phibe.security.capabilities.CapabilityPolicy",
             _broken_policy,
         )
 
@@ -100,7 +100,7 @@ class TestSetupSecurityEnabled:
             raise RuntimeError("limiter unavailable")
 
         monkeypatch.setattr(
-            "phi.security.rate_limiter.RateLimiter",
+            "phibe.security.rate_limiter.RateLimiter",
             _broken_limiter,
         )
 
@@ -134,7 +134,7 @@ def test_partial_capability_config_preserves_profile_defaults(
     enabled,
     default_deny,
 ):
-    from phi.core.config import load_config
+    from phibe.core.config import load_config
 
     path = tmp_path / "config.toml"
     path.write_text(

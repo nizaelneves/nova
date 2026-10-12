@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from phi.sandbox.mount_security import (
+from phibe.sandbox.mount_security import (
     DEFAULT_BLOCKED_PATTERNS,
     AllowedRoot,
     MountAllowlist,

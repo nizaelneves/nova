@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from phi.security.file_policy import filter_sensitive_paths, is_sensitive_file
+from phibe.security.file_policy import filter_sensitive_paths, is_sensitive_file
 
 
 class TestIsSensitiveFile:

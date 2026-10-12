@@ -6,13 +6,13 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.connectors._stubs import Document
-from phi.core.registry import ConnectorRegistry
+from phibe.connectors._stubs import Document
+from phibe.core.registry import ConnectorRegistry
 
 
 def test_hackernews_registered():
     """HackerNewsConnector is discoverable via ConnectorRegistry."""
-    from phi.connectors.hackernews import HackerNewsConnector
+    from phibe.connectors.hackernews import HackerNewsConnector
 
     ConnectorRegistry.register_value("hackernews", HackerNewsConnector)
     assert ConnectorRegistry.contains("hackernews")
@@ -74,7 +74,7 @@ _STORY_ITEMS = {
 
 @pytest.fixture()
 def connector():
-    from phi.connectors.hackernews import HackerNewsConnector
+    from phibe.connectors.hackernews import HackerNewsConnector
 
     return HackerNewsConnector()
 
@@ -91,11 +91,11 @@ def test_sync_yields_top_five(connector):
 
     with (
         patch(
-            "phi.connectors.hackernews._hn_top_story_ids",
+            "phibe.connectors.hackernews._hn_top_story_ids",
             return_value=_TOP_STORY_IDS,
         ),
         patch(
-            "phi.connectors.hackernews._hn_item",
+            "phibe.connectors.hackernews._hn_item",
             side_effect=mock_item,
         ),
     ):

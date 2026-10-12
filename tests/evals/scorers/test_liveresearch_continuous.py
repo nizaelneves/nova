@@ -13,10 +13,10 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from phi.evals.cli import main as cli_main
-from phi.evals.core.runner import EvalRunner, _extract_continuous_score
-from phi.evals.core.types import EvalRecord, RunConfig
-from phi.evals.scorers.liveresearch import (
+from phibe.evals.cli import main as cli_main
+from phibe.evals.core.runner import EvalRunner, _extract_continuous_score
+from phibe.evals.core.types import EvalRecord, RunConfig
+from phibe.evals.scorers.liveresearch import (
     _escape_newlines_inside_strings,
     _parse_judge_response,
     _safe_json_loads,
@@ -76,7 +76,7 @@ def test_continuous_score_fields_present_in_summary(tmp_path):
     out = tmp_path / "out.jsonl"
     cfg = RunConfig(
         benchmark="test",
-        backend="phi-direct",
+        backend="phibe-direct",
         model="test-model",
         output_path=str(out),
     )

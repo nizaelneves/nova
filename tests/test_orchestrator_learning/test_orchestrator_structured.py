@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from phi.agents.orchestrator import OrchestratorAgent
-from phi.core.types import ToolResult
-from phi.engine._stubs import InferenceEngine
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents.orchestrator import OrchestratorAgent
+from phibe.core.types import ToolResult
+from phibe.engine._stubs import InferenceEngine
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # -- Mocks -------------------------------------------------------------------
 

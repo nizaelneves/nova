@@ -10,16 +10,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.mcp.protocol import MCPRequest
-from phi.mcp.server import MCPServer
-from phi.mcp.transport import (
+from phibe.mcp.protocol import MCPRequest
+from phibe.mcp.server import MCPServer
+from phibe.mcp.transport import (
     InProcessTransport,
     SSETransport,
     StdioTransport,
     StreamableHTTPTransport,
 )
-from phi.tools.calculator import CalculatorTool
-from phi.tools.think import ThinkTool
+from phibe.tools.calculator import CalculatorTool
+from phibe.tools.think import ThinkTool
 
 
 @pytest.fixture

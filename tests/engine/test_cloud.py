@@ -7,10 +7,10 @@ from unittest import mock
 
 import pytest
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.cloud import (
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.cloud import (
     CloudEngine,
     _is_codex_model,
     _is_deepseek_model,
@@ -337,7 +337,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "phi.engine.cloud.httpx.post",
+            "phibe.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             result = engine.generate(
@@ -384,7 +384,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "phi.engine.cloud.httpx.post",
+            "phibe.engine.cloud.httpx.post",
             return_value=fake_response,
         ):
             result = engine.generate(
@@ -413,7 +413,7 @@ class TestCodexGenerate:
         }
 
         with mock.patch(
-            "phi.engine.cloud.httpx.post",
+            "phibe.engine.cloud.httpx.post",
             return_value=fake_response,
         ) as mock_post:
             engine.generate(

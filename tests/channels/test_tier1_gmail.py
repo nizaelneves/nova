@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.channels._stubs import ChannelStatus
-from phi.channels.gmail import GmailChannel
-from phi.core.events import EventBus, EventType
-from phi.core.registry import ChannelRegistry
+from phibe.channels._stubs import ChannelStatus
+from phibe.channels.gmail import GmailChannel
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 
@@ -188,8 +188,8 @@ class TestLive:
 
         result = ch.send(
             recipient,
-            "Phi Gmail channel test message",
-            metadata={"subject": "Phi Test"},
+            "Phibe Gmail channel test message",
+            metadata={"subject": "Phibe Test"},
         )
         assert result is True
         ch.disconnect()

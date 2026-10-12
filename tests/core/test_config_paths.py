@@ -1,8 +1,8 @@
-"""Tests for the env-aware Phi home-directory resolver (issue #462).
+"""Tests for the env-aware Phibe home-directory resolver (issue #462).
 
-Covers the single-root consolidation: ``$PHI_HOME`` >
-``$XDG_DATA_HOME/phi`` > ``~/.phi``, backward compatibility
-(no env => exactly ``~/.phi``), and the source-tree rejection guard.
+Covers the single-root consolidation: ``$PHIBE_HOME`` >
+``$XDG_DATA_HOME/phibe`` > ``~/.phibe``, backward compatibility
+(no env => exactly ``~/.phibe``), and the source-tree rejection guard.
 """
 
 from __future__ import annotations
@@ -12,13 +12,13 @@ from pathlib import Path
 
 import pytest
 
-from phi.core import paths
+from phibe.core import paths
 
 
 def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Remove every env var that influences home resolution."""
     for var in (
-        "PHI_HOME",
+        "PHIBE_HOME",
         "XDG_DATA_HOME",
         "XDG_CONFIG_HOME",
         "XDG_CACHE_HOME",
@@ -33,16 +33,16 @@ class TestGetConfigDir:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Backward-compat: with nothing set, the resolved dir is exactly the
-        # historical ~/.phi so existing installs are untouched.
+        # historical ~/.phibe so existing installs are untouched.
         _clear_env(monkeypatch)
-        assert paths.get_config_dir() == (Path.home() / ".phi").resolve()
+        assert paths.get_config_dir() == (Path.home() / ".phibe").resolve()
 
-    def test_respects_phi_home(
+    def test_respects_phibe_home(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
         custom = tmp_path / "oj"
-        monkeypatch.setenv("PHI_HOME", str(custom))
+        monkeypatch.setenv("PHIBE_HOME", str(custom))
         assert paths.get_config_dir() == custom.resolve()
 
     def test_respects_xdg_data_home(
@@ -50,28 +50,28 @@ class TestGetConfigDir:
     ) -> None:
         _clear_env(monkeypatch)
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-        # Single nested 'phi' dir under XDG_DATA_HOME.
-        assert paths.get_config_dir() == (tmp_path / "phi").resolve()
+        # Single nested 'phibe' dir under XDG_DATA_HOME.
+        assert paths.get_config_dir() == (tmp_path / "phibe").resolve()
 
-    def test_phi_home_wins_over_xdg(
+    def test_phibe_home_wins_over_xdg(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
         oj = tmp_path / "oj_wins"
-        monkeypatch.setenv("PHI_HOME", str(oj))
+        monkeypatch.setenv("PHIBE_HOME", str(oj))
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_loses"))
         assert paths.get_config_dir() == oj.resolve()
 
-    def test_expands_user_in_phi_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_expands_user_in_phibe_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
         _clear_env(monkeypatch)
-        monkeypatch.setenv("PHI_HOME", "~/relocated-oj")
+        monkeypatch.setenv("PHIBE_HOME", "~/relocated-oj")
         assert paths.get_config_dir() == (Path.home() / "relocated-oj").resolve()
 
     def test_returns_absolute_path(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "rel"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "rel"))
         assert paths.get_config_dir().is_absolute()
 
 
@@ -80,21 +80,21 @@ class TestDerivedDirs:
 
     def test_config_path(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _clear_env(monkeypatch)
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         assert paths.get_config_path() == (tmp_path / "oj" / "config.toml").resolve()
 
     def test_data_dir_equals_config_dir(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         assert paths.get_data_dir() == paths.get_config_dir()
 
     def test_cache_dir_is_nested_cache(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _clear_env(monkeypatch)
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         assert paths.get_cache_dir() == (tmp_path / "oj" / "cache").resolve()
 
     def test_cache_dir_under_xdg(
@@ -102,7 +102,7 @@ class TestDerivedDirs:
     ) -> None:
         _clear_env(monkeypatch)
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-        assert paths.get_cache_dir() == (tmp_path / "phi" / "cache").resolve()
+        assert paths.get_cache_dir() == (tmp_path / "phibe" / "cache").resolve()
 
 
 class TestSourceTreeRejection:
@@ -114,7 +114,7 @@ class TestSourceTreeRejection:
         _clear_env(monkeypatch)
         source_root = paths._find_source_root()
         assert source_root is not None  # We must be running inside the repo.
-        monkeypatch.setenv("PHI_HOME", str(source_root / "junk_dir"))
+        monkeypatch.setenv("PHIBE_HOME", str(source_root / "junk_dir"))
         with pytest.raises(paths.ConfigurationError, match="inside the source tree"):
             paths.get_config_dir()
 
@@ -123,7 +123,7 @@ class TestLegacyConstantsHonorEnv:
     """The legacy DEFAULT_CONFIG_* names route through the env-aware resolver.
 
     This is the exact split-brain bug from #462: the constant used to ignore
-    PHI_HOME entirely. The constant is resolved once at import (the
+    PHIBE_HOME entirely. The constant is resolved once at import (the
     install-script model, where the env is set before the process starts), and
     every instance-level default goes through ``get_config_dir()`` so it honors
     the override. ``DEFAULT_CONFIG_DIR`` stays a real attribute so existing
@@ -131,7 +131,7 @@ class TestLegacyConstantsHonorEnv:
     """
 
     def test_constant_matches_resolver_at_import(self) -> None:
-        from phi.core import config
+        from phibe.core import config
 
         # The constant is the import-time resolution of the same function.
         assert config.DEFAULT_CONFIG_DIR == paths.get_config_dir()
@@ -142,7 +142,7 @@ class TestLegacyConstantsHonorEnv:
     ) -> None:
         # Install/CLI tests monkeypatch this attribute directly; it must be a
         # real module attribute (not __getattr__-only) for setattr/undo to work.
-        from phi.core import config
+        from phibe.core import config
 
         monkeypatch.setattr(config, "DEFAULT_CONFIG_DIR", tmp_path / "patched")
         assert config.DEFAULT_CONFIG_DIR == tmp_path / "patched"
@@ -151,11 +151,11 @@ class TestLegacyConstantsHonorEnv:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # Config dataclass field defaults must resolve under the override at
-        # instantiation time, not freeze ~/.phi at import.
+        # instantiation time, not freeze ~/.phibe at import.
         _clear_env(monkeypatch)
-        from phi.core.config import SessionConfig, StorageConfig
+        from phibe.core.config import SessionConfig, StorageConfig
 
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         root = (tmp_path / "oj").resolve()
         assert StorageConfig().db_path == str(root / "memory.db")
         assert SessionConfig().db_path == str(root / "sessions.db")
@@ -166,9 +166,9 @@ class TestLegacyConstantsHonorEnv:
         # End-to-end: a non-config subsystem (credentials) resolves under the
         # custom root, proving the override is no longer split-brain.
         _clear_env(monkeypatch)
-        from phi.core import credentials
+        from phibe.core import credentials
 
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "oj"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "oj"))
         assert (
             credentials._default_path()
             == (tmp_path / "oj" / "credentials.toml").resolve()
@@ -176,11 +176,11 @@ class TestLegacyConstantsHonorEnv:
 
     def test_constant_never_resolves_to_the_real_developer_home(self) -> None:
         """Regression for #787: DEFAULT_CONFIG_DIR is resolved once, at the
-        first import of phi.core.config anywhere in the test
+        first import of phibe.core.config anywhere in the test
         session -- which happens via tests/conftest.py, before any test
-        body runs. If conftest.py doesn't set PHI_HOME before that
+        body runs. If conftest.py doesn't set PHIBE_HOME before that
         import, this constant (and the ~45 modules that reference it)
-        permanently binds to the developer's real ~/.phi for the
+        permanently binds to the developer's real ~/.phibe for the
         rest of the run, so tests touching e.g. AgentConfigEvolver or
         LearningOrchestrator read/write real files there.
 
@@ -188,8 +188,8 @@ class TestLegacyConstantsHonorEnv:
         session-wide value tests/conftest.py's import-time setup already
         produced, not a value manufactured by this test.
         """
-        from phi.core.config import DEFAULT_CONFIG_DIR
+        from phibe.core.config import DEFAULT_CONFIG_DIR
 
-        real_home = (Path.home() / ".phi").resolve()
+        real_home = (Path.home() / ".phibe").resolve()
         assert DEFAULT_CONFIG_DIR != real_home
-        assert "PHI_CONFIG" not in os.environ
+        assert "PHIBE_CONFIG" not in os.environ

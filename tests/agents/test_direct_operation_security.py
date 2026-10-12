@@ -6,13 +6,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents.claude_code import ClaudeCodeAgent
-from phi.agents.hybrid.baseline_cloud import BaselineCloudAgent
-from phi.agents.hybrid.mini_swe_agent import MiniSWEAgent
-from phi.agents.opencode import OpenCodeAgent
-from phi.agents.openhands import OpenHandsAgent
-from phi.core.events import EventBus, EventType
-from phi.security.capabilities import CapabilityPolicy
+from phibe.agents.claude_code import ClaudeCodeAgent
+from phibe.agents.hybrid.baseline_cloud import BaselineCloudAgent
+from phibe.agents.hybrid.mini_swe_agent import MiniSWEAgent
+from phibe.agents.opencode import OpenCodeAgent
+from phibe.agents.openhands import OpenHandsAgent
+from phibe.core.events import EventBus, EventType
+from phibe.security.capabilities import CapabilityPolicy
 
 
 class _RecordingLimiter:

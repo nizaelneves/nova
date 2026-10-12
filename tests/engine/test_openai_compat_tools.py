@@ -6,9 +6,9 @@ import json
 
 import httpx
 
-from phi.core.types import Message, Role
-from phi.engine._openai_compat import _OpenAICompatibleEngine
-from phi.engine.ollama import OllamaEngine
+from phibe.core.types import Message, Role
+from phibe.engine._openai_compat import _OpenAICompatibleEngine
+from phibe.engine.ollama import OllamaEngine
 
 # ---------------------------------------------------------------------------
 # _OpenAICompatibleEngine tests

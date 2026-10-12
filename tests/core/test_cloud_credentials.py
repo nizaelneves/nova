@@ -6,7 +6,7 @@ import os
 
 import pytest
 
-from phi.core import credentials as creds
+from phibe.core import credentials as creds
 
 
 @pytest.mark.parametrize(

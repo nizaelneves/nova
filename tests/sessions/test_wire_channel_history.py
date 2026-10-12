@@ -7,18 +7,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.config import PhiConfig
-from phi.core.events import EventBus
-from phi.core.types import Role
-from phi.system import PhiSystem
+from phibe.core.config import PhibeConfig
+from phibe.core.events import EventBus
+from phibe.core.types import Role
+from phibe.system import PhibeSystem
 
 
 @pytest.fixture()
 def minimal_system():
     engine = MagicMock()
     engine.generate.return_value = {"content": "ok", "usage": {}}
-    return PhiSystem(
-        config=PhiConfig(),
+    return PhibeSystem(
+        config=PhibeConfig(),
         bus=EventBus(),
         engine=engine,
         engine_key="mock",
@@ -30,7 +30,7 @@ def minimal_system():
 class TestWireChannelHistory:
     def test_prior_messages_passed_to_ask(self, tmp_path, minimal_system):
         """Session history is forwarded as prior_messages to ask()."""
-        from phi.sessions.session import SessionStore
+        from phibe.sessions.session import SessionStore
 
         db = tmp_path / "sessions.db"
         store = SessionStore(db_path=db)
@@ -80,7 +80,7 @@ class TestWireChannelHistory:
 
     def test_empty_session_passes_empty_prior_messages(self, tmp_path, minimal_system):
         """First message in a new session passes prior_messages=[]."""
-        from phi.sessions.session import SessionStore
+        from phibe.sessions.session import SessionStore
 
         db = tmp_path / "sessions.db"
         store = SessionStore(db_path=db)

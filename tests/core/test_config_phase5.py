@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.config import PhiConfig, load_config
-from phi.core.registry import BenchmarkRegistry
+from phibe.core.config import PhibeConfig, load_config
+from phibe.core.registry import BenchmarkRegistry
 
 
 class TestBenchmarkRegistry:
@@ -30,25 +30,25 @@ class TestBenchmarkRegistry:
 
 
 class TestConfigPhase5:
-    def test_phi_config_loads(self):
-        cfg = PhiConfig()
+    def test_phibe_config_loads(self):
+        cfg = PhibeConfig()
         assert cfg.engine is not None
         assert cfg.learning is not None
 
     def test_benchmark_registry_importable(self):
-        from phi.core.registry import BenchmarkRegistry
+        from phibe.core.registry import BenchmarkRegistry
 
         assert BenchmarkRegistry is not None
 
     def test_registry_isolation(self):
         """BenchmarkRegistry entries don't leak into other registries."""
-        from phi.core.registry import ModelRegistry
+        from phibe.core.registry import ModelRegistry
 
         BenchmarkRegistry.register_value("iso-test", "bench-value")
         with pytest.raises(KeyError):
             ModelRegistry.get("iso-test")
 
     def test_load_config_default(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
+        monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
         cfg = load_config(tmp_path / "missing-config.toml")
-        assert isinstance(cfg, PhiConfig)
+        assert isinstance(cfg, PhibeConfig)

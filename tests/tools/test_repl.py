@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from phi.core.registry import ToolRegistry
-from phi.tools.repl import ReplTool
+from phibe.core.registry import ToolRegistry
+from phibe.tools.repl import ReplTool
 
 
 class TestReplSpec:

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from phi.telemetry.phase_metrics import compute_phase_metrics, split_at_ttft
-from phi.telemetry.session import TelemetrySample, TelemetrySession
+from phibe.telemetry.phase_metrics import compute_phase_metrics, split_at_ttft
+from phibe.telemetry.session import TelemetrySample, TelemetrySession
 
 
 class TestComputePhaseMetrics:

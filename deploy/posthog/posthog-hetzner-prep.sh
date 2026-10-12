@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # posthog-hetzner-prep.sh — one-shot Hetzner Cloud server prep for
-# Phi's self-hosted PostHog analytics backend.
+# Phibe's self-hosted PostHog analytics backend.
 #
 # Run this on a fresh Ubuntu 22.04+ box (Hetzner CCX23 in Ashburn, or
 # similar) after pointing the desired domain at it. Idempotent: safe
 # to re-run if a step fails partway.
 #
 # Usage:
-#   sudo bash posthog-hetzner-prep.sh analytics.phi.ai you@phi.ai
+#   sudo bash posthog-hetzner-prep.sh analytics.phibe.ai you@phibe.ai
 #
 # After it finishes:
 #   1. Visit https://<DOMAIN>/ and create the admin account.
-#   2. Create project "Phi".
+#   2. Create project "Phibe".
 #   3. Settings → Project → grab the Project API Key (phc_…).
-#   4. Update src/phi/core/config.py AnalyticsConfig defaults:
+#   4. Update src/phibe/core/config.py AnalyticsConfig defaults:
 #        host = "https://<DOMAIN>"
 #        key  = "phc_<new>"
 #   5. Ship a release. Frontend + backend + install.sh all read those
@@ -36,7 +36,7 @@ Usage:
   sudo bash posthog-hetzner-prep.sh <domain> <admin_email>
 
 Examples:
-  sudo bash posthog-hetzner-prep.sh analytics.phi.ai team@phi.ai
+  sudo bash posthog-hetzner-prep.sh analytics.phibe.ai team@phibe.ai
 
 The domain must already resolve to this box (DNS A record) before
 the script runs — Let's Encrypt needs to reach this server on port 80.
@@ -124,14 +124,14 @@ PostHog is up at https://$DOMAIN/
 Next steps:
   1. Open https://$DOMAIN/ in a browser.
   2. Create the first admin account (any email, your password).
-  3. Create project "Phi".
+  3. Create project "Phibe".
   4. Settings → Project → Project API Key — copy the phc_… value.
-  5. Update src/phi/core/config.py AnalyticsConfig defaults:
+  5. Update src/phibe/core/config.py AnalyticsConfig defaults:
         host = "https://$DOMAIN"
         key  = "phc_<the-new-key>"
   6. Settings → Data Management → set retention to 365 days.
   7. Settings → Recordings → confirm Session Replay is OFF (default).
-  8. Ship a release of Phi with the new config defaults.
+  8. Ship a release of Phibe with the new config defaults.
 
 Operational notes:
   - Updates:    bash <(curl -fsSL https://raw.githubusercontent.com/posthog/posthog/HEAD/bin/upgrade-hobby)

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from phi.security.injection_scanner import InjectionScanner
-from phi.security.types import ThreatLevel
+from phibe.security.injection_scanner import InjectionScanner
+from phibe.security.types import ThreatLevel
 
 
 class TestInjectionScanner:

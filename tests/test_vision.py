@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import phi.engine.ollama as ollama_mod
-from phi.core.types import Message, Role
-from phi.engine._base import messages_to_dicts
+import phibe.engine.ollama as ollama_mod
+from phibe.core.types import Message, Role
+from phibe.engine._base import messages_to_dicts
 
 
 def test_message_defaults_to_no_images() -> None:
@@ -41,20 +41,20 @@ def test_messages_to_dicts_empty_images_treated_as_text() -> None:
 
 
 def test_default_num_ctx_default_and_override(monkeypatch) -> None:
-    monkeypatch.delenv("PHI_NUM_CTX", raising=False)
+    monkeypatch.delenv("PHIBE_NUM_CTX", raising=False)
     assert ollama_mod._default_num_ctx() == 16384
 
-    monkeypatch.setenv("PHI_NUM_CTX", "8000")
+    monkeypatch.setenv("PHIBE_NUM_CTX", "8000")
     assert ollama_mod._default_num_ctx() == 8000
 
     # A non-integer override must fall back to the safe default, not crash.
-    monkeypatch.setenv("PHI_NUM_CTX", "not-an-int")
+    monkeypatch.setenv("PHIBE_NUM_CTX", "not-an-int")
     assert ollama_mod._default_num_ctx() == 16384
 
 
 def test_guardrails_preserves_images_when_sanitizing() -> None:
     """A flagged message gets rewritten; its image must survive the rewrite."""
-    from phi.security.guardrails import GuardrailsEngine
+    from phibe.security.guardrails import GuardrailsEngine
 
     class _RecordingEngine:
         """Captures the messages the guardrail forwards to the real engine."""

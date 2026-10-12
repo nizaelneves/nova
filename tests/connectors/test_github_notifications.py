@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.connectors._stubs import Document
-from phi.core.registry import ConnectorRegistry
+from phibe.connectors._stubs import Document
+from phibe.core.registry import ConnectorRegistry
 
 
 def test_github_notifications_registered():
     """GitHubNotificationsConnector is discoverable via ConnectorRegistry."""
-    from phi.connectors.github_notifications import (
+    from phibe.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -55,7 +55,7 @@ _NOTIFICATIONS_RESPONSE = [
 @pytest.fixture()
 def connector(tmp_path):
     """GitHubNotificationsConnector with fake token file."""
-    from phi.connectors.github_notifications import (
+    from phibe.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -69,7 +69,7 @@ def test_is_connected(connector):
 
 
 def test_is_connected_no_file(tmp_path):
-    from phi.connectors.github_notifications import (
+    from phibe.connectors.github_notifications import (
         GitHubNotificationsConnector,
     )
 
@@ -80,7 +80,7 @@ def test_is_connected_no_file(tmp_path):
 def test_sync_yields_documents(connector):
     """Sync returns Documents for each notification."""
     with patch(
-        "phi.connectors.github_notifications._github_api_get",
+        "phibe.connectors.github_notifications._github_api_get",
         return_value=_NOTIFICATIONS_RESPONSE,
     ):
         docs = list(connector.sync(since=datetime(2026, 4, 1)))

@@ -1,6 +1,6 @@
 /** Auto-matching of a Bank/Card name to one of the bundled logo images.
  *
- * Mirrors `match_logo_key` in `phi.finances.store` exactly — checked from
+ * Mirrors `match_logo_key` in `phibe.finances.store` exactly — checked from
  * most-specific to least-specific so "Santander Empresas" never matches
  * plain "Santander" first. The backend persists the match as `logo_key` on
  * create/rename; this copy exists only to show a live preview while typing.

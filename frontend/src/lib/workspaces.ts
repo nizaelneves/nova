@@ -69,7 +69,7 @@ export interface WorkspacesData {
   activities: Activity[];
 }
 
-const STORAGE_KEY = 'phi-workspaces';
+const STORAGE_KEY = 'phibe-workspaces';
 
 export const DEFAULT_STAGES: Stage[] = [
   { id: 'stage-briefing', name: 'Briefing' },

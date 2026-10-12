@@ -6,8 +6,8 @@ import httpx
 import pytest
 import respx
 
-from phi.core.types import Message, Role
-from phi.engine.openai_compat_engines import (
+from phibe.core.types import Message, Role
+from phibe.engine.openai_compat_engines import (
     OpenAICompatEngine,
     VLLMEngine,
     normalize_openai_base_url,

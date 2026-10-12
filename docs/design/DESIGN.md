@@ -1,10 +1,10 @@
-# Phi design: motion and effects
+# Phibe design: motion and effects
 
-Base for every visual effect in Phi. Read this before adding or changing an effect, so they all feel like the same product.
+Base for every visual effect in Phibe. Read this before adding or changing an effect, so they all feel like the same product.
 
 ## Concept: constant evolution
 
-Phi is always becoming something new. Nothing in the interface simply switches on or off:
+Phibe is always becoming something new. Nothing in the interface simply switches on or off:
 
 - **Leaving** a state, it **disintegrates**: the old shape breaks into small numbers that drift away like dust in the wind.
 - **Arriving** at a state, it **re-integrates**: numbers gather and merge into the new shape.
@@ -68,16 +68,16 @@ The bar beside the active menu icon travels to the new item like a comet:
 - At 55 % of the trip, 14 numbers **gather** at the new item and merge into the bar.
 - Bar: 2 px wide, 20 px long, accent colour with glow. A stretched bar fades towards its tail, with a white head.
 
-Origin: the movement model is inspired by the "Electric Nav" animation; the maths and the particle idea are Phi's own.
+Origin: the movement model is inspired by the "Electric Nav" animation; the maths and the particle idea are Phibe's own.
 
-### Floating button (`PhiBubble.tsx`, `phiBubble.ts`, `phiPresence.ts`, `PhiAvatar.tsx`)
+### Floating button (`PhibeBubble.tsx`, `phibeBubble.ts`, `phibePresence.ts`, `PhibeAvatar.tsx`)
 
-First version of Phi's presence, built inside the page (localhost) so it can be tested; the desktop app will give the same component its own small window.
+First version of Phibe's presence, built inside the page (localhost) so it can be tested; the desktop app will give the same component its own small window.
 
-- Snail avatar (style 1) on a 64 px round button. Drag it anywhere; on release it snaps to the nearest side edge and remembers its height (`phi-bubble-placement`).
+- Snail avatar (style 1) on a 64 px round button. Drag it anywhere; on release it snaps to the nearest side edge and remembers its height (`phibe-bubble-placement`).
 - After 5 s of quiet it tucks 55 % out of sight; hover or focus brings it back. It never tucks while something is waiting or its bubble is open.
-- Badge (one at a time, with a total count): `!` approval, `?` question, red dot error, check done, bell reminder. Approvals come from `/v1/approvals/pending` (polled every 15 s, never while the tab is hidden). Anything else: `notifyPhi(kind, text)`. In dev, `__phi.notify('done', 'text')` in the console previews it.
-- Click opens the chat bubble: approve or deny right there, dismiss notes, "Open chat", "Approvals", "Hide". Hiding is also a switch in Settings -> General -> Floating Phi.
+- Badge (one at a time, with a total count): `!` approval, `?` question, red dot error, check done, bell reminder. Approvals come from `/v1/approvals/pending` (polled every 15 s, never while the tab is hidden). Anything else: `notifyPhibe(kind, text)`. In dev, `__phibe.notify('done', 'text')` in the console previews it.
+- Click opens the chat bubble: approve or deny right there, dismiss notes, "Open chat", "Approvals", "Hide". Hiding is also a switch in Settings -> General -> Floating Phibe.
 - Cost: the eyes blink with a CSS animation, the button moves with `transform`, no timers except the 5 s tuck and the light poll.
 
 ## Ideas for the next effects (same language)

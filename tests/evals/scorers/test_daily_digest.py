@@ -1,7 +1,7 @@
 """Tests for the daily_digest scorer."""
 
-from phi.evals.core.types import EvalRecord
-from phi.evals.scorers.daily_digest import DailyDigestScorer
+from phibe.evals.core.types import EvalRecord
+from phibe.evals.scorers.daily_digest import DailyDigestScorer
 
 
 def _make_record(must_mention, priority_order=None):

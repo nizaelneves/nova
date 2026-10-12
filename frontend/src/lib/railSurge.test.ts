@@ -30,6 +30,6 @@ describe('railSurge', () => {
 
   it('short hops are faster than long ones, within limits', () => {
     expect(travelTime(52)).toBeLessThan(travelTime(400));
-    expect(travelTime(5000)).toBe(0.625);
+    expect(travelTime(5000)).toBe(0.24);
   });
 });

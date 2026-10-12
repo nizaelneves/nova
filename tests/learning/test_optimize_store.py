@@ -1,9 +1,9 @@
-"""Tests for phi.optimize.store module."""
+"""Tests for phibe.optimize.store module."""
 
 from __future__ import annotations
 
-from phi.learning.optimize.store import OptimizationStore
-from phi.learning.optimize.types import (
+from phibe.learning.optimize.store import OptimizationStore
+from phibe.learning.optimize.types import (
     OptimizationRun,
     SampleScore,
     SearchDimension,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from phi.skills.overlay import (
+from phibe.skills.overlay import (
     SkillOverlay,
     SkillOverlayLoader,
     write_overlay,

@@ -8,10 +8,10 @@ import httpx
 import pytest
 import respx
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.openai_compat_engines import LlamaCppEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.openai_compat_engines import LlamaCppEngine
 
 LLAMACPP_HOST = "http://testhost:8080"
 # Only models with llamacpp in supported_engines

@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.agents._stubs import AgentResult, ToolUsingAgent
-from phi.core.config import (
+from phibe.agents._stubs import AgentResult, ToolUsingAgent
+from phibe.core.config import (
     CapabilitiesConfig,
-    PhiConfig,
+    PhibeConfig,
     SecurityConfig,
 )
-from phi.core.events import EventBus
-from phi.core.registry import AgentRegistry
-from phi.core.types import ToolCall
-from phi.security import setup_security
-from phi.security.capabilities import CapabilityPolicy
-from phi.system import PhiSystem
-from phi.tools.repl import ReplTool
+from phibe.core.events import EventBus
+from phibe.core.registry import AgentRegistry
+from phibe.core.types import ToolCall
+from phibe.security import setup_security
+from phibe.security.capabilities import CapabilityPolicy
+from phibe.system import PhibeSystem
+from phibe.tools.repl import ReplTool
 
 
 class _ConcreteAgent(ToolUsingAgent):
@@ -67,7 +67,7 @@ def _make_mock_engine() -> MagicMock:
 
 def _has_rust() -> bool:
     try:
-        import phi_rust  # noqa: F401
+        import phibe_rust  # noqa: F401
 
         return True
     except ImportError:
@@ -76,7 +76,7 @@ def _has_rust() -> bool:
 
 class TestCapabilityPolicyReachesExecutor:
     def test_no_policy_when_caps_disabled(self) -> None:
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         cfg.security = SecurityConfig(
             enabled=True,
             capabilities=CapabilitiesConfig(enabled=False),
@@ -94,7 +94,7 @@ class TestCapabilityPolicyReachesExecutor:
         assert agent._executor._capability_policy is None
 
     def test_no_policy_when_security_disabled(self) -> None:
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         cfg.security = SecurityConfig(enabled=False)
         engine = _make_mock_engine()
         sec = setup_security(cfg, engine)
@@ -117,10 +117,10 @@ class TestCapabilityPolicyReachesExecutor:
         policy.deny(key, "code:execute")
         limiter = _RecordingLimiter()
         repl = ReplTool()
-        config = PhiConfig()
+        config = PhibeConfig()
         config.agent.context_from_memory = False
         config.traces.enabled = False
-        system = PhiSystem(
+        system = PhibeSystem(
             config=config,
             bus=EventBus(),
             engine=_make_mock_engine(),
@@ -142,7 +142,7 @@ class TestCapabilityPolicyReachesExecutor:
     def test_cli_ask_propagates_runtime_identity_and_limiter(self, monkeypatch) -> None:
         import importlib
 
-        ask_module = importlib.import_module("phi.cli.ask")
+        ask_module = importlib.import_module("phibe.cli.ask")
 
         key = "restricted-cli-ask-agent"
         AgentRegistry.register_value(key, _CallingAgent)
@@ -151,11 +151,11 @@ class TestCapabilityPolicyReachesExecutor:
         policy.deny(key, "code:execute")
         limiter = _RecordingLimiter()
         repl = ReplTool()
-        config = PhiConfig()
+        config = PhibeConfig()
         config.agent.context_from_memory = False
         monkeypatch.setattr(ask_module, "_build_tools", lambda *args: [repl])
         monkeypatch.setattr(
-            "phi.mcp.loader.load_mcp_tools_from_config",
+            "phibe.mcp.loader.load_mcp_tools_from_config",
             lambda *args, **kwargs: ([], []),
         )
 

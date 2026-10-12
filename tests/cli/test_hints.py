@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.cli.hints import (
+from phibe.cli.hints import (
     hint_no_config,
     hint_no_engine,
     hint_no_model,

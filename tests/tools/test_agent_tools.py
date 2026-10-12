@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from phi.tools.agent_tools import (
+from phibe.tools.agent_tools import (
     _SPAWNED_AGENTS,
     AgentKillTool,
     AgentListTool,

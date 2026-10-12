@@ -9,8 +9,8 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from phi.cli import daemon_cmd
-from phi.server.daemon import DaemonServer, run_server
+from phibe.cli import daemon_cmd
+from phibe.server.daemon import DaemonServer, run_server
 
 
 @pytest.fixture

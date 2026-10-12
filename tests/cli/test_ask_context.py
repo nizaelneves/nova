@@ -1,4 +1,4 @@
-"""Tests for context injection integration in ``phi ask``."""
+"""Tests for context injection integration in ``phibe ask``."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import importlib
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
 def test_ask_no_context_flag():
@@ -35,19 +35,19 @@ def test_get_memory_backend_returns_backend_even_when_empty(
     which is the kind of ambiguity that leads to silent grounding
     failures downstream.
     """
-    from phi.core.config import MemoryConfig, PhiConfig
-    from phi.core.registry import MemoryRegistry
-    from phi.tools.storage.sqlite import SQLiteMemory
+    from phibe.core.config import MemoryConfig, PhibeConfig
+    from phibe.core.registry import MemoryRegistry
+    from phibe.tools.storage.sqlite import SQLiteMemory
 
     if not MemoryRegistry.contains("sqlite"):
         MemoryRegistry.register_value("sqlite", SQLiteMemory)
 
-    config = PhiConfig()
+    config = PhibeConfig()
     config.memory = MemoryConfig(
         db_path=str(tmp_path / "empty.db"),
     )
 
-    mod = importlib.import_module("phi.cli.ask")
+    mod = importlib.import_module("phibe.cli.ask")
     result = mod._get_memory_backend(config)
     assert result is not None
     # An empty backend should still retrieve cleanly (zero hits).
@@ -61,15 +61,15 @@ def test_get_memory_backend_returns_backend_with_docs(
     monkeypatch,
 ):
     """_get_memory_backend returns a backend when docs exist."""
-    from phi.core.config import MemoryConfig, PhiConfig
-    from phi.core.registry import MemoryRegistry
-    from phi.tools.storage.sqlite import SQLiteMemory
+    from phibe.core.config import MemoryConfig, PhibeConfig
+    from phibe.core.registry import MemoryRegistry
+    from phibe.tools.storage.sqlite import SQLiteMemory
 
     if not MemoryRegistry.contains("sqlite"):
         MemoryRegistry.register_value("sqlite", SQLiteMemory)
 
     db_path = str(tmp_path / "test.db")
-    config = PhiConfig()
+    config = PhibeConfig()
     config.memory = MemoryConfig(db_path=db_path)
 
     # Pre-populate with a document
@@ -77,7 +77,7 @@ def test_get_memory_backend_returns_backend_with_docs(
     backend.store("test document content")
     backend.close()
 
-    mod = importlib.import_module("phi.cli.ask")
+    mod = importlib.import_module("phibe.cli.ask")
     result = mod._get_memory_backend(config)
     assert result is not None
     if hasattr(result, "close"):

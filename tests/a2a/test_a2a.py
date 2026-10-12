@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from phi.a2a.protocol import (
+from phibe.a2a.protocol import (
     A2ARequest,
     A2AResponse,
     A2ATask,
     AgentCard,
     TaskState,
 )
-from phi.a2a.server import A2AServer
-from phi.core.events import EventBus, EventType
+from phibe.a2a.server import A2AServer
+from phibe.core.events import EventBus, EventType
 
 
 class TestAgentCard:

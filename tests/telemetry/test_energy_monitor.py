@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.telemetry.energy_monitor import (
+from phibe.telemetry.energy_monitor import (
     EnergyMonitor,
     EnergySample,
     EnergyVendor,
@@ -79,19 +79,19 @@ class TestCreateEnergyMonitor:
     def test_returns_none_when_nothing_available(self):
         with (
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.available",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_apple.AppleEnergyMonitor.available",
+                "phibe.telemetry.energy_apple.AppleEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.available",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.available",
                 return_value=False,
             ),
         ):
@@ -102,23 +102,23 @@ class TestCreateEnergyMonitor:
         """When prefer_vendor is set, that vendor is tried first."""
         with (
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.available",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_apple.AppleEnergyMonitor.available",
+                "phibe.telemetry.energy_apple.AppleEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.available",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.available",
                 return_value=True,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.__init__",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.__init__",
                 return_value=None,
             ) as mock_init,
         ):
@@ -140,23 +140,23 @@ class TestCreateEnergyMonitor:
 
         with (
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
                 side_effect=nvidia_available,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.available",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.available",
                 side_effect=amd_available,
             ),
             patch(
-                "phi.telemetry.energy_apple.AppleEnergyMonitor.available",
+                "phibe.telemetry.energy_apple.AppleEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.available",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.__init__",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.__init__",
                 return_value=None,
             ),
         ):
@@ -178,23 +178,23 @@ class TestCreateEnergyMonitor:
 
         with (
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
                 side_effect=nvidia_available,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.available",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.available",
                 side_effect=amd_available,
             ),
             patch(
-                "phi.telemetry.energy_apple.AppleEnergyMonitor.available",
+                "phibe.telemetry.energy_apple.AppleEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.available",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.available",
                 return_value=False,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.__init__",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.__init__",
                 return_value=None,
             ),
         ):
@@ -223,19 +223,19 @@ class TestCreateEnergyMonitor:
 
         with (
             patch(
-                "phi.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
+                "phibe.telemetry.energy_nvidia.NvidiaEnergyMonitor.available",
                 side_effect=nvidia_available,
             ),
             patch(
-                "phi.telemetry.energy_amd.AmdEnergyMonitor.available",
+                "phibe.telemetry.energy_amd.AmdEnergyMonitor.available",
                 side_effect=amd_available,
             ),
             patch(
-                "phi.telemetry.energy_apple.AppleEnergyMonitor.available",
+                "phibe.telemetry.energy_apple.AppleEnergyMonitor.available",
                 side_effect=apple_available,
             ),
             patch(
-                "phi.telemetry.energy_rapl.RaplEnergyMonitor.available",
+                "phibe.telemetry.energy_rapl.RaplEnergyMonitor.available",
                 side_effect=rapl_available,
             ),
         ):

@@ -1,6 +1,6 @@
-"""Tests for PhiSystem.wire_channel() — channel → agent routing.
+"""Tests for PhibeSystem.wire_channel() — channel → agent routing.
 
-These tests exercise wire_channel() on PhiSystem directly. The serve.py
+These tests exercise wire_channel() on PhibeSystem directly. The serve.py
 entrypoint now delegates all channel-wiring logic there.
 """
 
@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.channels._stubs import ChannelMessage
-from phi.core.config import PhiConfig
-from phi.core.events import EventBus
-from phi.sessions.session import SessionStore
-from phi.system import PhiSystem
+from phibe.channels._stubs import ChannelMessage
+from phibe.core.config import PhibeConfig
+from phibe.core.events import EventBus
+from phibe.sessions.session import SessionStore
+from phibe.system import PhibeSystem
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,13 +34,13 @@ def _make_channel_message(
     )
 
 
-def _make_system(engine=None, agent_name="", tmp_path=None) -> PhiSystem:
-    """Build a minimal PhiSystem with mock engine for testing wire_channel."""
-    config = PhiConfig()
+def _make_system(engine=None, agent_name="", tmp_path=None) -> PhibeSystem:
+    """Build a minimal PhibeSystem with mock engine for testing wire_channel."""
+    config = PhibeConfig()
     if tmp_path is not None:
         config.sessions.db_path = str(tmp_path / "sessions.db")
     mock_engine = engine or MagicMock()
-    return PhiSystem(
+    return PhibeSystem(
         config=config,
         bus=EventBus(record_history=False),
         engine=mock_engine,
@@ -57,7 +57,7 @@ def _fire(channel_mock, cm: ChannelMessage) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Tests via PhiSystem.wire_channel()
+# Tests via PhibeSystem.wire_channel()
 # ---------------------------------------------------------------------------
 
 
@@ -287,11 +287,11 @@ class TestWireChannelErrorHandling:
 
 
 class TestChannelToolLoading:
-    """PhiSystem receives tools when agent accepts them."""
+    """PhibeSystem receives tools when agent accepts them."""
 
     def test_tool_using_agent_receives_tools(self, tmp_path):
-        """PhiSystem built with a tool list passes tools to the agent via ask()."""
-        from phi.tools._stubs import BaseTool, ToolSpec
+        """PhibeSystem built with a tool list passes tools to the agent via ask()."""
+        from phibe.tools._stubs import BaseTool, ToolSpec
 
         # Minimal fake tool
         class _FakeTool(BaseTool):
@@ -301,10 +301,10 @@ class TestChannelToolLoading:
                 pass
 
         fake_tool = _FakeTool()
-        config = PhiConfig()
+        config = PhibeConfig()
         config.sessions.db_path = str(tmp_path / "sessions.db")
 
-        system = PhiSystem(
+        system = PhibeSystem(
             config=config,
             bus=EventBus(record_history=False),
             engine=MagicMock(),
@@ -318,12 +318,12 @@ class TestChannelToolLoading:
         assert system.tools[0].spec.name == "fake"
 
     def test_non_tool_agent_receives_empty_tools(self, tmp_path):
-        """PhiSystem with no tools list results in empty tools — simple agent
+        """PhibeSystem with no tools list results in empty tools — simple agent
         unaffected."""
-        config = PhiConfig()
+        config = PhibeConfig()
         config.sessions.db_path = str(tmp_path / "sessions.db")
 
-        system = PhiSystem(
+        system = PhibeSystem(
             config=config,
             bus=EventBus(record_history=False),
             engine=MagicMock(),

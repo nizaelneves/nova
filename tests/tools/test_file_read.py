@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from phi.tools.file_read import FileReadTool
+from phibe.tools.file_read import FileReadTool
 
 
 class TestFileReadTool:

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from phi.agents.manager import AgentManager
+from phibe.agents.manager import AgentManager
 
 
 @pytest.fixture

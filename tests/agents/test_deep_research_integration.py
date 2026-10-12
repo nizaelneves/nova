@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from phi.agents.deep_research import DeepResearchAgent
-from phi.connectors._stubs import Document
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.retriever import TwoStageRetriever
-from phi.connectors.store import KnowledgeStore
-from phi.tools.knowledge_search import KnowledgeSearchTool
+from phibe.agents.deep_research import DeepResearchAgent
+from phibe.connectors._stubs import Document
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.retriever import TwoStageRetriever
+from phibe.connectors.store import KnowledgeStore
+from phibe.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # Helpers

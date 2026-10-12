@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from phi.tools.db_query import DatabaseQueryTool
+from phibe.tools.db_query import DatabaseQueryTool
 
 
 class TestDatabaseQueryTool:

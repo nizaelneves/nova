@@ -1,4 +1,4 @@
-// Downloads the brand logos Phi shows for its connectors from Iconify and saves
+// Downloads the brand logos Phibe shows for its connectors from Iconify and saves
 // them inside the project, so the app never needs the internet to draw a logo.
 //
 //   node scripts/vendor-brands.mjs
@@ -43,7 +43,7 @@ for (const full of new Set(Object.values(BRANDS))) {
 const fetched = {};
 for (const [set, names] of Object.entries(bySet)) {
   const res = await fetch(`https://api.iconify.design/${set}.json?icons=${names.join(',')}`, {
-    headers: { 'User-Agent': 'phi-vendor-brands' },
+    headers: { 'User-Agent': 'phibe-vendor-brands' },
   });
   if (!res.ok) throw new Error(`Iconify answered ${res.status} for ${set}`);
   const data = await res.json();

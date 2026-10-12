@@ -6,12 +6,12 @@ from collections import Counter
 
 import pytest
 
-from phi.agents import tool_resolver
-from phi.connectors.store import KnowledgeStore
-from phi.core.registry import ToolRegistry
-from phi.core.types import ToolResult
-from phi.tools import description_loader
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents import tool_resolver
+from phibe.connectors.store import KnowledgeStore
+from phibe.core.registry import ToolRegistry
+from phibe.core.types import ToolResult
+from phibe.tools import description_loader
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 
 class _AlphaTool(BaseTool):

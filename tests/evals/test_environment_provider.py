@@ -1,6 +1,6 @@
 """Tests for EnvironmentProvider ABC."""
 
-from phi.evals.core.environment import EnvironmentProvider
+from phibe.evals.core.environment import EnvironmentProvider
 
 
 class _MockEnv(EnvironmentProvider):
@@ -26,7 +26,7 @@ class TestEnvironmentProvider:
         assert info["url"] == "http://localhost:8080"
 
     def test_validate_returns_tuple(self) -> None:
-        from phi.evals.core.types import EvalRecord
+        from phibe.evals.core.types import EvalRecord
 
         env = _MockEnv()
         record = EvalRecord("r1", "problem", "ref", "agentic")

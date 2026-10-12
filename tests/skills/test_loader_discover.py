@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from phi.skills.loader import discover_skills
+from phibe.skills.loader import discover_skills
 
 
 def _write_valid_toml_skill(directory: Path, name: str) -> None:

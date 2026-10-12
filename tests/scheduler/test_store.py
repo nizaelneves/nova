@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.scheduler.store import SchedulerStore
+from phibe.scheduler.store import SchedulerStore
 
 
 @pytest.fixture()

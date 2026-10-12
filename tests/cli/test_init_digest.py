@@ -1,4 +1,4 @@
-"""Tests for ``phi init --digest`` config writing."""
+"""Tests for ``phibe init --digest`` config writing."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 _NO_DL = "--no-download"
 _READ_TEXT = Path.read_text
@@ -44,14 +44,14 @@ class TestInitDigestEncoding:
 
         Without explicit ``encoding=`` the write uses the locale codec, which
         is cp1252 on a default Windows install and cannot encode U+2500, so
-        ``phi init --digest`` crashed with UnicodeEncodeError there.
+        ``phibe init --digest`` crashed with UnicodeEncodeError there.
         """
-        config_dir = tmp_path / ".phi"
+        config_dir = tmp_path / ".phibe"
         config_path = config_dir / "config.toml"
         with (
-            mock.patch("phi.cli.init_cmd.DEFAULT_CONFIG_DIR", config_dir),
-            mock.patch("phi.cli.init_cmd.DEFAULT_CONFIG_PATH", config_path),
-            mock.patch("phi.cli.init_cmd.PrivacyScanner"),
+            mock.patch("phibe.cli.init_cmd.DEFAULT_CONFIG_DIR", config_dir),
+            mock.patch("phibe.cli.init_cmd.DEFAULT_CONFIG_PATH", config_path),
+            mock.patch("phibe.cli.init_cmd.PrivacyScanner"),
             # Emulate Windows' non-UTF default locale on every platform. Any
             # init-path read/write that omits encoding now uses cp1252 and the
             # box-drawing rule raises exactly the original Unicode error.

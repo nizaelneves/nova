@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from phi.recipes.loader import (
+from phibe.recipes.loader import (
     Recipe,
     discover_recipes,
     load_recipe,

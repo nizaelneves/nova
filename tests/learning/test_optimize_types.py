@@ -1,8 +1,8 @@
-"""Tests for phi.optimize.types module."""
+"""Tests for phibe.optimize.types module."""
 
 from __future__ import annotations
 
-from phi.learning.optimize.types import (
+from phibe.learning.optimize.types import (
     OptimizationRun,
     SampleScore,
     SearchDimension,
@@ -11,7 +11,7 @@ from phi.learning.optimize.types import (
     TrialFeedback,
     TrialResult,
 )
-from phi.recipes.loader import Recipe
+from phibe.recipes.loader import Recipe
 
 # ---------------------------------------------------------------------------
 # SearchDimension

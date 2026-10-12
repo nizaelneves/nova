@@ -2,7 +2,6 @@ import { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { MessageBubble } from './MessageBubble';
 import { InputArea } from './InputArea';
-import { Orb } from '../Orb';
 import { VoiceVisualizer } from '../VoiceVisualizer';
 import { StreamingDots } from './StreamingDots';
 import { useAppStore } from '../../lib/store';
@@ -80,7 +79,7 @@ export function ChatArea() {
             Connect your data sources (Gmail, iMessage, Slack, etc.) to get personalized answers.
           </span>
           <button
-            onClick={() => navigate('/data-sources')}
+            onClick={() => navigate('/settings?tab=data-sources')}
             className="px-3 py-1 rounded text-xs font-medium cursor-pointer"
             style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)', border: 'none' }}
           >
@@ -103,8 +102,7 @@ export function ChatArea() {
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full px-4">
             <div className="relative">
-              <Orb />
-              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2">
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-4">
                 <VoiceVisualizer />
               </div>
             </div>

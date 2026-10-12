@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from phi.telemetry.energy_rapl import (
+from phibe.telemetry.energy_rapl import (
     RaplEnergyMonitor,
     _discover_domains,
 )
@@ -16,8 +16,8 @@ from tests.telemetry.energy_test_helpers import (
     assert_sample_result_basics,
 )
 
-_PLAT = "phi.telemetry.energy_rapl.platform.system"
-_BASE = "phi.telemetry.energy_rapl._RAPL_BASE"
+_PLAT = "phibe.telemetry.energy_rapl.platform.system"
+_BASE = "phibe.telemetry.energy_rapl._RAPL_BASE"
 
 
 # ---------------------------------------------------------------------------

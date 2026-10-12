@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from phi.evals.core.types import MetricStats, RunSummary
-from phi.learning.optimize.optimizer import compute_pareto_frontier
-from phi.learning.optimize.types import (
+from phibe.evals.core.types import MetricStats, RunSummary
+from phibe.learning.optimize.optimizer import compute_pareto_frontier
+from phibe.learning.optimize.types import (
     ObjectiveSpec,
     TrialConfig,
     TrialResult,
@@ -53,7 +53,7 @@ def _make_trial_with_summary(
     defaults: Dict[str, Any] = dict(
         benchmark="test",
         category="reasoning",
-        backend="phi-direct",
+        backend="phibe-direct",
         model="test-model",
         total_samples=10,
         scored_samples=10,

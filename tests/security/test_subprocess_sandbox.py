@@ -6,8 +6,8 @@ import os
 import shlex
 import tempfile
 
-from phi.core import get_python_executable
-from phi.security.subprocess_sandbox import (
+from phibe.core import get_python_executable
+from phibe.security.subprocess_sandbox import (
     build_safe_env,
     kill_process_tree,
     run_sandboxed,

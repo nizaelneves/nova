@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import Message, Role
-from phi.telemetry.instrumented_engine import InstrumentedEngine
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Message, Role
+from phibe.telemetry.instrumented_engine import InstrumentedEngine
 
 
 @pytest.fixture
@@ -146,7 +146,7 @@ class TestTokensPerJoule:
 
     def test_tokens_per_joule_formula_via_record(self):
         """Verify the formula: tokens_per_joule = completion_tokens / energy_joules."""
-        from phi.core.types import TelemetryRecord
+        from phibe.core.types import TelemetryRecord
 
         # Direct construction — verifies the field accepts computed values
         rec = TelemetryRecord(
@@ -160,7 +160,7 @@ class TestTokensPerJoule:
 
     def test_tokens_per_joule_zero_when_no_tokens(self):
         """tokens_per_joule is 0.0 when completion_tokens is 0."""
-        from phi.core.types import TelemetryRecord
+        from phibe.core.types import TelemetryRecord
 
         rec = TelemetryRecord(
             timestamp=1.0,

@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import AgentResult
-from phi.agents.native_openhands import NativeOpenHandsAgent
-from phi.agents.native_react import NativeReActAgent
-from phi.agents.orchestrator import OrchestratorAgent
-from phi.agents.simple import SimpleAgent
-from phi.core.events import EventBus, EventType
+from phibe.agents._stubs import AgentResult
+from phibe.agents.native_openhands import NativeOpenHandsAgent
+from phibe.agents.native_react import NativeReActAgent
+from phibe.agents.orchestrator import OrchestratorAgent
+from phibe.agents.simple import SimpleAgent
+from phibe.core.events import EventBus, EventType
 
 # ---------------------------------------------------------------------------
 # Helpers

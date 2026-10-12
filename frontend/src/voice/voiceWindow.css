@@ -1,0 +1,11 @@
+/* The floating voice window is transparent: only the card and the avatar are drawn. */
+html,
+body,
+#voice-root {
+  margin: 0;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+  user-select: none;
+}
+

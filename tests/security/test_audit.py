@@ -6,9 +6,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from phi.core.events import EventBus, EventType
-from phi.security.audit import AuditLogger
-from phi.security.types import (
+from phibe.core.events import EventBus, EventType
+from phibe.security.audit import AuditLogger
+from phibe.security.types import (
     ScanFinding,
     SecurityEvent,
     SecurityEventType,

@@ -1,4 +1,4 @@
-"""The tasks API is part of the real Phi server."""
+"""The tasks API is part of the real Phibe server."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from phi.server.app import create_app
+from phibe.server.app import create_app
 
 
 def test_tasks_api_is_served_by_the_real_app(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
     engine = SimpleNamespace(engine_id="fake", health=lambda: True)
     client = TestClient(create_app(engine, "fake"))
 

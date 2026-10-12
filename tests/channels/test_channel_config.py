@@ -5,7 +5,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from phi.core.config import (
+from phibe.core.config import (
     ChannelConfig,
     TelegramChannelConfig,
     WhatsAppChannelConfig,

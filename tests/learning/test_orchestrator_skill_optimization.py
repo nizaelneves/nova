@@ -10,7 +10,7 @@ class TestOrchestratorSkillAutoOptimize:
     def test_auto_optimize_disabled_by_default_does_not_call_skill_optimizer(
         self, tmp_path: Path
     ) -> None:
-        from phi.learning.learning_orchestrator import (
+        from phibe.learning.learning_orchestrator import (
             LearningOrchestrator,
         )
 
@@ -23,13 +23,13 @@ class TestOrchestratorSkillAutoOptimize:
         )
 
         with patch(
-            "phi.learning.agents.skill_optimizer.SkillOptimizer.optimize"
+            "phibe.learning.agents.skill_optimizer.SkillOptimizer.optimize"
         ) as mock_optimize:
             orchestrator._maybe_optimize_skills(auto_optimize=False)
             mock_optimize.assert_not_called()
 
     def test_auto_optimize_enabled_calls_skill_optimizer(self, tmp_path: Path) -> None:
-        from phi.learning.learning_orchestrator import (
+        from phibe.learning.learning_orchestrator import (
             LearningOrchestrator,
         )
 
@@ -42,7 +42,7 @@ class TestOrchestratorSkillAutoOptimize:
         )
 
         with patch(
-            "phi.learning.agents.skill_optimizer.SkillOptimizer.optimize",
+            "phibe.learning.agents.skill_optimizer.SkillOptimizer.optimize",
             return_value={},
         ) as mock_optimize:
             orchestrator._maybe_optimize_skills(
@@ -64,13 +64,13 @@ class TestOrchestratorRunSkillTrigger:
         return store
 
     def _make_config(self, *, auto_optimize: bool):
-        from phi.core.config import (
+        from phibe.core.config import (
             LearningConfig,
-            PhiConfig,
+            PhibeConfig,
             SkillsLearningConfig,
         )
 
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         cfg.learning = LearningConfig()
         cfg.learning.skills = SkillsLearningConfig(
             auto_optimize=auto_optimize,
@@ -82,7 +82,7 @@ class TestOrchestratorRunSkillTrigger:
     def test_run_does_not_call_skill_optimizer_when_disabled(
         self, tmp_path: Path
     ) -> None:
-        from phi.learning.learning_orchestrator import (
+        from phibe.learning.learning_orchestrator import (
             LearningOrchestrator,
         )
 
@@ -93,20 +93,20 @@ class TestOrchestratorRunSkillTrigger:
         )
 
         with patch(
-            "phi.core.config.load_config",
+            "phibe.core.config.load_config",
             return_value=self._make_config(auto_optimize=False),
         ):
             with patch(
-                "phi.learning.agents.skill_optimizer.SkillOptimizer.optimize"
+                "phibe.learning.agents.skill_optimizer.SkillOptimizer.optimize"
             ) as mock_optimize:
                 orchestrator.run()
                 mock_optimize.assert_not_called()
 
     def test_run_calls_skill_optimizer_when_enabled(self, tmp_path: Path) -> None:
-        from phi.learning.agents.skill_optimizer import (
+        from phibe.learning.agents.skill_optimizer import (
             SkillOptimizationResult,
         )
-        from phi.learning.learning_orchestrator import (
+        from phibe.learning.learning_orchestrator import (
             LearningOrchestrator,
         )
 
@@ -125,11 +125,11 @@ class TestOrchestratorRunSkillTrigger:
         }
 
         with patch(
-            "phi.core.config.load_config",
+            "phibe.core.config.load_config",
             return_value=self._make_config(auto_optimize=True),
         ):
             with patch(
-                "phi.learning.agents.skill_optimizer.SkillOptimizer.optimize",
+                "phibe.learning.agents.skill_optimizer.SkillOptimizer.optimize",
                 return_value=fake_results,
             ) as mock_optimize:
                 result = orchestrator.run()

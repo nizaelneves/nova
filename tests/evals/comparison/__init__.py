@@ -1,1 +1,1 @@
-"""Tests for phi.evals.comparison."""
+"""Tests for phibe.evals.comparison."""

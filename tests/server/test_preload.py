@@ -1,4 +1,4 @@
-"""Model warm-up goes through the Phi server, not straight from the browser."""
+"""Model warm-up goes through the Phibe server, not straight from the browser."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from phi.server.app import create_app
+from phibe.server.app import create_app
 
 
 def _client(tmp_path, monkeypatch, engine_id: str) -> TestClient:
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
     engine = SimpleNamespace(engine_id=engine_id, health=lambda: True)
     return TestClient(create_app(engine, "fake"))
 

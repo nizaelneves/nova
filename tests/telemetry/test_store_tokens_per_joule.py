@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from phi.core.types import TelemetryRecord
-from phi.telemetry.aggregator import TelemetryAggregator
-from phi.telemetry.store import TelemetryStore
+from phibe.core.types import TelemetryRecord
+from phibe.telemetry.aggregator import TelemetryAggregator
+from phibe.telemetry.store import TelemetryStore
 
 
 class TestTokensPerJouleStorage:

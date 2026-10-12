@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from phi.core.types import ToolResult
-from phi.skills.executor import SkillExecutor
-from phi.skills.tool_adapter import SkillTool
-from phi.skills.types import SkillManifest, SkillStep
-from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phibe.core.types import ToolResult
+from phibe.skills.executor import SkillExecutor
+from phibe.skills.tool_adapter import SkillTool
+from phibe.skills.types import SkillManifest, SkillStep
+from phibe.tools._stubs import BaseTool, ToolExecutor, ToolSpec
 
 
 class EchoTool(BaseTool):

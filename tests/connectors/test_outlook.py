@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from phi.connectors.oauth import load_tokens
-from phi.connectors.outlook import OutlookConnector
-from phi.core.registry import ConnectorRegistry
+from phibe.connectors.oauth import load_tokens
+from phibe.connectors.outlook import OutlookConnector
+from phibe.core.registry import ConnectorRegistry
 
 
 def test_outlook_registered() -> None:

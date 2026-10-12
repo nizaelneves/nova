@@ -6,10 +6,10 @@ import httpx
 import pytest
 import respx
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.openai_compat_engines import LMStudioEngine
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.openai_compat_engines import LMStudioEngine
 
 
 @pytest.fixture()

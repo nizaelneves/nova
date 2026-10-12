@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.security.taint import (
+from phibe.security.taint import (
     SINK_POLICY,
     TaintLabel,
     TaintSet,

@@ -1,6 +1,6 @@
 """Tests for the security_scanner dataset."""
 
-from phi.evals.datasets.security_scanner import SecurityScannerDataset
+from phibe.evals.datasets.security_scanner import SecurityScannerDataset
 
 
 def test_dataset_loads():

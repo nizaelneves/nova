@@ -1,4 +1,4 @@
-"""ElevenLabs backend and Phi's voice router (ElevenLabs -> local Kokoro)."""
+"""ElevenLabs backend and Phibe's voice router (ElevenLabs -> local Kokoro)."""
 
 from __future__ import annotations
 
@@ -9,17 +9,17 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from phi.core.registry import TTSRegistry
-from phi.speech.elevenlabs_tts import ElevenLabsError, ElevenLabsTTSBackend
-from phi.speech.tts import TTSResult
-from phi.speech.tts_router import COOLDOWN_SECONDS, NoVoiceAvailable, TTSRouter
+from phibe.core.registry import TTSRegistry
+from phibe.speech.elevenlabs_tts import ElevenLabsError, ElevenLabsTTSBackend
+from phibe.speech.tts import TTSResult
+from phibe.speech.tts_router import COOLDOWN_SECONDS, NoVoiceAvailable, TTSRouter
 
 PCM = b"\x01\x00" * 2400  # 0.1 s of 24 kHz 16-bit mono
 
 
 @pytest.fixture
 def creds(tmp_path, monkeypatch):
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     (tmp_path / "credentials.toml").write_text(
         '[elevenlabs]\nELEVENLABS_API_KEY = "secret-key"\n'
         'ELEVENLABS_VOICE_ID = "voice-123"\n',
@@ -103,7 +103,7 @@ def test_network_failure_is_an_elevenlabs_error(creds, monkeypatch) -> None:
 
 
 def test_missing_credentials_message(tmp_path, monkeypatch) -> None:
-    monkeypatch.setenv("PHI_HOME", str(tmp_path))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path))
     monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
     with pytest.raises(ElevenLabsError, match="API_KEY"):
         ElevenLabsTTSBackend().synthesize("a")
@@ -112,7 +112,7 @@ def test_missing_credentials_message(tmp_path, monkeypatch) -> None:
 def test_backend_is_registered() -> None:
     import importlib
 
-    import phi.speech.elevenlabs_tts as module
+    import phibe.speech.elevenlabs_tts as module
 
     importlib.reload(module)
     assert TTSRegistry.contains("elevenlabs")
@@ -226,23 +226,23 @@ def test_status_does_not_synthesize(world) -> None:
 def test_synthesize_endpoint(world, tmp_path, monkeypatch) -> None:
     from fastapi.testclient import TestClient
 
-    from phi.server.app import create_app
+    from phibe.server.app import create_app
 
-    monkeypatch.setenv("PHI_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
     engine = SimpleNamespace(engine_id="fake", health=lambda: True)
     client = TestClient(create_app(engine, "fake"))
 
     ok = client.post("/v1/speech/synthesize", json={"text": "Olá"})
     assert ok.status_code == 200
     assert ok.headers["content-type"] == "audio/wav"
-    assert ok.headers["x-phi-voice"] == "elevenlabs"
+    assert ok.headers["x-phibe-voice"] == "elevenlabs"
     assert ok.content == b"elevenlabs"
 
     world.backends["elevenlabs"].fail = True
     client.app.state.tts_router._failed_at.clear()
     fell = client.post("/v1/speech/synthesize", json={"text": "Olá"})
-    assert fell.headers["x-phi-voice"] == "kokoro"
-    assert "elevenlabs unavailable" in fell.headers["x-phi-voice-notice"]
+    assert fell.headers["x-phibe-voice"] == "kokoro"
+    assert "elevenlabs unavailable" in fell.headers["x-phibe-voice-notice"]
 
     assert client.post("/v1/speech/synthesize", json={"text": " "}).status_code == 422
     too_long = client.post("/v1/speech/synthesize", json={"text": "a" * 4001})

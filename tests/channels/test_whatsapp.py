@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.channels._stubs import ChannelStatus
-from phi.channels.whatsapp import WhatsAppChannel
-from phi.core.events import EventBus, EventType
-from phi.core.registry import ChannelRegistry
+from phibe.channels._stubs import ChannelStatus
+from phibe.channels.whatsapp import WhatsAppChannel
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import ChannelRegistry
 from tests.channels.channel_test_helpers import make_common_channel_tests
 
 

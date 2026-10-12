@@ -6,10 +6,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import AgentContext, AgentResult
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry, RouterPolicyRegistry, ToolRegistry
-from phi.core.types import (
+from phibe.agents._stubs import AgentContext, AgentResult
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry, RouterPolicyRegistry, ToolRegistry
+from phibe.core.types import (
     Conversation,
     Message,
     Role,
@@ -23,8 +23,8 @@ from phi.core.types import (
 
 
 def _register_agents():
-    from phi.agents.orchestrator import OrchestratorAgent
-    from phi.agents.simple import SimpleAgent
+    from phibe.agents.orchestrator import OrchestratorAgent
+    from phibe.agents.simple import SimpleAgent
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
@@ -33,8 +33,8 @@ def _register_agents():
 
 
 def _register_tools():
-    from phi.tools.calculator import CalculatorTool
-    from phi.tools.think import ThinkTool
+    from phibe.tools.calculator import CalculatorTool
+    from phibe.tools.think import ThinkTool
 
     if not ToolRegistry.contains("calculator"):
         ToolRegistry.register_value("calculator", CalculatorTool)
@@ -101,7 +101,7 @@ class TestOrchestratorWithCalculator:
         _register_agents()
         _register_tools()
 
-        from phi.tools.calculator import CalculatorTool
+        from phibe.tools.calculator import CalculatorTool
 
         engine = MagicMock()
         engine.engine_id = "mock"
@@ -164,7 +164,7 @@ class TestAPIServerRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from phi.server.app import create_app
+        from phibe.server.app import create_app
 
         engine = _make_engine("API response!")
         app = create_app(engine, "test-model")
@@ -189,7 +189,7 @@ class TestAPIServerRoundtrip:
         pytest.importorskip("fastapi")
         from fastapi.testclient import TestClient
 
-        from phi.server.app import create_app
+        from phibe.server.app import create_app
 
         engine = _make_engine()
         app = create_app(engine, "test-model")
@@ -241,7 +241,7 @@ class TestTelemetryThroughAgent:
     def test_telemetry_record_created(self):
         """Telemetry records are now produced by InstrumentedEngine,
         not by agents directly."""
-        from phi.telemetry.instrumented_engine import InstrumentedEngine
+        from phibe.telemetry.instrumented_engine import InstrumentedEngine
 
         _register_agents()
         bus = EventBus(record_history=True)
@@ -264,9 +264,9 @@ class TestToolExecutorIntegration:
 
     def test_calculator_and_think(self):
         _register_tools()
-        from phi.tools._stubs import ToolExecutor
-        from phi.tools.calculator import CalculatorTool
-        from phi.tools.think import ThinkTool
+        from phibe.tools._stubs import ToolExecutor
+        from phibe.tools.calculator import CalculatorTool
+        from phibe.tools.think import ThinkTool
 
         bus = EventBus(record_history=True)
         executor = ToolExecutor([CalculatorTool(), ThinkTool()], bus=bus)
@@ -301,8 +301,8 @@ class TestHeuristicRewardWithTelemetry:
     """HeuristicRewardFunction scores using TelemetryRecord data."""
 
     def test_reward_from_telemetry_record(self):
-        from phi.learning._stubs import RoutingContext
-        from phi.learning.routing.heuristic_reward import HeuristicRewardFunction
+        from phibe.learning._stubs import RoutingContext
+        from phibe.learning.routing.heuristic_reward import HeuristicRewardFunction
 
         rec = TelemetryRecord(
             timestamp=0.0,
@@ -330,7 +330,7 @@ class TestRouterPolicyRegistryDiscovery:
     """RouterPolicyRegistry discovers both heuristic and learned."""
 
     def test_both_policies_registered(self):
-        from phi.learning import ensure_registered
+        from phibe.learning import ensure_registered
 
         ensure_registered()
         assert RouterPolicyRegistry.contains("heuristic")
@@ -343,8 +343,8 @@ class TestTelemetryPipeline:
     def test_store_then_aggregate(self, tmp_path):
         import time
 
-        from phi.telemetry.aggregator import TelemetryAggregator
-        from phi.telemetry.store import TelemetryStore
+        from phibe.telemetry.aggregator import TelemetryAggregator
+        from phibe.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -387,8 +387,8 @@ class TestEventBusTelemetryAggregator:
     """EventBus → TelemetryStore → TelemetryAggregator end-to-end."""
 
     def test_event_driven_pipeline(self, tmp_path):
-        from phi.telemetry.aggregator import TelemetryAggregator
-        from phi.telemetry.store import TelemetryStore
+        from phibe.telemetry.aggregator import TelemetryAggregator
+        from phibe.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -419,9 +419,9 @@ class TestAskFlowWithRouterPolicy:
     """Full ask flow with router policy (mocked)."""
 
     def test_mocked_ask_with_registry_router(self):
-        from phi.learning._stubs import RoutingContext
-        from phi.learning.routing.heuristic_policy import ensure_registered
-        from phi.learning.routing.router import HeuristicRouter
+        from phibe.learning._stubs import RoutingContext
+        from phibe.learning.routing.heuristic_policy import ensure_registered
+        from phibe.learning.routing.router import HeuristicRouter
 
         ensure_registered()
         router_cls = RouterPolicyRegistry.get("heuristic")
@@ -442,10 +442,10 @@ class TestRewardTelemetryIntegration:
     def test_score_from_aggregated_stats(self, tmp_path):
         import time
 
-        from phi.learning._stubs import RoutingContext
-        from phi.learning.routing.heuristic_reward import HeuristicRewardFunction
-        from phi.telemetry.aggregator import TelemetryAggregator
-        from phi.telemetry.store import TelemetryStore
+        from phibe.learning._stubs import RoutingContext
+        from phibe.learning.routing.heuristic_reward import HeuristicRewardFunction
+        from phibe.telemetry.aggregator import TelemetryAggregator
+        from phibe.telemetry.store import TelemetryStore
 
         db = tmp_path / "telemetry.db"
         store = TelemetryStore(db)
@@ -487,12 +487,12 @@ class TestRewardTelemetryIntegration:
 
 
 class TestSDKImport:
-    """Verify Phi class is importable from phi."""
+    """Verify Phibe class is importable from phibe."""
 
-    def test_phi_imports(self):
-        from phi import Phi
+    def test_phibe_imports(self):
+        from phibe import Phibe
 
-        assert Phi is not None
+        assert Phibe is not None
 
 
 class TestSDKAskFlow:
@@ -501,12 +501,12 @@ class TestSDKAskFlow:
     def test_sdk_ask_e2e(self):
         from unittest.mock import patch
 
-        from phi.core.config import PhiConfig
-        from phi.sdk import Phi
+        from phibe.core.config import PhibeConfig
+        from phibe.sdk import Phibe
 
         engine = _make_engine("SDK response")
-        with patch("phi.sdk.get_engine", return_value=("mock", engine)):
-            j = Phi(config=PhiConfig(), model="test-model")
+        with patch("phibe.sdk.get_engine", return_value=("mock", engine)):
+            j = Phibe(config=PhibeConfig(), model="test-model")
             result = j.ask("Hello from integration test")
             assert result == "SDK response"
             j.close()
@@ -516,10 +516,10 @@ class TestSDKMemoryHandle:
     """SDK memory handle with SQLite backend."""
 
     def test_index_and_search(self, tmp_path):
-        from phi.core.config import PhiConfig
-        from phi.sdk import MemoryHandle
+        from phibe.core.config import PhibeConfig
+        from phibe.sdk import MemoryHandle
 
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         handle = MemoryHandle(cfg)
 
         mock_backend = MagicMock()
@@ -550,8 +550,8 @@ class TestBenchmarkRegistryDiscovery:
     """BenchmarkRegistry discovers latency + throughput."""
 
     def test_discovers_benchmarks(self):
-        from phi.bench import ensure_registered
-        from phi.core.registry import BenchmarkRegistry
+        from phibe.bench import ensure_registered
+        from phibe.core.registry import BenchmarkRegistry
 
         ensure_registered()
         assert BenchmarkRegistry.contains("latency")
@@ -564,9 +564,9 @@ class TestBenchmarkSuiteRunAll:
     def test_suite_produces_jsonl(self):
         import json
 
-        from phi.bench import ensure_registered
-        from phi.bench._stubs import BenchmarkSuite
-        from phi.core.registry import BenchmarkRegistry
+        from phibe.bench import ensure_registered
+        from phibe.bench._stubs import BenchmarkSuite
+        from phibe.core.registry import BenchmarkRegistry
 
         ensure_registered()
         benchmarks = [cls() for _, cls in BenchmarkRegistry.items()]
@@ -588,10 +588,10 @@ class TestFullPipeline:
     def test_full_pipeline(self, tmp_path):
         from unittest.mock import patch
 
-        from phi.agents._stubs import AgentResult
-        from phi.core.config import PhiConfig
-        from phi.core.registry import AgentRegistry
-        from phi.sdk import Phi
+        from phibe.agents._stubs import AgentResult
+        from phibe.core.config import PhibeConfig
+        from phibe.core.registry import AgentRegistry
+        from phibe.sdk import Phibe
 
         engine = _make_engine("Pipeline response")
 
@@ -611,11 +611,11 @@ class TestFullPipeline:
 
         AgentRegistry.register_value("pipeline-test", PipelineAgent)
 
-        cfg = PhiConfig()
+        cfg = PhibeConfig()
         cfg.telemetry.db_path = str(tmp_path / "telemetry.db")
 
-        with patch("phi.sdk.get_engine", return_value=("mock", engine)):
-            j = Phi(config=cfg, model="test-model")
+        with patch("phibe.sdk.get_engine", return_value=("mock", engine)):
+            j = Phibe(config=cfg, model="test-model")
             result = j.ask("Full pipeline test", agent="pipeline-test")
             assert result == "Pipeline response"
             j.close()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.cli.dashboard import DashboardApp
+from phibe.cli.dashboard import DashboardApp
 
 
 class TestDashboard:

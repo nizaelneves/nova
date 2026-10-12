@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import ToolResult
-from phi.learning.intelligence.orchestrator.environment import (
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import ToolResult
+from phibe.learning.intelligence.orchestrator.environment import (
     OrchestratorEnvironment,
 )
-from phi.learning.intelligence.orchestrator.types import OrchestratorAction
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.learning.intelligence.orchestrator.types import OrchestratorAction
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # -- Mock tool ---------------------------------------------------------------
 

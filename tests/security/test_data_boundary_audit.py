@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from phi.core.config import PhiConfig, load_config
-from phi.security.data_boundary_audit import (
+from phibe.core.config import PhibeConfig, load_config
+from phibe.security.data_boundary_audit import (
     API_KEY_ENV_VARS,
     BROWSER_TOOLS,
     CHANNEL_OUTBOUND_TOOLS,
@@ -105,10 +105,10 @@ def _ids(report):
 def _low_noise_config():
     """Baseline config with no warn/fail findings under an empty scan root.
 
-    PhiConfig defaults include absolute store paths under the real
-    PHI_HOME; clear those so tests only see artifacts under tmp_path.
+    PhibeConfig defaults include absolute store paths under the real
+    PHIBE_HOME; clear those so tests only see artifacts under tmp_path.
     """
-    config = PhiConfig()
+    config = PhibeConfig()
     config.traces.enabled = False
     config.telemetry.enabled = False
     config.agent.context_from_memory = False
@@ -136,7 +136,7 @@ def _low_noise_config():
     config.engine.default = "ollama"
     config.deep_research.engine = ""
     config.deep_research.model = ""
-    # Avoid scanning the developer's real ~/.phi store files.
+    # Avoid scanning the developer's real ~/.phibe store files.
     config.traces.db_path = ""
     config.telemetry.db_path = ""
     config.security.audit_log_path = ""
@@ -156,7 +156,7 @@ def _low_noise_config():
 
 def test_missing_config_does_not_report_dataclass_defaults(tmp_path, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    config = PhiConfig()
+    config = PhibeConfig()
 
     report = build_data_boundary_report(config, tmp_path, config_loaded=False)
 
@@ -166,7 +166,7 @@ def test_missing_config_does_not_report_dataclass_defaults(tmp_path, monkeypatch
 
 
 def test_config_error_returns_fail_finding_without_crashing(tmp_path):
-    config = PhiConfig()
+    config = PhibeConfig()
 
     report = build_data_boundary_report(
         config,
@@ -591,15 +591,15 @@ def test_config_root_error_returns_fail_without_local_store_scan(tmp_path):
     report = build_data_boundary_report(
         config,
         None,
-        root_error=("ConfigurationError: bad PHI_HOME at /Users/alice/private/phi"),
+        root_error=("ConfigurationError: bad PHIBE_HOME at /Users/alice/private/phibe"),
     )
 
     findings = {finding.id: finding for finding in report.findings}
     assert findings["config-root-error"].status == "fail"
-    assert "bad PHI_HOME" not in findings["config-root-error"].evidence
-    assert "/Users/alice/private/phi" not in str(report.to_dict())
+    assert "bad PHIBE_HOME" not in findings["config-root-error"].evidence
+    assert "/Users/alice/private/phibe" not in str(report.to_dict())
     assert "path details were redacted" in findings["config-root-error"].evidence
-    assert report.root == "<unresolved-phi-home>"
+    assert report.root == "<unresolved-phibe-home>"
 
 
 def test_group_or_other_readable_local_store_warns(tmp_path):
@@ -1128,7 +1128,7 @@ def test_knowledge_db_posix_permissions_checked(tmp_path):
 
 
 def test_browser_resolver_tools_are_all_classified():
-    from phi.agents.tool_resolver import BROWSER_SUB_TOOLS
+    from phibe.agents.tool_resolver import BROWSER_SUB_TOOLS
 
     assert set(BROWSER_SUB_TOOLS) <= BROWSER_TOOLS
 
@@ -1324,43 +1324,43 @@ class TestWebSearchDestination:
         for key in (
             "TAVILY_API_KEY",
             "YOUDOTCOM_API_KEY",
-            "PHI_WEB_SEARCH_ENGINE",
+            "PHIBE_WEB_SEARCH_ENGINE",
         ):
             monkeypatch.delenv(key, raising=False)
 
     def test_keyless_youcom_is_named(self, monkeypatch):
-        from phi.security.data_boundary_audit import _web_search_destination
+        from phibe.security.data_boundary_audit import _web_search_destination
 
         self._clear(monkeypatch)
         assert "You.com" in _web_search_destination()
         assert "keyless" in _web_search_destination()
 
     def test_keyed_youcom_is_named(self, monkeypatch):
-        from phi.security.data_boundary_audit import _web_search_destination
+        from phibe.security.data_boundary_audit import _web_search_destination
 
         self._clear(monkeypatch)
         monkeypatch.setenv("YOUDOTCOM_API_KEY", "ydc-key")
         assert "keyed" in _web_search_destination()
 
     def test_tavily_is_named(self, monkeypatch):
-        from phi.security.data_boundary_audit import _web_search_destination
+        from phibe.security.data_boundary_audit import _web_search_destination
 
         self._clear(monkeypatch)
         monkeypatch.setenv("TAVILY_API_KEY", "tvly-key")
         assert "Tavily" in _web_search_destination()
 
     def test_duckduckgo_is_named(self, monkeypatch):
-        from phi.security.data_boundary_audit import _web_search_destination
+        from phibe.security.data_boundary_audit import _web_search_destination
 
         self._clear(monkeypatch)
-        monkeypatch.setenv("PHI_WEB_SEARCH_ENGINE", "duckduckgo")
+        monkeypatch.setenv("PHIBE_WEB_SEARCH_ENGINE", "duckduckgo")
         assert "DuckDuckGo" in _web_search_destination()
 
     def test_matches_the_tool_resolution(self, monkeypatch):
         """Guard against the audit's copy of the precedence rule drifting from
         WebSearchTool._resolve_engine, which is the source of truth."""
-        from phi.security.data_boundary_audit import _web_search_destination
-        from phi.tools.web_search import WebSearchTool
+        from phibe.security.data_boundary_audit import _web_search_destination
+        from phibe.tools.web_search import WebSearchTool
 
         labels = {
             "youcom": "You.com",
@@ -1376,7 +1376,7 @@ class TestWebSearchDestination:
                     if youcom:
                         monkeypatch.setenv("YOUDOTCOM_API_KEY", youcom)
                     if engine:
-                        monkeypatch.setenv("PHI_WEB_SEARCH_ENGINE", engine)
+                        monkeypatch.setenv("PHIBE_WEB_SEARCH_ENGINE", engine)
                     resolved = WebSearchTool()._resolve_engine()
                     assert labels[resolved] in _web_search_destination(), (
                         f"tavily={tavily} youcom={youcom} engine={engine}"

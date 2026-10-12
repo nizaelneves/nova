@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.learning._stubs import (
+from phibe.learning._stubs import (
     AgentLearningPolicy,
     IntelligenceLearningPolicy,
     LearningPolicy,

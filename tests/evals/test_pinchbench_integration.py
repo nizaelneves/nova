@@ -7,8 +7,8 @@ without requiring the actual PinchBench repo or cloud API keys.
 import textwrap
 from pathlib import Path
 
-from phi.evals.core.event_recorder import EventRecorder, EventType
-from phi.evals.datasets.pinchbench import PinchBenchDataset
+from phibe.evals.core.event_recorder import EventRecorder, EventType
+from phibe.evals.datasets.pinchbench import PinchBenchDataset
 
 
 def _create_test_repo(tmp_path: Path) -> Path:

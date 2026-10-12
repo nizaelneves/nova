@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.agents.native_react import REACT_SYSTEM_PROMPT, NativeReActAgent
+from phibe.agents.native_react import REACT_SYSTEM_PROMPT, NativeReActAgent
 
 
 class _StubEngine:
@@ -71,12 +71,12 @@ class TestReactSystemPromptPlaceholder:
 class TestSystemBuilderCapturesFewShot:
     def test_skill_manager_examples_stored_on_system(self, tmp_path):
         """SystemBuilder.build() pulls examples from SkillManager and
-        stashes them on the PhiSystem instance for _run_agent to
+        stashes them on the PhibeSystem instance for _run_agent to
         forward to tool-using agents."""
 
-        from phi.skills.manager import SkillManager
-        from phi.skills.overlay import SkillOverlay, write_overlay
-        from phi.skills.types import SkillManifest
+        from phibe.skills.manager import SkillManager
+        from phibe.skills.overlay import SkillOverlay, write_overlay
+        from phibe.skills.types import SkillManifest
 
         # Build an overlay so the manager picks up real few-shot examples
         overlay_dir = tmp_path / "overlays"
@@ -92,7 +92,7 @@ class TestSystemBuilderCapturesFewShot:
             overlay_dir,
         )
 
-        from phi.core.events import EventBus
+        from phibe.core.events import EventBus
 
         mgr = SkillManager(bus=EventBus(), overlay_dir=overlay_dir)
         mgr._skills["seeded-skill"] = SkillManifest(
@@ -114,8 +114,8 @@ class TestRunAgentForwardsExamples:
         agent_kwargs when the agent class has accepts_tools=True."""
         from unittest.mock import patch
 
-        from phi.agents._stubs import AgentResult
-        from phi.system import PhiSystem
+        from phibe.agents._stubs import AgentResult
+        from phibe.system import PhibeSystem
 
         captured_kwargs: dict = {}
 
@@ -128,8 +128,8 @@ class TestRunAgentForwardsExamples:
             def run(self, query, context=None, **kw):
                 return AgentResult(content="ok", turns=1)
 
-        # Build a minimal PhiSystem with the captured examples
-        system = PhiSystem.__new__(PhiSystem)
+        # Build a minimal PhibeSystem with the captured examples
+        system = PhibeSystem.__new__(PhibeSystem)
         system.config = MagicMock()
         system.config.intelligence.temperature = 0.0
         system.config.intelligence.max_tokens = 100
@@ -149,7 +149,7 @@ class TestRunAgentForwardsExamples:
         system._mcp_clients = []
 
         with patch(
-            "phi.core.registry.AgentRegistry.get",
+            "phibe.core.registry.AgentRegistry.get",
             return_value=_CapturingAgent,
         ):
             system._run_agent(

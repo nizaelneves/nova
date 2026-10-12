@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from phi.skills.security import (
+from phibe.skills.security import (
     TrustTier,
     classify_trust_tier,
     has_dangerous_capabilities,
     validate_capabilities,
 )
-from phi.skills.types import SkillManifest
+from phibe.skills.types import SkillManifest
 
 
 class TestTrustTiers:

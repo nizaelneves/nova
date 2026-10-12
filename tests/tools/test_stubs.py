@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import ToolCall, ToolResult
-from phi.security.capabilities import DEFAULT_TOOL_CAPABILITIES
-from phi.tools._stubs import BaseTool, ToolExecutor, ToolSpec
-from phi.tools.code_interpreter import CodeInterpreterTool
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import ToolCall, ToolResult
+from phibe.security.capabilities import DEFAULT_TOOL_CAPABILITIES
+from phibe.tools._stubs import BaseTool, ToolExecutor, ToolSpec
+from phibe.tools.code_interpreter import CodeInterpreterTool
 
 # ---------------------------------------------------------------------------
 # Helpers

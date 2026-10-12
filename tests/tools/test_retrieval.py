@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from phi.tools.retrieval import RetrievalTool
-from phi.tools.storage._stubs import MemoryBackend, RetrievalResult
+from phibe.tools.retrieval import RetrievalTool
+from phibe.tools.storage._stubs import MemoryBackend, RetrievalResult
 
 
 class _FakeBackend(MemoryBackend):

@@ -6,8 +6,8 @@ from typing import List
 
 import pytest
 
-from phi.channels._stubs import BaseChannel, ChannelHandler, ChannelStatus
-from phi.core.registry import ChannelRegistry
+from phibe.channels._stubs import BaseChannel, ChannelHandler, ChannelStatus
+from phibe.core.registry import ChannelRegistry
 
 
 class TestChannelRegistry:

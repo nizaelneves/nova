@@ -6,9 +6,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from phi.core.events import EventBus, EventType
-from phi.core.types import TelemetryRecord
-from phi.telemetry.store import TelemetryStore
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import TelemetryRecord
+from phibe.telemetry.store import TelemetryStore
 
 
 class TestTelemetryStore:

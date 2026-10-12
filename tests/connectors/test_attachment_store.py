@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from phi.connectors.attachment_store import AttachmentStore
+from phibe.connectors.attachment_store import AttachmentStore
 
 # ---------------------------------------------------------------------------
 # Fixtures

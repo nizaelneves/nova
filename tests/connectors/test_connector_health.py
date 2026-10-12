@@ -10,20 +10,20 @@ import pytest
 
 # All connectors that should be testable without credentials
 _LOCAL_CONNECTORS = [
-    ("apple_notes", "phi.connectors.apple_notes", "AppleNotesConnector"),
-    ("imessage", "phi.connectors.imessage", "IMessageConnector"),
+    ("apple_notes", "phibe.connectors.apple_notes", "AppleNotesConnector"),
+    ("imessage", "phibe.connectors.imessage", "IMessageConnector"),
 ]
 
 _TOKEN_CONNECTORS = [
-    ("gmail_imap", "phi.connectors.gmail_imap", "GmailIMAPConnector"),
-    ("outlook", "phi.connectors.outlook", "OutlookConnector"),
-    ("slack", "phi.connectors.slack_connector", "SlackConnector"),
-    ("notion", "phi.connectors.notion", "NotionConnector"),
-    ("granola", "phi.connectors.granola", "GranolaConnector"),
-    ("gdrive", "phi.connectors.gdrive", "GDriveConnector"),
-    ("gcalendar", "phi.connectors.gcalendar", "GCalendarConnector"),
-    ("gcontacts", "phi.connectors.gcontacts", "GContactsConnector"),
-    ("dropbox", "phi.connectors.dropbox", "DropboxConnector"),
+    ("gmail_imap", "phibe.connectors.gmail_imap", "GmailIMAPConnector"),
+    ("outlook", "phibe.connectors.outlook", "OutlookConnector"),
+    ("slack", "phibe.connectors.slack_connector", "SlackConnector"),
+    ("notion", "phibe.connectors.notion", "NotionConnector"),
+    ("granola", "phibe.connectors.granola", "GranolaConnector"),
+    ("gdrive", "phibe.connectors.gdrive", "GDriveConnector"),
+    ("gcalendar", "phibe.connectors.gcalendar", "GCalendarConnector"),
+    ("gcontacts", "phibe.connectors.gcontacts", "GContactsConnector"),
+    ("dropbox", "phibe.connectors.dropbox", "DropboxConnector"),
 ]
 
 _ALL_CONNECTORS = _LOCAL_CONNECTORS + _TOKEN_CONNECTORS
@@ -124,8 +124,8 @@ def test_knowledge_store_has_data() -> None:
 
     Skips if the DB is missing or has no indexed rows (fresh install / empty store).
     """
-    from phi.connectors.store import KnowledgeStore
-    from phi.core.config import DEFAULT_CONFIG_DIR
+    from phibe.connectors.store import KnowledgeStore
+    from phibe.core.config import DEFAULT_CONFIG_DIR
 
     db_path = DEFAULT_CONFIG_DIR / "knowledge.db"
     if not db_path.exists():
@@ -152,8 +152,8 @@ def test_knowledge_store_sources_have_chunks() -> None:
 
     Skips if the DB is missing or empty (same as test_knowledge_store_has_data).
     """
-    from phi.connectors.store import KnowledgeStore
-    from phi.core.config import DEFAULT_CONFIG_DIR
+    from phibe.connectors.store import KnowledgeStore
+    from phibe.core.config import DEFAULT_CONFIG_DIR
 
     db_path = DEFAULT_CONFIG_DIR / "knowledge.db"
     if not db_path.exists():

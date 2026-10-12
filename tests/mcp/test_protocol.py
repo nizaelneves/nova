@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from phi.mcp.protocol import (
+from phibe.mcp.protocol import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
     INVALID_REQUEST,

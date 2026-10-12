@@ -10,8 +10,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.core.types import Message, Role, ToolCall
-from phi.engine._stubs import StreamChunk
+from phibe.core.types import Message, Role, ToolCall
+from phibe.engine._stubs import StreamChunk
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -20,7 +20,7 @@ from phi.engine._stubs import StreamChunk
 
 def _make_cloud_engine(**overrides: Any) -> Any:
     """Create a CloudEngine without calling __init__ (no env vars needed)."""
-    from phi.engine.cloud import CloudEngine
+    from phibe.engine.cloud import CloudEngine
 
     engine = CloudEngine.__new__(CloudEngine)
     engine._openai_client = overrides.get("openai_client")

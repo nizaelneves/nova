@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("fastapi", reason="phi[server] not installed")
+pytest.importorskip("fastapi", reason="phibe[server] not installed")
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from phi.server.auth_middleware import AuthMiddleware
+from phibe.server.auth_middleware import AuthMiddleware
 
 
 def _make_app(api_key: str) -> FastAPI:

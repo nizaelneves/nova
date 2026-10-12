@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from phi.core.config import PhiConfig
-from phi.core.events import EventBus
-from phi.system import QueryOrchestrator
+from phibe.core.config import PhibeConfig
+from phibe.core.events import EventBus
+from phibe.system import QueryOrchestrator
 
 
 class _FakeEngine:
@@ -36,7 +36,7 @@ class _FakeEngine:
 class _FakeSystem:
     """Minimum surface QueryOrchestrator reads — no subsystems wired."""
 
-    config: PhiConfig = field(default_factory=PhiConfig)
+    config: PhibeConfig = field(default_factory=PhibeConfig)
     bus: EventBus = field(default_factory=EventBus)
     engine: Any = None
     engine_key: str = "fake"
@@ -76,7 +76,7 @@ class TestAskDirectEngineMode:
 
     def test_uses_config_defaults_when_omitted(self):
         engine = _FakeEngine({"content": ""})
-        config = PhiConfig()
+        config = PhibeConfig()
         config.intelligence.temperature = 0.42
         config.intelligence.max_tokens = 77
         system = _FakeSystem(config=config, engine=engine)
@@ -121,7 +121,7 @@ class TestDetectAgentIntent:
         ],
     )
     def test_morning_digest_triggers(self, query):
-        from phi.core.registry import AgentRegistry
+        from phibe.core.registry import AgentRegistry
 
         # Register a stub so the intent check returns the name.
         try:

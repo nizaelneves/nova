@@ -1,4 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router';
+import { shortcutFromEvent } from '../lib/shortcutKeys';
+import { AVATARS, type AvatarId } from '../lib/avatar/registry';
+import { AgentsPage } from './AgentsPage';
+import { DataSourcesPage } from './DataSourcesPage';
+import { YourData } from '../components/YourData';
 import {
   Palette,
   Globe,
@@ -27,6 +33,7 @@ import {
   saveToolCredentials,
   deleteToolCredential,
   isTauri,
+  apiFetch,
   fetchSyncSettings,
   saveSyncSettings,
   fetchMemoryNotes,
@@ -53,7 +60,7 @@ import {
   type MemorizeData,
 } from '../lib/memorize';
 
-const CLOUD_KEY_STATUS_CHANGED = 'phi-cloud-key-status-changed';
+const CLOUD_KEY_STATUS_CHANGED = 'phibe-cloud-key-status-changed';
 
 function OllamaModelList() {
   const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
@@ -232,7 +239,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const SYNC_INTERVALS = [5, 15, 30, 60, 180, 360, 720, 1440];
 
 function intervalLabel(minutes: number): string {
-  if (minutes === 0) return 'Only when Phi starts';
+  if (minutes === 0) return 'Only when Phibe starts';
   if (minutes < 60) return `Every ${minutes} minutes`;
   if (minutes === 60) return 'Every hour';
   if (minutes % 60 === 0 && minutes < 1440) return `Every ${minutes / 60} hours`;
@@ -347,7 +354,7 @@ function SyncSection({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-/** What Phi remembers about you: two notes you can read and edit. */
+/** What Phibe remembers about you: two notes you can read and edit. */
 function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; memoryStats: { entries: number; backend: string } | null }) {
   const [saved, setSaved] = useState<{ about_you: string; memories: string } | null>(null);
   const [aboutYou, setAboutYou] = useState('');
@@ -370,7 +377,7 @@ function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; mem
       setAboutYou(n.about_you);
       setMemories(n.memories);
       onSaved();
-      toast.success('Phi will use this from your next message');
+      toast.success('Phibe will use this from your next message');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save');
     } finally {
@@ -382,7 +389,7 @@ function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; mem
   return (
     <Section title="Memory">
       <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-        Everything here is sent to the model as background, so Phi knows who you are. Edit it freely: what you write is what Phi remembers.
+        Everything here is sent to the model as background, so Phibe knows who you are. Edit it freely: what you write is what Phibe remembers.
       </p>
       <div className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
@@ -394,7 +401,7 @@ function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; mem
         <label className="flex flex-col gap-1.5">
           <span className="text-sm" style={{ color: 'var(--color-text)' }}>Things to remember</span>
           <textarea value={memories} rows={7} disabled={!saved} onChange={(e) => setMemories(e.target.value)}
-            placeholder="Preferences, decisions, anything Phi should keep in mind between chats…"
+            placeholder="Preferences, decisions, anything Phibe should keep in mind between chats…"
             className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y" style={box} />
         </label>
         <div className="flex items-center justify-between">
@@ -452,7 +459,7 @@ function ToolsSection() {
   );
 }
 
-/** Where Phi keeps its files on this computer, with a button to open that folder. */
+/** Where Phibe keeps its files on this computer, with a button to open that folder. */
 function DataFolderRow() {
   const [path, setPath] = useState<string | null>(null);
   useEffect(() => {
@@ -468,7 +475,7 @@ function DataFolderRow() {
   };
 
   return (
-    <SettingRow label="Phi folder" description="Tasks, finances, memory, knowledge and settings are saved here">
+    <SettingRow label="Phibe folder" description="Tasks, finances, memory, knowledge and settings are saved here">
       <div className="flex items-center gap-2 max-w-md">
         <code className="text-xs truncate px-2 py-1 rounded" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }} title={path ?? ''}>
           {path ?? 'Unavailable'}
@@ -556,7 +563,9 @@ function SettingRow({ label, description, children }: { label: string; descripti
 
 const SETTINGS_TABS = [
   { id: 'general', label: 'General' },
+  { id: 'agents', label: 'Agents' },
   { id: 'ai', label: 'API' },
+  { id: 'data-sources', label: 'Data Source' },
   { id: 'integrations', label: 'Integrations' },
   { id: 'memory', label: 'Memory' },
   { id: 'about', label: 'About' },
@@ -564,7 +573,7 @@ const SETTINGS_TABS = [
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
-/** The topics Phi should help the user memorize, and the items they add under them. */
+/** The topics Phibe should help the user memorize, and the items they add under them. */
 function MemorizeSection({ onSaved }: { onSaved: () => void }) {
   const [data, setData] = useState<MemorizeData>(() => loadMemorize());
   const [picked, setPicked] = useState<MemorizeCategory | ''>('');
@@ -591,7 +600,7 @@ function MemorizeSection({ onSaved }: { onSaved: () => void }) {
 
   return (
     <>
-      <Section title="What should Phi help you memorize?">
+      <Section title="What should Phibe help you memorize?">
         {MEMORIZE_CATEGORIES.map((c) => (
           <SettingRow key={c.id} label={c.label} description={c.description}>
             <Switch
@@ -602,7 +611,7 @@ function MemorizeSection({ onSaved }: { onSaved: () => void }) {
           </SettingRow>
         ))}
         <p className="text-xs mt-3" style={{ color: 'var(--color-text-tertiary)' }}>
-          How and when Phi brings these up (a ping, out loud, or on command) is set up next.
+          How and when Phibe brings these up (a ping, out loud, or on command) is set up next.
         </p>
       </Section>
 
@@ -688,8 +697,253 @@ function MemorizeSection({ onSaved }: { onSaved: () => void }) {
   );
 }
 
+interface VoiceModelStatus {
+  model: string;
+  installed: boolean;
+  downloading: boolean;
+  size_mb: number;
+  progress: number;
+  error: string | null;
+}
+
+/** Whether the voice model is on this computer, with a button to download it (never automatic). */
+function VoiceModelRow() {
+  const [status, setStatus] = useState<VoiceModelStatus | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await apiFetch('/v1/speech/model');
+      if (res.ok) setStatus(await res.json());
+    } catch {
+      setStatus(null);
+    }
+  }, []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  // Follow the download while it runs.
+  const busy = status?.downloading;
+  useEffect(() => {
+    if (!busy) return;
+    const id = setInterval(() => void refresh(), 2500);
+    return () => clearInterval(id);
+  }, [busy, refresh]);
+
+  const start = async () => {
+    const res = await apiFetch('/v1/speech/model/download', { method: 'POST' });
+    if (res.ok) setStatus(await res.json());
+  };
+
+  if (!status) return null;
+  const note = status.installed
+    ? `${status.model} is on this computer`
+    : status.downloading
+      ? `Downloading ${status.model}: ${Math.round(status.progress * 100)}%`
+      : status.error ?? `${status.model}, ${status.size_mb} MB. Needed to understand your voice.`;
+  return (
+    <SettingRow label="Voice model" description={note}>
+      {status.installed ? (
+        <span className="text-xs" style={{ color: 'var(--color-success)' }}>Ready</span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void start()}
+          disabled={status.downloading}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-60 disabled:cursor-default"
+          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
+        >
+          {status.downloading ? 'Downloading…' : `Download (${status.size_mb} MB)`}
+        </button>
+      )}
+    </SettingRow>
+  );
+}
+
+interface GpuPackStatus {
+  available: boolean;
+  installed: boolean;
+  enabled: boolean;
+  downloading: boolean;
+  progress: number;
+  size_mb: number;
+  error: string | null;
+}
+
+/** The optional NVIDIA GPU pack: only shown on a computer that has such a GPU. */
+function GpuPackRow({ onSaved }: { onSaved: () => void }) {
+  const [status, setStatus] = useState<GpuPackStatus | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await apiFetch('/v1/speech/gpu');
+      if (res.ok) setStatus(await res.json());
+    } catch {
+      setStatus(null);
+    }
+  }, []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const busy = status?.downloading;
+  useEffect(() => {
+    if (!busy) return;
+    const id = setInterval(() => void refresh(), 2500);
+    return () => clearInterval(id);
+  }, [busy, refresh]);
+
+  const post = async (path: string, body?: unknown) => {
+    const res = await apiFetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    if (res.ok) {
+      setStatus(await res.json());
+      onSaved();
+    }
+  };
+
+  if (!status?.available) return null;
+  const note = status.installed
+    ? 'Uses your NVIDIA graphics card to understand your voice faster.'
+    : status.downloading
+      ? `Downloading the GPU pack: ${Math.round(status.progress * 100)}%`
+      : status.error ?? `Optional download, about ${status.size_mb / 1000} GB. Understands your voice in under a second.`;
+  return (
+    <SettingRow label="Faster voice with an NVIDIA GPU" description={note}>
+      {status.installed ? (
+        <Switch on={status.enabled} label="Use the GPU for voice" onClick={() => void post('/v1/speech/gpu/enable', { enabled: !status.enabled })} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => void post('/v1/speech/gpu/install')}
+          disabled={status.downloading}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-60 disabled:cursor-default"
+          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
+        >
+          {status.downloading ? 'Downloading…' : `Download (${status.size_mb / 1000} GB)`}
+        </button>
+      )}
+    </SettingRow>
+  );
+}
+
+interface VoiceSettingsData {
+  shortcut: string;
+  silence_secs: number;
+  countdown_secs: number;
+  custom_words: string[];
+  mic: string | null;
+}
+
+const DEFAULT_VOICE_SHORTCUT = 'Ctrl+Alt+P';
+const FIELD_STYLE: React.CSSProperties = { background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
+
+/** The global voice shortcut, microphone, silence timing and custom words (desktop app only). */
+function VoiceShortcutSection({ onSaved }: { onSaved: () => void }) {
+  const [data, setData] = useState<VoiceSettingsData | null>(null);
+  const [mics, setMics] = useState<string[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [words, setWords] = useState('');
+
+  useEffect(() => {
+    void (async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const current = await invoke<VoiceSettingsData>('voice_settings_get');
+      setData(current);
+      setWords(current.custom_words.join('\n'));
+      setMics(await invoke<string[]>('voice_list_mics'));
+    })().catch(() => setData(null));
+  }, []);
+
+  const save = useCallback(async (next: VoiceSettingsData) => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const kept = await invoke<VoiceSettingsData>('voice_settings_set', { next });
+      setData(kept);
+      onSaved();
+    } catch (err) {
+      toast.error(typeof err === 'string' ? err : 'Could not save the voice settings');
+    }
+  }, [onSaved]);
+
+  // While recording a new shortcut, the next valid key combination is taken.
+  useEffect(() => {
+    if (!recording || !data) return;
+    const onKey = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === 'Escape') {
+        setRecording(false);
+        return;
+      }
+      const combo = shortcutFromEvent(e);
+      if (!combo) return;
+      setRecording(false);
+      void save({ ...data, shortcut: combo });
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [recording, data, save]);
+
+  if (!data) return null;
+  const mic = data.mic && mics.includes(data.mic) ? data.mic : '';
+
+  return (
+    <Section title="Global Voice">
+      <SettingRow label="Voice shortcut" description="Works from any app: press to talk, press again to send. Esc cancels.">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setRecording((v) => !v)}
+            className="px-3 py-1.5 rounded-lg text-xs font-mono cursor-pointer min-w-[8rem]"
+            style={recording ? { background: 'var(--color-accent)', color: 'var(--color-on-accent)' } : FIELD_STYLE}
+          >
+            {recording ? 'Press the keys…' : data.shortcut}
+          </button>
+          {data.shortcut !== DEFAULT_VOICE_SHORTCUT && (
+            <button type="button" onClick={() => void save({ ...data, shortcut: DEFAULT_VOICE_SHORTCUT })} className="text-xs cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>
+              Reset
+            </button>
+          )}
+        </div>
+      </SettingRow>
+      <SettingRow label="Microphone" description="The one Phibe listens to with the shortcut.">
+        <select value={mic} onChange={(e) => void save({ ...data, mic: e.target.value || null })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer max-w-[16rem]" style={FIELD_STYLE}>
+          <option value="">Windows default</option>
+          {mics.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+      </SettingRow>
+      <SettingRow label="Silence before the countdown" description="How long Phibe waits when you stop talking.">
+        <select value={data.silence_secs} onChange={(e) => void save({ ...data, silence_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
+          {[3, 5, 7, 10, 15, 20].map((s) => <option key={s} value={s}>{s} seconds</option>)}
+        </select>
+      </SettingRow>
+      <SettingRow label="Countdown" description="Then the card closes; what you said is kept as a draft.">
+        <select value={data.countdown_secs} onChange={(e) => void save({ ...data, countdown_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
+          {[3, 5, 8, 10].map((s) => <option key={s} value={s}>{s} seconds</option>)}
+        </select>
+      </SettingRow>
+      <div className="pt-3">
+        <div className="text-sm" style={{ color: 'var(--color-text)' }}>Custom words</div>
+        <div className="text-xs mt-0.5 mb-2" style={{ color: 'var(--color-text-tertiary)' }}>Names and brands Phibe should spell right, one per line.</div>
+        <textarea
+          value={words}
+          onChange={(e) => setWords(e.target.value)}
+          onBlur={() => void save({ ...data, custom_words: words.split('\n') })}
+          rows={4}
+          placeholder={'eKyte\nRed Shield'}
+          className="w-full text-sm px-3 py-2 rounded-lg outline-none"
+          style={FIELD_STYLE}
+        />
+      </div>
+    </Section>
+  );
+}
+
 export function SettingsPage() {
-  const [tab, setTab] = useState<SettingsTab>('general');
+  const [params, setParams] = useSearchParams();
+  const [dataView, setDataView] = useState<'Sources' | 'Your Data'>('Sources');
+  const wanted = params.get('tab');
+  const tab: SettingsTab = SETTINGS_TABS.some((t) => t.id === wanted) ? (wanted as SettingsTab) : 'general';
+  const setTab = (id: SettingsTab) => setParams(id === 'general' ? {} : { tab: id }, { replace: true });
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const conversations = useAppStore((s) => s.conversations);
@@ -745,12 +999,12 @@ export function SettingsPage() {
   };
 
   const handleExport = () => {
-    const data = localStorage.getItem('phi-conversations') || '{}';
+    const data = localStorage.getItem('phibe-conversations') || '{}';
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `phi-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `phibe-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -767,7 +1021,7 @@ export function SettingsPage() {
         try {
           const data = JSON.parse(ev.target?.result as string);
           if (data.version === 1) {
-            localStorage.setItem('phi-conversations', JSON.stringify(data));
+            localStorage.setItem('phibe-conversations', JSON.stringify(data));
             useAppStore.getState().loadConversations();
             showSaved();
           }
@@ -785,14 +1039,15 @@ export function SettingsPage() {
       setTimeout(() => setConfirmClear(false), 3000);
       return;
     }
-    localStorage.removeItem('phi-conversations');
+    localStorage.removeItem('phibe-conversations');
     useAppStore.getState().loadConversations();
     setConfirmClear(false);
     showSaved();
   };
 
   return (
-    <div className="flex flex-col h-full px-6 py-5 gap-4 overflow-y-auto">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col gap-4 px-6 pt-5 pb-4 shrink-0">
       <div className="flex items-center justify-end min-h-[1.75rem]">
         {saved && (
           <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{
@@ -821,16 +1076,46 @@ export function SettingsPage() {
           ))}
         </div>
       </div>
+      </div>
 
+      {tab === 'agents' && <AgentsPage />}
+      {tab === 'data-sources' && (
+        <>
+          <div className="flex justify-center pb-2 shrink-0">
+            <div className="pings-tab-pill" role="tablist">
+              {(['Sources', 'Your Data'] as const).map((label) => (
+                <button key={label} type="button" role="tab" aria-selected={dataView === label} data-active={dataView === label} onClick={() => setDataView(label)} className="pings-tab-pill-item">
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {dataView === 'Sources' ? <DataSourcesPage /> : <YourData />}
+        </>
+      )}
+      {tab !== 'agents' && tab !== 'data-sources' && (
+      <div className="flex-1 min-h-0 overflow-y-auto px-6">
       <div className="w-full max-w-2xl mx-auto pb-6">
         <div className="flex flex-col gap-4">
           {tab === 'general' && (
             <>
               <AppearanceSection settings={settings} updateSettings={updateSettings} onSaved={showSaved} />
-              <Section title="Floating Phi">
-                <SettingRow label="Show Phi on screen" description="A small button you can drag anywhere. Click it to see what is waiting for you.">
-                  <Switch on={settings.floatingPhi} label="Show Phi on screen"
-                    onClick={() => { updateSettings({ floatingPhi: !settings.floatingPhi }); showSaved(); }} />
+              <Section title="Avatar">
+                <SettingRow label="Phibe's Floating Button">
+                  <select
+                    value={settings.avatar}
+                    onChange={(e) => { updateSettings({ avatar: e.target.value as AvatarId }); showSaved(); }}
+                    className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+                  >
+                    {AVATARS.map((av) => <option key={av.id} value={av.id}>{av.label}</option>)}
+                  </select>
+                </SettingRow>
+              </Section>
+              <Section title="Floating Phibe">
+                <SettingRow label="Show Phibe on screen" description="A small button you can drag anywhere. Click it to see what is waiting for you.">
+                  <Switch on={settings.floatingPhibe} label="Show Phibe on screen"
+                    onClick={() => { updateSettings({ floatingPhibe: !settings.floatingPhibe }); showSaved(); }} />
                 </SettingRow>
               </Section>
             </>
@@ -987,12 +1272,16 @@ export function SettingsPage() {
                 <option value="off">Never</option>
               </select>
             </SettingRow>
+            <VoiceModelRow />
+            <GpuPackRow onSaved={showSaved} />
             <SettingRow label="Clap Activation">
               <Switch on={settings.clapToActivate} label="Clap Activation"
                 onClick={() => { updateSettings({ clapToActivate: !settings.clapToActivate }); showSaved(); }} />
             </SettingRow>
           </Section>
           )}
+
+          {tab === 'general' && isTauri() && <VoiceShortcutSection onSaved={showSaved} />}
 
           {tab === 'general' && (
           <>
@@ -1073,7 +1362,7 @@ export function SettingsPage() {
                 type="password"
                 value={settings.apiKey}
                 onChange={(e) => { updateSettings({ apiKey: e.target.value }); showSaved(); }}
-                placeholder="PHI_API_KEY"
+                placeholder="PHIBE_API_KEY"
                 autoComplete="off"
                 className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
                 style={{
@@ -1117,7 +1406,7 @@ export function SettingsPage() {
             {!speechBackendAvailable && speechBackendAvailable !== null && (
               <div className="text-xs mt-2 px-1" style={{ color: 'var(--color-text-tertiary)' }}>
                 Set up a speech backend to use voice input.
-                See the <a href="https://github.com/nizaelneves/phi" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
+                See the <a href="https://github.com/nizaelneves/phibe" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>documentation</a> for details.
               </div>
             )}
           </Section>
@@ -1127,10 +1416,14 @@ export function SettingsPage() {
           {tab === 'about' && (
           <Section title="About">
             <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <div className="mb-4">
+                <img src="/brand/phibe-logo-dark.svg" alt="Phibe" height={64} className="brand-logo-dark" style={{ height: 64, width: 'auto' }} />
+                <img src="/brand/phibe-logo-light.svg" alt="Phibe" height={64} className="brand-logo-light" style={{ height: 64, width: 'auto' }} />
+              </div>
               <p className="mb-2">
-                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>PhiOS</span> — your personal AI copilot, running on your own computer.
+                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Phibe</span> — your personal AI copilot, running on your own computer.
               </p>
-              <p className="mb-2">Your AI Assistant in constant becoming.</p>
+              <p className="mb-2">Your personal AI assistant in constant become.</p>
               <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
                 <div className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text)' }}>Adding local models</div>
                 <p className="text-xs">
@@ -1139,7 +1432,7 @@ export function SettingsPage() {
               </div>
               <div className="flex gap-3 mt-4 text-xs">
                 <a
-                  href="https://github.com/nizaelneves/phi"
+                  href="https://github.com/nizaelneves/phibe"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: 'var(--color-accent)' }}
@@ -1152,6 +1445,8 @@ export function SettingsPage() {
           )}
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

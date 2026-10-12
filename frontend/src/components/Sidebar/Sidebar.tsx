@@ -14,12 +14,10 @@ interface Module {
 /** The main menu, in this order. Names are always English. */
 const MODULES: Module[] = [
   { path: '/', icon: 'chat-round-dots', label: 'Chat' },
-  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
   { path: '/workspaces', icon: 'widget-2', label: 'Workspaces' },
+  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
   { path: '/pings', icon: 'bell', label: 'Pings' },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
-  { path: '/agents', icon: 'bot', label: 'Agents' },
-  { path: '/data-sources', icon: 'database', label: 'Data Sources' },
   { path: '/approvals', icon: 'shield-check', label: 'Approvals' },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];

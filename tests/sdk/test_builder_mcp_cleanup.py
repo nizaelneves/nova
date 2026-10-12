@@ -16,18 +16,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from phi.core.config import PhiConfig
-from phi.system.builder import SystemBuilder
+from phibe.core.config import PhibeConfig
+from phibe.system.builder import SystemBuilder
 
 
 @pytest.fixture
 def _mock_mcp_stack():
     """Patch MCPClient / transports / MCPToolProvider so no real I/O happens."""
     with (
-        patch("phi.mcp.client.MCPClient") as MockClient,
-        patch("phi.mcp.transport.StreamableHTTPTransport") as MockHttp,
-        patch("phi.mcp.transport.StdioTransport") as MockStdio,
-        patch("phi.tools.mcp_adapter.MCPToolProvider") as MockProvider,
+        patch("phibe.mcp.client.MCPClient") as MockClient,
+        patch("phibe.mcp.transport.StreamableHTTPTransport") as MockHttp,
+        patch("phibe.mcp.transport.StdioTransport") as MockStdio,
+        patch("phibe.tools.mcp_adapter.MCPToolProvider") as MockProvider,
     ):
         MockProvider.return_value.discover.return_value = []
         MockClient.return_value.initialize.return_value = None
@@ -40,7 +40,7 @@ def _mock_mcp_stack():
 
 
 def test_failed_initialize_closes_the_client(_mock_mcp_stack, caplog):
-    builder = SystemBuilder(config=PhiConfig())
+    builder = SystemBuilder(config=PhibeConfig())
 
     bad_client = MagicMock()
     bad_client.initialize.side_effect = RuntimeError("handshake failed")

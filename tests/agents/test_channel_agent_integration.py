@@ -19,14 +19,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
-from phi.agents.channel_agent import ChannelAgent
-from phi.agents.deep_research import DeepResearchAgent
-from phi.channels._stubs import BaseChannel, ChannelMessage, ChannelStatus
-from phi.connectors._stubs import Document
-from phi.connectors.pipeline import IngestionPipeline
-from phi.connectors.retriever import TwoStageRetriever
-from phi.connectors.store import KnowledgeStore
-from phi.tools.knowledge_search import KnowledgeSearchTool
+from phibe.agents.channel_agent import ChannelAgent
+from phibe.agents.deep_research import DeepResearchAgent
+from phibe.channels._stubs import BaseChannel, ChannelMessage, ChannelStatus
+from phibe.connectors._stubs import Document
+from phibe.connectors.pipeline import IngestionPipeline
+from phibe.connectors.retriever import TwoStageRetriever
+from phibe.connectors.store import KnowledgeStore
+from phibe.tools.knowledge_search import KnowledgeSearchTool
 
 # ---------------------------------------------------------------------------
 # FakeChannel helper
@@ -160,7 +160,7 @@ def _build_store_and_tool(
 
 def test_quick_query_inline_response(tmp_path: Path) -> None:
     """Quick query 'When is my next meeting?' receives an inline response
-    containing calendar info and NO phi:// link.
+    containing calendar info and NO phibe:// link.
     """
     # 1. Build populated store and search tool
     _store, ks_tool = _build_store_and_tool(tmp_path)
@@ -194,7 +194,7 @@ def test_quick_query_inline_response(tmp_path: Path) -> None:
     sent_content: str = channel._sent[0]["content"]
 
     # Response sent inline (no escalation link)
-    assert "phi://" not in sent_content, (
+    assert "phibe://" not in sent_content, (
         f"Quick query must NOT produce an escalation link, but got:\n{sent_content}"
     )
 
@@ -279,6 +279,6 @@ def test_deep_query_escalation_link(tmp_path: Path) -> None:
     sent_content: str = channel._sent[0]["content"]
 
     # Response contains the escalation link
-    assert "phi://" in sent_content, (
+    assert "phibe://" in sent_content, (
         f"Deep query must produce an escalation link, but got:\n{sent_content}"
     )

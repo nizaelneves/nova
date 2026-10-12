@@ -6,11 +6,11 @@ import threading
 import time
 from unittest.mock import MagicMock
 
-from phi.agents._stubs import AgentContext
-from phi.agents.orchestrator import OrchestratorAgent
-from phi.core.events import EventBus, EventType
-from phi.core.types import Conversation, Message, Role, ToolResult
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents._stubs import AgentContext
+from phibe.agents.orchestrator import OrchestratorAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.types import Conversation, Message, Role, ToolResult
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers

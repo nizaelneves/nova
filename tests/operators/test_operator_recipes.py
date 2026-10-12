@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from phi.operators.loader import load_operator
+from phibe.operators.loader import load_operator
 
 _OPERATORS_DIR = (
     Path(__file__).parent.parent.parent
     / "src"
-    / "phi"
+    / "phibe"
     / "recipes"
     / "data"
     / "operators"

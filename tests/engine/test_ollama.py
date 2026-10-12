@@ -15,10 +15,10 @@ except ImportError:  # respx is an optional test-only dep; the async MockTranspo
     respx = None  # type: ignore[assignment]  # pins below run without it.
     _HAS_RESPX = False
 
-from phi.core.registry import EngineRegistry
-from phi.core.types import Message, Role
-from phi.engine._base import EngineConnectionError
-from phi.engine.ollama import OllamaEngine, _is_control_token_only_args
+from phibe.core.registry import EngineRegistry
+from phibe.core.types import Message, Role
+from phibe.engine._base import EngineConnectionError
+from phibe.engine.ollama import OllamaEngine, _is_control_token_only_args
 
 # respx-backed tests exercise the SYNC client paths (generate/list_models/health)
 # and the respx-driven stream tests; they skip cleanly when respx is absent. The

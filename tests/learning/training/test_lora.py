@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.learning.training.lora import HAS_TORCH, LoRATrainer, LoRATrainingConfig
+from phibe.learning.training.lora import HAS_TORCH, LoRATrainer, LoRATrainingConfig
 
 # ---------------------------------------------------------------------------
 # Config tests (no torch required)

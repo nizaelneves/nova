@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.tools.llm_tool import LLMTool
+from phibe.tools.llm_tool import LLMTool
 
 
 def _make_mock_engine(content: str = "response") -> MagicMock:

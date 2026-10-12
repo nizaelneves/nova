@@ -4,24 +4,24 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from phi.cli._model_switch import (
+from phibe.cli._model_switch import (
     interactive_pick_model,
     resolve_chat_cli_model,
     tty_wants_model_picker,
     variant_preset_model,
 )
-from phi.core.config import PhiConfig
+from phibe.core.config import PhibeConfig
 
 
 def test_variant_preset_long() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.model_long = "devstral:q4"
     assert variant_preset_model(cfg, "long") == "devstral:q4"
     assert variant_preset_model(cfg, "chat") == ""
 
 
 def test_resolve_explicit_model() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.default_model = "fallback"
     cfg.intelligence.model_long = "preset-long"
     eng = MagicMock()
@@ -38,7 +38,7 @@ def test_resolve_explicit_model() -> None:
 
 
 def test_resolve_smart_uses_preset() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.default_model = "fallback"
     cfg.intelligence.model_code = "coder-model"
     eng = MagicMock()
@@ -66,18 +66,18 @@ def test_invalid_index_returns_none() -> None:
 
 
 def test_preset_chat_variant() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.model_chat = "chat-preset"
     assert variant_preset_model(cfg, "chat") == "chat-preset"
 
 
 def test_resolve_returns_empty_when_nothing_found() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.default_model = ""
     eng = MagicMock()
     with (
-        patch("phi.engine.discover_engines", return_value=[]),
-        patch("phi.engine.discover_models", return_value={}),
+        patch("phibe.engine.discover_engines", return_value=[]),
+        patch("phibe.engine.discover_models", return_value={}),
     ):
         m = resolve_chat_cli_model(
             console=MagicMock(),
@@ -91,7 +91,7 @@ def test_resolve_returns_empty_when_nothing_found() -> None:
 
 
 def test_resolve_omitted_uses_default() -> None:
-    cfg = PhiConfig()
+    cfg = PhibeConfig()
     cfg.intelligence.default_model = "defm"
     eng = MagicMock()
     eng.list_models.return_value = ["x"]

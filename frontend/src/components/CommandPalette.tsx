@@ -446,12 +446,6 @@ export function CommandPalette() {
           ) : (
             /* ── Cloud Models tab ── */
             <div className="px-4 py-2">
-              {desktopKeyStorage && (
-                <div className="text-[11px] mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-                  Add your API keys to use cloud models. Keys are stored in secure desktop storage.
-                </div>
-              )}
-
               {CLOUD_PROVIDERS.map((provider) => {
                 const key = apiKeys[provider.envKey] || '';
                 const hasSavedKey = !!cloudKeyStatus[provider.envKey];

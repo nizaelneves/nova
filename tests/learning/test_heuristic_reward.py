@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from phi.learning._stubs import RoutingContext
-from phi.learning.routing.heuristic_reward import HeuristicRewardFunction
+from phibe.learning._stubs import RoutingContext
+from phibe.learning.routing.heuristic_reward import HeuristicRewardFunction
 
 
 class TestHeuristicRewardFunction:

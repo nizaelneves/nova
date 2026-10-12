@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.agents._stubs import AgentContext
-from phi.agents.native_openhands import NativeOpenHandsAgent
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry
-from phi.core.types import Conversation, Message, Role, ToolCall, ToolResult
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents._stubs import AgentContext
+from phibe.agents.native_openhands import NativeOpenHandsAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry
+from phibe.core.types import Conversation, Message, Role, ToolCall, ToolResult
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -579,8 +579,8 @@ class TestUrlExpansion:
     ):
         import httpx
 
-        from phi.core.events import EventBus, EventType
-        from phi.security.capabilities import CapabilityPolicy
+        from phibe.core.events import EventBus, EventType
+        from phibe.security.capabilities import CapabilityPolicy
 
         class _RecordingLimiter:
             def __init__(self):

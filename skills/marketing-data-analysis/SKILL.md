@@ -3,7 +3,7 @@ name: marketing-data-analysis
 description: Analyze marketing data from CSV or XLSX files or pasted tables (campaigns, funnels, traffic, conversions, spend, ROI). Use when the user asks to understand a spreadsheet, find what is working or not, compare periods or channels, or prepare numbers for a report.
 version: 0.1.0
 metadata:
-  phi:
+  phibe:
     tools: none
     tools_allowed_when:
       - '\.(csv|xlsx|xls)\b'

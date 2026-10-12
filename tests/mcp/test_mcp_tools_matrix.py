@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from phi.mcp.client import MCPClient
-from phi.mcp.server import MCPServer
-from phi.mcp.transport import InProcessTransport
-from phi.tools.calculator import CalculatorTool
-from phi.tools.think import ThinkTool
+from phibe.mcp.client import MCPClient
+from phibe.mcp.server import MCPServer
+from phibe.mcp.transport import InProcessTransport
+from phibe.tools.calculator import CalculatorTool
+from phibe.tools.think import ThinkTool
 
 # Tool configs: (tool_class, call_arguments, expected_substring)
 _TOOL_CONFIGS = {

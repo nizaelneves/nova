@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from phi.sandbox.wasm_runner import WasmResult, WasmRunner, create_sandbox_runner
+from phibe.sandbox.wasm_runner import WasmResult, WasmRunner, create_sandbox_runner
 
 
 class TestWasmRunner:

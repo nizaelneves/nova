@@ -1,4 +1,4 @@
-"""Tests for the phi _bootstrap hidden CLI command."""
+"""Tests for the phibe _bootstrap hidden CLI command."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ else:
 
 from click.testing import CliRunner
 
-from phi.cli import cli
+from phibe.cli import cli
 
 
-def test_bootstrap_command_writes_config(tmp_phi_home: Path, monkeypatch) -> None:
+def test_bootstrap_command_writes_config(tmp_phibe_home: Path, monkeypatch) -> None:
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -35,7 +35,7 @@ def test_bootstrap_command_writes_config(tmp_phi_home: Path, monkeypatch) -> Non
         ],
     )
     assert result.exit_code == 0, result.output
-    cfg = tmp_phi_home / "config.toml"
+    cfg = tmp_phibe_home / "config.toml"
     assert cfg.exists()
     data = tomllib.loads(cfg.read_text())
     assert data["engine"]["default"] == "ollama"
@@ -43,7 +43,7 @@ def test_bootstrap_command_writes_config(tmp_phi_home: Path, monkeypatch) -> Non
 
 
 def test_bootstrap_command_uses_cloud_key_when_present(
-    tmp_phi_home: Path, monkeypatch
+    tmp_phibe_home: Path, monkeypatch
 ) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
@@ -65,7 +65,7 @@ def test_bootstrap_command_uses_cloud_key_when_present(
         ],
     )
     assert result.exit_code == 0, result.output
-    data = tomllib.loads((tmp_phi_home / "config.toml").read_text())
+    data = tomllib.loads((tmp_phibe_home / "config.toml").read_text())
     # When --prefer-cloud-when-available is set and a key was found,
     # we override engine to cloud.
     assert data["engine"]["default"] == "cloud"
@@ -73,7 +73,7 @@ def test_bootstrap_command_uses_cloud_key_when_present(
 
 
 def test_bootstrap_command_is_hidden_from_help(
-    tmp_phi_home: Path,
+    tmp_phibe_home: Path,
 ) -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])

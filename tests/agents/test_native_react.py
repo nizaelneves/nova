@@ -7,12 +7,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from phi.agents._stubs import AgentContext
-from phi.agents.native_react import NativeReActAgent
-from phi.core.events import EventBus, EventType
-from phi.core.registry import AgentRegistry
-from phi.core.types import Conversation, Message, Role, ToolResult
-from phi.tools._stubs import BaseTool, ToolSpec
+from phibe.agents._stubs import AgentContext
+from phibe.agents.native_react import NativeReActAgent
+from phibe.core.events import EventBus, EventType
+from phibe.core.registry import AgentRegistry
+from phibe.core.types import Conversation, Message, Role, ToolResult
+from phibe.tools._stubs import BaseTool, ToolSpec
 
 # ---------------------------------------------------------------------------
 # Helpers

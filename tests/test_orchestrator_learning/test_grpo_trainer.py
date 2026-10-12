@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from phi.learning.intelligence.orchestrator.grpo_trainer import (
+from phibe.learning.intelligence.orchestrator.grpo_trainer import (
     OrchestratorGRPOConfig,
 )
-from phi.learning.intelligence.orchestrator.types import Episode
+from phibe.learning.intelligence.orchestrator.types import Episode
 
 
 class TestOrchestratorGRPOConfig:
@@ -74,7 +74,7 @@ class TestGroupAdvantageNormalization:
 
 class TestRewardIntegration:
     def test_episode_reward(self):
-        from phi.learning.intelligence.orchestrator.reward import (
+        from phibe.learning.intelligence.orchestrator.reward import (
             MultiObjectiveReward,
             Normalizers,
             RewardWeights,
@@ -97,7 +97,7 @@ class TestRewardIntegration:
 
 class TestGRPORegistration:
     def test_registered_in_learning_registry(self):
-        import phi.learning.intelligence.orchestrator.grpo_trainer  # noqa: F401
-        from phi.core.registry import LearningRegistry
+        import phibe.learning.intelligence.orchestrator.grpo_trainer  # noqa: F401
+        from phibe.core.registry import LearningRegistry
 
         assert LearningRegistry.contains("orchestrator_grpo")

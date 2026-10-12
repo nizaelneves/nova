@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from phi.channels._stubs import ChannelStatus
-from phi.core.registry import ChannelRegistry
+from phibe.channels._stubs import ChannelStatus
+from phibe.core.registry import ChannelRegistry
 
 
 def make_common_channel_tests(

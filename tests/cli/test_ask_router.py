@@ -1,4 +1,4 @@
-"""Tests for model resolution fallback chain in phi ask."""
+"""Tests for model resolution fallback chain in phibe ask."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from phi.cli import cli
-from phi.core.config import PhiConfig
+from phibe.cli import cli
+from phibe.core.config import PhibeConfig
 
-_ask_mod = importlib.import_module("phi.cli.ask")
+_ask_mod = importlib.import_module("phibe.cli.ask")
 
 
 def _mock_engine():
@@ -31,12 +31,12 @@ def _mock_engine():
 def _register_agents():
     """Re-register agents after the conftest registry clear.
 
-    The default ``PhiConfig().agent.default_agent`` is ``"simple"``,
-    so ``phi ask "..."`` (without ``--agent``) routes through SimpleAgent.
+    The default ``PhibeConfig().agent.default_agent`` is ``"simple"``,
+    so ``phibe ask "..."`` (without ``--agent``) routes through SimpleAgent.
     Without this re-registration, that path raises ``Unknown agent: simple``.
     """
-    from phi.agents.simple import SimpleAgent
-    from phi.core.registry import AgentRegistry
+    from phibe.agents.simple import SimpleAgent
+    from phibe.core.registry import AgentRegistry
 
     if not AgentRegistry.contains("simple"):
         AgentRegistry.register_value("simple", SimpleAgent)
@@ -103,7 +103,7 @@ class TestAskModelResolution:
             mock.patch.object(
                 _ask_mod,
                 "load_config",
-                return_value=PhiConfig(),
+                return_value=PhibeConfig(),
             ) as mock_config,
         ):
             cfg = mock_config.return_value
@@ -137,7 +137,7 @@ class TestAskModelResolution:
             mock.patch.object(
                 _ask_mod,
                 "load_config",
-                return_value=PhiConfig(),
+                return_value=PhibeConfig(),
             ) as mock_config,
         ):
             cfg = mock_config.return_value
