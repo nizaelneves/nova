@@ -1,24 +1,16 @@
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { MessageBubble } from './MessageBubble';
-import { InputArea } from './InputArea';
 import { VoiceVisualizer } from '../VoiceVisualizer';
-import { StreamingDots } from './StreamingDots';
-import { useAppStore } from '../../lib/store';
+import { SyncButton } from '../SyncButton';
 import { Database, X } from 'lucide-react';
 import { listConnectors } from '../../lib/connectors-api';
 
+/**
+ * The home screen. Phibe's conversation lives in the island, so this screen only keeps the
+ * sky, the voice visualizer, the data-sources hint and the Sync button.
+ */
 export function ChatArea() {
-  const activeId = useAppStore((s) => s.activeId);
-  const messages = useAppStore((s) => s.messages);
-  const streamState = useAppStore((s) => s.streamState);
   const navigate = useNavigate();
-  const listRef = useRef<HTMLDivElement>(null);
-  const shouldAutoScroll = useRef(true);
-  const wasStreaming = useRef(false);
-  const lastScrollTop = useRef(0);
-  const isCurrentChatStreaming = streamState.isStreaming && streamState.conversationId === activeId;
-  const currentStreamContent = isCurrentChatStreaming ? streamState.content : '';
 
   // Check if any data sources are connected
   const [hasConnectedSources, setHasConnectedSources] = useState<boolean | null>(null);
@@ -29,39 +21,6 @@ export function ChatArea() {
       .then((list) => setHasConnectedSources(list.some((c) => c.connected)))
       .catch(() => setHasConnectedSources(null));
   }, []);
-
-  useEffect(() => {
-    // Sending a message always pins the view to the bottom, even if the
-    // user had scrolled up to read earlier messages.
-    if (isCurrentChatStreaming && !wasStreaming.current) {
-      shouldAutoScroll.current = true;
-    }
-    wasStreaming.current = isCurrentChatStreaming;
-    if (shouldAutoScroll.current && listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [messages, currentStreamContent, isCurrentChatStreaming]);
-
-  const handleScroll = () => {
-    if (!listRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    const distance = scrollHeight - scrollTop - clientHeight;
-    const scrolledUp = scrollTop < lastScrollTop.current;
-    lastScrollTop.current = scrollTop;
-    if (scrolledUp && distance >= 1) {
-      // Any upward scroll away from the bottom stops autoscroll immediately,
-      // so streaming content never fights the user (no jitter). Sub-1px
-      // upward movement (elastic bounce settling at the bottom) is ignored.
-      shouldAutoScroll.current = false;
-    } else if (!scrolledUp) {
-      // Re-engage when scrolled back to the bottom. < 2 rather than < 1:
-      // at fractional zoom levels the at-bottom residual can reach 1px,
-      // which would otherwise leave autoscroll permanently disengaged.
-      shouldAutoScroll.current = distance < 2;
-    }
-  };
-
-  const isEmpty = messages.length === 0 && !isCurrentChatStreaming;
 
   return (
     <div className="flex flex-col h-full">
@@ -94,48 +53,16 @@ export function ChatArea() {
           </button>
         </div>
       )}
-      <div
-        ref={listRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
-      >
-        {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full px-4">
-            <div className="relative">
-              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-4">
-                <VoiceVisualizer />
-              </div>
-            </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <div className="relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-4">
+            <VoiceVisualizer />
           </div>
-        ) : (
-          <div className="max-w-[var(--chat-max-width)] mx-auto px-4 py-6">
-            {messages.map((msg, i) => {
-              const isLastAssistant =
-                i === messages.length - 1 && msg.role === 'assistant';
-              return (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  isLive={isLastAssistant && isCurrentChatStreaming}
-                />
-              );
-            })}
-            {(() => {
-              if (!isCurrentChatStreaming || streamState.content !== '') return null;
-              // For research messages the ResearchTimeline handles its own
-              // pre-content loading state — suppress the generic dots.
-              const last = messages[messages.length - 1];
-              if (last?.role === 'assistant' && last.isResearch) return null;
-              return (
-                <div className="flex justify-start mb-4">
-                  <StreamingDots phase={streamState.phase} />
-                </div>
-              );
-            })()}
-          </div>
-        )}
+        </div>
       </div>
-      <InputArea />
+      <div className="px-4 pb-4 pt-3">
+        <SyncButton />
+      </div>
     </div>
   );
 }

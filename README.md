@@ -15,7 +15,7 @@ uv run phibe chat                # chat from the terminal
 ```
 
 Phibe talks to a local [Ollama](https://ollama.com) by default. Pull a model first, for
-example `ollama pull qwen3.5:2b`.
+example `ollama pull qwen3.5:4b`.
 
 ## Frontend
 

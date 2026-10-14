@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAppStore } from '../../lib/store';
+import { disintegrate } from '../../lib/disintegrate';
 
 interface Props {
   searchQuery: string;
@@ -84,7 +85,7 @@ export function ConversationList({ searchQuery }: Props) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                deleteConversation(conv.id);
+                void disintegrate(e.currentTarget.closest('.group'), '#ff6b6b').then(() => deleteConversation(conv.id));
               }}
               disabled={isStreaming}
               className="p-1.5 mr-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"

@@ -8,16 +8,20 @@ interface Module {
   path: string;
   icon: IconName;
   label: string;
+  /** Shown in the menu but not open yet. */
+  soon?: boolean;
 }
 
 /** The main menu, in this order. Names are always English. */
 const MODULES: Module[] = [
   { path: '/', icon: 'chat-round-dots', label: 'Chat' },
-  { path: '/desk', icon: 'desk', label: 'Your Desk' },
-  { path: '/seeds', icon: 'sunflower', label: 'Seeds' },
+  { path: '/workspaces', icon: 'widget-2', label: 'Workspaces' },
+  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
+  { path: '/pings', icon: 'bell', label: 'Pings' },
+  { path: '/meeting-notes', icon: 'transcript', label: 'Meeting Notes' },
+  { path: '/seeds', icon: 'north-star', label: 'Seeds' },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
-  { path: '/tutor', icon: 'graduation-cap', label: 'Tutor Mod' },
-  { path: '/approvals', icon: 'shield-check', label: 'Approvals' },
+  { path: '/tutor', icon: 'graduation-cap', label: 'Tutor Mod', soon: true },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
 
@@ -35,16 +39,18 @@ function RailItem({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={module.soon ? undefined : onClick}
       data-active={active}
       aria-label={module.label}
       aria-current={active ? 'page' : undefined}
-      className={`rail-item cursor-pointer ${expanded ? 'w-full px-3' : 'w-11 justify-center'}`}
+      aria-disabled={module.soon || undefined}
+      className={`rail-item ${module.soon ? 'cursor-default' : 'cursor-pointer'} ${expanded ? 'w-full px-3' : 'w-11 justify-center'}`}
+      style={module.soon ? { opacity: 0.4 } : undefined}
     >
       <Icon name={module.icon} size={22} className="rail-icon shrink-0" />
-      {expanded && <span className="text-sm font-normal truncate">{module.label}</span>}
+      {expanded && <span className="text-sm font-normal truncate">{module.label}{module.soon && <em className="rail-soon">Coming Soon</em>}</span>}
       {/* Names appear as a tip only while the menu is collapsed to icons. */}
-      {!expanded && <span className="rail-tip">{module.label}</span>}
+      {!expanded && <span className="rail-tip">{module.soon ? `${module.label} · Coming Soon` : module.label}</span>}
     </button>
   );
 }
@@ -55,16 +61,6 @@ export function Sidebar() {
 
   const expanded = useAppStore((s) => s.sidebarOpen);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
-  const createConversation = useAppStore((s) => s.createConversation);
-  const selectedModel = useAppStore((s) => s.selectedModel);
-  const messages = useAppStore((s) => s.messages);
-
-  const handleNewChat = () => {
-    // Don't create a new chat if the current one is empty
-    if (messages.length > 0) createConversation(selectedModel);
-    navigate('/');
-  };
-
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
@@ -100,17 +96,6 @@ export function Sidebar() {
             <Icon name="sidebar-minimalistic" size={20} className="rail-icon" />
             {!expanded && <span className="rail-tip">Expand menu</span>}
           </button>
-          {expanded && (
-            <button
-              type="button"
-              onClick={handleNewChat}
-              className="rail-item px-3 gap-2 cursor-pointer text-sm"
-              aria-label="New chat"
-            >
-              <Icon name="add-circle" size={20} className="rail-icon" />
-              <span className="font-normal">New chat</span>
-            </button>
-          )}
         </div>
 
         <nav ref={navRef} className={`relative flex flex-col gap-2 [@media(max-height:720px)]:gap-1 ${expanded ? '' : 'mt-14 [@media(max-height:720px)]:mt-8 items-center'}`}>

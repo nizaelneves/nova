@@ -48,7 +48,7 @@ import {
 } from '../lib/api';
 import { toast } from 'sonner';
 import { CLI_ENGINES_ENABLED } from '../lib/features';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
 import {
   MEMORIZE_CATEGORIES,
   addItem,
@@ -224,15 +224,10 @@ function CloudProviderStatus({ label, keyName, toolName }: { label: string; keyN
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-xl p-5"
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-    >
-      <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--color-text)' }}>
-        {title}
-      </h3>
+    <section className="set-section fin-card">
+      <h3>{title}</h3>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -255,13 +250,9 @@ function Switch({ on, onClick, label }: { on: boolean; onClick: () => void; labe
       role="switch"
       aria-checked={on}
       aria-label={label}
-      className="relative w-11 h-6 rounded-full transition-colors cursor-pointer"
-      style={{ background: on ? 'var(--color-accent)' : 'var(--color-bg-tertiary)' }}
+      className="set-switch"
     >
-      <span
-        className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform bg-white"
-        style={{ transform: on ? 'translateX(20px)' : 'translateX(0)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
-      />
+      <span />
     </button>
   );
 }
@@ -548,28 +539,26 @@ function AppearanceSection({
 
 function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
-      <div>
-        {label && <div className="text-sm" style={{ color: 'var(--color-text)' }}>{label}</div>}
-        {description && (
-          <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>{description}</div>
-        )}
+    <div className="set-row">
+      <div className="set-row-text">
+        {label && <b>{label}</b>}
+        {description && <span>{description}</span>}
       </div>
-      <div>{children}</div>
+      <div className="set-row-control">{children}</div>
     </div>
   );
 }
 
 
 const SETTINGS_TABS = [
-  { id: 'general', label: 'General' },
-  { id: 'agents', label: 'Agents' },
-  { id: 'ai', label: 'API' },
-  { id: 'data-sources', label: 'Data Source' },
-  { id: 'integrations', label: 'Integrations' },
-  { id: 'memory', label: 'Memory' },
-  { id: 'about', label: 'About' },
-] as const;
+  { id: 'general', label: 'General', icon: 'settings' },
+  { id: 'agents', label: 'Agents', icon: 'bot' },
+  { id: 'ai', label: 'API', icon: 'key-minimalistic' },
+  { id: 'data-sources', label: 'Data Source', icon: 'database' },
+  { id: 'integrations', label: 'Integrations', icon: 'link-round' },
+  { id: 'memory', label: 'Memory', icon: 'stars' },
+  { id: 'about', label: 'About', icon: 'info-circle' },
+] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
@@ -1046,56 +1035,46 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex flex-col gap-4 px-6 pt-5 pb-4 shrink-0">
-      <div className="flex items-center justify-end min-h-[1.75rem]">
-        {saved && (
-          <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{
-            background: 'var(--color-accent-subtle)',
-            color: 'var(--color-success)',
-          }}>
-            <Check size={12} /> Saved
-          </span>
-        )}
-      </div>
-
-      <div className="flex justify-center">
-        <div className="pings-tab-pill" role="tablist">
-          {SETTINGS_TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className="pings-tab-pill-item"
-              data-active={tab === t.id}
-            >
-              {t.label}
-            </button>
-          ))}
+    <div className="fin-root set-root flex flex-col h-full overflow-hidden">
+      <div className="fin-wrap set-head shrink-0">
+        <header className="fin-header">
+          <div className="fin-hello">
+            <span className="module-mark"><Icon name="settings" size={26} /></span>
+            <h2>Settings</h2>
+          </div>
+          <div className="fin-controls">
+            <div className="fin-actions" role="tablist" aria-label="Settings sections">
+              {SETTINGS_TABS.map((t) => (
+                <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} data-active={tab === t.id}
+                  className="fin-act" aria-label={t.label} onClick={() => setTab(t.id)}>
+                  <Icon name={t.icon} size={16} />
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </header>
+        <div className="set-saved" aria-live="polite">
+          {saved && <span><Check size={12} /> Saved</span>}
         </div>
-      </div>
       </div>
 
       {tab === 'agents' && <AgentsPage />}
       {tab === 'data-sources' && (
         <>
-          <div className="flex justify-center pb-2 shrink-0">
-            <div className="pings-tab-pill" role="tablist">
-              {(['Sources', 'Your Data'] as const).map((label) => (
-                <button key={label} type="button" role="tab" aria-selected={dataView === label} data-active={dataView === label} onClick={() => setDataView(label)} className="pings-tab-pill-item">
-                  {label}
-                </button>
-              ))}
-            </div>
+          <div className="set-sub shrink-0" role="tablist">
+            {(['Sources', 'Your Data'] as const).map((label) => (
+              <button key={label} type="button" role="tab" aria-selected={dataView === label} data-active={dataView === label} onClick={() => setDataView(label)}>
+                {label}
+              </button>
+            ))}
           </div>
           {dataView === 'Sources' ? <DataSourcesPage /> : <YourData />}
         </>
       )}
       {tab !== 'agents' && tab !== 'data-sources' && (
       <div className="flex-1 min-h-0 overflow-y-auto px-6">
-      <div className="w-full max-w-2xl mx-auto pb-6">
+      <div className="w-full max-w-3xl mx-auto pb-6">
         <div className="flex flex-col gap-4">
           {tab === 'general' && (
             <>

@@ -317,7 +317,7 @@ export function PhibeBubble() {
               Open chat
             </button>
             {approvals.length > 0 && (
-              <button type="button" className="phibe-pop-btn" onClick={() => { setOpen(false); navigate('/approvals'); }}>
+              <button type="button" className="phibe-pop-btn" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent('phibe:island', { detail: 'approvals' })); }}>
                 Approvals
               </button>
             )}

@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router';
+import { fetchPendingApprovals } from '../lib/api';
+import type { PendingApproval } from '../lib/api';
+import { IslandPanel, type IslandLevel, type IslandSection } from './IslandPanel';
 import { useAppStore } from '../lib/store';
 import { getVoiceLevel } from '../lib/voiceReply';
 import { gazeToward } from '../lib/avatar/gaze';
 import { useVoiceEvents } from '../voice/VoiceCard';
 
-type IslandState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'done';
+type IslandState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'done' | 'waiting';
 
-const LABEL: Record<IslandState, string> = { idle: '', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', done: '' };
+const LABEL: Record<IslandState, string> = { idle: '', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', done: '', waiting: '' };
+// Seeds that circle the face while Phibe thinks: the sunflower pattern, on the golden angle.
+const SEEDS = Array.from({ length: 8 }, (_, i) => {
+  const a = (i + 1) * Math.PI * (3 - Math.sqrt(5));
+  const r = 15.5 + i * 0.55;
+  return { x: Math.cos(a) * r, y: Math.sin(a) * r, r: 0.7 + i * 0.1 };
+});
 // How far the eyes (and, a little, the face) travel at full turn, in drawing units.
 const TRAVEL = { eyeX: 5.2, eyeY: 3.8, faceX: 2.2, faceY: 1.7 };
 // Mist pace and strength by state.
@@ -16,6 +26,7 @@ const MIST: Record<IslandState, { speed: number; op: number }> = {
   thinking: { speed: 2.6, op: 0.95 },
   speaking: { speed: 1.4, op: 1 },
   done: { speed: 1.2, op: 1 },
+  waiting: { speed: 1.2, op: 1 },
 };
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
@@ -33,6 +44,15 @@ export function Island() {
   const [blink, setBlink] = useState(false);
   const [happy, setHappy] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [pulse, setPulse] = useState(false);
+  const [pending, setPending] = useState<PendingApproval[]>([]);
+  const [open, setOpen] = useState(false); // the panel with the sections
+  const [section, setSection] = useState<IslandSection>('chats');
+  const [hover, setHover] = useState(false);
+  const [extra, setExtra] = useState(0); // height added while the message box grows
+  const waiting = pending.length;
+  const level: IslandLevel = open ? 'panel' : hover && waiting > 0 ? 'card' : 'pill';
+  const { pathname } = useLocation();
 
   const faceRef = useRef<SVGSVGElement>(null);
   const eyesRef = useRef<SVGGElement>(null);
@@ -43,7 +63,7 @@ export function Island() {
   const lastMove = useRef(0);
 
   const listening = voice.phase === 'listening' || voice.phase === 'countdown';
-  const state: IslandState = happy ? 'done' : listening ? 'listening' : speaking ? 'speaking' : thinking ? 'thinking' : 'idle';
+  const state: IslandState = happy ? 'done' : listening ? 'listening' : speaking ? 'speaking' : thinking ? 'thinking' : waiting > 0 ? 'waiting' : 'idle';
 
   // Draw the current gaze straight into the DOM: no React render per mouse move.
   const draw = () => {
@@ -96,6 +116,45 @@ export function Island() {
       raf.current = 0;
     };
   }, [effects]);
+
+  // A small pulse whenever you move to another screen.
+  useEffect(() => {
+    setPulse(true);
+    const t = window.setTimeout(() => setPulse(false), 377);
+    return () => window.clearTimeout(t);
+  }, [pathname]);
+
+  // Approvals waiting for you: checked now and then, only while the window is visible.
+  useEffect(() => {
+    const check = () => {
+      if (!document.hidden) fetchPendingApprovals().then(setPending).catch(() => setPending([]));
+    };
+    check();
+    const id = window.setInterval(check, 15000);
+    return () => window.clearInterval(id);
+  }, [pathname]);
+
+  // Ctrl+W (Cmd+W on Mac) opens and closes the panel; Escape closes it. Browsers keep Ctrl+W for
+  // closing the tab, so in the browser this only works inside the desktop app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        setOpen((v) => !v);
+      } else if (e.key === 'Escape' && !document.querySelector('[role="dialog"]')) setOpen(false); // a pop-up takes the Escape first
+    };
+    // Other parts of the app can open the panel on a section (the floating button does, for approvals).
+    const onOpen = (e: Event) => {
+      setSection((e as CustomEvent<IslandSection>).detail ?? 'chats');
+      setOpen(true);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('phibe:island', onOpen);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('phibe:island', onOpen);
+    };
+  }, []);
 
   // The mist stops when the window is hidden or not focused.
   useEffect(() => {
@@ -153,19 +212,22 @@ export function Island() {
       </g>
     );
 
-  const wide = LABEL[state] !== '';
+  const text = state === 'waiting' ? `${waiting} to approve` : LABEL[state];
+  const wide = text !== '';
   const mist = MIST[state];
   const still = effects === 'off' || hidden;
   return (
     <div
       className={`phibe-island${still ? ' is-still' : ''}`}
-      style={{ width: wide ? 330 : 240, ['--mist-speed' as string]: mist.speed, ['--mist-op' as string]: mist.op }}
-      onClick={() => {
-        setHappy(true);
-        window.setTimeout(() => setHappy(false), 1400);
-      }}
+      data-pulse={pulse}
+      data-state={state}
+      data-level={level}
+      style={{ ['--isl-extra' as string]: `${extra}px`, width: level === 'panel' ? 'min(580px, calc(100vw - 32px))' : level === 'card' ? 'min(440px, calc(100vw - 32px))' : wide ? 330 : 240, ['--mist-speed' as string]: mist.speed, ['--mist-op' as string]: mist.op }}
+      onClick={() => setOpen((v) => !v)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       role="img"
-      aria-label={wide ? `Phibe: ${LABEL[state]}` : 'Phibe'}
+      aria-label={wide ? `Phibe: ${text}` : 'Phibe'}
     >
       <div className="phibe-island-inner">
         <div className="phibe-island-facebox">
@@ -211,6 +273,9 @@ export function Island() {
                 <feGaussianBlur stdDeviation="1.8" />
               </filter>
             </defs>
+            <g className="isl-seeds" data-on={state === 'thinking'}>
+              {SEEDS.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#20e7aa" />)}
+            </g>
             <circle r="13" fill="url(#isl-core)" />
             <circle r="13" fill="none" stroke="#20e7aa" strokeOpacity=".5" strokeWidth="1.1" />
             <g ref={eyesRef}>
@@ -224,9 +289,11 @@ export function Island() {
           </svg>
         </div>
         <span className="phibe-island-label" aria-hidden="true" style={{ opacity: wide ? 1 : 0, width: wide ? 'auto' : 0 }}>
-          {LABEL[state]}
+          {text}
         </span>
       </div>
+      <IslandPanel onExtra={setExtra} level={level} section={section} onSection={setSection} pending={pending} onClose={() => setOpen(false)}
+        onDecided={() => { setHappy(true); window.setTimeout(() => setHappy(false), 1400); fetchPendingApprovals().then(setPending).catch(() => setPending([])); }} />
     </div>
   );
 }

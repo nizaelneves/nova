@@ -11,8 +11,8 @@ class TestRecommendModelTiers:
     def test_8gb_ram_picks_qwen35_2b(self) -> None:
         hw = HardwareInfo(platform="linux", ram_gb=8.0, gpu=None)
         result = recommend_model(hw, "llamacpp")
-        # available = (8 - 4) * 0.8 = 3.2 GB → ≤8 tier → qwen3.5:2b
-        assert result == "qwen3.5:2b"
+        # available = (8 - 4) * 0.8 = 3.2 GB → ≤16 tier (4B is the floor) → qwen3.5:4b
+        assert result == "qwen3.5:4b"
 
     def test_16gb_ram_picks_qwen35_4b(self) -> None:
         hw = HardwareInfo(platform="linux", ram_gb=16.0, gpu=None)
@@ -53,8 +53,8 @@ class TestRecommendModelGpu:
             gpu=GpuInfo(vendor="nvidia", name="RTX 3070", vram_gb=8.0, count=1),
         )
         result = recommend_model(hw, "ollama")
-        # available = 8 * 0.9 = 7.2 GB → ≤8 tier → qwen3.5:2b
-        assert result == "qwen3.5:2b"
+        # available = 8 * 0.9 = 7.2 GB → ≤16 tier (4B is the floor) → qwen3.5:4b
+        assert result == "qwen3.5:4b"
 
     def test_4gb_gpu_picks_qwen35_2b(self) -> None:
         hw = HardwareInfo(
@@ -63,8 +63,8 @@ class TestRecommendModelGpu:
             gpu=GpuInfo(vendor="nvidia", name="GTX 1650", vram_gb=4.0, count=1),
         )
         result = recommend_model(hw, "ollama")
-        # available = 4 * 0.9 = 3.6 GB → ≤8 tier → qwen3.5:2b
-        assert result == "qwen3.5:2b"
+        # available = 4 * 0.9 = 3.6 GB → ≤16 tier (4B is the floor) → qwen3.5:4b
+        assert result == "qwen3.5:4b"
 
     def test_multi_gpu_picks_qwen35_27b(self) -> None:
         hw = HardwareInfo(
@@ -111,8 +111,8 @@ class TestRecommendModelEdgeCases:
     def test_6gb_ram_picks_qwen35_2b(self) -> None:
         hw = HardwareInfo(platform="linux", ram_gb=6.0, gpu=None)
         result = recommend_model(hw, "llamacpp")
-        # available = (6 - 4) * 0.8 = 1.6 GB → ≤8 tier → qwen3.5:2b
-        assert result == "qwen3.5:2b"
+        # available = (6 - 4) * 0.8 = 1.6 GB → ≤16 tier (4B is the floor) → qwen3.5:4b
+        assert result == "qwen3.5:4b"
 
     def test_very_low_ram_returns_empty(self) -> None:
         hw = HardwareInfo(platform="linux", ram_gb=4.0, gpu=None)
@@ -131,8 +131,8 @@ class TestRecommendModelMlx:
             gpu=GpuInfo(vendor="apple", name="Apple M1", vram_gb=8.0, count=1),
         )
         result = recommend_model(hw, "mlx")
-        # available = 8 * 0.9 = 7.2 GB → ≤8 tier → qwen3.5:2b
-        assert result == "qwen3.5:2b"
+        # available = 8 * 0.9 = 7.2 GB → ≤16 tier (4B is the floor) → qwen3.5:4b
+        assert result == "qwen3.5:4b"
 
     def test_apple_silicon_16gb_mlx(self) -> None:
         hw = HardwareInfo(

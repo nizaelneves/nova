@@ -984,6 +984,10 @@ export const snoozePing = (id: string, minutes?: number): Promise<Ping> =>
 export const deletePing = (id: string): Promise<void> =>
   syncJson(`/v1/pings/${id}`, { method: 'DELETE' });
 
+/** Claude Code sign-in: Phibe only reads the state and opens the official CLI so the user signs in with Anthropic. */
+export const fetchClaudeCliStatus = (): Promise<{ installed: boolean; signed_in: boolean }> => syncJson('/v1/cli/claude/status');
+export const startClaudeCliLogin = (): Promise<{ opened: boolean }> => syncJson('/v1/cli/claude/login', { method: 'POST' });
+
 export const fetchPingsSettings = (): Promise<PingsSettings> => syncJson('/v1/pings/settings');
 
 export const savePingsSettings = (changes: Partial<PingsSettings>): Promise<PingsSettings> =>

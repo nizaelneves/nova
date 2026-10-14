@@ -290,8 +290,9 @@ def _available_memory_gb(hw: HardwareInfo) -> float:
 # Walked in order — first tier where available_gb <= max_ram is chosen.
 # Uses Qwen3.5 MoE models — better quality per GB than dense models since
 # only a fraction of parameters are active per token.
+# 4B is the floor: it is Phibe's default model on every machine (slower on
+# small GPUs, where Ollama splits it between GPU and CPU).
 _MODEL_TIERS = [
-    (8, "qwen3.5:2b"),
     (16, "qwen3.5:4b"),
     (32, "qwen3.5:9b"),
     (64, "qwen3.5:27b"),

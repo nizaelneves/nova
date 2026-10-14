@@ -58,7 +58,7 @@ class TestNextStepsOllama:
 
     def test_next_steps_ollama_default_model(self) -> None:
         text = _next_steps_text("ollama")
-        assert "ollama pull qwen3.5:2b" in text
+        assert "ollama pull qwen3.5:4b" in text
 
 
 class TestNextStepsVllm:

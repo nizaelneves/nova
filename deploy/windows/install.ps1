@@ -372,16 +372,16 @@ if (-not $ollamaReady) {
 }
 
 # ---------------------------------------------------------------------------
-# 8. Pull a starter model (qwen3.5:2b - ~1.5 GB)
+# 8. Pull the default model (qwen3.5:4b - ~3.4 GB)
 # ---------------------------------------------------------------------------
 
 $modelPullOk = $false
 if ($ollamaReady) {
-    Write-Info "Pulling qwen3.5:2b (~1.5 GB) so 'phibe' works on first run..."
-    & $ollamaExe pull 'qwen3.5:2b'
+    Write-Info "Pulling qwen3.5:4b (~3.4 GB, from the Ollama registry) so 'phibe' works on first run..."
+    & $ollamaExe pull 'qwen3.5:4b'
     if ($LASTEXITCODE -eq 0) {
         $modelPullOk = $true
-        Write-Ok "Starter model ready"
+        Write-Ok "Default model ready"
     } else {
         Write-Warn2 "ollama pull failed; the bg-orchestrator will retry once Ollama is reachable."
     }
@@ -523,7 +523,7 @@ if ($pathNeedsRefresh) {
 
 if (-not $modelPullOk) {
     Write-Host ""
-    Write-Host "  NOTE: the qwen3.5:2b model didn't finish downloading." -ForegroundColor Yellow
+    Write-Host "  NOTE: the qwen3.5:4b model didn't finish downloading." -ForegroundColor Yellow
     Write-Host "        Chat will fail until the bg-orchestrator finishes the retry."
     Write-Host "        'phibe doctor' shows progress."
 }

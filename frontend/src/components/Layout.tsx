@@ -32,12 +32,14 @@ export function Layout() {
   }, []);
 
   const navigate = useNavigate();
-  const onHome = useLocation().pathname === '/';
+  const { pathname } = useLocation();
+  const onHome = pathname === '/';
+  const onSeeds = pathname.startsWith('/seeds');
   const hasMessages = useAppStore((s) => s.messages.length > 0);
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden relative" style={{ background: 'transparent' }}>
-      {onHome ? <Galaxy dim={hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
+      {onHome || onSeeds ? <Galaxy dim={onHome && hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
 
       {/* Health check banner */}
       {apiReachable === false && (
@@ -74,7 +76,9 @@ export function Layout() {
         )}
         <main className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden" style={{ background: 'transparent' }}>
           <div className="flex-1 flex flex-col min-w-0 min-h-0 relative z-[2]" style={{ paddingTop: 66 }}>
-            <Outlet />
+            <div key={pathname} className="route-enter flex-1 flex flex-col min-w-0 min-h-0">
+              <Outlet />
+            </div>
           </div>
           {/* The voice card sits in the middle of the content area, above the message box. */}
           <VoiceOverlay />

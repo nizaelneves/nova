@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /** A centered pop-up over the page. Click outside or press Escape to close. */
 export function Popup({
@@ -20,7 +21,7 @@ export function Popup({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(3, 3, 10, 0.72)', backdropFilter: 'blur(4px)' }}
@@ -47,5 +48,5 @@ export function Popup({
         {children}
       </div>
     </div>
-  );
+  , document.body);
 }

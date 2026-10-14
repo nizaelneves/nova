@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { apiFetch, getBase } from '../lib/api';
 import { ConversationList } from './Sidebar/ConversationList';
 import { Icon } from './Icon';
+import { SeedsLoader } from './SeedsLoader';
+import { disintegrate } from '../lib/disintegrate';
 
 interface VoiceEntry {
   id: string;
@@ -80,7 +82,7 @@ export function YourData() {
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-4">
-        <div className="rounded-xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <div className="set-section fin-card">
           <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Chats</h3>
           <p className="text-xs mt-1 mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
             Every conversation you had with Phibe. Open one to continue it, or delete it.
@@ -98,7 +100,7 @@ export function YourData() {
           </div>
         </div>
 
-        <div className="rounded-xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <div className="set-section fin-card">
           <div className="flex items-start justify-between gap-4 mb-1">
             <div>
               <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Voice history</h3>
@@ -118,7 +120,7 @@ export function YourData() {
           </div>
 
           {entries === null ? (
-            <div className="text-sm py-4" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
+            <SeedsLoader />
           ) : entries.length === 0 ? (
             <div className="text-sm py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here yet.</div>
           ) : (
@@ -136,7 +138,7 @@ export function YourData() {
                       <Icon name="play-circle" size={16} />
                     </button>
                   )}
-                  <button type="button" onClick={() => void remove(e.id)} aria-label="Delete entry" title="Delete" className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>
+                  <button type="button" onClick={(ev) => void disintegrate(ev.currentTarget.closest('li'), '#ff6b6b').then(() => remove(e.id))} aria-label="Delete entry" title="Delete" className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>
                     <Icon name="trash-bin-minimalistic" size={16} />
                   </button>
                 </li>

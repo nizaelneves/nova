@@ -13,20 +13,9 @@ import {
   saveCloudKey,
 } from '../lib/api';
 
-/** Popular models that users can download from the catalogue. */
+/** Models offered in the Download tab. The default, qwen3.5:4b, is installed with Phibe. */
 const CATALOGUE_MODELS = [
-  { id: 'qwen3.5:0.8b', size: '~1 GB', desc: 'Qwen 3.5 0.8B — fast, lightweight' },
-  { id: 'qwen3.5:2b', size: '~2.7 GB', desc: 'Qwen 3.5 2B' },
-  { id: 'qwen3.5:4b', size: '~3.4 GB', desc: 'Qwen 3.5 4B — recommended default' },
-  { id: 'qwen3.5:9b', size: '~6.6 GB', desc: 'Qwen 3.5 9B' },
-  { id: 'qwen3.5:27b', size: '~17 GB', desc: 'Qwen 3.5 27B' },
-  { id: 'qwen3.5:35b', size: '~24 GB', desc: 'Qwen 3.5 35B' },
-  { id: 'qwen3.5:122b', size: '~81 GB', desc: 'Qwen 3.5 122B — largest' },
-  { id: 'llama3.3:latest', size: '~4.9 GB', desc: 'Llama 3.3 8B' },
-  { id: 'mistral:latest', size: '~4.1 GB', desc: 'Mistral 7B' },
-  { id: 'gemma3:latest', size: '~3.3 GB', desc: 'Gemma 3 4B' },
-  { id: 'deepseek-r1:7b', size: '~4.7 GB', desc: 'DeepSeek R1 7B' },
-  { id: 'phi4:latest', size: '~9.1 GB', desc: 'Phi-4 14B' },
+  { id: 'qwen3.5:9b', desc: 'better answers, needs 16 GB of memory or more' },
 ];
 
 /** Cloud provider definitions */
@@ -403,7 +392,7 @@ export function CommandPalette() {
                     <Download size={16} style={{ color: 'var(--color-text-tertiary)' }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm truncate" style={{ color: 'var(--color-text)' }}>{model.id}</div>
-                      <div className="text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>{model.desc} &middot; {model.size}</div>
+                      <div className="text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>{model.desc}</div>
                     </div>
                     <button
                       onClick={() => handlePull(model.id)}

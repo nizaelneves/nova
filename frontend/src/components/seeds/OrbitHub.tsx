@@ -59,15 +59,13 @@ export function OrbitHub({ areas, onEnter }: { areas: SeedArea[]; onEnter: (area
       <div className="seeds-core">
         <span className="seeds-pulse" />
         <span className="seeds-pulse seeds-pulse-late" />
-        <span className="seeds-orb"><Icon name="sunflower" size={34} /></span>
+        <span className="seeds-orb">
+          <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+            <path className="seeds-orb-spiral" pathLength="1" d="M3 16.1A11.1 11.1 0 0 1 14.1 5A6.9 6.9 0 0 1 21 11.9A4.2 4.2 0 0 1 16.8 16.1A2.7 2.7 0 0 1 14.1 13.4A1.6 1.6 0 0 1 15.7 11.8" />
+          </svg>
+        </span>
         <div className="seeds-core-text" aria-live="polite">
-          {active && (
-            <>
-              <h1>{active.title}</h1>
-              <p>{active.tagline}</p>
-              <ul>{active.folders.slice(0, 4).map((f) => <li key={f}>{f}</li>)}</ul>
-            </>
-          )}
+          {active && <h1>{active.title}</h1>}
         </div>
       </div>
 

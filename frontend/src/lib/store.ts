@@ -201,6 +201,7 @@ interface AppState {
   createConversation: (model?: string) => string;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
+  renameConversation: (id: string, title: string) => void;
   loadMessages: (conversationId: string | null) => void;
   addMessage: (conversationId: string, message: ChatMessage) => void;
   updateLastAssistant: (
@@ -363,6 +364,17 @@ export const useAppStore = create<AppState>((set, get) => {
         activeId: id,
         messages: conv ? conv.messages : [],
       });
+    },
+
+    renameConversation: (id: string, title: string) => {
+      const clean = title.trim();
+      if (!clean) return;
+      const store = loadConversations();
+      const conv = store.conversations[id];
+      if (!conv) return;
+      conv.title = clean;
+      saveConversations(store);
+      set({ conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt) });
     },
 
     deleteConversation: (id: string) => {

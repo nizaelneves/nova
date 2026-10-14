@@ -164,7 +164,7 @@ def _check_models(
                             f"Models: {key}",
                             "warn",
                             "No models available",
-                            details="Pull a model (e.g. `ollama pull qwen3.5:2b`).",
+                            details="Pull a model (e.g. `ollama pull qwen3.5:4b`).",
                         )
                     )
         except Exception:

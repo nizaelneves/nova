@@ -206,7 +206,7 @@ _CLOUD_PROVIDER_DEFAULT_MODELS: dict[str, str] = {
 @click.option(
     "--model",
     default="",
-    help="Model id (e.g. qwen3.5:2b). Empty = auto-recommend.",
+    help="Model id (e.g. qwen3.5:4b). Empty = auto-recommend.",
 )
 @click.option(
     "--prefer-cloud-when-available",
