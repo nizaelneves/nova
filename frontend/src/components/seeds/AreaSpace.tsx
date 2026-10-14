@@ -27,7 +27,7 @@ export function AreaSpace({ area, onOrbit, onLeave }: { area: SeedArea; onOrbit:
 
   return createPortal(
     <div className="seeds-space" style={{ '--area': area.color } as React.CSSProperties}>
-      <nav className="seeds-rail" aria-label="Seeds">
+      <nav className="seeds-rail" aria-label="Atlas">
         <button type="button" className="seeds-rail-btn seeds-rail-area" onClick={onOrbit} aria-label="Back to the orbit" title="Back to the orbit">
           <Icon name={area.icon} size={20} />
         </button>

@@ -139,10 +139,6 @@ export function parseCents(input: string): number | null {
   return Number(whole || '0') * 100 + Number((frac + '00').slice(0, 2));
 }
 
-export function greeting(hour = new Date().getHours()): string {
-  return hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-}
-
 /** One or two plain sentences about how the user is doing in the selected period. */
 export function summarize(o: Overview): string {
   const { totals: t, deltas, balance } = o;

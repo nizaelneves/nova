@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  DateRangePicker, ExpenseBubbles, FinanceIcon, GoalsProgress, IncomeVsExpenses,
-  StatCard, TabIcons, TransactionsTable, type Tab,
+  DateRangePicker, ExpenseBubbles, GoalsProgress, IncomeVsExpenses,
+  StatCard, TabIcons, TerminalLine, TransactionsTable, type Tab,
 } from '../components/finances/parts';
 import { AccountsTab, CategoriesTab, GoalsTab, TransactionsTab } from '../components/finances/tabs';
 import { TransactionForm } from '../components/finances/forms';
-import { type Range, type TxKind, greeting, presetRange, summarize } from '../lib/finance/model';
+import { type Range, type TxKind, presetRange, summarize } from '../lib/finance/model';
 import { useFinance, useOverview, useTransactions } from '../lib/finance/store';
 
 export function FinancesPage() {
@@ -25,13 +25,7 @@ export function FinancesPage() {
     <div className="fin-root h-full overflow-y-auto">
       <div className="fin-wrap">
         <header className="fin-header">
-          <div className="fin-hello">
-            <FinanceIcon size={48} />
-            <div>
-              <h2>{greeting()}!</h2>
-              <p>{summarize(overview)}</p>
-            </div>
-          </div>
+          <TerminalLine text={summarize(overview)} />
           <div className="fin-controls">
             <TabIcons tab={tab} onChange={(t) => open(t)} onAdd={() => setAdding(true)} />
             <DateRangePicker range={range} onChange={setRange} />

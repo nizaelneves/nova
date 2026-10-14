@@ -1395,6 +1395,11 @@
 .fin-hello { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 380px; }
 .fin-hello h2 { font-size: 1.35rem; font-weight: 700; color: var(--color-heading, var(--color-text)); margin: 0; }
 .fin-hello p { font-size: 0.85rem; color: var(--color-text-secondary); margin: 2px 0 0; max-width: 520px; line-height: 1.4; }
+.fin-line { display: flex; gap: 8px; align-items: flex-start; flex: 1 1 380px; min-width: 0; min-height: 3em; margin: 0; font-family: var(--term-font); font-size: 0.86rem; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.fin-line > span:first-child { color: #20e7aa; flex-shrink: 0; }
+.fin-num { font-weight: 500; color: #10c3d3; }
+.fin-num-up { color: #20e7aa; }
+.fin-num-down { color: #ffe3bd; }
 .fin-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 
 .fin-actions { display: flex; gap: 6px; }

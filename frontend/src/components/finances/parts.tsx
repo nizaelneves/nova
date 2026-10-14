@@ -13,15 +13,37 @@ import { SeriesBar } from '../charts/series-bar';
 import { XAxis } from '../charts/x-axis';
 import { ChartTooltip } from '../charts/tooltip';
 
-/** The Finances icon: three Fibonacci-height bars (13, 21, 34) on the brand navy. */
-export function FinanceIcon({ size = 40 }: { size?: number }) {
+const NUMBERS = /(R\$\s?[\d.]+,\d{2}|\d+%)/;
+
+/** The summary sentence typed out like the island's terminal; amounts are coloured, the first by gain or loss. */
+export function TerminalLine({ text }: { text: string }) {
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(text.length); return; }
+    setShown(0);
+    let n = 0;
+    const t = window.setInterval(() => { n += 1; setShown(n); if (n >= text.length) window.clearInterval(t); }, 18);
+    return () => window.clearInterval(t);
+  }, [text]);
+
+  let first = true;
+  let used = 0;
+  const parts = text.split(NUMBERS).map((part, i) => {
+    const visible = part.slice(0, Math.max(0, shown - used));
+    used += part.length;
+    if (!visible) return null;
+    if (i % 2 === 0) return visible;
+    const tone = first ? (text.includes('ahead') ? 'up' : 'down') : 'num';
+    first = false;
+    return <b key={i} className={`fin-num fin-num-${tone}`}>{visible}</b>;
+  });
+
   return (
-    <svg width={size} height={size} viewBox="0 0 84 84" role="img" aria-label="Finances">
-      <rect width="84" height="84" rx="22" fill="#14123f" />
-      <rect x="20" y="46" width="11" height="18" rx="5" fill="#10c3d3" />
-      <rect x="36.5" y="34" width="11" height="30" rx="5" fill="#20e7aa" />
-      <rect x="53" y="20" width="11" height="44" rx="5" fill="#ffe3bd" />
-    </svg>
+    <p className="fin-line" aria-label={text}>
+      <span aria-hidden="true">❯</span>
+      <span aria-hidden="true">{parts}<i className="tm-cursor" /></span>
+    </p>
   );
 }
 

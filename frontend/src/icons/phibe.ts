@@ -17,5 +17,8 @@ export const PHIBE_ICONS = {
   orbit: line('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><circle cx="17.7" cy="6.3" r="1.6" fill="currentColor"/>'),
   spiral: line('<path d="M3 16.1A11.1 11.1 0 0 1 14.1 5A6.9 6.9 0 0 1 21 11.9A4.2 4.2 0 0 1 16.8 16.1A2.7 2.7 0 0 1 14.1 13.4A1.6 1.6 0 0 1 15.7 11.8"/>'),
   transcript: line('<path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M14 3v4h4 M8.5 11v2 M11 9.5v5 M13.5 10.5v3 M8.5 17.5h7"/>'),
-  'graduation-cap': line('<path d="M2 9l10-5 10 5-10 5z M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5 M22 9v6"/>'),
+  // A two-armed spiral galaxy with a bright core: Horizon.
+  galaxy: line('<path d="M12 12c-2-4 .7-8 5-8.500 3.800-.4 6 2 5.500 5M12 12c2 4-.7 8-5 8.500-3.800.4-6-2-5.500-5"/><circle cx="12" cy="12" r="1.500" fill="currentColor"/>'),
+  // An eye of Horus: the watching guide of Mentor Mode.
+  'horus-eye': line('<path d="M2 11c3.500-5 6.500-6.500 10-6.500S18.500 6 22 11c-3.500 5-6.500 6.500-10 6.500S5.500 16 2 11z"/><circle cx="12" cy="11" r="3"/><circle cx="12" cy="11" r="1" fill="currentColor"/><path d="M11 17.200V21M14.500 16.800c1.200 1.700 3 2.200 4.500 1.200"/>'),
 } as const;

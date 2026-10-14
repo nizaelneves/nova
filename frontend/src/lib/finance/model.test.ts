@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_OVERVIEW, greeting, parseCents, presetRange, rangeLabel, summarize } from './model';
+import { EMPTY_OVERVIEW, parseCents, presetRange, rangeLabel, summarize } from './model';
 import { legacyPayload } from './store';
 
 describe('periods', () => {
@@ -25,13 +25,7 @@ describe('parseCents', () => {
   });
 });
 
-describe('greeting and summary', () => {
-  it('follows the hour of the day', () => {
-    expect(greeting(8)).toBe('Good Morning');
-    expect(greeting(14)).toBe('Good Afternoon');
-    expect(greeting(21)).toBe('Good Evening');
-  });
-
+describe('summary', () => {
   it('says so when there is no activity, and compares spending otherwise', () => {
     expect(summarize(EMPTY_OVERVIEW)).toContain('No activity');
     const text = summarize({ ...EMPTY_OVERVIEW, totals: { income: 500_00, expenses: 200_00, savings: 0 }, deltas: { ...EMPTY_OVERVIEW.deltas, expenses: -12.5 } });
