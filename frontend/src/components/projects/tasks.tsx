@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Icon } from '../components/Icon';
-import { Popup } from '../components/Popup';
+import { Icon } from '../Icon';
+import { Popup } from '../Popup';
 import {
   Area,
   Priority,
@@ -9,44 +9,26 @@ import {
   Status,
   Task,
   TaskCreate,
-  TasksApiError,
-  createArea,
   createTask,
-  deleteArea,
   deleteTask,
-  fetchAreas,
-  fetchKanban,
-  fetchSummary,
-  renameArea,
-  setTaskStatus,
   toDue,
   todayLocal,
   updateTask,
-} from '../lib/tasks-api';
-import { RollNumber } from '../components/RollNumber';
-import { StrikeText } from '../components/StrikeText';
-import { TaskCheck } from '../components/TaskCheck';
-import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../lib/tasks';
+} from '../../lib/tasks-api';
+import { PERSONAL_COLOR } from '../../lib/projects';
+import { RollNumber } from '../RollNumber';
+import { StrikeText } from '../StrikeText';
+import { TaskCheck } from '../TaskCheck';
+import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../../lib/tasks';
 
-const COLUMNS: { status: Status; label: string }[] = [
+export const COLUMNS: { status: Status; label: string }[] = [
   { status: 'todo', label: 'To Do' },
   { status: 'doing', label: 'Doing' },
   { status: 'done', label: 'Done' },
 ];
 
-type Tab = 'all' | 'today' | 'upcoming' | 'overdue';
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'today', label: 'Today' },
-  { id: 'upcoming', label: 'Upcoming' },
-  { id: 'overdue', label: 'Overdue' },
-  { id: 'all', label: 'All' },
-];
-
-type View = 'kanban' | 'list';
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'kanban', label: 'Kanban' },
-  { id: 'list', label: 'List' },
-];
+/** The colour of a project (an area id, or null for personal tasks); set by the Projects screen. */
+export const ProjectColorContext = createContext<(areaId: string | null) => string>(() => PERSONAL_COLOR);
 
 export const PRIORITY_COLOR: Record<Priority, string> = {
   high: 'var(--color-error)',
@@ -54,7 +36,7 @@ export const PRIORITY_COLOR: Record<Priority, string> = {
   low: 'var(--color-text-tertiary)',
 };
 
-function apiErrorMessage(err: unknown): string {
+export function apiErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong';
 }
 
@@ -83,6 +65,7 @@ function priorityStyle(task: Task): React.CSSProperties {
  * Kanban card and the List row — factored out once so the two views never
  * drift apart in how they render the same `Task`. */
 function TaskMetaChips({ task }: { task: Task }) {
+  const color = useContext(ProjectColorContext)(task.area_id);
   return (
     <>
       {task.priority && (
@@ -109,7 +92,10 @@ function TaskMetaChips({ task }: { task: Task }) {
           <Icon name="repeat" size={11} />
         </span>
       )}
-      {task.area && <span className="task-chip">{task.area}</span>}
+      <span className="task-chip">
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
+        {task.area || 'Personal'}
+      </span>
     </>
   );
 }
@@ -178,7 +164,7 @@ function TaskListRow({
 // List view
 // ---------------------------------------------------------------------------
 
-function TaskListView({
+export function TaskListView({
   tasks,
   onOpen,
   onToggleDone,
@@ -248,12 +234,14 @@ function TaskListView({
 export function TaskForm({
   areas,
   task,
+  defaultAreaId = '',
   onClose,
   onSaved,
   onDeleted,
 }: {
   areas: Area[];
   task: Task | null;
+  defaultAreaId?: string;
   onClose: () => void;
   onSaved: () => void;
   onDeleted: () => void;
@@ -261,7 +249,7 @@ export function TaskForm({
   const [title, setTitle] = useState(task?.title ?? '');
   const [date, setDate] = useState(task ? task.due.slice(0, 10) : todayLocal());
   const [time, setTime] = useState(task && !task.all_day ? task.due.slice(11, 16) : '');
-  const [areaId, setAreaId] = useState(task?.area_id ?? areas[0]?.id ?? '');
+  const [areaId, setAreaId] = useState(task ? task.area_id ?? '' : defaultAreaId);
   const [priority, setPriority] = useState<'' | Priority>(task?.priority ?? '');
   const [status, setStatus] = useState<Status>(task?.status ?? 'todo');
   const [notes, setNotes] = useState(task?.notes ?? '');
@@ -333,7 +321,7 @@ export function TaskForm({
             Area
             <select value={areaId} onChange={(e) => setAreaId(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={field}>
-              <option value="">No area</option>
+              <option value="">Personal</option>
               {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </label>
@@ -430,294 +418,47 @@ export function TaskForm({
 }
 
 // ---------------------------------------------------------------------------
-// Areas pop-up
+// Kanban board
 // ---------------------------------------------------------------------------
 
-function AreasPopup({
-  areas,
-  onClose,
-  onChanged,
-}: {
-  areas: Area[];
-  onClose: () => void;
-  onChanged: () => void;
-}) {
-  const [name, setName] = useState('');
-  const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
-  const [pendingDelete, setPendingDelete] = useState<Area | null>(null);
-  const [moveTo, setMoveTo] = useState('');
-
-  const add = async () => {
-    const clean = name.trim();
-    if (!clean) return;
-    try {
-      await createArea(clean);
-      setName('');
-      onChanged();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    }
-  };
-
-  const rename = async (id: string) => {
-    const clean = draft.trim();
-    if (!clean) { setEditing(null); return; }
-    try {
-      await renameArea(id, clean);
-      setEditing(null);
-      onChanged();
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    }
-  };
-
-  const remove = async (area: Area, withMoveTo?: string) => {
-    try {
-      await deleteArea(area.id, withMoveTo);
-      setPendingDelete(null);
-      onChanged();
-    } catch (err) {
-      if (err instanceof TasksApiError && typeof err.detail === 'object' && err.detail && 'task_count' in (err.detail as any)) {
-        setPendingDelete(area);
-        setMoveTo(areas.find((a) => a.id !== area.id)?.id ?? '');
-      } else {
-        toast.error(apiErrorMessage(err));
-      }
-    }
-  };
-
-  const field = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
-  return (
-    <Popup title="Areas" onClose={onClose}>
-      <div className="flex flex-col gap-2 mb-3">
-        {areas.map((a) => (
-          <div key={a.id} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-            {editing === a.id ? (
-              <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && void rename(a.id)}
-                onBlur={() => void rename(a.id)}
-                className="flex-1 text-sm bg-transparent outline-none" style={{ color: 'var(--color-text)' }} />
-            ) : (
-              <span className="flex-1 text-sm" style={{ color: 'var(--color-text)' }}>
-                {a.name} <span style={{ color: 'var(--color-text-tertiary)' }}>· {a.task_count}</span>
-              </span>
-            )}
-            <button type="button" onClick={() => { setEditing(a.id); setDraft(a.name); }} className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-text-secondary)' }}>
-              <Icon name="pen" size={14} />
-            </button>
-            <button type="button" onClick={() => void remove(a)} className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-error)' }}>
-              <Icon name="trash-bin-minimalistic" size={14} />
-            </button>
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New area"
-          onKeyDown={(e) => e.key === 'Enter' && void add()}
-          className="flex-1 text-sm px-3 py-1.5 rounded-lg outline-none" style={field} />
-        <button type="button" onClick={() => void add()} disabled={!name.trim()}
-          className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-          Add
-        </button>
-      </div>
-      {pendingDelete && (
-        <Popup title={`Move ${pendingDelete.task_count} task(s) first`} onClose={() => setPendingDelete(null)}>
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-            "{pendingDelete.name}" still has tasks. Choose where they go.
-          </p>
-          <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)}
-            className="w-full text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer mb-3" style={field}>
-            {areas.filter((a) => a.id !== pendingDelete.id).map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setPendingDelete(null)}
-              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-              Cancel
-            </button>
-            <button type="button" onClick={() => void remove(pendingDelete, moveTo)} disabled={!moveTo}
-              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-              style={{ background: 'var(--color-error)', color: '#fff' }}>
-              Move and delete
-            </button>
-          </div>
-        </Popup>
-      )}
-    </Popup>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export function TasksPage() {
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [areaFilter, setAreaFilter] = useState<string>('');
-  const [tab, setTab] = useState<Tab>('all');
-  const [view, setView] = useState<View>('kanban');
-  const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [summary, setSummary] = useState<Record<'today' | 'upcoming' | 'overdue', number> | null>(null);
-  const [editing, setEditing] = useState<Task | null | 'new'>(null);
-  const [showAreas, setShowAreas] = useState(false);
+export function TaskBoard({ tasks, onOpen, onMove }: { tasks: Task[]; onOpen: (task: Task) => void; onMove: (id: string, status: Status) => void }) {
   const [dragOver, setDragOver] = useState<Status | null>(null);
-
-  const load = useCallback(() => {
-    fetchAreas().then(setAreas).catch(() => setAreas([]));
-    fetchSummary().then(setSummary).catch(() => setSummary(null));
-    fetchKanban(areaFilter || undefined)
-      .then((columns) => setTasks(Object.values(columns).flat()))
-      .catch(() => setTasks([]));
-  }, [areaFilter]);
-
-  useEffect(load, [load]);
-
-  // Tasks passed through the Today/Upcoming/Overdue/All tab filter — shared
-  // by the Kanban and List views. (Calendar picks its own day instead.)
-  const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-    if (tab === 'all') return tasks;
-    const now = new Date();
-    const today = todayLocal();
-    return tasks.filter((t) => {
-      if (t.status === 'done') return true;
-      const day = t.due.slice(0, 10);
-      const isPast = t.all_day ? day < today : new Date(t.due) < now;
-      const isToday = day === today;
-      if (tab === 'today') return isToday && !isPast;
-      if (tab === 'overdue') return isPast;
-      if (tab === 'upcoming') return day > today;
-      return true;
-    });
-  }, [tasks, tab]);
-
   const board = useMemo(() => {
     const grouped: Record<Status, Task[]> = { todo: [], doing: [], done: [] };
-    for (const t of filteredTasks) grouped[t.status].push(t);
+    for (const t of tasks) grouped[t.status].push(t);
     return grouped;
-  }, [filteredTasks]);
-
-  const move = async (id: string, status: Status) => {
-    setTasks((prev) => prev?.map((t) => (t.id === id ? { ...t, status } : t)) ?? prev);
-    try {
-      await setTaskStatus(id, status);
-    } catch (err) {
-      toast.error(apiErrorMessage(err));
-    } finally {
-      load();
-    }
-  };
-
-  const toggleDone = (task: Task) => void move(task.id, task.status === 'done' ? 'todo' : 'done');
+  }, [tasks]);
 
   return (
-    <div className="flex flex-col h-full px-6 py-5 gap-4 overflow-y-auto">
-      <div className="flex items-center justify-end flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
-            style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
-            <option value="">All Workspaces</option>
-            {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          <button type="button" onClick={() => setEditing('new')}
-            className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-            <Icon name="add-circle" size={16} /> New Task
-          </button>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+      {COLUMNS.map((col) => (
+        <div
+          key={col.status}
+          className="task-column"
+          data-over={dragOver === col.status}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(col.status); }}
+          onDragLeave={() => setDragOver((d) => (d === col.status ? null : d))}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(null);
+            const id = e.dataTransfer.getData('text/task-id');
+            if (id) onMove(id, col.status);
+          }}
+        >
+          <div className="task-column-head">
+            {col.label}
+            <span className="task-tab-count">{board[col.status].length}</span>
+          </div>
+          <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
+            {board[col.status].length === 0 && (
+              <div className="text-xs px-1 py-3 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here</div>
+            )}
+            {board[col.status].map((t) => (
+              <TaskCard key={t.id} task={t} onOpen={() => onOpen(t)} onDragStart={(e) => e.dataTransfer.setData('text/task-id', t.id)} />
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="pings-tab-pill">
-          {VIEWS.map((v) => (
-            <button key={v.id} type="button" onClick={() => setView(v.id)} className="pings-tab-pill-item" data-active={view === v.id}>
-              {v.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {(
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className="composer-chip"
-              data-filled="true"
-              data-active={tab === t.id}
-            >
-              {t.label}
-              {summary && t.id !== 'all' && (
-                <span className="task-tab-count">{summary[t.id]}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {tasks === null ? (
-        <div className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
-      ) : view === 'kanban' ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-          {COLUMNS.map((col) => (
-            <div
-              key={col.status}
-              className="task-column"
-              data-over={dragOver === col.status}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(col.status); }}
-              onDragLeave={() => setDragOver((d) => (d === col.status ? null : d))}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(null);
-                const id = e.dataTransfer.getData('text/task-id');
-                if (id) void move(id, col.status);
-              }}
-            >
-              <div className="task-column-head">
-                {col.label}
-                <span className="task-tab-count">{board[col.status].length}</span>
-              </div>
-              <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
-                {board[col.status].length === 0 && (
-                  <div className="text-xs px-1 py-3 text-center" style={{ color: 'var(--color-text-tertiary)' }}>
-                    Nothing here
-                  </div>
-                )}
-                {board[col.status].map((t) => (
-                  <TaskCard
-                    key={t.id}
-                    task={t}
-                    onOpen={() => setEditing(t)}
-                    onDragStart={(e) => e.dataTransfer.setData('text/task-id', t.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <TaskListView tasks={filteredTasks} onOpen={(t) => setEditing(t)} onToggleDone={toggleDone} />
-      )}
-
-      {editing && (
-        <TaskForm
-          areas={areas}
-          task={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(); }}
-          onDeleted={() => { setEditing(null); load(); }}
-        />
-      )}
-      {showAreas && (
-        <AreasPopup areas={areas} onClose={() => setShowAreas(false)} onChanged={load} />
-      )}
+      ))}
     </div>
   );
 }

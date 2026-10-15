@@ -307,11 +307,6 @@ class TaskStore:
         except ValueError as exc:
             raise TaskError(str(exc)) from exc
         with self._lock:
-            if area_id is None:
-                first = self._conn.execute(
-                    "SELECT id FROM areas ORDER BY position LIMIT 1"
-                ).fetchone()
-                area_id = first["id"] if first else None
             if area_id is not None:
                 self._area_row(area_id)
             task_id = self._insert(

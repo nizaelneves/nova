@@ -8,8 +8,7 @@ import { SeedsPage } from './pages/SeedsPage';
 import { TutorPage } from './pages/TutorPage';
 import { MeetingNotesPage } from './pages/MeetingNotesPage';
 import { PingsPage } from './pages/PingsPage';
-import { TasksPage } from './pages/TasksPage';
-import { WorkspacesPage } from './pages/WorkspacesPage';
+import { ProjectsPage } from './pages/ProjectsPage';
 import { FinancesPage } from './pages/FinancesPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
 import { CommandPalette } from './components/CommandPalette';
@@ -82,11 +81,12 @@ export default function App() {
           <Route path="data-sources" element={<Navigate to="/settings?tab=data-sources" replace />} />
           <Route path="agents" element={<Navigate to="/settings?tab=agents" replace />} />
           <Route path="desk" element={<Navigate to="/" replace />} />
-          <Route path="workspaces" element={<WorkspacesPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="workspaces" element={<Navigate to="/projects" replace />} />
           <Route path="seeds" element={<SeedsPage />} />
           <Route path="tutor" element={<TutorPage />} />
           <Route path="meeting-notes" element={<MeetingNotesPage />} />
-          <Route path="tasks" element={<TasksPage />} />
+          <Route path="tasks" element={<Navigate to="/projects" replace />} />
           <Route path="pings" element={<PingsPage />} />
           <Route path="finances" element={<FinancesPage />} />
           <Route path="approvals" element={<Navigate to="/" replace />} />

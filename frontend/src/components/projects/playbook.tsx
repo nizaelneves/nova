@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Icon } from '../components/Icon';
-import { Popup } from '../components/Popup';
-import { todayLocal } from '../lib/tasks-api';
+import { useState } from 'react';
+import { Icon } from '../Icon';
+import { Popup } from '../Popup';
+import { todayLocal } from '../../lib/tasks-api';
 import {
   type Activity,
+  type Workspace,
   type Stage,
   type WorkspacesData,
   addActivity,
@@ -22,13 +23,7 @@ import {
   saveWorkspaces,
   toggleStep,
   updateActivity,
-} from '../lib/workspaces';
-
-type Tab = 'workspaces' | 'stages';
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'workspaces', label: 'Workspaces' },
-  { id: 'stages', label: 'Stages' },
-];
+} from '../../lib/workspaces';
 
 const FIELD: React.CSSProperties = {
   background: 'var(--color-bg)',
@@ -220,126 +215,82 @@ function ActivityCard({ data, activity, showWorkspace, today, onOpen }: { data: 
   );
 }
 
-function ActivitiesTab({ data, onChange }: { data: WorkspacesData; onChange: (next: WorkspacesData) => void }) {
-  const [selected, setSelected] = useState<string>('all');
+/** One client's activities as a board by stage or a list, with its settings and the shared stages. */
+export function Playbook({ data, workspace, onChange, onRename, onDelete }: {
+  data: WorkspacesData;
+  workspace: Workspace;
+  onChange: (next: WorkspacesData) => void;
+  onRename: (name: string) => void;
+  onDelete: () => void;
+}) {
   const [view, setView] = useState<'board' | 'list'>('board');
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
-  const [editing, setEditing] = useState(false);
+  const [panel, setPanel] = useState<'' | 'settings' | 'stages'>('');
   const today = todayLocal();
-  const workspace = data.workspaces.find((w) => w.id === selected) ?? null;
   const activities = data.activities
-    .filter((a) => !workspace || a.workspaceId === workspace.id)
+    .filter((a) => a.workspaceId === workspace.id)
     .sort((a, b) => a.due.localeCompare(b.due));
   const open = data.activities.find((a) => a.id === openId) ?? null;
 
-  const addClient = () => {
-    const next = addWorkspace(data, newName);
-    if (next === data) return;
-    onChange(next);
-    setSelected(next.workspaces[next.workspaces.length - 1].id);
-    setNewName('');
-  };
-
   return (
-    <div className="flex gap-4 flex-col md:flex-row">
-      <aside className="md:w-56 shrink-0 flex flex-col gap-1">
-        {[{ id: 'all', name: 'All Workspaces' }, ...data.workspaces].map((w) => (
-          <button
-            key={w.id}
-            type="button"
-            onClick={() => { setSelected(w.id); setEditing(false); }}
-            data-active={selected === w.id}
-            className="text-left text-sm px-3 py-2 rounded-lg cursor-pointer flex items-center gap-2"
-            style={{
-              background: selected === w.id ? 'var(--color-bg-secondary)' : 'transparent',
-              color: selected === w.id ? 'var(--color-text)' : 'var(--color-text-secondary)',
-              border: `1px solid ${selected === w.id ? 'var(--color-border)' : 'transparent'}`,
-            }}
-          >
-            <Icon name="buildings-2" size={16} />
-            <span className="flex-1 truncate">{w.name}</span>
-          </button>
-        ))}
-        <div className="flex gap-1 mt-2">
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addClient()} placeholder="New WorkSpace" className={FIELD_CLS} style={FIELD} />
-          <button type="button" aria-label="Add workspace" onClick={addClient} disabled={!newName.trim()} className="px-2 rounded-lg cursor-pointer disabled:opacity-50" style={PRIMARY}>
-            <Icon name="add-circle" size={18} />
-          </button>
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="pings-tab-pill mr-auto" style={{ padding: '0.2rem' }}>
+          {(['board', 'list'] as const).map((v) => (
+            <button key={v} type="button" data-active={view === v} onClick={() => setView(v)} className="pings-tab-pill-item" style={{ padding: '0.3rem 0.9rem', fontSize: '0.8rem' }}>
+              {v === 'board' ? 'Board' : 'List'}
+            </button>
+          ))}
         </div>
-      </aside>
+        <Button onClick={() => setPanel(panel === 'stages' ? '' : 'stages')}>{panel === 'stages' ? 'Close stages' : 'Stages'}</Button>
+        <Button onClick={() => setPanel(panel === 'settings' ? '' : 'settings')}>{panel === 'settings' ? 'Close settings' : 'Settings'}</Button>
+        <Button primary onClick={() => setCreating(true)}>New activity</Button>
+      </div>
 
-      <section className="flex-1 min-w-0 flex flex-col gap-3">
-        {data.workspaces.length === 0 ? (
-          <div className="rounded-xl p-8 text-center text-sm" style={{ border: '1px dashed var(--color-border)', ...MUTED }}>
-            Create a workspace for each client to start adding activities.
+      {panel === 'settings' && (
+        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
+          <div>
+            <Label>Name</Label>
+            <input defaultValue={workspace.name} key={workspace.id} onBlur={(e) => onRename(e.target.value)} className={FIELD_CLS} style={FIELD} />
           </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-semibold mr-auto" style={{ color: 'var(--color-heading)' }}>{workspace ? workspace.name : 'All Workspaces'}</h2>
-              {workspace && <Button onClick={() => setEditing((v) => !v)}>{editing ? 'Close settings' : 'Settings'}</Button>}
-              <div className="pings-tab-pill" style={{ padding: '0.2rem' }}>
-                {(['board', 'list'] as const).map((v) => (
-                  <button key={v} type="button" data-active={view === v} onClick={() => setView(v)} className="pings-tab-pill-item" style={{ padding: '0.3rem 0.9rem', fontSize: '0.8rem' }}>
-                    {v === 'board' ? 'Board' : 'List'}
-                  </button>
-                ))}
-              </div>
-              <Button primary onClick={() => setCreating(true)}>New activity</Button>
-            </div>
+          <div><Button onClick={onDelete}>Delete project and its activities</Button></div>
+        </div>
+      )}
+      {panel === 'stages' && <StagesTab data={data} onChange={onChange} />}
 
-            {workspace && editing && (
-              <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
-                <div>
-                  <Label>Name</Label>
-                  <input defaultValue={workspace.name} key={workspace.id} onBlur={(e) => onChange(renameWorkspace(data, workspace.id, e.target.value))} className={FIELD_CLS} style={FIELD} />
+      {activities.length === 0 ? (
+        <div className="rounded-xl p-8 text-center text-sm" style={{ border: '1px dashed var(--color-border)', ...MUTED }}>No activities yet.</div>
+      ) : view === 'board' ? (
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {data.stages.map((stage) => {
+            const items = activities.filter((a) => currentStageId(a, data.stages) === stage.id);
+            return (
+              <div key={stage.id} className="w-64 shrink-0 flex flex-col gap-2">
+                <div className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: 'var(--color-text-secondary)', letterSpacing: '0.08em' }}>
+                  {stage.name}<span style={MUTED}>{items.length}</span>
                 </div>
-                <div><Button onClick={() => { onChange(removeWorkspace(data, workspace.id)); setSelected('all'); setEditing(false); }}>Delete workspace and its activities</Button></div>
+                {items.map((a) => <ActivityCard key={a.id} data={data} activity={a} showWorkspace={false} today={today} onOpen={() => setOpenId(a.id)} />)}
               </div>
-            )}
-
-            {activities.length === 0 ? (
-              <div className="rounded-xl p-8 text-center text-sm" style={{ border: '1px dashed var(--color-border)', ...MUTED }}>No activities yet.</div>
-            ) : view === 'board' ? (
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {data.stages.map((stage) => {
-                  const items = activities.filter((a) => currentStageId(a, data.stages) === stage.id);
-                  return (
-                    <div key={stage.id} className="w-64 shrink-0 flex flex-col gap-2">
-                      <div className="text-xs font-semibold uppercase flex items-center gap-2" style={{ color: 'var(--color-text-secondary)', letterSpacing: '0.08em' }}>
-                        {stage.name}<span style={MUTED}>{items.length}</span>
-                      </div>
-                      {items.map((a) => <ActivityCard key={a.id} data={data} activity={a} showWorkspace={!workspace} today={today} onOpen={() => setOpenId(a.id)} />)}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {activities.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3">
-                    <div className="flex-1"><ActivityCard data={data} activity={a} showWorkspace={!workspace} today={today} onOpen={() => setOpenId(a.id)} /></div>
-                    <span className="text-xs w-28" style={MUTED}>{data.stages.find((s) => s.id === currentStageId(a, data.stages))?.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </section>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {activities.map((a) => (
+            <div key={a.id} className="flex items-center gap-3">
+              <div className="flex-1"><ActivityCard data={data} activity={a} showWorkspace={false} today={today} onOpen={() => setOpenId(a.id)} /></div>
+              <span className="text-xs w-28" style={MUTED}>{data.stages.find((st) => st.id === currentStageId(a, data.stages))?.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {creating && (
-        <NewActivityPopup
-          data={data}
-          workspaceId={workspace?.id ?? ''}
-          onCreate={(input) => onChange(addActivity(data, input))}
-          onClose={() => setCreating(false)}
-        />
+        <NewActivityPopup data={data} workspaceId={workspace.id} onCreate={(input) => onChange(addActivity(data, input))} onClose={() => setCreating(false)} />
       )}
       {open && <ActivityPopup data={data} activity={open} onChange={onChange} onClose={() => setOpenId(null)} />}
-    </div>
+    </section>
   );
 }
 
@@ -367,33 +318,6 @@ function StagesTab({ data, onChange }: { data: WorkspacesData; onChange: (next: 
       <div className="flex gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="New stage" className={FIELD_CLS} style={FIELD} />
         <Button primary onClick={add} disabled={!name.trim()}>Add stage</Button>
-      </div>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------ page
-
-export function WorkspacesPage() {
-  const [data, setData] = useState<WorkspacesData>(loadWorkspaces);
-  const [tab, setTab] = useState<Tab>('workspaces');
-
-  useEffect(() => { saveWorkspaces(data); }, [data]);
-
-  return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col gap-6">
-        <div className="flex justify-center">
-          <div className="pings-tab-pill" role="tablist">
-            {TABS.map((t) => (
-              <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} data-active={tab === t.id} onClick={() => setTab(t.id)} className="pings-tab-pill-item">
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {tab === 'workspaces' && <ActivitiesTab data={data} onChange={setData} />}
-        {tab === 'stages' && <StagesTab data={data} onChange={setData} />}
       </div>
     </div>
   );

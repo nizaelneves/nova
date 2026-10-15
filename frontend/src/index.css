@@ -1933,3 +1933,69 @@
 
 .isl-quote { display: flex; gap: 8px; align-items: flex-start; min-height: 4.3em; margin: 0; padding: 10px 4px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); font-family: var(--term-font); font-size: 0.76rem; line-height: 1.5; color: rgba(255, 255, 255, 0.72); }
 .isl-quote > span:first-child { color: #20e7aa; flex-shrink: 0; }
+
+/* Projects: bubbles for the clients, a hero, tabs, and a Google-style week calendar */
+.pj-wrap { max-width: 1120px; margin: 0 auto; padding: 28px 24px 60px; display: flex; flex-direction: column; gap: 18px; }
+.pj-wrap .fin-line { flex: none; }
+.pj-top { display: grid; grid-template-columns: minmax(220px, 290px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 760px) { .pj-top { grid-template-columns: 1fr; } }
+.pj-select { position: relative; }
+.pj-select-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 16px; background: rgba(255, 255, 255, 0.035); color: #e9ecf5; font-size: 0.9rem; cursor: pointer; }
+.pj-select-btn span:nth-child(2) { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj-select-menu { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 6px); padding: 6px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); background: #0d0d18; max-height: 320px; overflow-y: auto; }
+.pj-opt { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: 10px; background: none; border: 0; color: rgba(233, 236, 245, 0.75); font-size: 0.85rem; cursor: pointer; text-align: left; }
+.pj-opt:hover, .pj-opt[data-on='true'] { background: rgba(255, 255, 255, 0.06); color: #e9ecf5; }
+.pj-opt input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #e9ecf5; font-size: 0.85rem; }
+.pj-mark { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 0.66rem; font-weight: 600; border: 1.5px solid var(--c); color: var(--c); flex-shrink: 0; }
+.pj-card { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; padding: 18px 22px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 20px; background: rgba(255, 255, 255, 0.035); }
+.pj-card h1 { margin: 0; font-size: 1.4rem; font-weight: 600; letter-spacing: -0.01em; color: #e9ecf5; }
+.pj-big b { font-size: 2.1rem; font-weight: 600; letter-spacing: -0.02em; }
+.pj-big small { display: block; font-size: 0.75rem; color: rgba(233, 236, 245, 0.4); }
+.pj-chart { flex: 1 1 220px; min-width: 200px; max-width: 420px; margin-left: auto; }
+.pj-days { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 6px; text-align: center; font-size: 0.68rem; color: rgba(233, 236, 245, 0.4); }
+.pj-days [data-today='true'] { color: #20e7aa; font-weight: 600; }
+.pj-add { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; background: var(--color-accent); color: var(--color-on-accent); font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 0; }
+.pj-tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.09); overflow-x: auto; }
+.pj-tabs button { padding: 9px 14px; font-size: 0.8rem; color: rgba(233, 236, 245, 0.58); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; }
+.pj-tabs button[data-on='true'] { color: #e9ecf5; border-color: var(--c); }
+.pj-tabs em { font-style: normal; font-size: 0.68rem; margin-left: 6px; color: rgba(233, 236, 245, 0.34); }
+.pj-soon { padding: 60px 20px; text-align: center; border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 16px; color: rgba(233, 236, 245, 0.4); font-size: 0.85rem; }
+.pj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.pj-note { display: block; padding: 14px 16px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 16px; background: rgba(255, 255, 255, 0.035); }
+.pj-note h4 { margin: 0 0 6px; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: #20e7aa; font-weight: 600; }
+.pj-note textarea { width: 100%; resize: vertical; background: transparent; border: 0; outline: none; color: rgba(233, 236, 245, 0.8); font: inherit; font-size: 0.85rem; line-height: 1.5; }
+.pj-cnav { display: flex; align-items: center; gap: 10px; color: rgba(233, 236, 245, 0.58); }
+.pj-cnav button { padding: 4px 10px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 8px; font-size: 0.8rem; background: none; color: inherit; cursor: pointer; }
+.pj-cnav b { font-weight: 500; font-size: 0.95rem; color: #e9ecf5; margin-left: 6px; }
+.pj-cal { border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, 0.015); }
+.pj-cal-head, .pj-cal-allday, .pj-cal-grid { display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); }
+.pj-cal-head { padding: 10px 0 6px; }
+.pj-cal-head > div { text-align: center; font-size: 0.68rem; letter-spacing: 0.06em; color: rgba(233, 236, 245, 0.58); }
+.pj-cal-head b { display: grid; place-items: center; width: 38px; height: 38px; margin: 4px auto 0; border-radius: 50%; font-size: 1.25rem; font-weight: 400; color: #e9ecf5; letter-spacing: 0; }
+.pj-cal-head [data-today='true'] { color: #20e7aa; }
+.pj-cal-head [data-today='true'] b { background: #20e7aa; color: #04120c; font-weight: 500; }
+.pj-cal-allday { border-top: 1px solid rgba(255, 255, 255, 0.09); border-bottom: 1px solid rgba(255, 255, 255, 0.09); min-height: 30px; }
+.pj-cal-allday > div { padding: 3px 2px; border-left: 1px solid rgba(255, 255, 255, 0.09); min-width: 0; }
+.pj-cal-allday > div:first-child { border: 0; }
+.pj-cal-body { max-height: 520px; overflow-y: auto; }
+.pj-cal-grid { position: relative; }
+.pj-cal-col { position: relative; border-left: 1px solid rgba(255, 255, 255, 0.09); }
+.pj-cal-col:first-child { border: 0; }
+.pj-cal-hour { position: absolute; right: 8px; font-size: 0.68rem; color: rgba(233, 236, 245, 0.34); transform: translateY(-50%); }
+.pj-cal-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(255, 255, 255, 0.09); }
+.pj-cal-now { position: absolute; left: 0; right: 0; border-top: 2px solid #ff6b6b; z-index: 2; }
+.pj-cal-now::before { content: ''; position: absolute; left: -5px; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: #ff6b6b; }
+.pj-ev { position: absolute; padding: 3px 7px; text-align: left; border: 0; border-left: 3px solid var(--c); border-radius: 7px; background: color-mix(in srgb, var(--c) 22%, #0c0c16); color: #e9ecf5; font-size: 0.7rem; line-height: 1.3; overflow: hidden; cursor: pointer; }
+.pj-ev small { display: block; font-size: 0.62rem; color: rgba(233, 236, 245, 0.58); }
+.pj-ev[data-done='true'] { opacity: 0.5; text-decoration: line-through; }
+.pj-ev-allday { position: static; display: block; width: 100%; margin: 1px 0; padding: 2px 7px; white-space: nowrap; text-overflow: ellipsis; background: color-mix(in srgb, var(--c) 30%, #0c0c16); }
+.pj-flow { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 14px; height: 68vh; min-height: 420px; }
+@media (max-width: 760px) { .pj-flow { grid-template-columns: 1fr; height: auto; } .pj-flow-view { height: 60vh; } }
+.pj-flow-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.pj-flow-side textarea { flex: 1; min-height: 160px; resize: none; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 14px; background: rgba(255, 255, 255, 0.035); color: #e9ecf5; font-family: var(--term-font); font-size: 0.8rem; line-height: 1.6; outline: none; }
+.pj-flow-side p, .pj-flow-side small { margin: 0; font-size: 0.72rem; line-height: 1.5; color: rgba(233, 236, 245, 0.45); }
+.pj-flow-side code { font-family: var(--term-font); color: #20e7aa; }
+.pj-flow-actions { display: flex; gap: 8px; }
+.pj-flow-actions button { padding: 6px 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 999px; background: none; color: #e9ecf5; font-size: 0.75rem; cursor: pointer; }
+.pj-flow-actions button:hover { border-color: #20e7aa; color: #20e7aa; }
+.pj-flow-view { border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 16px; overflow: hidden; background: rgba(255, 255, 255, 0.015); min-height: 0; }

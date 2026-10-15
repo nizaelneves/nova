@@ -19,6 +19,8 @@ export const PHIBE_ICONS = {
   transcript: line('<path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M14 3v4h4 M8.5 11v2 M11 9.5v5 M13.5 10.5v3 M8.5 17.5h7"/>'),
   // A two-armed spiral galaxy with a bright core: Horizon.
   galaxy: line('<path d="M12 12c-2-4 .7-8 5-8.500 3.800-.4 6 2 5.500 5M12 12c2 4-.7 8-5 8.500-3.800.4-6-2-5.500-5"/><circle cx="12" cy="12" r="1.500" fill="currentColor"/>'),
-  // An eye of Horus: the watching guide of Mentor Mode.
+  // An eye of Horus: the watching guide of Mentor.
   'horus-eye': line('<path d="M2 11c3.500-5 6.500-6.500 10-6.500S18.500 6 22 11c-3.500 5-6.500 6.500-10 6.500S5.500 16 2 11z"/><circle cx="12" cy="11" r="3"/><circle cx="12" cy="11" r="1" fill="currentColor"/><path d="M11 17.200V21M14.500 16.800c1.200 1.700 3 2.200 4.500 1.200"/>'),
+  // Three planets of different sizes, sharing one space: Projects.
+  projects: line('<circle cx="8" cy="8.500" r="4.500"/><circle cx="18" cy="7" r="2.500"/><circle cx="15.500" cy="16.500" r="4"/><circle cx="6.500" cy="18.500" r="1.500" fill="currentColor"/>'),
 } as const;

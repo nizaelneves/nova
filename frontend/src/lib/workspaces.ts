@@ -38,7 +38,11 @@ export interface Workspace {
   name: string;
   /** Playbooks (services) this client contracted. Empty means all of them. */
   playbookIds: string[];
+  /** What the team knows about the client, by ABOUT_FIELDS key. */
+  about: Record<string, string>;
 }
+
+export const ABOUT_FIELDS = ['Company', 'Mission', 'Vision', 'Goals', 'Audience', 'What worked', 'Stakeholders'] as const;
 
 export interface ActivityStep {
   id: string;
@@ -254,7 +258,12 @@ export function parseWorkspaces(raw: string | null): WorkspacesData {
       .map((t) => ({ id: t.id, kind: isStr(t.kind) ? t.kind : 'Other', name: t.name, body: t.body, builtIn: !!t.builtIn }));
     const workspaces = (Array.isArray(d.workspaces) ? d.workspaces : [])
       .filter((w) => w && isStr(w.id) && isStr(w.name))
-      .map((w) => ({ id: w.id, name: w.name, playbookIds: Array.isArray(w.playbookIds) ? w.playbookIds.filter(isStr) : [] }));
+      .map((w) => ({
+        id: w.id,
+        name: w.name,
+        playbookIds: Array.isArray(w.playbookIds) ? w.playbookIds.filter(isStr) : [],
+        about: Object.fromEntries(Object.entries(w.about ?? {}).filter(([, v]) => isStr(v))),
+      }));
     const workspaceIds = new Set(workspaces.map((w) => w.id));
     const activities = (Array.isArray(d.activities) ? d.activities : [])
       .filter((a) => a && isStr(a.id) && isStr(a.title) && workspaceIds.has(a.workspaceId) && isDate(a.start) && isDate(a.due))
@@ -336,13 +345,17 @@ export function isOverdue(activity: Activity, stages: Stage[], today: string): b
 export function addWorkspace(data: WorkspacesData, name: string): WorkspacesData {
   const trimmed = name.trim();
   if (!trimmed) return data;
-  return { ...data, workspaces: [...data.workspaces, { id: uid('ws'), name: trimmed, playbookIds: [] }] };
+  return { ...data, workspaces: [...data.workspaces, { id: uid('ws'), name: trimmed, playbookIds: [], about: {} }] };
 }
 
 export function renameWorkspace(data: WorkspacesData, id: string, name: string): WorkspacesData {
   const trimmed = name.trim();
   if (!trimmed) return data;
   return { ...data, workspaces: data.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)) };
+}
+
+export function setAbout(data: WorkspacesData, id: string, field: string, value: string): WorkspacesData {
+  return { ...data, workspaces: data.workspaces.map((w) => (w.id === id ? { ...w, about: { ...w.about, [field]: value } } : w)) };
 }
 
 export function removeWorkspace(data: WorkspacesData, id: string): WorkspacesData {

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   DateRangePicker, ExpenseBubbles, GoalsProgress, IncomeVsExpenses,
-  StatCard, TabIcons, TerminalLine, TransactionsTable, type Tab,
+  StatCard, TabIcons, TransactionsTable, type Tab,
 } from '../components/finances/parts';
+import { TerminalLine } from '../components/TerminalLine';
 import { AccountsTab, CategoriesTab, GoalsTab, TransactionsTab } from '../components/finances/tabs';
 import { TransactionForm } from '../components/finances/forms';
 import { type Range, type TxKind, presetRange, summarize } from '../lib/finance/model';

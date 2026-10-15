@@ -13,40 +13,6 @@ import { SeriesBar } from '../charts/series-bar';
 import { XAxis } from '../charts/x-axis';
 import { ChartTooltip } from '../charts/tooltip';
 
-const NUMBERS = /(R\$\s?[\d.]+,\d{2}|\d+%)/;
-
-/** The summary sentence typed out like the island's terminal; amounts are coloured, the first by gain or loss. */
-export function TerminalLine({ text }: { text: string }) {
-  const [shown, setShown] = useState(0);
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(text.length); return; }
-    setShown(0);
-    let n = 0;
-    const t = window.setInterval(() => { n += 1; setShown(n); if (n >= text.length) window.clearInterval(t); }, 18);
-    return () => window.clearInterval(t);
-  }, [text]);
-
-  let first = true;
-  let used = 0;
-  const parts = text.split(NUMBERS).map((part, i) => {
-    const visible = part.slice(0, Math.max(0, shown - used));
-    used += part.length;
-    if (!visible) return null;
-    if (i % 2 === 0) return visible;
-    const tone = first ? (text.includes('ahead') ? 'up' : 'down') : 'num';
-    first = false;
-    return <b key={i} className={`fin-num fin-num-${tone}`}>{visible}</b>;
-  });
-
-  return (
-    <p className="fin-line" aria-label={text}>
-      <span aria-hidden="true">❯</span>
-      <span aria-hidden="true">{parts}<i className="tm-cursor" /></span>
-    </p>
-  );
-}
-
 // -- Section tabs: only the icon until hovered, then icon + label; the open one stays expanded --
 
 export const TABS = [

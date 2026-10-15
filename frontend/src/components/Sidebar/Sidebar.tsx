@@ -15,13 +15,12 @@ interface Module {
 /** The main menu, in this order. Names are always English. */
 const MODULES: Module[] = [
   { path: '/', icon: 'galaxy', label: 'Horizon' },
-  { path: '/workspaces', icon: 'widget-2', label: 'Workspaces' },
-  { path: '/tasks', icon: 'checklist-minimalistic', label: 'Tasks' },
+  { path: '/projects', icon: 'projects', label: 'Projects' },
   { path: '/pings', icon: 'bell', label: 'Pings' },
-  { path: '/meeting-notes', icon: 'transcript', label: 'Meeting Minutes' },
-  { path: '/seeds', icon: 'north-star', label: 'Atlas' },
+  { path: '/meeting-notes', icon: 'transcript', label: 'Meeting Minutes', soon: true },
+  { path: '/seeds', icon: 'north-star', label: 'Atlas', soon: true },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
-  { path: '/tutor', icon: 'horus-eye', label: 'Mentor Mode', soon: true },
+  { path: '/tutor', icon: 'horus-eye', label: 'Mentor', soon: true },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
 

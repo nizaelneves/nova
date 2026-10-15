@@ -302,3 +302,8 @@ def test_migration_makes_area_id_nullable_on_an_old_schema_db(tmp_path) -> None:
         assert fresh["area_id"] is None
     finally:
         store.close()
+
+
+def test_a_task_without_an_area_stays_personal_even_when_areas_exist(store) -> None:
+    store.create_area("Client")
+    assert _add(store, "mine", "2026-10-09")["area_id"] is None
