@@ -835,6 +835,7 @@ function DataSourcesSection() {
   const isFirstLoad = cachedConnectors === null;
   const [syncStatuses, setSyncStatuses] = useState<Record<string, SyncStatus>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmOff, setConfirmOff] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [disconnectError, setDisconnectError] = useState<{ id: string; message: string } | null>(null);
@@ -1064,125 +1065,11 @@ function DataSourcesSection() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-5">
-      {/* Connected sources */}
-      {connected.length > 0 && (
-        <section>
-          <div className="label-caps mb-2 flex items-center gap-2">
-            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: 'var(--color-success)' }} />
-            Connected · {connected.length}
-          </div>
-          <div className="flex flex-col gap-2">
-          {connected.map((c) => {
-            const meta = metaFor(c.connector_id);
-            const unit = meta?.unitLabel || 'items';
-            const sync = syncStatuses[c.connector_id];
-            const hasError = !!sync?.error;
-            return (
-              <div
-                key={c.connector_id}
-                className="source-card"
-                style={{
-                  borderColor: hasError
-                    ? 'color-mix(in srgb, var(--color-error) 28%, transparent)'
-                    : 'var(--color-border)',
-                }}
-              >
-                <div style={{
-                  padding: '14px 18px',
-                  display: 'flex', alignItems: 'center', gap: 14,
-                }}>
-                  <ConnectorLogo id={c.connector_id} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="font-semibold" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-                      {meta?.display_name ?? c.display_name}
-                    </div>
-                    <SyncStatusDisplay
-                      chunks={c.chunks}
-                      sync={sync}
-                      unitLabel={unit}
-                      connectorId={c.connector_id}
-                      disabled={connectorActionsBusy}
-                      onSyncTriggered={loadConnectors}
-                    />
-                    {disconnectError?.id === c.connector_id && (
-                      <div style={{ fontSize: 11, color: 'var(--color-error)', marginTop: 4 }}>
-                        Disconnect failed: {disconnectError.message}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDisconnect(c.connector_id)}
-                    disabled={connectorActionsBusy}
-                    className="label-caps"
-                    style={{
-                      padding: '6px 12px',
-                      background: 'transparent',
-                      color: 'var(--color-text-secondary)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 4,
-                      cursor: connectorActionsBusy ? 'default' : 'pointer',
-                      letterSpacing: '0.15em',
-                      opacity: connectorActionsBusy ? 0.5 : 1,
-                    }}
-                  >
-                    {disconnectingId === c.connector_id
-                      ? sync?.state === 'stopping' ? 'Cleaning up…' : 'Disconnecting…'
-                      : sync?.state === 'stopping' ? 'Finish disconnect' : 'Disconnect'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-          </div>
-        </section>
-      )}
-
-      {/* Not connected list */}
-      {notConnected.length > 0 && (
-        <section>
-          <div className="label-caps mb-2 flex items-center gap-2">
-            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: 'var(--color-text-tertiary)' }} />
-            Available · {notConnected.length}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-          {notConnected.map((c) => {
-            const meta = metaFor(c.connector_id);
-            const isExpanded = expandedId === c.connector_id;
-
-            return (
-              <div
-                key={c.connector_id}
-                className="source-card"
-                style={{
-                  gridColumn: isExpanded ? '1 / -1' : undefined,
-                  opacity: isExpanded ? 1 : 0.85,
-                  borderStyle: isExpanded ? 'solid' : 'dashed',
-                }}
-              >
-                <div
-                  style={{
-                    padding: '12px 14px', display: 'flex',
-                    alignItems: 'center', gap: 12,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setExpandedId(isExpanded ? null : c.connector_id)}
-                >
-                  <ConnectorLogo id={c.connector_id} size={44} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="font-semibold" style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-                      {meta?.display_name ?? c.display_name}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
-                      {meta?.description ?? 'Not connected'}
-                    </div>
-                  </div>
-                  <span style={{ color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 500 }}>
-                    {isExpanded ? '× Close' : '+ Add'}
-                  </span>
-                </div>
-
+  const renderPanel = (c: (typeof connectors)[number]) => {
+    const meta = metaFor(c.connector_id);
+    const isExpanded = expandedId === c.connector_id;
+    return (
+      <>
                 {isExpanded && c.connector_id === 'upload' && (
                   <div style={{ borderTop: '1px solid var(--color-border)', padding: 12 }}>
                     <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 10 }}>
@@ -1308,12 +1195,94 @@ function DataSourcesSection() {
                     )}
                   </div>
                 )}
+      </>
+    );
+  };
+
+  const cards = [...connected, ...notConnected];
+
+  return (
+    <div>
+      <div className="ds-count">Connected {connected.length} of {cards.length}</div>
+      <div className="ds-grid">
+        {cards.map((c) => {
+          const meta = metaFor(c.connector_id);
+          const on = c.connected;
+          const isUpload = c.connector_id === 'upload';
+          const isExpanded = expandedId === c.connector_id;
+          const sync = syncStatuses[c.connector_id];
+          const busy = disconnectingId === c.connector_id || (loading && connectingId === c.connector_id);
+          const name = meta?.display_name ?? c.display_name;
+          return (
+            <div
+              key={c.connector_id}
+              className="ds-card"
+              data-on={on || undefined}
+              data-error={(on && !!sync?.error) || undefined}
+              style={{ gridColumn: isExpanded ? '1 / -1' : undefined }}
+            >
+              <div className="ds-top">
+                <ConnectorLogo id={c.connector_id} size={44} />
+                {isUpload ? (
+                  <button type="button" className="ds-add" onClick={() => setExpandedId(isExpanded ? null : c.connector_id)}>
+                    {isExpanded ? 'Close' : '+ Add'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    aria-label={`${name}: ${on ? 'connected' : 'not connected'}`}
+                    className="ds-switch"
+                    data-on={on || undefined}
+                    data-pending={(!on && isExpanded) || undefined}
+                    data-busy={busy || undefined}
+                    disabled={connectorActionsBusy && !busy}
+                    onClick={() => {
+                      if (busy) return;
+                      if (on) { if (sync?.state === 'stopping') void handleDisconnect(c.connector_id); else setConfirmOff(c.connector_id); }
+                      else setExpandedId(isExpanded ? null : c.connector_id);
+                    }}
+                  >
+                    <i />
+                  </button>
+                )}
               </div>
-            );
-          })}
-          </div>
-        </section>
-      )}
+              <div className="ds-name">{name}</div>
+              <div className="ds-desc">{meta?.description ?? (on ? 'Connected' : 'Not connected')}</div>
+
+              {on && (
+                <div className="ds-sync">
+                  <SyncStatusDisplay
+                    chunks={c.chunks}
+                    sync={sync}
+                    unitLabel={meta?.unitLabel || 'items'}
+                    connectorId={c.connector_id}
+                    disabled={connectorActionsBusy}
+                    onSyncTriggered={loadConnectors}
+                  />
+                </div>
+              )}
+              {disconnectError?.id === c.connector_id && (
+                <div style={{ fontSize: 11, color: 'var(--color-error)', marginTop: 6 }}>Disconnect failed: {disconnectError.message}</div>
+              )}
+              {busy && disconnectingId === c.connector_id && (
+                <div className="ds-note">{sync?.state === 'stopping' ? 'Cleaning up…' : 'Disconnecting…'}</div>
+              )}
+              {confirmOff === c.connector_id && (
+                <div className="ds-confirm">
+                  <span>Turn off {name}? Its synced data is removed from Phibe.</span>
+                  <div>
+                    <button type="button" onClick={() => setConfirmOff(null)}>Keep On</button>
+                    <button type="button" data-danger onClick={() => { setConfirmOff(null); void handleDisconnect(c.connector_id); }}>Turn Off</button>
+                  </div>
+                </div>
+              )}
+              {!on && isExpanded && <div className="ds-panel">{renderPanel(c)}</div>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

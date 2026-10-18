@@ -23,7 +23,9 @@ export function WeekCalendar({ tasks, colorOf, onOpen }: { tasks: Task[]; colorO
   const today = isoDay(now);
   const nowHour = now.getHours() + now.getMinutes() / 60;
 
-  const on = (day: Date) => tasks.filter((t) => t.due.slice(0, 10) === isoDay(day));
+  // A task with a start shows on every day from start to due.
+  const on = (day: Date) => tasks.filter((t) => (t.start ?? t.due).slice(0, 10) <= isoDay(day) && isoDay(day) <= t.due.slice(0, 10));
+  const hourOf = (iso: string) => Number(iso.slice(11, 13)) + Number(iso.slice(14, 16)) / 60;
 
   return (
     <div className="flex flex-col gap-2">
@@ -60,8 +62,12 @@ export function WeekCalendar({ tasks, colorOf, onOpen }: { tasks: Task[]; colorO
             </div>
             {days.map((d) => {
               const timed = on(d).filter((t) => !t.all_day).map((t) => {
-                const start = Number(t.due.slice(11, 13)) + Number(t.due.slice(14, 16)) / 60;
-                return { task: t, start, end: start + 1 };
+                const day = isoDay(d);
+                const first = (t.start ?? t.due).slice(0, 10) === day;
+                const last = t.due.slice(0, 10) === day;
+                const start = first ? hourOf(t.start ?? t.due) : 0;
+                const end = last ? (t.start ? Math.max(hourOf(t.due), start + 0.5) : start + 1) : 24;
+                return { task: t, start, end };
               });
               return (
                 <div key={d.getTime()} className="pj-cal-col">
@@ -73,7 +79,7 @@ export function WeekCalendar({ tasks, colorOf, onOpen }: { tasks: Task[]; colorO
                       type="button"
                       className="pj-ev"
                       data-done={item.task.status === 'done'}
-                      style={{ ['--c' as string]: colorOf(item.task.area_id), top: item.start * HH + 1, height: HH - 3, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 8px)` }}
+                      style={{ ['--c' as string]: colorOf(item.task.area_id), top: item.start * HH + 1, height: (item.end - item.start) * HH - 3, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 8px)` }}
                       onClick={() => onOpen(item.task)}
                     >
                       {item.task.title}

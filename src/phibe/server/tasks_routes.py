@@ -23,6 +23,7 @@ class RecurrenceBody(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str
+    start: Optional[str] = None
     due: str
     all_day: bool
     area_id: Optional[str] = None
@@ -38,6 +39,7 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = None
     notes: Optional[str] = None
     area_id: Optional[str] = None
+    start: Optional[str] = None
     due: Optional[str] = None
     all_day: Optional[bool] = None
     priority: Optional[Priority] = None
@@ -126,6 +128,7 @@ def create_tasks_router(get_store: Callable[[], TaskStore]) -> APIRouter:
         return guarded(
             lambda: get_store().create_task(
                 title=body.title,
+                start=body.start,
                 due=body.due,
                 all_day=body.all_day,
                 area_id=body.area_id,

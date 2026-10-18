@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { DownloadBar } from './DownloadBar';
+import { usePulls } from '../lib/pulls';
 import { Search, Cpu, X, Download, Loader2, Trash2, Check, Cloud, Key, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { isCliModel } from '../lib/model-capabilities';
 import { useAppStore } from '../lib/store';
 import {
-  pullModel,
   deleteModel,
   fetchModels,
   preloadModel,
@@ -15,7 +16,7 @@ import {
 
 /** Models offered in the Download tab. The default, qwen3.5:4b, is installed with Phibe. */
 const CATALOGUE_MODELS = [
-  { id: 'qwen3.5:9b', desc: 'better answers, needs 16 GB of memory or more' },
+  { id: 'qwen3.5:9b', desc: 'Better Answers, Needs 16 GB Of Memory or More' },
 ];
 
 /** Cloud provider definitions */
@@ -70,10 +71,10 @@ export function CommandPalette() {
   const [query, setQuery] = useState('');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [tab, setTab] = useState<Tab>('installed');
-  const [pulling, setPulling] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
   const [pullSuccess, setPullSuccess] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [customModel, setCustomModel] = useState('');
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
@@ -90,6 +91,11 @@ export function CommandPalette() {
   const setModels = useAppStore((s) => s.setModels);
   const setCommandPaletteOpen = useAppStore((s) => s.setCommandPaletteOpen);
 
+  const pulling = usePulls((s) => s.model);
+  const pullProgress = usePulls((s) => s.progress);
+  const pullSpeed = usePulls((s) => s.speed);
+  const startPull = usePulls((s) => s.start);
+  const cancelPull = usePulls((s) => s.cancel);
   const installedIds = new Set(models.map((m) => m.id));
   const desktopKeyStorage = isTauri();
 
@@ -162,22 +168,21 @@ export function CommandPalette() {
   };
 
   const handlePull = async (modelId: string) => {
-    setPulling(modelId);
     setPullError(null);
-    try {
-      await pullModel(modelId);
+    const outcome = await startPull(modelId);
+    if (outcome.result === 'done') {
       setPullSuccess(modelId);
       await refreshModels();
       setSelectedModel(modelId);
-    } catch (e: any) {
-      setPullError(e.message || 'Download failed');
-    } finally {
-      setPulling(null);
+    } else if (outcome.result === 'error') {
+      setPullError(outcome.message);
     }
   };
 
   const handleDelete = async (modelId: string) => {
     setDeleting(modelId);
+    setConfirming(null);
+    setPullError(null);
     try {
       await deleteModel(modelId);
       await refreshModels();
@@ -185,7 +190,9 @@ export function CommandPalette() {
         const remaining = models.filter((m) => m.id !== modelId);
         if (remaining.length > 0) setSelectedModel(remaining[0].id);
       }
-    } catch {} finally {
+    } catch (e: any) {
+      setPullError(e.message || 'Could not uninstall the model');
+    } finally {
       setDeleting(null);
     }
   };
@@ -365,19 +372,28 @@ export function CommandPalette() {
                         </span>
                       )}
                     </button>
-                    {model.owned_by !== 'litellm' && (
+                    {model.owned_by !== 'litellm' && (confirming === model.id ? (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>Uninstall?</span>
+                        <button onClick={() => setConfirming(null)} className="px-2.5 py-1 rounded-lg text-xs cursor-pointer"
+                          style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>Keep</button>
+                        <button onClick={() => handleDelete(model.id)} className="px-2.5 py-1 rounded-lg text-xs font-medium cursor-pointer"
+                          style={{ background: 'var(--color-error)', color: '#fff' }}>Uninstall</button>
+                      </div>
+                    ) : (
                       <button
-                        onClick={() => handleDelete(model.id)}
+                        onClick={() => setConfirming(model.id)}
                         disabled={isDeleting}
-                        className="p-1 rounded transition-colors cursor-pointer"
-                        style={{ color: 'var(--color-text-tertiary)', opacity: 0 }}
-                        title="Delete model"
+                        className="p-1 rounded transition-colors cursor-pointer shrink-0"
+                        style={{ color: 'var(--color-text-tertiary)', opacity: 0.6 }}
+                        title="Uninstall model"
+                        aria-label={`Uninstall ${model.id}`}
                         onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--color-error)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
                       >
                         {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                       </button>
-                    )}
+                    ))}
                   </div>
                 );
               })
@@ -388,13 +404,14 @@ export function CommandPalette() {
                 const isPulling = pulling === model.id;
                 const justInstalled = pullSuccess === model.id;
                 return (
-                  <div key={model.id} className="flex items-center gap-3 w-full px-4 py-2.5">
+                  <div key={model.id} className="w-full px-4 py-2.5">
+                   <div className="flex items-center gap-3 w-full">
                     <Download size={16} style={{ color: 'var(--color-text-tertiary)' }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm truncate" style={{ color: 'var(--color-text)' }}>{model.id}</div>
                       <div className="text-[11px]" style={{ color: 'var(--color-text-tertiary)' }}>{model.desc}</div>
                     </div>
-                    <button
+                    {!isPulling && <button
                       onClick={() => handlePull(model.id)}
                       disabled={isPulling || !!pulling}
                       className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium cursor-pointer"
@@ -404,15 +421,15 @@ export function CommandPalette() {
                         opacity: (isPulling || (pulling && !isPulling)) ? 0.5 : 1,
                       }}
                     >
-                      {isPulling ? <><Loader2 size={12} className="animate-spin" /> Downloading...</> :
-                       justInstalled ? <><Check size={12} /> Installed</> :
-                       <><Download size={12} /> Download</>}
-                    </button>
+                      {justInstalled ? <><Check size={12} /> Installed</> : <><Download size={12} /> Download</>}
+                    </button>}
+                   </div>
+                   {isPulling && <DownloadBar model={model.id} progress={pullProgress} speed={pullSpeed} onCancel={cancelPull} />}
                   </div>
                 );
               })}
               <div className="px-4 py-3 mt-1" style={{ borderTop: '1px solid var(--color-border)' }}>
-                <div className="text-[11px] mb-2" style={{ color: 'var(--color-text-tertiary)' }}>Or enter any Ollama model name:</div>
+                <div className="text-[11px] mb-2" style={{ color: 'var(--color-text-tertiary)' }}>Or Enter Any Ollama Model Name:</div>
                 <div className="flex gap-2">
                   <input
                     type="text" value={customModel}
@@ -430,6 +447,9 @@ export function CommandPalette() {
                     <Download size={12} /> Pull
                   </button>
                 </div>
+                {pulling && !CATALOGUE_MODELS.some((m) => m.id === pulling) && (
+                  <DownloadBar model={pulling} progress={pullProgress} speed={pullSpeed} onCancel={cancelPull} />
+                )}
               </div>
             </>
           ) : (
@@ -563,7 +583,7 @@ export function CommandPalette() {
               <span><kbd className="font-mono">Esc</kbd> Close</span>
             </>
           ) : tab === 'catalogue' ? (
-            <span>Models are downloaded from the Ollama registry</span>
+            <span>Models Are Downloaded From The Ollama Registry</span>
           ) : (
             <span>Stored Only Locally</span>
           )}

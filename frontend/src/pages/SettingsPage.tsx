@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 import { shortcutFromEvent } from '../lib/shortcutKeys';
-import { AVATARS, type AvatarId } from '../lib/avatar/registry';
 import { AgentsPage } from './AgentsPage';
 import { DataSourcesPage } from './DataSourcesPage';
+import { ComputerWidget } from '../horizon/widgets/computer';
 import { YourData } from '../components/YourData';
 import {
   Palette,
@@ -24,7 +24,6 @@ import { useAppStore } from '../lib/store';
 import {
   checkHealth,
   fetchSpeechHealth,
-  getMemoryStats,
   getInferenceSource,
   setInferenceSource,
   getCloudKeyStatus,
@@ -36,10 +35,8 @@ import {
   apiFetch,
   fetchSyncSettings,
   saveSyncSettings,
-  fetchMemoryNotes,
   fetchDataFolder,
   openDataFolder,
-  saveMemoryNotes,
   fetchAvailableTools,
   type ToolInfo,
   syncAllConnectors,
@@ -49,16 +46,6 @@ import {
 import { toast } from 'sonner';
 import { CLI_ENGINES_ENABLED } from '../lib/features';
 import { Icon, type IconName } from '../components/Icon';
-import {
-  MEMORIZE_CATEGORIES,
-  addItem,
-  loadMemorize,
-  removeItem,
-  saveMemorize,
-  toggleCategory,
-  type MemorizeCategory,
-  type MemorizeData,
-} from '../lib/memorize';
 
 const CLOUD_KEY_STATUS_CHANGED = 'phibe-cloud-key-status-changed';
 
@@ -345,72 +332,7 @@ function SyncSection({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-/** What Phibe remembers about you: two notes you can read and edit. */
-function MemoryNotesSection({ onSaved, memoryStats }: { onSaved: () => void; memoryStats: { entries: number; backend: string } | null }) {
-  const [saved, setSaved] = useState<{ about_you: string; memories: string } | null>(null);
-  const [aboutYou, setAboutYou] = useState('');
-  const [memories, setMemories] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    fetchMemoryNotes()
-      .then((n) => { setSaved(n); setAboutYou(n.about_you); setMemories(n.memories); })
-      .catch(() => setSaved(null));
-  }, []);
-
-  const dirty = !!saved && (aboutYou !== saved.about_you || memories !== saved.memories);
-
-  const save = async () => {
-    setBusy(true);
-    try {
-      const n = await saveMemoryNotes({ about_you: aboutYou, memories });
-      setSaved(n);
-      setAboutYou(n.about_you);
-      setMemories(n.memories);
-      onSaved();
-      toast.success('Phibe will use this from your next message');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const box = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
-  return (
-    <Section title="Memory">
-      <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-        Everything here is sent to the model as background, so Phibe knows who you are. Edit it freely: what you write is what Phibe remembers.
-      </p>
-      <div className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm" style={{ color: 'var(--color-text)' }}>About you</span>
-          <textarea value={aboutYou} rows={7} disabled={!saved} onChange={(e) => setAboutYou(e.target.value)}
-            placeholder="Your name, language, work, goals…"
-            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y" style={box} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm" style={{ color: 'var(--color-text)' }}>Things to remember</span>
-          <textarea value={memories} rows={7} disabled={!saved} onChange={(e) => setMemories(e.target.value)}
-            placeholder="Preferences, decisions, anything Phibe should keep in mind between chats…"
-            className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y" style={box} />
-        </label>
-        <div className="flex items-center justify-between">
-          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            {memoryStats ? `Also indexed: ${memoryStats.entries} saved entries (${memoryStats.backend})` : ''}
-          </span>
-          <button type="button" onClick={() => void save()} disabled={!dirty || busy}
-            className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-40"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}>
-            {busy ? 'Saving…' : 'Save memory'}
-          </button>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-// Keys already shown in "API Keys" are not repeated under Tools.
+// The cloud model keys are added from Phibe's island, so they are not repeated under Tools.
 const CLOUD_KEYS = new Set(['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'OPENROUTER_API_KEY', 'TYPESAFE_API_KEY']);
 
 /**
@@ -556,135 +478,10 @@ const SETTINGS_TABS = [
   { id: 'ai', label: 'API', icon: 'key-minimalistic' },
   { id: 'data-sources', label: 'Data Source', icon: 'database' },
   { id: 'integrations', label: 'Integrations', icon: 'link-round' },
-  { id: 'memory', label: 'Memory', icon: 'stars' },
   { id: 'about', label: 'About', icon: 'info-circle' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
-
-/** The topics Phibe should help the user memorize, and the items they add under them. */
-function MemorizeSection({ onSaved }: { onSaved: () => void }) {
-  const [data, setData] = useState<MemorizeData>(() => loadMemorize());
-  const [picked, setPicked] = useState<MemorizeCategory | ''>('');
-  const [text, setText] = useState('');
-  const [source, setSource] = useState('');
-
-  const update = (next: MemorizeData) => {
-    setData(next);
-    saveMemorize(next);
-    onSaved();
-  };
-
-  const enabled = MEMORIZE_CATEGORIES.filter((c) => data.enabled.includes(c.id));
-  const target = enabled.find((c) => c.id === picked)?.id ?? enabled[0]?.id;
-  const label = (id: MemorizeCategory) => MEMORIZE_CATEGORIES.find((c) => c.id === id)?.label ?? id;
-  const box = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
-
-  const add = () => {
-    if (!target || !text.trim()) return;
-    update(addItem(data, { category: target, text, source }));
-    setText('');
-    setSource('');
-  };
-
-  return (
-    <>
-      <Section title="What should Phibe help you memorize?">
-        {MEMORIZE_CATEGORIES.map((c) => (
-          <SettingRow key={c.id} label={c.label} description={c.description}>
-            <Switch
-              on={data.enabled.includes(c.id)}
-              label={c.label}
-              onClick={() => update(toggleCategory(data, c.id))}
-            />
-          </SettingRow>
-        ))}
-        <p className="text-xs mt-3" style={{ color: 'var(--color-text-tertiary)' }}>
-          How and when Phibe brings these up (a ping, out loud, or on command) is set up next.
-        </p>
-      </Section>
-
-      <Section title="Your items">
-        {!target ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-            Turn on at least one topic above to start adding what you want to memorize.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <select
-              value={target}
-              onChange={(e) => setPicked(e.target.value as MemorizeCategory)}
-              aria-label="Topic"
-              className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer w-full"
-              style={box}
-            >
-              {enabled.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-            <textarea
-              value={text}
-              rows={3}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="What do you want to memorize?"
-              className="w-full text-sm px-3 py-2 rounded-lg outline-none resize-y"
-              style={box}
-            />
-            <input
-              type="text"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              placeholder="Source (optional): book, verse reference, author…"
-              className="w-full text-sm px-3 py-1.5 rounded-lg outline-none"
-              style={box}
-            />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={add}
-                disabled={!text.trim()}
-                className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-40"
-                style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        )}
-
-        {data.items.length > 0 && (
-          <div className="flex flex-col mt-4">
-            {data.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start justify-between gap-3 py-3"
-                style={{ borderTop: '1px solid var(--color-border-subtle)' }}
-              >
-                <div className="min-w-0">
-                  <div className="text-xs mb-1" style={{ color: 'var(--color-accent)' }}>{label(item.category)}</div>
-                  <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>{item.text}</div>
-                  {item.source && (
-                    <div className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>{item.source}</div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => update(removeItem(data, item.id))}
-                  className="p-1 rounded cursor-pointer shrink-0"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                  aria-label="Remove item"
-                  title="Remove"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-    </>
-  );
-}
 
 interface VoiceModelStatus {
   model: string;
@@ -941,7 +738,6 @@ export function SettingsPage() {
   const [speechBackendAvailable, setSpeechBackendAvailable] = useState<boolean | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const [memoryStats, setMemoryStats] = useState<{ entries: number; backend: string } | null>(null);
 
   const [srcKind, setSrcKind] = useState<InferenceSource['kind']>('ollama');
   const [customHost, setCustomHost] = useState('http://localhost:1234/v1');
@@ -977,9 +773,6 @@ export function SettingsPage() {
     fetchSpeechHealth()
       .then((h) => setSpeechBackendAvailable(h.available))
       .catch(() => setSpeechBackendAvailable(false));
-    getMemoryStats()
-      .then(setMemoryStats)
-      .catch(() => setMemoryStats(null));
   }, []);
 
   const showSaved = () => {
@@ -1036,17 +829,16 @@ export function SettingsPage() {
 
   return (
     <div className="fin-root set-root flex flex-col h-full overflow-hidden">
-      <div className="fin-wrap set-head shrink-0">
-        <header className="fin-header">
-          <div className="fin-hello">
-            <span className="module-mark"><Icon name="settings" size={26} /></span>
-            <h2>Settings</h2>
-          </div>
-          <div className="fin-controls">
-            <div className="fin-actions" role="tablist" aria-label="Settings sections">
+      <div className="set-head shrink-0">
+        <header className="set-title">
+          <div className="set-right">
+            <div className="set-saved" aria-live="polite">
+              {saved && <span><Check size={12} /> Saved</span>}
+            </div>
+            <div className="fin-actions set-acts" role="tablist" aria-label="Settings sections">
               {SETTINGS_TABS.map((t) => (
                 <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} data-active={tab === t.id}
-                  className="fin-act" aria-label={t.label} onClick={() => setTab(t.id)}>
+                  className="fin-act" aria-label={t.label} title={t.label} onClick={() => setTab(t.id)}>
                   <Icon name={t.icon} size={16} />
                   <span>{t.label}</span>
                 </button>
@@ -1054,9 +846,6 @@ export function SettingsPage() {
             </div>
           </div>
         </header>
-        <div className="set-saved" aria-live="polite">
-          {saved && <span><Check size={12} /> Saved</span>}
-        </div>
       </div>
 
       {tab === 'agents' && <AgentsPage />}
@@ -1074,23 +863,12 @@ export function SettingsPage() {
       )}
       {tab !== 'agents' && tab !== 'data-sources' && (
       <div className="flex-1 min-h-0 overflow-y-auto px-6">
-      <div className="w-full max-w-3xl mx-auto pb-6">
+      <div className="set-cols">
+      <div className="set-main">
         <div className="flex flex-col gap-4">
           {tab === 'general' && (
             <>
               <AppearanceSection settings={settings} updateSettings={updateSettings} onSaved={showSaved} />
-              <Section title="Avatar">
-                <SettingRow label="Phibe's Floating Button">
-                  <select
-                    value={settings.avatar}
-                    onChange={(e) => { updateSettings({ avatar: e.target.value as AvatarId }); showSaved(); }}
-                    className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
-                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-                  >
-                    {AVATARS.map((av) => <option key={av.id} value={av.id}>{av.label}</option>)}
-                  </select>
-                </SettingRow>
-              </Section>
               <Section title="Floating Phibe">
                 <SettingRow label="Show Phibe on screen" description="A small button you can drag anywhere. Click it to see what is waiting for you.">
                   <Switch on={settings.floatingPhibe} label="Show Phibe on screen"
@@ -1158,25 +936,6 @@ export function SettingsPage() {
             )}
           </Section>
 
-          {/* API Keys */}
-          <Section title="API Keys">
-            <SettingRow label="OpenAI">
-              <ApiKeyInput keyName="OPENAI_API_KEY" toolName="openai" placeholder="sk-..." />
-            </SettingRow>
-            <SettingRow label="Anthropic">
-              <ApiKeyInput keyName="ANTHROPIC_API_KEY" toolName="anthropic" placeholder="sk-ant-..." />
-            </SettingRow>
-            <SettingRow label="Google">
-              <ApiKeyInput keyName="GEMINI_API_KEY" toolName="gemini" placeholder="AI..." />
-            </SettingRow>
-            <SettingRow label="OpenRouter">
-              <ApiKeyInput keyName="OPENROUTER_API_KEY" toolName="openrouter" placeholder="sk-or-..." />
-            </SettingRow>
-            <SettingRow label="TypeSafe">
-              <ApiKeyInput keyName="TYPESAFE_API_KEY" toolName="jev" placeholder="ts_..." />
-            </SettingRow>
-          </Section>
-
           {/* Model parameters */}
           <Section title="Model Parameters">
             <SettingRow label="Temperature" description={`${settings.temperature}`}>
@@ -1206,17 +965,7 @@ export function SettingsPage() {
           )}
 
           {tab === 'integrations' && (
-            <>
-              <ToolsSection />
-              <SyncSection onSaved={showSaved} />
-            </>
-          )}
-
-          {tab === 'memory' && (
-            <>
-              <MemorizeSection onSaved={showSaved} />
-              <MemoryNotesSection onSaved={showSaved} memoryStats={memoryStats} />
-            </>
+            <ToolsSection />
           )}
 
           {/* Speech */}
@@ -1253,10 +1002,6 @@ export function SettingsPage() {
             </SettingRow>
             <VoiceModelRow />
             <GpuPackRow onSaved={showSaved} />
-            <SettingRow label="Clap Activation">
-              <Switch on={settings.clapToActivate} label="Clap Activation"
-                onClick={() => { updateSettings({ clapToActivate: !settings.clapToActivate }); showSaved(); }} />
-            </SettingRow>
           </Section>
           )}
 
@@ -1354,6 +1099,9 @@ export function SettingsPage() {
           </Section>
           )}
 
+          {/* Synchronization */}
+          {tab === 'general' && <SyncSection onSaved={showSaved} />}
+
           {/* Status */}
           {tab === 'general' && (
           <Section title="Status">
@@ -1399,17 +1147,7 @@ export function SettingsPage() {
                 <img src="/brand/phibe-logo-dark.svg" alt="Phibe" height={64} className="brand-logo-dark" style={{ height: 64, width: 'auto' }} />
                 <img src="/brand/phibe-logo-light.svg" alt="Phibe" height={64} className="brand-logo-light" style={{ height: 64, width: 'auto' }} />
               </div>
-              <p className="mb-2">
-                <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Phibe</span> — your personal AI copilot, running on your own computer.
-              </p>
-              <p className="mb-2">Your personal AI assistant in constant become.</p>
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text)' }}>Adding local models</div>
-                <p className="text-xs">
-                  Run <code className="px-1 py-0.5 rounded text-[11px]" style={{ background: 'var(--color-bg-tertiary)' }}>ollama pull &lt;model-name&gt;</code> in your terminal to add more models.
-                </p>
-              </div>
-              <div className="flex gap-3 mt-4 text-xs">
+              <div className="flex gap-3 text-xs">
                 <a
                   href="https://github.com/nizaelneves/phibe"
                   target="_blank"
@@ -1423,6 +1161,8 @@ export function SettingsPage() {
           </Section>
           )}
         </div>
+      </div>
+      <aside className="set-aside" aria-label="This computer"><ComputerWidget /></aside>
       </div>
       </div>
       )}

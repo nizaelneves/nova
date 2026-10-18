@@ -206,7 +206,7 @@ export function VoiceCardView({
       )}
       {avatar && (
         <div className="vc-fab" data-ring={view.ring}>
-          <AvatarMini size={56} mirror={mirror} />
+          <AvatarMini size={56} />
           {view.badge && <VoiceBadgeSvg badge={view.badge} />}
         </div>
       )}

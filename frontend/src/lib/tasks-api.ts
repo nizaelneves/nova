@@ -24,6 +24,8 @@ export interface Task {
   notes: string;
   area_id: string | null;
   area: string;
+  /** When the task begins, if it spans days; `due` is then its end. */
+  start: string | null;
   due: string;
   all_day: boolean;
   priority: Priority | null;
@@ -36,6 +38,7 @@ export interface Task {
 
 export interface TaskCreate {
   title: string;
+  start?: string | null;
   due: string;
   all_day: boolean;
   area_id?: string;

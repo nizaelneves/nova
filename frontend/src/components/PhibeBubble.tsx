@@ -84,7 +84,6 @@ function usePendingApprovals(enabled: boolean) {
  */
 export function PhibeBubble() {
   const enabled = useAppStore((s) => s.settings.floatingPhibe);
-  const avatarId = useAppStore((s) => s.settings.avatar);
   const effects = useAppStore((s) => s.settings.effects);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const navigate = useNavigate();
@@ -252,14 +251,14 @@ export function PhibeBubble() {
         onFocus={() => setDocked(false)}
         onClick={onClick}
       >
-        <AvatarMini size={BUTTON_SIZE - 6} asleep={docked && !dragPos} still={effects === 'off'} avatar={avatarId} mirror={placement.edge === 'left'} />
+        <AvatarMini size={BUTTON_SIZE - 6} asleep={docked && !dragPos} still={effects === 'off'} />
         {voiceOn && voice.badge ? <VoiceBadgeSvg badge={voice.badge} /> : badge && <Badge kind={badge.kind} total={badge.total} />}
       </button>
 
       {open && (
         <div role="dialog" aria-label="Phibe" className="phibe-pop" style={{ width: POPOVER_WIDTH, ...popStyle }}>
           <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
-            <AvatarMini size={36} still={effects === 'off'} avatar={avatarId} />
+            <AvatarMini size={36} still={effects === 'off'} />
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold" style={{ color: 'var(--color-heading)' }}>Phibe</div>
               <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>

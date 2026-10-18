@@ -307,3 +307,40 @@ def test_migration_makes_area_id_nullable_on_an_old_schema_db(tmp_path) -> None:
 def test_a_task_without_an_area_stays_personal_even_when_areas_exist(store) -> None:
     store.create_area("Client")
     assert _add(store, "mine", "2026-10-09")["area_id"] is None
+
+
+def test_a_task_can_span_days_and_rejects_a_start_after_its_end(store) -> None:
+    t = _add(store, "Trip", "2026-10-12", start="2026-10-09")
+    assert (t["start"], t["due"]) == ("2026-10-09", "2026-10-12")
+    assert _add(store, "Plain", "2026-10-12")["start"] is None
+    with pytest.raises(TaskError):
+        _add(store, "Backwards", "2026-10-09", start="2026-10-12")
+    assert store.update_task(t["id"], start=None)["start"] is None
+    with pytest.raises(TaskError):
+        store.update_task(t["id"], start="2026-10-20")
+
+
+def test_a_repeating_span_moves_whole(store) -> None:
+    t = _add(store, "Sprint", "2026-10-12", start="2026-10-09", recurrence={"freq": "weekly"})
+    (nxt,) = _finish(store, t)
+    assert (nxt["start"], nxt["due"]) == ("2026-10-16", "2026-10-19")
+
+
+def test_migration_adds_start_to_a_db_that_lacks_it(tmp_path) -> None:
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    db = sqlite3.connect(path)
+    db.executescript(
+        "CREATE TABLE areas (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, position INTEGER NOT NULL);"
+        "CREATE TABLE tasks (id TEXT PRIMARY KEY, title TEXT NOT NULL, notes TEXT NOT NULL DEFAULT '',"
+        " area_id TEXT, due TEXT NOT NULL, all_day INTEGER NOT NULL, priority TEXT, status TEXT NOT NULL DEFAULT 'todo',"
+        " recurrence TEXT, series_id TEXT, occurrence INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, completed_at TEXT);"
+        "INSERT INTO tasks (id, title, due, all_day, created_at) VALUES ('a', 'Old', '2026-10-05', 1, '2026-10-01T00:00:00');"
+    )
+    db.commit()
+    db.close()
+    s = TaskStore(path, now=lambda: NOW)
+    assert s.get_task("a")["start"] is None
+    assert s.create_task(title="New", due="2026-10-06", all_day=True, start="2026-10-05")["start"] == "2026-10-05"
+    s.close()

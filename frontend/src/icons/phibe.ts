@@ -3,6 +3,8 @@ const line = (body: string) =>
   `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">${body}</g>`;
 
 export const PHIBE_ICONS = {
+  // A card with a plus on top: the Horizon card switch.
+  'card-plus': line('<rect x="3" y="8" width="15" height="12" rx="3"/><path d="M3 12.500h15"/><path d="M19 3v6M16 6h6"/>'),
   // A slim four-point star with curved sides: the North Star.
   'north-star': line('<path d="M12 3C12.600 8.500 15.500 11.400 21 12 15.500 12.600 12.600 15.500 12 21 11.400 15.500 8.500 12.600 3 12 8.500 11.400 11.400 8.500 12 3z"/>'),
   'social-media': line('<path d="M12 3C7 3 3 6.6 3 11c0 2.3 1.1 4.3 2.9 5.8L5 21l4.2-2.1c.9.2 1.8.3 2.8.3 5 0 9-3.6 9-8s-4-8-9-8z M12 14.4l-2.7-2.7a1.8 1.8 0 0 1 2.7-2.4 1.8 1.8 0 0 1 2.7 2.4z"/>'),
@@ -23,4 +25,7 @@ export const PHIBE_ICONS = {
   'horus-eye': line('<path d="M2 11c3.500-5 6.500-6.500 10-6.500S18.500 6 22 11c-3.500 5-6.500 6.500-10 6.500S5.500 16 2 11z"/><circle cx="12" cy="11" r="3"/><circle cx="12" cy="11" r="1" fill="currentColor"/><path d="M11 17.200V21M14.500 16.800c1.200 1.700 3 2.200 4.500 1.200"/>'),
   // Three planets of different sizes, sharing one space: Projects.
   projects: line('<circle cx="8" cy="8.500" r="4.500"/><circle cx="18" cy="7" r="2.500"/><circle cx="15.500" cy="16.500" r="4"/><circle cx="6.500" cy="18.500" r="1.500" fill="currentColor"/>'),
+  // A stopwatch: the focus timer in the island.
+  'focus-timer': line('<circle cx="12" cy="13.500" r="7.500"/><path d="M12 13.500V9.500M9.500 3h5M18 6l1.500-1.500"/>'),
+  'pause-circle': line('<circle cx="12" cy="12" r="9.500"/><path d="M10 9v6M14 9v6"/>'),
 } as const;

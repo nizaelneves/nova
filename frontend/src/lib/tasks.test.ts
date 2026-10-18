@@ -18,6 +18,7 @@ function makeTask(overrides: Partial<Task>): Task {
     notes: '',
     area_id: 'a1',
     area: 'Personal',
+    start: null,
     due: '2026-09-30T09:30',
     all_day: false,
     priority: null,

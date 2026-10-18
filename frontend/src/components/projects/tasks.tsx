@@ -249,6 +249,9 @@ export function TaskForm({
   const [title, setTitle] = useState(task?.title ?? '');
   const [date, setDate] = useState(task ? task.due.slice(0, 10) : todayLocal());
   const [time, setTime] = useState(task && !task.all_day ? task.due.slice(11, 16) : '');
+  const [range, setRange] = useState(!!task?.start);
+  const [startDate, setStartDate] = useState(task?.start ? task.start.slice(0, 10) : todayLocal());
+  const [startTime, setStartTime] = useState(task?.start && !task.all_day ? task.start.slice(11, 16) : '');
   const [areaId, setAreaId] = useState(task ? task.area_id ?? '' : defaultAreaId);
   const [priority, setPriority] = useState<'' | Priority>(task?.priority ?? '');
   const [status, setStatus] = useState<Status>(task?.status ?? 'todo');
@@ -263,9 +266,12 @@ export function TaskForm({
     if (!clean) return;
     setSaving(true);
     try {
+      // A span is timed only when both ends have a time; otherwise it runs whole days.
+      const timed = range ? !!(time && startTime) : !!time;
       const body: TaskCreate = {
         title: clean,
-        ...toDue(date, time),
+        ...toDue(date, timed ? time : ''),
+        start: range ? (timed ? `${startDate}T${startTime}` : startDate) : null,
         area_id: areaId || undefined,
         priority: priority || null,
         status,
@@ -294,31 +300,54 @@ export function TaskForm({
 
   const field = { background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
   return (
-    <Popup title={task ? 'Edit task' : 'New task'} onClose={onClose} wide>
+    <Popup title={task ? 'Edit Task' : 'New Task'} onClose={onClose} wide>
       <div className="flex flex-col gap-3">
         <input
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Task title"
+          placeholder="Task Title"
           className="w-full text-sm px-3 py-2 rounded-lg outline-none"
           style={field}
         />
+        <div className="flex gap-1 text-xs" role="tablist">
+          {([['Due Date', false], ['Start and End', true]] as const).map(([text, on]) => (
+            <button key={text} type="button" role="tab" aria-selected={range === on} onClick={() => setRange(on)}
+              className="px-3 py-1 rounded-lg cursor-pointer"
+              style={{ background: range === on ? 'var(--color-surface)' : 'transparent', color: range === on ? 'var(--color-text)' : 'var(--color-text-tertiary)', border: '1px solid var(--color-border)' }}>
+              {text}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-3">
+          {range && (
+            <>
+              <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                Start Date
+                <input type="date" value={startDate} max={date} onChange={(e) => setStartDate(e.target.value)}
+                  className="text-sm px-3 py-1.5 rounded-lg outline-none" style={field} />
+              </label>
+              <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                Start Time
+                <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
+                  className="text-sm px-3 py-1.5 rounded-lg outline-none" style={field} />
+              </label>
+            </>
+          )}
           <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            Due date
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+            {range ? 'End Date' : 'Due Date'}
+            <input type="date" value={date} min={range ? startDate : undefined} onChange={(e) => setDate(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none" style={field} />
           </label>
           <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            Time (optional — all day otherwise)
+            {range ? 'End Time' : 'Time (Optional — All Day otherwise)'}
             <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none" style={field} />
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            Area
+            Workspace
             <select value={areaId} onChange={(e) => setAreaId(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={field}>
               <option value="">Personal</option>
@@ -338,7 +367,7 @@ export function TaskForm({
         </div>
         <div className="grid grid-cols-3 gap-3">
           <label className="flex flex-col gap-1 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-            Column
+            Stage
             <select value={status} onChange={(e) => setStatus(e.target.value as Status)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={field}>
               <option value="todo">To Do</option>
@@ -350,7 +379,7 @@ export function TaskForm({
             Repeat
             <select value={freq} onChange={(e) => setFreq(e.target.value as '' | RecurrenceFreq)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={field}>
-              <option value="">Doesn't repeat</option>
+              <option value="">Doesn't Repeat</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>

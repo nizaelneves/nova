@@ -105,6 +105,75 @@ class TestModelPull:
         assert resp.status_code == 502
 
 
+class TestModelPullStream:
+    def test_requires_model_and_ollama(self):
+        client = TestClient(_app(_make_ollama_engine(), engine_name="ollama"))
+        assert client.post("/v1/models/pull/stream", json={}).status_code == 400
+        other = TestClient(_app(_make_engine(engine_id="vllm"), engine_name="vllm"))
+        assert other.post("/v1/models/pull/stream", json={"model": "x"}).status_code == 501
+
+    def test_passes_ollama_progress_lines_through(self):
+        client = TestClient(_app(_make_ollama_engine(), engine_name="ollama"))
+        sent = [
+            {"status": "pulling manifest"},
+            {"status": "pulling abc", "digest": "abc", "total": 100, "completed": 40},
+            {"status": "success"},
+        ]
+
+        class FakeResponse:
+            status_code = 200
+
+            async def aiter_lines(self):
+                for line in sent:
+                    yield json.dumps(line)
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+        class FakeClient:
+            def __init__(self, *a, **kw):
+                pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc):
+                return False
+
+            def stream(self, method, url, json=None):
+                assert (method, url, json) == ("POST", "/api/pull", {"name": "m:1", "stream": True})
+                return FakeResponse()
+
+        with patch("httpx.AsyncClient", FakeClient):
+            resp = client.post("/v1/models/pull/stream", json={"model": "m:1"})
+
+        assert resp.status_code == 200
+        assert [json.loads(x) for x in resp.text.splitlines()] == sent
+
+    def test_reports_an_unreachable_ollama_as_a_line(self):
+        import httpx
+
+        client = TestClient(_app(_make_ollama_engine(), engine_name="ollama"))
+
+        class Down:
+            def __init__(self, *a, **kw):
+                pass
+
+            async def __aenter__(self):
+                raise httpx.ConnectError("refused")
+
+            async def __aexit__(self, *exc):
+                return False
+
+        with patch("httpx.AsyncClient", Down):
+            resp = client.post("/v1/models/pull/stream", json={"model": "m"})
+
+        assert "unreachable" in json.loads(resp.text.splitlines()[0])["error"]
+
+
 # ---------------------------------------------------------------------------
 # Model delete endpoint
 # ---------------------------------------------------------------------------
@@ -313,3 +382,27 @@ class TestModelsEndpointExtended:
         assert resp.status_code == 200
         assert [m["id"] for m in resp.json()["data"]] == ["qwen3.5:4b"]
         mock_to_thread.assert_awaited_once_with(engine.list_models)
+
+
+class TestOllamaHostBehindWrappers:
+    def test_finds_ollama_inside_a_multi_engine(self):
+        from types import SimpleNamespace
+
+        from phibe.engine.multi import MultiEngine
+        from phibe.server.routes import _ollama_host
+
+        local = _make_ollama_engine()
+        local._host = "http://127.0.0.1:11434"
+        multi = MultiEngine([("ollama", local), ("litellm", _make_engine(engine_id="litellm"))])
+        request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(engine=multi, engine_name="")))
+        assert _ollama_host(request) == "http://127.0.0.1:11434"
+
+    def test_none_when_no_engine_is_ollama(self):
+        from types import SimpleNamespace
+
+        from phibe.engine.multi import MultiEngine
+        from phibe.server.routes import _ollama_host
+
+        multi = MultiEngine([("litellm", _make_engine(engine_id="litellm"))])
+        request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(engine=multi, engine_name="")))
+        assert _ollama_host(request) is None

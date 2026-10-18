@@ -48,10 +48,10 @@ export function AttachMenu({ disabled }: { disabled?: boolean }) {
           onClose={() => setOpen(false)}
           footer={<span>{tab === 'files' ? KNOWLEDGE_FILE_TYPES.join('  ') : 'Coming soon'}</span>}>
           {tab === 'files' ? (
-            <PickerRow icon={<Icon name="paperclip" size={16} />} title="Add Files or Photos" note="Phibe reads them and uses them in answers"
+            <PickerRow icon={<Icon name="paperclip" size={16} />} title="Add Files or Photos"
               onClick={() => fileRef.current?.click()} />
           ) : (
-            <PickerRow icon={<Icon name="database" size={16} />} title="Add Context @" note="Pull in notes and sources from your data" soon />
+            <PickerRow icon={<Icon name="database" size={16} />} title="Add Context @" soon />
           )}
         </PickerModal>
       )}

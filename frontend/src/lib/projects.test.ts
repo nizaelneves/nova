@@ -59,3 +59,45 @@ describe('summary and week bars', () => {
     expect([week[3].done, week[3].open, week[6].open]).toEqual([1, 1, 1]);
   });
 });
+
+describe('counters', () => {
+  it('counts what is open, done and late, with the recent change', async () => {
+    const { counters } = await import('./projects');
+    const now = new Date('2026-10-15T12:00:00');
+    const t = (o: Partial<Task>) => ({ status: 'todo', all_day: true, due: '2026-10-15', completed_at: null, ...o }) as unknown as Task;
+    const tasks = [t({}), t({ due: '2026-10-10' }), t({ status: 'done', completed_at: '2026-10-14T09:00:00' }), t({ status: 'done', completed_at: '2026-09-01T09:00:00' })];
+    expect(counters(tasks, now)).toEqual({ open: 2, openToday: 1, done: 2, doneWeek: 1, overdue: 1 });
+  });
+});
+
+describe('sortAreas', () => {
+  it('orders by creation or by name without touching the input', async () => {
+    const { sortAreas } = await import('./projects');
+    const list = [{ name: 'Beta' }, { name: 'alpha' }, { name: 'Gamma' }];
+    expect(sortAreas(list, 'ascending').map((a) => a.name)).toEqual(['Beta', 'alpha', 'Gamma']);
+    expect(sortAreas(list, 'descending').map((a) => a.name)).toEqual(['Gamma', 'alpha', 'Beta']);
+    expect(sortAreas(list, 'a-z').map((a) => a.name)).toEqual(['alpha', 'Beta', 'Gamma']);
+    expect(sortAreas(list, 'z-a').map((a) => a.name)).toEqual(['Gamma', 'Beta', 'alpha']);
+    expect(list[0].name).toBe('Beta');
+  });
+});
+
+
+describe('results', () => {
+  it('sums up what was delivered, on time and how fast', async () => {
+    const { results } = await import('./projects');
+    const now = new Date('2026-10-15T12:00:00'); // Thursday; this week starts Sunday the 11th
+    const t = (o: Partial<Task>) => ({ status: 'done', due: '2026-10-14', created_at: '2026-10-12T00:00:00', completed_at: '2026-10-13T00:00:00', ...o }) as unknown as Task;
+    const tasks = [t({}), t({ completed_at: '2026-10-20T00:00:00' }), t({ status: 'todo', completed_at: null })];
+    const r = results(tasks, now);
+    expect(r).toMatchObject({ done: 2, rate: 67, onTime: 50, avgDays: 4.5 });
+    expect(r.weeks).toHaveLength(8);
+    expect(r.weeks[7].done).toBe(1); // the week of the 11th
+    expect(r.delivered[0].completed_at).toBe('2026-10-20T00:00:00');
+  });
+
+  it('is all zeros for a project with nothing done', async () => {
+    const { results } = await import('./projects');
+    expect(results([], new Date())).toMatchObject({ done: 0, rate: 0, onTime: 0, avgDays: 0, delivered: [] });
+  });
+});

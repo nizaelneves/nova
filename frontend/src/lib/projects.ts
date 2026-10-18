@@ -70,3 +70,66 @@ export function weekCounts(tasks: Task[], now: Date): DayCount[] {
     return { date, done: due.filter((t) => t.status === 'done').length, open: due.filter((t) => t.status !== 'done').length };
   });
 }
+
+export type Counters = { open: number; openToday: number; done: number; doneWeek: number; overdue: number };
+
+/** The numbers on top of the Projects home: what is open, what is done, what is late, and the recent change in each. */
+export function counters(tasks: Task[], now: Date): Counters {
+  const open = tasks.filter((t) => t.status !== 'done');
+  const weekAgo = now.getTime() - 7 * 86_400_000;
+  return {
+    open: open.length,
+    openToday: open.filter((t) => t.due.slice(0, 10) === dayOf(now)).length,
+    done: tasks.length - open.length,
+    doneWeek: tasks.filter((t) => t.status === 'done' && t.completed_at && new Date(t.completed_at).getTime() >= weekAgo).length,
+    overdue: open.filter((t) => isOverdue(t, now)).length,
+  };
+}
+
+export type SortMode = 'ascending' | 'descending' | 'a-z' | 'z-a';
+
+/** Orders the client projects: by when they were created (ascending = oldest first) or by name. Personal is placed by the caller. */
+export function sortAreas<T extends { name: string }>(areas: T[], mode: SortMode): T[] {
+  const copy = [...areas];
+  if (mode === 'a-z') return copy.sort((a, b) => a.name.localeCompare(b.name));
+  if (mode === 'z-a') return copy.sort((a, b) => b.name.localeCompare(a.name));
+  return mode === 'descending' ? copy.reverse() : copy;
+}
+
+
+export type Results = {
+  done: number;
+  /** Share of all tasks that are done, in whole percent. */
+  rate: number;
+  /** Share of done tasks finished on or before their due day. */
+  onTime: number;
+  /** Average days from creating a task to finishing it. */
+  avgDays: number;
+  /** Tasks finished in each of the last eight weeks (Sunday start), oldest first. */
+  weeks: { date: Date; done: number }[];
+  /** Finished tasks, newest first. */
+  delivered: Task[];
+};
+
+/** What the project has delivered so far. */
+export function results(tasks: Task[], now: Date): Results {
+  const delivered = tasks
+    .filter((t) => t.status === 'done' && t.completed_at)
+    .sort((a, b) => b.completed_at!.localeCompare(a.completed_at!));
+  const onTime = delivered.filter((t) => t.completed_at!.slice(0, 10) <= t.due.slice(0, 10)).length;
+  const days = delivered.reduce((sum, t) => sum + Math.max(0, (new Date(t.completed_at!).getTime() - new Date(t.created_at).getTime()) / 86_400_000), 0);
+  const weeks = Array.from({ length: 8 }, (_, i) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - (7 - i) * 7 + 7);
+    const from = dayOf(date);
+    const to = dayOf(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 6));
+    return { date, done: delivered.filter((t) => t.completed_at!.slice(0, 10) >= from && t.completed_at!.slice(0, 10) <= to).length };
+  });
+  return {
+    done: delivered.length,
+    rate: tasks.length ? Math.round((100 * delivered.length) / tasks.length) : 0,
+    onTime: delivered.length ? Math.round((100 * onTime) / delivered.length) : 0,
+    avgDays: delivered.length ? Math.round((days / delivered.length) * 10) / 10 : 0,
+    weeks,
+    delivered,
+  };
+}

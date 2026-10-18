@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import { Layout } from './components/Layout';
-import { ChatPage } from './pages/ChatPage';
+import { HorizonPage } from './pages/HorizonPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AgentsPage } from './pages/AgentsPage';
 import { SeedsPage } from './pages/SeedsPage';
@@ -11,6 +11,7 @@ import { PingsPage } from './pages/PingsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { FinancesPage } from './pages/FinancesPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
+import { startComputerFeed } from './horizon/lib/computerFeed';
 import { CommandPalette } from './components/CommandPalette';
 import { Toaster } from './components/ui/sonner';
 import { useAppStore } from './lib/store';
@@ -42,6 +43,9 @@ export default function App() {
     const interval = setInterval(importOverlay, 5000);
     return () => clearInterval(interval);
   }, [importOverlay]);
+
+  // Read this computer in the background, so the Computer widget opens already full.
+  useEffect(() => { startComputerFeed(); }, []);
 
   // Fetch models on mount
   useEffect(() => {
@@ -75,7 +79,7 @@ export default function App() {
     <>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<ChatPage />} />
+          <Route index element={<HorizonPage />} />
           <Route path="settings" element={<SettingsPage />} />
           {/* Agents and Data Sources now live inside Settings. */}
           <Route path="data-sources" element={<Navigate to="/settings?tab=data-sources" replace />} />

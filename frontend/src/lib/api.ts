@@ -888,20 +888,6 @@ export const fetchDataFolder = (): Promise<DataFolder> => syncJson('/v1/data-fol
 export const openDataFolder = (): Promise<{ opened: string }> =>
   syncJson('/v1/data-folder/open', { method: 'POST' });
 
-export interface MemoryNotes {
-  about_you: string;
-  memories: string;
-}
-
-export const fetchMemoryNotes = (): Promise<MemoryNotes> => syncJson('/v1/memory-notes');
-
-export const saveMemoryNotes = (changes: Partial<MemoryNotes>): Promise<MemoryNotes> =>
-  syncJson('/v1/memory-notes', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(changes),
-  });
-
 export const fetchSyncOverview = (): Promise<SyncOverview> =>
   syncJson('/v1/connectors/sync-status');
 

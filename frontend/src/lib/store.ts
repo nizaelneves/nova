@@ -15,7 +15,6 @@ import type {
 import type { ManagedAgent } from './api';
 import { isCliModel, isEmbedOnlyModel } from './model-capabilities';
 import { CLI_ENGINES_ENABLED } from './features';
-import { DEFAULT_AVATAR, type AvatarId } from './avatar/registry';
 import { serializeToolCallArguments } from './tool-call';
 
 export interface CachedConnector {
@@ -106,18 +105,10 @@ interface Settings {
   cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   // Visual effects: full, balanced (lighter) or off (nothing animated in the background).
   effects: 'full' | 'balanced' | 'off';
-  // Clap twice near the mic to start a voice recording — only listens while
-  // the app window is open and this is on; never listens in the background.
-  clapToActivate: boolean;
   // Phibe's floating button: always within reach, draggable, can be hidden here or from the button.
   floatingPhibe: boolean;
-  // Which avatar Phibe wears.
-  avatar: AvatarId;
-  // Bumped when the default avatar changes, so the new default reaches everyone once.
-  avatarV?: number;
 }
 
-const AVATAR_VERSION = 2;
 
 function loadSettings(): Settings {
   const defaults: Settings = {
@@ -132,21 +123,14 @@ function loadSettings(): Settings {
     voiceReplies: 'voice',
     cliEffort: 'medium',
     effects: 'full',
-    clapToActivate: false,
     floatingPhibe: true,
-    avatar: DEFAULT_AVATAR,
-    avatarV: AVATAR_VERSION,
   };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
-    const saved = { ...defaults, ...parsed };
-    if (parsed.avatarV !== AVATAR_VERSION) {
-      saved.avatar = DEFAULT_AVATAR;
-      saved.avatarV = AVATAR_VERSION;
-    }
-    return saved;
+    const { avatar: _avatar, avatarV: _avatarV, clapToActivate: _clap, ...kept } = parsed; // settings that no longer exist
+    return { ...defaults, ...kept };
   } catch {
     return defaults;
   }

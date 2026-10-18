@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe Orb Lab</title>
+<style>
+  :root { --navy: #14123f; --mint: #20e7aa; --cyan: #10c3d3; --peach: #ffe3bd; --bg: #0a0a1c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: #e9ecf5; font-family: system-ui, "Segoe UI", sans-serif; }
+  header { padding: 28px 32px 8px; max-width: 1180px; margin: 0 auto; }
+  h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 600; }
+  header p { margin: 0; color: rgba(233, 236, 245, 0.6); font-size: 0.9rem; line-height: 1.55; max-width: 780px; }
+  .bar { display: flex; gap: 10px; margin-top: 16px; }
+  .bar button { padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.18); background: none; color: #e9ecf5; font-size: 0.82rem; cursor: pointer; }
+  .bar button:hover { border-color: var(--mint); color: var(--mint); }
+  main { max-width: 1180px; margin: 0 auto; padding: 18px 32px 60px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+  .tile { border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 22px; background: linear-gradient(180deg, #0f0e2b, #0b0a20); padding: 14px 14px 18px; cursor: pointer; }
+  .tile:hover { border-color: rgba(32, 231, 170, 0.45); }
+  .stage { position: relative; width: 100%; aspect-ratio: 1; }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .goo { filter: url(#goo); }
+  .stage canvas.mist { filter: blur(7px); }
+  .round { grid-column: 1 / -1; margin: 14px 0 0; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mint); }
+  .bar button[data-on='true'] { border-color: var(--mint); color: var(--mint); }
+  .tag { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 6px; }
+  .tag b { font-size: 1rem; font-weight: 600; }
+  .tag small { font-size: 0.7rem; color: var(--mint); letter-spacing: 0.08em; text-transform: uppercase; }
+  .note { margin: 6px 6px 0; font-size: 0.8rem; line-height: 1.5; color: rgba(233, 236, 245, 0.62); }
+  @media (max-width: 480px) { main { padding: 12px 14px 40px; grid-template-columns: 1fr; } header { padding: 20px 14px 4px; } .rules { padding: 0 14px 40px; } }
+  .rules { max-width: 1180px; margin: 0 auto; padding: 0 32px 50px; color: rgba(233, 236, 245, 0.55); font-size: 0.8rem; line-height: 1.7; }
+  .rules b { color: #e9ecf5; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/></filter>
+</svg>
+
+<header>
+  <h1>Phibe Orb Lab</h1>
+  <p>Twenty-four directions for the new Orb, in four rounds. Rounds 3 and 4 keep today's Phibe: the dark round face, the same eyes and a cloud of mist. Round 4 has no ring around the face and breaks apart like the menu bar: into pixels and Fibonacci numbers, or into pixels only. Every one is only a face on a body that is made of pieces, so it can fall apart into numbers, dots, drops or shards and gather again. No arms, no hands, no limbs. Click a card to dissolve or rebuild it; they also do it on their own.</p>
+  <div class="bar"><button id="all">Dissolve all</button><button id="auto">Auto cycle: on</button><button data-mood="happy" data-on="true">Happy</button><button data-mood="thinking">Thinking</button><button data-mood="listening">Listening</button><button data-mood="speaking">Speaking</button></div>
+</header>
+<main id="grid"></main>
+<div class="rules">
+  <b>Brief followed:</b> more business than mascot (navy, mint, cyan; no glow-cloud look); tied to the brand (the golden ratio, Fibonacci 3-5-8-11-16, the dot that moves from the b to the e); a body that can really disintegrate and come back; only the little face stays whole.
+</div>
+
+<script>
+const TAU = Math.PI * 2, GA = 137.50776 * Math.PI / 180, S = 300, R = 100;
+const NAVY = '#14123f', MINT = '#20e7aa', CYAN = '#10c3d3', PEACH = '#ffe3bd';
+const FIB = [3, 5, 8, 11, 16];
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const ease = (x) => x * x * (3 - 2 * x);
+const mix = (a, b, t) => a + (b - a) * t;
+const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const lerpColor = (a, b, t) => { const x = rgb(a), y = rgb(b); return `rgb(${x.map((v, i) => Math.round(mix(v, y[i], t))).join(',')})`; };
+
+
+/* ---------- the menu bar's dust (ported from lib/fx/particles.ts) ---------- */
+const FIBS = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89], WIND = { angle: -0.45, speed: 70 };
+const pickFib = (rand) => FIBS[Math.floor(rand() * rand() * FIBS.length)];
+function mkRng(seedValue) { let a = seedValue >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const blankP = (mode) => ({ mode, glyph: 'num', value: 1, age: 0, life: 1, x: 0, y: 0, vx: 0, vy: 0, sx: 0, sy: 0, tx: 0, ty: 0, size: 9 });
+function dustOut(rand, x, y, glyph, delay) {
+  const q = blankP('out'); q.glyph = glyph; q.age = -delay;
+  const spread = (rand() - 0.5) * 1.1, speed = WIND.speed * 1.5 * (0.35 + rand() * 0.9);
+  q.value = glyph === 'px' ? 0 : pickFib(rand); q.x = x; q.y = y;
+  q.vx = Math.cos(WIND.angle + spread) * speed; q.vy = Math.sin(WIND.angle + spread) * speed;
+  q.life = glyph === 'px' ? 0.45 + rand() * 0.6 : 0.7 + rand() * 0.6; q.size = glyph === 'px' ? 3 : 10 + Math.floor(rand() * 4);
+  return q;
+}
+function dustIn(rand, tx, ty, delay, glyph) {
+  const q = blankP('in'); q.glyph = glyph;
+  const spread = (rand() - 0.5) * 1.3, d = 110 * (0.5 + rand() * 0.7);
+  q.value = glyph === 'px' ? 0 : pickFib(rand); q.tx = tx; q.ty = ty;
+  q.sx = tx + Math.cos(WIND.angle + spread) * d; q.sy = ty + Math.sin(WIND.angle + spread) * d; q.x = q.sx; q.y = q.sy;
+  q.life = glyph === 'px' ? 0.3 + rand() * 0.25 : 0.45 + rand() * 0.3; q.age = -delay; q.size = glyph === 'px' ? 3 : 10 + Math.floor(rand() * 4);
+  return q;
+}
+const easeIO = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function stepDust(list, dt) {
+  for (const q of list) { q.age += dt; if (q.age < 0) continue; if (q.mode === 'out') { const drag = Math.exp(-1.6 * dt); q.vx *= drag; q.vy *= drag; q.x += q.vx * dt; q.y += q.vy * dt; } else { const k = easeIO(Math.min(1, q.age / q.life)); q.x = q.sx + (q.tx - q.sx) * k; q.y = q.sy + (q.ty - q.sy) * k; } }
+  for (let i = list.length - 1; i >= 0; i--) if (list[i].age >= list[i].life) list.splice(i, 1);
+}
+const dustAlpha = (q) => { if (q.age < 0 || q.age >= q.life) return 0; const x = q.age / q.life; return q.mode === 'out' ? Math.pow(1 - x, 1.5) : Math.min(1, x * 4) * (1 - Math.pow(x, 6)); };
+function drawDust(ctx, list, color) {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; let font = 0;
+  for (const q of list) {
+    const a = dustAlpha(q); if (a <= 0.01) continue; ctx.globalAlpha = a;
+    if (q.glyph === 'px') { ctx.fillRect(Math.round(q.x / 3) * 3, Math.round(q.y / 3) * 3, q.size, q.size); continue; }
+    if (q.size !== font) { font = q.size; ctx.font = `600 ${font}px ui-monospace, "Cascadia Mono", Consolas, monospace`; }
+    ctx.fillText(String(q.value), q.x, q.y);
+  }
+  ctx.globalAlpha = 1;
+}
+/** A random point inside the orb's body (a disc, or the rounded square for the tile). */
+function bodyPoint(rand, shape) {
+  for (;;) { const x = (rand() * 2 - 1) * 112, y = (rand() * 2 - 1) * 112; if (shape === 'squircle' ? Math.abs(x) < 100 && Math.abs(y) < 100 : Math.hypot(x, y) < 112) return [x, y]; }
+}
+function spawnDust(t, out) {
+  const rand = mkRng(Math.floor(performance.now()) & 0xffffff), px = t.v.dust === 'px', n = px ? 420 : 340, numbers = px ? 0 : 70;
+  for (let i = 0; i < n + numbers; i++) {
+    const [x, y] = bodyPoint(rand, t.v.core), glyph = i < n ? 'px' : 'num';
+    t.dust.push(out ? dustOut(rand, x, y, glyph, rand() * 0.55) : dustIn(rand, x, y, 0.05 + rand() * 0.4, glyph));
+  }
+}
+
+/* ---------- the face: the only part that never breaks ---------- */
+let mood = 'happy';
+const G = { speak: 0, vis: 1, level: 0.6 };
+const blob = (ctx, x, y, r, c, a) => { const g = ctx.createRadialGradient(x, y, 0, x, y, r), [R_, G_, B_] = c[0] === '#' ? rgb(c) : c.match(/\d+/g).map(Number); g.addColorStop(0, `rgba(${R_},${G_},${B_},${a})`); g.addColorStop(1, `rgba(${R_},${G_},${B_},0)`); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); };
+function phibeEyes(ctx, t, d, open, gx, gy, lift, listen) {
+  const k = 1.35;
+  [-18, 18].forEach((ex) => {
+    ctx.save(); ctx.translate(ex * k + gx, -2.7 + gy + lift); ctx.scale(1, open);
+    ctx.save(); ctx.filter = 'blur(4px)'; ctx.fillStyle = MINT; const boost = mood === 'speaking' ? G.level : 0; ctx.globalAlpha = listen ? 0.75 : 0.5 + boost * 0.4; ctx.beginPath(); ctx.ellipse(0, 0, (9 + boost * 5) * k, (12 + boost * 6) * k, 0, 0, TAU); ctx.fill(); ctx.restore();
+    const g = ctx.createRadialGradient(-0.2 * 6.4 * k, -0.3 * 9.4 * k, 1, 0, 0, 9.4 * k * 0.9); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#bff8f3'); g.addColorStop(1, MINT);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, 6.4 * k, 9.4 * k, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.ellipse(-1.6 * k, -3 * k, 1.8 * k, 2.6 * k, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+  });
+}
+function core(ctx, shape, t, e, opts = {}) {
+  const ring = opts.ring !== false, r = opts.fixed ? 62 : 62 * (1 - 0.38 * e), a = opts.vis ?? 1 - e * 0.85;
+  ctx.save(); ctx.globalAlpha = a; if (!ring) ctx.filter = 'blur(1.4px)';
+  const g = ctx.createRadialGradient(-6, -r * 0.4, 2, 0, 0, r * 1.25); g.addColorStop(0, '#143f4a'); g.addColorStop(1, '#04101a'); ctx.fillStyle = g;
+  ctx.beginPath();
+  for (let i = 0; i <= 120; i++) {
+    const th = (i / 120) * TAU, wob = 1 + 0.012 * Math.sin(th * 3 + t * 1.3) + 0.01 * Math.sin(th * 5 - t * 1.9);
+    let x = Math.cos(th), y = Math.sin(th);
+    if (shape === 'squircle') { x = Math.sign(x) * Math.sqrt(Math.abs(x)); y = Math.sign(y) * Math.sqrt(Math.abs(y)); x *= 0.93; y *= 0.93; }
+    i ? ctx.lineTo(x * r * wob, y * r * wob) : ctx.moveTo(x * r * wob, y * r * wob);
+  }
+  ctx.closePath(); ctx.fill();
+  if (ring) { ctx.strokeStyle = MINT; ctx.globalAlpha = 0.45 * a; ctx.lineWidth = 3.2; ctx.stroke(); }
+  ctx.restore();
+}
+function face(ctx, kind, t, d, blinkAmt) {
+  const think = mood === 'thinking', listen = mood === 'listening';
+  const gx = think ? -6 + Math.sin(t * 0.6) : Math.sin(t * 0.6) * 3, gy = think ? -5 : Math.cos(t * 0.45) * 2;      // slow gaze
+  const lift = -d * 6 + Math.sin(t * 1.4) * 1.2;                         // it floats a little when the body is gone
+  const open = 1 - blinkAmt * 0.92;
+  const eye = (x, y, w, h) => {
+    ctx.save(); ctx.translate(x + gx, y + gy + lift); ctx.scale(1, open);
+    if (kind === 'oval') {
+      ctx.shadowColor = MINT; ctx.shadowBlur = 16; ctx.fillStyle = MINT;
+      ctx.beginPath(); ctx.ellipse(0, 0, w, h, 0, 0, TAU); ctx.fill();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#eafff8'; ctx.beginPath(); ctx.ellipse(-w * 0.25, -h * 0.35, w * 0.28, h * 0.28, 0, 0, TAU); ctx.fill();
+    } else if (kind === 'dark') {
+      ctx.fillStyle = NAVY; ctx.beginPath(); ctx.ellipse(0, 0, w, h, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-w * 0.3, -h * 0.35, w * 0.22, 0, TAU); ctx.fill();
+    } else {
+      const g = ctx.createRadialGradient(0, 0, 1, 0, 0, w * 1.3);
+      g.addColorStop(0, '#e8fffa'); g.addColorStop(0.35, MINT); g.addColorStop(1, 'rgba(16,195,211,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, w * 1.25, h * 1.25, 0, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  };
+  if (kind === 'visor') {                                                  // glossy black visor with two lights
+    ctx.save(); ctx.translate(0, lift);
+    const g = ctx.createLinearGradient(0, -34, 0, 34); g.addColorStop(0, '#1b1a4a'); g.addColorStop(1, '#05051a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-62, -30, 124, 60, 30); ctx.fill();
+    ctx.strokeStyle = 'rgba(32,231,170,.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.beginPath(); ctx.ellipse(-20, -20, 28, 5, -0.1, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  const eh = listen ? 17 : 14, ew = listen ? 10 : 9;
+  if (kind === 'phibe') { phibeEyes(ctx, t, d, open, gx, gy, lift, listen); return; }
+  eye(-26, -2, ew, eh); eye(26, -2, ew, eh);
+  if (kind !== 'visor') {                                                  // a tiny smile, only when whole
+    ctx.save(); ctx.globalAlpha = 1 - d; ctx.strokeStyle = kind === 'dark' ? NAVY : MINT; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.beginPath(); if (think) { ctx.moveTo(-7, 16); ctx.lineTo(7, 16); } else ctx.arc(gx * 0.6, 14 + gy * 0.6, listen ? 5 : 9, 0.25 * Math.PI, 0.75 * Math.PI); ctx.stroke(); ctx.restore();
+  }
+}
+
+/* ---------- the six bodies ---------- */
+const variants = [
+  { round: 'Round 1', name: 'Phi Seed', tag: 'Golden ratio', face: 'oval', goo: false,
+    note: 'A sunflower of dots on the golden angle (137.5°): the same spiral as the Phibe name. Falls apart by spinning outward along its own arms.',
+    build() { const N = 420; return Array.from({ length: N }, (_, i) => { const r = R * Math.sqrt((i + 0.5) / N), a = i * GA; return { x: Math.cos(a) * r, y: Math.sin(a) * r, r, a, s: 1.4 + 3.4 * (r / R), c: lerpColor(CYAN, MINT, r / R), k: rnd() }; }).filter((p) => Math.hypot(Math.abs(p.x) - 26, p.y + 2) > 17 && !(Math.abs(p.x) < 14 && p.y > 4 && p.y < 26)); },
+    draw(ctx, p, e) { const spin = e * 2.4 * (0.6 + p.k), push = 1 + e * (1.4 + p.k * 1.6), a = p.a + spin; ctx.globalAlpha = 1 - e * 0.55; ctx.fillStyle = p.c; const x = mix(p.x, Math.cos(a) * p.r * push, e), y = mix(p.y, Math.sin(a) * p.r * push, e); ctx.beginPath(); ctx.arc(x, y, p.s * (1 - e * 0.35), 0, TAU); ctx.fill(); } },
+
+  { name: 'Fib Squares', tag: 'Brand squares', face: 'oval', goo: false,
+    note: 'A mosaic of squares sized 3, 5, 8, 11 and 16, the same squares that sit in the logo. Breaks into tiles that tumble away and land back in place.',
+    build() { const out = []; for (let gy = -R; gy <= R; gy += 12) for (let gx = -R; gx <= R; gx += 12) { if (Math.hypot(gx, gy) > R - 2) continue; if (Math.hypot(Math.abs(gx) - 26, gy + 2) < 18) continue; const k = rnd(); out.push({ x: gx, y: gy, s: FIB[Math.floor(k * FIB.length)], c: k > 0.8 ? MINT : k > 0.45 ? CYAN : '#2a2a78', k, rot: (rnd() - 0.5) * 3 }); } return out; },
+    draw(ctx, p, e) { const dx = (p.k - 0.5) * 260 * e, dy = (p.k * 7 % 1 - 0.3) * 240 * e - 40 * e; ctx.save(); ctx.translate(p.x + dx, p.y + dy); ctx.rotate(p.rot * e * 2); ctx.globalAlpha = 1 - e * 0.5; ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore(); } },
+
+  { name: 'Digit Cloud', tag: 'Numbers', face: 'oval', goo: false,
+    note: 'The body is written in Fibonacci numbers: 0 1 1 2 3 5 8. It disintegrates into numbers and reintegrates, as the brand story says.',
+    build() { const out = [], G = '0112358'; for (let gy = -R; gy <= R; gy += 12) for (let gx = -R; gx <= R; gx += 11) { if (Math.hypot(gx, gy) > R) continue; if (Math.hypot(Math.abs(gx) - 26, gy + 2) < 18) continue; const k = rnd(); out.push({ x: gx, y: gy, ch: G[Math.floor(k * G.length)], c: k > 0.7 ? MINT : CYAN, k, al: 0.45 + k * 0.55 }); } return out; },
+    draw(ctx, p, e) { const x = p.x + Math.sin(p.k * 40) * 70 * e, y = p.y - (60 + p.k * 120) * e; ctx.globalAlpha = p.al * (1 - e * 0.85); ctx.fillStyle = p.c; ctx.font = `600 ${10 + p.k * 4}px ui-monospace, Consolas, monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.ch, x, y); } },
+
+  { name: 'Ink Drop', tag: 'Liquid', face: 'oval', goo: true,
+    note: 'A navy-mint liquid that holds together like a drop. Splits into droplets that flow back and merge. The body has no edges to hold: only the face is solid.',
+    build() { const out = [{ x: 0, y: 0, r: 78, k: 0.5, home: true }]; for (let i = 0; i < 26; i++) { const a = rnd() * TAU, d = 52 + rnd() * 34; out.push({ x: Math.cos(a) * d * 0.9, y: Math.sin(a) * d * 0.9, r: 12 + rnd() * 20, k: rnd(), a }); } return out; },
+    draw(ctx, p, e, t) { const sway = Math.sin(t * 1.8 + p.k * 9) * 3; const out = e * (p.home ? 0 : 130 + p.k * 90); const x = p.x + Math.cos(p.a ?? 0) * out + sway, y = p.y + Math.sin(p.a ?? 0) * out * 0.8 + 20 * e * p.k; ctx.fillStyle = lerpColor('#2b2f9a', CYAN, p.k * 0.6); ctx.beginPath(); ctx.arc(x, y, p.r * (p.home ? 1 - e * 0.55 : 1 - e * 0.45), 0, TAU); ctx.fill(); } },
+
+  { name: 'Glitch Disc', tag: 'Signal', face: 'dark', goo: false,
+    note: 'A flat mint disc with a cyan and peach split, like a signal. Breaks into horizontal slices that slide apart and snap back in line.',
+    build() { const bands = 24, out = []; for (let i = 0; i < bands; i++) { const y0 = -R + (i * 2 * R) / bands, y1 = y0 + (2 * R) / bands; const ym = (y0 + y1) / 2; out.push({ y0, h: y1 - y0 + 0.6, w: Math.sqrt(R * R - ym * ym) * 2, k: rnd(), i }); } return out; },
+    draw(ctx, p, e, t) { const j = (p.k - 0.5) * 2, off = j * 150 * e + (Math.sin(t * 3 + p.i) > 0.97 ? 5 : 0); const w = p.w * (1 - e * 0.35 * p.k); [[-4, CYAN], [4, PEACH], [0, MINT]].forEach(([s, c]) => { ctx.globalAlpha = c === MINT ? 1 : 0.85 * (0.4 + e); ctx.fillStyle = c; ctx.fillRect(-w / 2 + off + s, p.y0, w, p.h); }); } },
+
+  { name: 'Glass Shards', tag: 'Visor', face: 'visor', goo: false,
+    note: 'Dark glossy sphere with a visor and two lights, the clean tech look. Its facets lift off like glass plates and slot back together.',
+    build() { const out = []; const rings = [0, 38, 70, 100]; for (let r = 0; r < 3; r++) { const n = [1, 10, 16][r]; for (let i = 0; i < n; i++) out.push({ r0: rings[r], r1: rings[r + 1], a0: (i / n) * TAU, a1: ((i + 1) / n) * TAU, k: rnd(), whole: n === 1 }); } return out; },
+    draw(ctx, p, e) { const am = (p.a0 + p.a1) / 2, rm = p.whole ? 0 : (p.r0 + p.r1) / 2, cx = Math.cos(am) * rm, cy = Math.sin(am) * rm, out = e * (p.whole ? 0 : 90 + p.k * 90); ctx.save(); ctx.translate(cx + Math.cos(am) * out, cy + Math.sin(am) * out); ctx.rotate((p.k - 0.5) * 2.4 * e); ctx.translate(-cx, -cy); const g = ctx.createRadialGradient(-30, -34, 4, 0, 0, R); g.addColorStop(0, '#4d4ac9'); g.addColorStop(0.45, '#1b1a55'); g.addColorStop(1, '#07071f'); ctx.fillStyle = g; ctx.strokeStyle = 'rgba(32,231,170,.28)'; ctx.lineWidth = 1; ctx.globalAlpha = 1 - e * 0.3; ctx.beginPath(); if (p.whole) ctx.arc(0, 0, p.r1, 0, TAU); else { ctx.arc(0, 0, p.r1, p.a0, p.a1); ctx.arc(0, 0, p.r0, p.a1, p.a0, true); ctx.closePath(); } ctx.fill(); ctx.stroke(); ctx.restore(); } },
+
+  /* ---------------- round 2 ---------------- */
+  { round: 'Round 2', name: 'Be Tile', tag: 'Golden rectangle', face: 'dark', goo: false,
+    note: 'The logo tile built from real Fibonacci squares (13, 8, 5, 3, 2, 1, 1), cyan to mint, with a navy face like the be. Squares drift apart in spiral order and snap back.',
+    build() { const u = 9.4, sq = [[0, 0, 13], [13, 0, 8], [16, 8, 5], [13, 10, 3], [14, 8, 2], [13, 8, 1], [13, 9, 1]]; return sq.map(([x, y, n], i) => ({ x: (x + n / 2 - 10.5) * u, y: (y + n / 2 - 6.5) * u, n: n * u - 2.2, i, k: rnd(), c: lerpColor(CYAN, MINT, i / 6) })); },
+    draw(ctx, p, e) { const a = p.i * 0.9 + 0.4, out = e * (70 + p.i * 14); ctx.save(); ctx.translate(p.x + Math.cos(a) * out, p.y + Math.sin(a) * out); ctx.rotate((p.k - 0.5) * 1.6 * e); ctx.globalAlpha = 1 - e * 0.35; ctx.fillStyle = p.c; ctx.beginPath(); ctx.roundRect(-p.n / 2, -p.n / 2, p.n, p.n, Math.min(14, p.n * 0.18)); ctx.fill(); ctx.restore(); } },
+
+  { round: 'Round 2', name: 'Golden Shell', tag: 'Spiral', face: 'oval', goo: false,
+    note: 'Three golden spirals (each turn grows by phi) wound into a shell, with the face in the open centre. It unwinds outward along the spiral and winds back.',
+    build() { const out = [], b = Math.log((1 + Math.sqrt(5)) / 2) / TAU, tmax = 12.5; for (let arm = 0; arm < 3; arm++) { let th = 0.6; while (th < tmax) { const r = R * Math.exp(b * (th - tmax)) * 1.05; if (r > 44) out.push({ th: th + (arm * TAU) / 3, r, s: 1.2 + (r / R) * 3.2, c: lerpColor(CYAN, MINT, r / R), k: rnd() }); th += Math.max(0.025, 3.4 / Math.max(r, 8)); } } return out; },
+    draw(ctx, p, e, t) { const th = p.th + e * (1.1 + p.k * 1.2), b = 0.0766, r = p.r * Math.exp(b * (th - p.th)) * (1 + e * 0.35); ctx.globalAlpha = 1 - e * 0.6; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(Math.cos(th) * r, Math.sin(th) * r, p.s * (1 - e * 0.4), 0, TAU); ctx.fill(); } },
+
+  { round: 'Round 2', name: 'Fur Spore', tag: 'Soft volume', face: 'oval', goo: false,
+    note: 'A soft ball of tiny points that turns slowly in 3D, the plush feel of your first reference with the brand colours. Blows away like seeds in the wind.',
+    build() { return Array.from({ length: 900 }, (_, i) => { const y = 1 - (i / 899) * 2, rr = Math.sqrt(1 - y * y), th = i * GA, j = 0.9 + rnd() * 0.16; return { x: Math.cos(th) * rr * j, y: y * j, z: Math.sin(th) * rr * j, k: rnd(), s: 0.9 + rnd() * 1.3 }; }); },
+    draw(ctx, p, e, t) { const a = t * 0.35, cx = p.x * Math.cos(a) + p.z * Math.sin(a), cz = -p.x * Math.sin(a) + p.z * Math.cos(a); let x = cx * R, y = p.y * R; const front = cz > 0 && Math.hypot(x, y) < 62 ? 0.18 : 1; const push = 1 + e * (0.5 + p.k * 2.2); x = x * push + e * 40 * (p.k - 0.5); y = y * push - e * 60 * p.k; ctx.globalAlpha = Math.max(0, (0.35 + 0.65 * (cz + 1) / 2) * front * (1 - e * 0.7)); ctx.fillStyle = lerpColor('#6b5cff', cz > 0 ? MINT : CYAN, (cz + 1) / 2); ctx.beginPath(); ctx.arc(x, y, p.s, 0, TAU); ctx.fill(); } },
+
+  { round: 'Round 2', name: 'Dot Matrix', tag: 'Display', face: 'oval', goo: false,
+    note: 'A sphere drawn as a dot-matrix display, lit from the top left, the pixel side of the brand. The dots fall like digital rain and rise back into the sphere.',
+    build() { const out = []; for (let gy = -R; gy <= R; gy += 9) for (let gx = -R; gx <= R; gx += 9) { const d = Math.hypot(gx, gy); if (d > R) continue; const z = Math.sqrt(R * R - d * d) / R, lit = Math.max(0, (-gx * 0.5 - gy * 0.6) / R * 0.5 + z * 0.7); out.push({ x: gx, y: gy, lit, k: rnd() }); } return out.filter((p) => Math.hypot(Math.abs(p.x) - 26, p.y + 2) > 16); },
+    draw(ctx, p, e) { const fall = e * e * (160 + p.k * 220); ctx.globalAlpha = (0.25 + 0.75 * p.lit) * (1 - e * 0.9); ctx.fillStyle = lerpColor('#2c2a8a', MINT, Math.min(1, p.lit)); ctx.beginPath(); ctx.arc(p.x, p.y + fall, 3.1 - e * 1.2, 0, TAU); ctx.fill(); } },
+
+  { round: 'Round 2', name: 'Pulse Rings', tag: 'Radar', face: 'oval', goo: false, plate: true,
+    note: 'Nine slightly wavering rings, like a radar or a chart axis: calm and technical. Dissolving sends them out as ripples; they gather back into the orb.',
+    build() { return Array.from({ length: 9 }, (_, i) => ({ r: (R * (i + 1)) / 9, i, c: lerpColor(CYAN, MINT, i / 8), ph: i * 0.8 })); },
+    draw(ctx, p, e, t) { const grow = 1 + e * (0.3 + p.i * 0.09), wob = 2.4 * (1 - e * 0.5); ctx.globalAlpha = (0.35 + 0.65 * (p.i / 8)) * (1 - e * 0.85); ctx.strokeStyle = p.c; ctx.lineWidth = 2.6 - e; ctx.beginPath(); for (let a = 0; a <= 96; a++) { const th = (a / 96) * TAU, r = p.r * grow + Math.sin(th * 3 + t * 1.6 + p.ph) * wob; const x = Math.cos(th) * r, y = Math.sin(th) * r; a ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); } },
+
+  { round: 'Round 2', name: 'Bar Orb', tag: 'Data', face: 'oval', goo: false, plate: true,
+    note: 'A circle made of vertical bars, like a chart or a voice meter, the most business reading of the set. The bars drop into a lively equaliser and grow back into the orb.',
+    build() { const out = []; for (let x = -R + 4; x <= R - 4; x += 10) { const h = 2 * Math.sqrt(R * R - x * x); out.push({ x, h, k: rnd(), c: lerpColor(CYAN, MINT, (x + R) / (2 * R)) }); } return out; },
+    draw(ctx, p, e, t) { const dance = 0.12 + 0.28 * (0.5 + 0.5 * Math.sin(t * 4 + p.k * 14)), h = mix(p.h, p.h * dance, e), y = e * 34; ctx.globalAlpha = 1 - e * 0.15; ctx.fillStyle = p.c; ctx.beginPath(); ctx.roundRect(p.x - 3.4, y - h / 2, 6.8, Math.max(8, h), 3.4); ctx.fill(); } },
+];
+
+const mistVariants = [
+  { round: 'Round 3 · Mist', name: 'Classic Mist', tag: 'Today, refined', face: 'phibe', core: 'circle', goo: false,
+    note: 'Today\'s Phibe, kept: the dark face, the same eyes and the cloud around it, with the cloud now made of separate billows that really drift. Dissolving lets the face fade into the mist and the cloud spread.',
+    mist: { build() { return Array.from({ length: 16 }, (_, i) => ({ a: (i / 16) * TAU + rnd() * 0.4, d: 56 + rnd() * 30, r: 30 + rnd() * 22, k: rnd(), c: i % 2 ? MINT : CYAN })); },
+      draw(ctx, p, e, t) { const a = p.a + t * 0.12 * (p.k > 0.5 ? 1 : -1), d = p.d * (1 + e * 1.0) + Math.sin(t * 0.7 + p.k * 9) * 6; blob(ctx, Math.cos(a) * d, Math.sin(a) * d, p.r * (1 + e * 0.45), p.c, 0.34 * (1 - e * 0.45)); } } },
+
+  { round: 'Round 3 · Mist', name: 'Golden Nebula', tag: 'Phi + mist', face: 'phibe', core: 'circle', goo: false,
+    note: 'The mist sits on the golden spiral, so the cloud itself turns like a galaxy and carries the Phi idea without a single hard line.',
+    mist: { build() { return Array.from({ length: 90 }, (_, i) => ({ r: 58 + 56 * Math.sqrt(i / 90), a: i * GA, s: 11 + (i / 90) * 10, k: rnd(), c: lerpColor(CYAN, MINT, i / 90) })); },
+      draw(ctx, p, e, t) { const a = p.a + t * 0.16 * (1.4 - p.r / 120) + e * 2.0, r = p.r * (1 + e * (0.5 + p.k)); blob(ctx, Math.cos(a) * r, Math.sin(a) * r, p.s * (1 + e * 0.6), p.c, 0.3 * (1 - e * 0.5)); } } },
+
+  { round: 'Round 3 · Mist', name: 'Square Fog', tag: 'Brand squares', face: 'phibe', core: 'circle', goo: false,
+    note: 'A fog made of soft squares sized 3, 5, 8, 11 and 16, the logo squares melted into mist. Scatters like tiles of fog and comes back.',
+    mist: { build() { return Array.from({ length: 56 }, () => { const a = rnd() * TAU, d = 62 + rnd() * 44, k = rnd(); return { a, d, s: FIB[Math.floor(k * 5)] * 1.7, k, c: k > 0.55 ? MINT : CYAN }; }); },
+      draw(ctx, p, e, t) { const a = p.a + t * 0.08 * (p.k - 0.5) * 2, d = p.d * (1 + e * 0.9); ctx.save(); ctx.translate(Math.cos(a) * d, Math.sin(a) * d); ctx.rotate(e * p.k * 2); ctx.globalAlpha = 0.42 * (1 - e * 0.5); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore(); } } },
+
+  { round: 'Round 3 · Mist', name: 'Ripple Fog', tag: 'Rings', face: 'phibe', core: 'circle', goo: false,
+    note: 'Soft rings of fog leave the face one after another, like a calm pulse on water. The quietest of the set, good for a resting state.',
+    mist: { build() { return Array.from({ length: 5 }, (_, i) => ({ i, c: i % 2 ? MINT : CYAN })); },
+      draw(ctx, p, e, t) { const ph = (t * (0.18 + e * 0.25) + p.i / 5) % 1, r = 60 + ph * 70 * (1 + e * 0.4); ctx.strokeStyle = p.c; ctx.globalAlpha = (1 - ph) * 0.5 * (1 - e * 0.3); ctx.lineWidth = 12 + ph * 8; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke(); } } },
+
+  { round: 'Round 3 · Mist', name: 'Bar Orb Refined', tag: 'Data + mist', face: 'phibe', core: 'circle', goo: false,
+    note: 'The bar orb, done properly: slim bars of a chart or voice meter around the dark Phibe face, glowing in mist. The face stays calm in the middle; dissolving drops the bars into a lively equaliser.',
+    mist: { build() { return [-1, 0, 1].map((x) => ({ x, k: rnd() })); },
+      draw(ctx, p, e, t) { blob(ctx, p.x * 62, Math.sin(t * 0.8 + p.k * 6) * 8, 70, p.x ? CYAN : MINT, 0.3 * (1 - e * 0.4)); } },
+    build() { const out = []; for (let x = -104; x <= 104; x += 9.5) out.push({ x, h: 2 * Math.sqrt(112 * 112 - x * x) * 0.98, k: rnd(), c: lerpColor(CYAN, MINT, (x + 104) / 208) }); return out; },
+    draw(ctx, p, e, t) { const breathe = 1 + Math.sin(t * 1.6 + p.k * 6) * 0.02 * (1 - e), dance = 0.1 + 0.3 * (0.5 + 0.5 * Math.sin(t * 4.2 + p.k * 14)), h = mix(p.h * breathe, p.h * dance, e), y = e * 36; ctx.globalAlpha = 0.92 - e * 0.1; const g = ctx.createLinearGradient(0, y - h / 2, 0, y + h / 2); g.addColorStop(0, p.c); g.addColorStop(1, lerpColor(CYAN, '#2a2a8a', 0.55)); ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(p.x - 2.7, y - h / 2, 5.4, Math.max(7, h), 2.7); ctx.fill(); } },
+
+  { round: 'Round 3 · Mist', name: 'Digit Fog', tag: 'Numbers', face: 'phibe', core: 'circle', goo: false,
+    note: 'A faint fog written in 0 1 1 2 3 5 8, orbiting the face. When the face is quiet, the numbers are what you see; dissolving lifts them like data steam.',
+    mist: { build() { return [0, 1, 2, 3, 4].map((i) => ({ i, a: (i / 5) * TAU })); },
+      draw(ctx, p, e, t) { blob(ctx, Math.cos(p.a + t * 0.1) * 70, Math.sin(p.a + t * 0.1) * 70, 46, p.i % 2 ? MINT : CYAN, 0.2 * (1 - e * 0.4)); } },
+    build() { const G = '0112358'; return Array.from({ length: 220 }, () => { const r = 68 + rnd() * 46, k = rnd(); return { r, a: rnd() * TAU, ch: G[Math.floor(rnd() * G.length)], k, al: 0.2 + 0.7 * (1 - (r - 68) / 46), c: k > 0.6 ? MINT : CYAN }; }); },
+    draw(ctx, p, e, t) { const a = p.a + t * 0.05 * (1.2 - p.k), x = Math.cos(a) * p.r, y = Math.sin(a) * p.r - e * (50 + p.k * 90); ctx.globalAlpha = p.al * (1 - e * 0.85); ctx.fillStyle = p.c; ctx.font = `600 ${9 + p.k * 4}px ui-monospace, Consolas, monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.ch, x, y); } },
+
+  { round: 'Round 3 · Mist', name: 'Tile Mist', tag: 'The be tile', face: 'phibe', core: 'squircle', goo: false,
+    note: 'The face takes the rounded-square shape of the logo tile, still dark with the same eyes, wrapped in mist. The most brand-aligned shape; the tile melts into the cloud when it dissolves.',
+    mist: { build() { return Array.from({ length: 14 }, (_, i) => ({ a: (i / 14) * TAU, k: rnd(), c: i % 2 ? MINT : CYAN })); },
+      draw(ctx, p, e, t) { const a = p.a + t * 0.1, d = (74 + Math.sin(t * 0.8 + p.k * 7) * 6) * (1 + e * 0.9), x = Math.sign(Math.cos(a)) * Math.min(1, Math.abs(Math.cos(a)) * 1.3) * d * 0.82, y = Math.sign(Math.sin(a)) * Math.min(1, Math.abs(Math.sin(a)) * 1.3) * d * 0.82; blob(ctx, x, y, 34 * (1 + e * 0.4), p.c, 0.34 * (1 - e * 0.45)); } } },
+
+  { round: 'Round 3 · Mist', name: 'Aurora Veil', tag: 'Ribbons', face: 'phibe', core: 'circle', goo: false,
+    note: 'Three ribbons of cyan, mint and navy-lit light wave around the face like an aurora. Gentle and premium; the ribbons loosen and drift apart when dissolving.',
+    mist: { build() { return [{ c: CYAN, ph: 0, r: 80 }, { c: MINT, ph: 2.1, r: 88 }, { c: '#6b5cff', ph: 4.2, r: 96 }]; },
+      draw(ctx, p, e, t) { ctx.strokeStyle = p.c; ctx.globalAlpha = 0.5 * (1 - e * 0.45); ctx.lineWidth = 14 * (1 - e * 0.3); ctx.beginPath(); for (let i = 0; i <= 120; i++) { const th = (i / 120) * TAU, r = p.r * (1 + e * 0.5) + Math.sin(th * 3 + t * 0.9 + p.ph) * (12 + e * 22) + Math.sin(th * 5 - t * 0.6) * 5; i ? ctx.lineTo(Math.cos(th) * r, Math.sin(th) * r) : ctx.moveTo(Math.cos(th) * r, Math.sin(th) * r); } ctx.closePath(); ctx.stroke(); } } },
+];
+variants.unshift(...mistVariants);
+
+const tileMistParts = {
+  mist: { build() { return Array.from({ length: 22 }, (_, i) => ({ a: (i / 22) * TAU, k: rnd(), c: i % 3 === 0 ? MINT : CYAN, r: 28 + rnd() * 14 })); },
+    draw(ctx, p, e, t) { const a = p.a + t * 0.07, d = 76 + Math.sin(t * 0.8 + p.k * 7) * 7; const cx = Math.cos(a), sy = Math.sin(a), x = Math.sign(cx) * Math.min(1, Math.abs(cx) * 1.25) * d * 0.86, y = Math.sign(sy) * Math.min(1, Math.abs(sy) * 1.25) * d * 0.86; blob(ctx, x, y, p.r, p.c, 0.3); if (p.k > 0.8) blob(ctx, 0, 0, 120, '#10c3d3', 0.04); } },
+};
+const auroraParts = {
+  mist: { build() { return [{ c: CYAN, ph: 0, r: 82, w: 12 }, { c: MINT, ph: 2.1, r: 90, w: 10 }, { c: '#6b5cff', ph: 4.2, r: 98, w: 9 }, { c: '#bff8f3', ph: 1.0, r: 86, w: 4 }]; },
+    draw(ctx, p, e, t) { ctx.strokeStyle = p.c; ctx.globalAlpha = p.w < 5 ? 0.3 : 0.46; ctx.lineWidth = p.w; ctx.beginPath(); for (let i = 0; i <= 140; i++) { const th = (i / 140) * TAU, r = p.r + Math.sin(th * 3 + t * 0.9 + p.ph) * 12 + Math.sin(th * 5 - t * 0.6 + p.ph) * 5; i ? ctx.lineTo(Math.cos(th) * r, Math.sin(th) * r) : ctx.moveTo(Math.cos(th) * r, Math.sin(th) * r); } ctx.closePath(); ctx.stroke(); } },
+};
+const calmFace = { face: 'phibe', ring: false, goo: false };
+const dustVariants = [
+  { round: 'Round 4 · No ring, menu-bar dust', name: 'Tile Mist · Numbers', tag: 'Pixels + Fibonacci', ...calmFace, core: 'squircle', dust: 'num', ...tileMistParts,
+    note: 'The tile-shaped face, now without the mint ring: its edge melts into the mist. It breaks like the menu bar: square pixels and small Fibonacci numbers drifting away on the wind, and gathering back.' },
+  { round: 'Round 4 · No ring, menu-bar dust', name: 'Tile Mist · Dust', tag: 'Pixels only', ...calmFace, core: 'squircle', dust: 'px', ...tileMistParts,
+    note: 'The same tile, no ring, but it only turns to pixel dust: quieter, closer to a pure dissolve. Better when the numbers feel like too much.' },
+  { round: 'Round 4 · No ring, menu-bar dust', name: 'Aurora Veil · Numbers', tag: 'Pixels + Fibonacci', ...calmFace, core: 'circle', dust: 'num', ...auroraParts,
+    note: 'Thinner, finer ribbons (and a pale hairline one) around a ringless round face. Dissolves into pixels and Fibonacci numbers like the menu bar, then reforms.' },
+  { round: 'Round 4 · No ring, menu-bar dust', name: 'Aurora Veil · Dust', tag: 'Pixels only', ...calmFace, core: 'circle', dust: 'px', ...auroraParts,
+    note: 'The same aurora and ringless face, dissolving only into pixel dust. The calmest, most premium of the four.' },
+];
+variants.unshift(...dustVariants);
+
+const voiceBars = {
+  build() { const out = []; for (let x = -104; x <= 104; x += 9.5) out.push({ x, h: 2 * Math.sqrt(112 * 112 - x * x) * 0.98, k: rnd(), c: lerpColor(CYAN, MINT, (x + 104) / 208) }); return out; },
+  draw(ctx, p, e, t) { const a = G.speak * G.vis; if (a < 0.02) return; const lvl = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(t * 5.2 + p.k * 14)) * G.level, h = Math.max(8, p.h * lvl); ctx.globalAlpha = 0.92 * a; const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, p.c); g.addColorStop(1, lerpColor(CYAN, '#2a2a8a', 0.55)); ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(p.x - 2.7, -h / 2, 5.4, h, 2.7); ctx.fill(); },
+};
+const orbMist = {
+  build() { const blobs = Array.from({ length: 18 }, (_, i) => ({ kind: 'b', a: (i / 18) * TAU + rnd() * 0.4, d: 54 + rnd() * 30, r: 30 + rnd() * 20, k: rnd(), c: i % 2 ? MINT : CYAN })); return [...blobs, { kind: 'ring' }, { kind: 'rib', c: CYAN, ph: 0, r: 90 }, { kind: 'rib', c: MINT, ph: 2.4, r: 98 }]; },
+  draw(ctx, p, e, t) {
+    if (p.kind === 'b') { const a = p.a + t * 0.12 * (p.k > 0.5 ? 1 : -1), d = p.d + Math.sin(t * 0.7 + p.k * 9) * 6; blob(ctx, Math.cos(a) * d, Math.sin(a) * d, p.r, p.c, 0.32); }
+    else if (p.kind === 'ring') { ctx.strokeStyle = MINT; ctx.globalAlpha = 0.14; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(0, 0, 62 + Math.sin(t) * 2, 0, TAU); ctx.stroke(); blob(ctx, 0, 0, 100, CYAN, 0.14); }
+    else { ctx.strokeStyle = p.c; ctx.globalAlpha = 0.2; ctx.lineWidth = 6; ctx.beginPath(); for (let i = 0; i <= 140; i++) { const th = (i / 140) * TAU, r = p.r + Math.sin(th * 3 + t * 0.9 + p.ph) * 10 + Math.sin(th * 5 - t * 0.6 + p.ph) * 4; i ? ctx.lineTo(Math.cos(th) * r, Math.sin(th) * r) : ctx.moveTo(Math.cos(th) * r, Math.sin(th) * r); } ctx.closePath(); ctx.stroke(); }
+  },
+};
+variants.unshift({ round: 'Round 4 · No ring, menu-bar dust', name: 'Aurora Veil · Numbers, refined', tag: 'Pixels + Fibonacci · Voice', face: 'phibe', ring: false, goo: false, core: 'circle', dust: 'num', mist: orbMist, ...voiceBars,
+  note: 'The mist now follows today\'s Phibe: soft billows of cyan and mint with a faint mint halo, and only two thin aurora hairlines left for the veil. Press Speaking: slim bars of a voice meter rise around the face, the eyes glow with the voice, and the mist steps back. It still dissolves into pixels and Fibonacci numbers.' });
+
+/* ---------- engine ---------- */
+const grid = document.getElementById('grid'), tiles = [];
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+let lastRound = '';
+variants.forEach((v) => {
+  if (v.round && v.round !== lastRound) { lastRound = v.round; const h = document.createElement('h2'); h.className = 'round'; h.textContent = v.round; grid.appendChild(h); }
+  seed = 11; v.parts = v.build ? v.build() : []; if (v.mist) { seed = 23; v.mistParts = v.mist.build(); }
+  const el = document.createElement('div'); el.className = 'tile';
+  el.innerHTML = `<div class="stage">${v.mist ? '<canvas class="mist"></canvas>' : ''}<canvas class="body ${v.goo ? 'goo' : ''}"></canvas>${v.dust ? '<canvas class="dust"></canvas>' : ''}<canvas class="face"></canvas></div><div class="tag"><b>${v.name}</b><small>${v.tag}</small></div><p class="note">${v.note}</p>`;
+  grid.appendChild(el);
+  const cb = el.querySelector('.body'), cf = el.querySelector('.face');
+  const cm = el.querySelector('.mist'), cd = el.querySelector('.dust');
+  [cb, cf, cm, cd].forEach((c) => { if (c) { c.width = S * dpr; c.height = S * dpr; } });
+  const t = { v, el, cb: cb.getContext('2d'), cf: cf.getContext('2d'), cm: cm && cm.getContext('2d'), cd: cd && cd.getContext('2d'), mistEl: cm, dust: [], prev: 0, last: 0, target: 0, d: 0, manual: false };
+  el.onclick = () => { t.manual = true; t.target = t.target ? 0 : 1; };
+  tiles.push(t);
+});
+
+let auto = true;
+document.getElementById('auto').onclick = (e) => { auto = !auto; tiles.forEach((t) => (t.manual = !auto)); e.target.textContent = 'Auto cycle: ' + (auto ? 'on' : 'off'); };
+document.querySelectorAll('[data-mood]').forEach((b) => { b.onclick = () => { mood = b.dataset.mood; document.querySelectorAll('[data-mood]').forEach((x) => (x.dataset.on = x === b)); }; });
+document.getElementById('all').onclick = () => tiles.forEach((t) => { t.manual = true; t.target = t.target ? 0 : 1; });
+
+function frame(ms) {
+  const time = ms / 1000;
+  tiles.forEach((t, i) => {
+    const cyc = (time + i * 0.7) % 9;
+    if (!t.manual) t.target = cyc > 3.2 && cyc < 5.6 ? 1 : 0;
+    t.d += (t.target - t.d) * 0.045;
+    const e = ease(Math.min(1, Math.max(0, t.d)));
+    const dt = Math.min(0.05, t.last ? time - t.last : 0.016); t.last = time;
+    const dusty = !!t.v.dust;
+    if (dusty && t.target !== t.prev) spawnDust(t, t.target === 1);
+    t.prev = t.target;
+    const vis = dusty ? Math.min(1, Math.max(0, 1 - t.d / 0.8)) : 1;
+    t.speak = (t.speak || 0) + ((mood === 'speaking' ? 1 : 0) - (t.speak || 0)) * 0.12;
+    G.speak = t.speak; G.vis = vis; G.level = 0.45 + 0.55 * Math.abs(Math.sin(time * 2.3)) * Math.abs(Math.sin(time * 0.7 + 1));
+    const blink = Math.max(0, 1 - Math.abs(((time + i) % 4.2) - 0.1) * 9);
+    [t.cb, t.cf, t.cm, t.cd].filter(Boolean).forEach((ctx) => { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, S, S); ctx.translate(S / 2, S / 2); ctx.globalAlpha = 1; });
+    const breathe = 1 + Math.sin(time * 1.6 + i) * 0.012 * (1 - e);
+    t.cb.save(); t.cb.scale(breathe, breathe);
+    t.v.parts.forEach((p) => { t.cb.save(); t.v.draw(t.cb, p, e, time); t.cb.restore(); });
+    t.cb.restore();
+    if (t.v.plate) { t.cf.save(); t.cf.globalAlpha = 1 - e * 0.6; t.cf.fillStyle = '#0d0c2e'; t.cf.strokeStyle = 'rgba(32,231,170,.3)'; t.cf.lineWidth = 1.5; t.cf.beginPath(); t.cf.arc(0, 4 - e * 6, 50, 0, TAU); t.cf.fill(); t.cf.stroke(); t.cf.restore(); }
+    if (t.cm) { t.cm.globalCompositeOperation = 'lighter'; t.v.mistParts.forEach((p) => { t.cm.save(); t.v.mist.draw(t.cm, p, dusty ? 0 : e, time); t.cm.restore(); }); t.mistEl.style.opacity = vis * (1 - 0.4 * t.speak); t.cm.globalCompositeOperation = 'source-over'; }
+    if (t.v.core) core(t.cf, t.v.core, time, e, dusty ? { ring: false, fixed: true, vis } : { ring: t.v.ring !== false });
+    if (t.cd) { stepDust(t.dust, dt); drawDust(t.cd, t.dust, MINT); }
+    face(t.cf, t.v.face, time, dusty ? 1 - vis : e, blink);
+  });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

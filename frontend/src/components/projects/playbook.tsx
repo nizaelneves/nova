@@ -112,7 +112,7 @@ function NewActivityPopup({ data, workspaceId, onCreate, onClose }: {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Start date</Label><input type="date" value={start} onChange={(e) => setStart(e.target.value)} className={FIELD_CLS} style={FIELD} /></div>
-          <div><Label>Due date</Label><input type="date" value={due} min={start} onChange={(e) => setDue(e.target.value)} className={FIELD_CLS} style={FIELD} /></div>
+          <div><Label>Due Date</Label><input type="date" value={due} min={start} onChange={(e) => setDue(e.target.value)} className={FIELD_CLS} style={FIELD} /></div>
         </div>
         <div className="flex justify-end gap-2 mt-1">
           <Button onClick={onClose}>Cancel</Button>
@@ -145,7 +145,7 @@ function ActivityPopup({ data, activity, onChange, onClose }: {
         />
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Start date</Label><input type="date" value={activity.start} onChange={(e) => onChange(updateActivity(data, activity.id, { start: e.target.value }))} className={FIELD_CLS} style={FIELD} /></div>
-          <div><Label>Due date</Label><input type="date" value={activity.due} min={activity.start} onChange={(e) => onChange(updateActivity(data, activity.id, { due: e.target.value }))} className={FIELD_CLS} style={FIELD} /></div>
+          <div><Label>Due Date</Label><input type="date" value={activity.due} min={activity.start} onChange={(e) => onChange(updateActivity(data, activity.id, { due: e.target.value }))} className={FIELD_CLS} style={FIELD} /></div>
         </div>
         <div>
           <Label>Stage{hasSteps ? ' (follows the steps)' : ''}</Label>

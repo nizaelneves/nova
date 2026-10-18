@@ -4,10 +4,10 @@ import { AttachMenu } from './Chat/AttachMenu';
 import { EngineMenu } from './Chat/EngineMenu';
 import { Terminal } from './IslandTerminal';
 import { MicButton } from './Chat/MicButton';
+import { TimerButton } from './TimerButton';
 import { Icon, type IconName } from './Icon';
-import { useClapToActivate } from '../hooks/useClapToActivate';
 import { useSpeech } from '../hooks/useSpeech';
-import { approveAction, completePing, denyAction, fetchHomeSettings, fetchPings, isTauri } from '../lib/api';
+import { approveAction, completePing, denyAction, fetchPings, isTauri } from '../lib/api';
 import type { Ping, PendingApproval } from '../lib/api';
 import { disintegrate } from '../lib/disintegrate';
 import { CLI_ENGINES_ENABLED } from '../lib/features';
@@ -16,7 +16,7 @@ import { nextPhrase, PHRASES } from '../lib/phrases';
 import { timeAgo } from '../lib/time';
 import { useChat } from '../lib/useChat';
 import { dismissPhibeEventsOfKind } from '../lib/phibePresence';
-import { speakReply, stopSpeaking } from '../lib/voiceReply';
+import { stopSpeaking } from '../lib/voiceReply';
 
 export type IslandLevel = 'pill' | 'card' | 'panel';
 export type IslandSection = 'overview' | 'chats' | 'approvals' | 'pings';
@@ -147,29 +147,6 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
     }
   }, [pendingVoice, streaming, modelLoading, setPendingVoice, chat]);
 
-  // Clap to wake Phibe: greet, wait until the greeting ends, then listen.
-  const clapToActivate = useAppStore((s) => s.settings.clapToActivate);
-  const startRecording = speech.startRecording;
-  const handleClapWake = useCallback(async () => {
-    let name = '';
-    try {
-      name = (await fetchHomeSettings()).display_name.trim();
-    } catch {
-      // No name available: greet without one.
-    }
-    try {
-      await speakReply(name ? `Oi, ${name}! Como posso te ajudar?` : 'Oi! Como posso te ajudar?');
-      await new Promise<void>((resolve) => {
-        if (!useAppStore.getState().speaking) { resolve(); return; }
-        const unsubscribe = useAppStore.subscribe((st) => { if (!st.speaking) { unsubscribe(); resolve(); } });
-      });
-    } catch {
-      // Voice backend unavailable: still open the mic.
-    }
-    await startRecording();
-  }, [startRecording]);
-  useClapToActivate(clapToActivate && speech.state !== 'recording', useCallback(() => { void handleClapWake(); }, [handleClapWake]));
-
   if (level === 'pill') return null;
 
   if (level === 'card') {
@@ -209,14 +186,15 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
       </div>
 
       <div className="isl-dock" onClick={(e) => e.stopPropagation()}>
+        <TimerButton />
+        <MicButton state={speech.state} onClick={() => void onMic()} disabled={micDisabled} reason={micReason} />
+        <button type="button" className="composer-icon" data-on={speech.state === 'recording'} aria-label="Voice Mode" title="Voice Mode" onClick={() => void onVoice()}>
+          <Icon name="soundwave" size={18} />
+        </button>
         <button type="button" className="composer-icon" data-on={think} aria-pressed={think} aria-label="Think"
           title={think ? 'Think: ON' : 'Think: OFF'} onClick={() => setThink(!think)}>
           <Icon name="lightbulb-bolt" size={18} />
         </button>
-        <button type="button" className="composer-icon" data-on={speech.state === 'recording'} aria-label="Voice Mode" title="Voice Mode" onClick={() => void onVoice()}>
-          <Icon name="soundwave" size={18} />
-        </button>
-        <MicButton state={speech.state} onClick={() => void onMic()} disabled={micDisabled} reason={micReason} />
       </div>
     </>
   );
@@ -248,19 +226,12 @@ function TypedPhrase() {
 
 function Overview({ pending }: { pending: PendingApproval[] }) {
   const chats = useAppStore((s) => s.conversations.length);
-  const [due, setDue] = useState<number | null>(null);
-
-  useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    fetchPings().then((all) => setDue(all.filter((p) => !p.completed && p.date <= today).length)).catch(() => setDue(0));
-  }, []);
 
   return (
     <div className="isl-over">
       <div className="isl-tiles">
-        <div><b>{pending.length}</b><span>To Approve</span></div>
-        <div><b>{due ?? '–'}</b><span>Due Today</span></div>
         <div><b>{chats}</b><span>Chats</span></div>
+        <div><b>{pending.length}</b><span>To Approve</span></div>
       </div>
       <TypedPhrase />
     </div>

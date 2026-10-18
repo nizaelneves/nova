@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     title        TEXT NOT NULL,
     notes        TEXT NOT NULL DEFAULT '',
     area_id      TEXT REFERENCES areas(id),
+    start        TEXT,
     due          TEXT NOT NULL,
     all_day      INTEGER NOT NULL,
     priority     TEXT,
@@ -71,6 +72,16 @@ def _parse_due(value: str, all_day: bool) -> str:
         raise TaskError(
             "due must look like 2026-10-05 (all day) or 2026-10-05T14:30"
         ) from exc
+
+
+def _parse_start(value: Optional[str], due: str, all_day: bool) -> Optional[str]:
+    """Normalise an optional start like ``due`` and make sure it is not after it."""
+    if not value:
+        return None
+    start = _parse_due(value, all_day)
+    if start > _parse_due(due, all_day):
+        raise TaskError("start must not be after due")
+    return start
 
 
 class TaskStore:
@@ -127,6 +138,10 @@ class TaskStore:
                 raise
             finally:
                 self._conn.execute("PRAGMA foreign_keys = ON")
+        if columns and "start" not in {
+            row["name"] for row in self._conn.execute("PRAGMA table_info(tasks)")
+        }:
+            self._conn.execute("ALTER TABLE tasks ADD COLUMN start TEXT")
 
     def close(self) -> None:
         with self._lock:
@@ -238,6 +253,7 @@ class TaskStore:
             "notes": row["notes"],
             "area_id": row["area_id"],
             "area": area["name"] if area else "",
+            "start": row["start"],
             "due": row["due"],
             "all_day": bool(row["all_day"]),
             "priority": row["priority"],
@@ -266,8 +282,8 @@ class TaskStore:
         recurrence = values.get("recurrence")
         self._conn.execute(
             "INSERT INTO tasks (id, title, notes, area_id, due, all_day, priority,"
-            " status, recurrence, series_id, occurrence, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " status, recurrence, series_id, occurrence, created_at, start)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 task_id,
                 values["title"],
@@ -281,6 +297,7 @@ class TaskStore:
                 values.get("series_id") or (task_id if recurrence else None),
                 values.get("occurrence", 1),
                 self._now().isoformat(timespec="seconds"),
+                values.get("start"),
             ),
         )
         return task_id
@@ -296,6 +313,7 @@ class TaskStore:
         status: str = "todo",
         notes: str = "",
         recurrence: Optional[Dict[str, Any]] = None,
+        start: Optional[str] = None,
     ) -> Dict[str, Any]:
         title = (title or "").strip()
         if not title:
@@ -315,6 +333,7 @@ class TaskStore:
                     "notes": notes,
                     "area_id": area_id,
                     "due": _parse_due(due, all_day),
+                    "start": _parse_start(start, due, all_day),
                     "all_day": all_day,
                     "priority": priority,
                     "status": status,
@@ -334,6 +353,7 @@ class TaskStore:
         "title",
         "notes",
         "area_id",
+        "start",
         "due",
         "all_day",
         "priority",
@@ -365,10 +385,13 @@ class TaskStore:
                     )
                 except ValueError as exc:
                     raise TaskError(str(exc)) from exc
-            if "due" in changes or "all_day" in changes:
+            if {"due", "all_day", "start"} & set(changes):
                 all_day = bool(changes.get("all_day", row["all_day"]))
                 changes["all_day"] = all_day
                 changes["due"] = _parse_due(changes.get("due", row["due"]), all_day)
+                changes["start"] = _parse_start(
+                    changes.get("start", row["start"]), changes["due"], all_day
+                )
             status = changes.pop("status", None)
             for column, value in changes.items():
                 if column == "recurrence":
@@ -421,6 +444,14 @@ class TaskStore:
         )
         if following is None:
             return None
+        start = None
+        if row["start"]:  # the whole span moves with the due date
+            moved = (
+                date.fromisoformat(row["start"])
+                if row["all_day"]
+                else datetime.fromisoformat(row["start"])
+            ) + (following - due)
+            start = moved.strftime("%Y-%m-%d" if row["all_day"] else "%Y-%m-%dT%H:%M")
         already = self._conn.execute(
             "SELECT 1 FROM tasks WHERE series_id = ? AND occurrence = ?",
             (row["series_id"], row["occurrence"] + 1),
@@ -432,6 +463,7 @@ class TaskStore:
                 "title": row["title"],
                 "notes": row["notes"],
                 "area_id": row["area_id"],
+                "start": start,
                 "due": following.strftime(
                     "%Y-%m-%d" if row["all_day"] else "%Y-%m-%dT%H:%M"
                 ),

@@ -40,3 +40,7 @@ The ISC License (graph-selector): permission to use, copy, modify, and/or distri
   this permission notice appear in all copies. THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR
   DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
   MERCHANTABILITY AND FITNESS.
+
+Third-party software bundled for the Horizon Computer widget:
+  - psutil 7.x (BSD 3-Clause). Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola. Reads processor, memory, disk, network, battery and process figures.
+  - nvidia-ml-py 13.x (BSD), NVIDIA's Python bindings for its management library. Reads the graphics card's use, memory and temperature.

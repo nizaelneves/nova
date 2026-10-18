@@ -13,15 +13,15 @@ import { EffortSlider } from './EffortPicker';
 
 const CLAUDE_MODELS = [
   { id: 'sonnet', label: 'Sonnet', note: 'Balanced' },
-  { id: 'opus', label: 'Opus', note: 'Most capable' },
+  { id: 'opus', label: 'Opus', note: 'Most Capable' },
   { id: 'haiku', label: 'Haiku', note: 'Fastest' },
 ];
 
 const CODEX_MODELS = [
-  { id: 'codex:default', label: 'Default', note: "Your Codex's own default model" },
-  { id: 'codex:gpt-6-astra', label: 'Astra', note: 'Most capable' },
-  { id: 'codex:gpt-6.1-sol', label: 'Sol', note: 'Near-Astra, lower cost' },
-  { id: 'codex:gpt-6-luna', label: 'Luna', note: 'Most efficient' },
+  { id: 'codex:default', label: 'Default', note: "Your Codex's Own Default Model" },
+  { id: 'codex:gpt-6-astra', label: 'Astra', note: 'Most Capable' },
+  { id: 'codex:gpt-6.1-sol', label: 'Sol', note: 'Near-Astra, Lower Cost' },
+  { id: 'codex:gpt-6-luna', label: 'Luna', note: 'Most Efficient' },
 ];
 
 /**
@@ -85,7 +85,6 @@ export function EngineMenu({ disabled }: { disabled?: boolean }) {
           tab={tab}
           onTab={setTab}
           onClose={() => setOpen(false)}
-          footer={<span>{tab === 'claude' ? 'Uses your Claude plan' : 'Uses your ChatGPT plan'} · runs the CLI you already have signed in</span>}
         >
           {tab === 'claude' && status && !status.installed && (
             <PickerRow icon={<Icon name="arrow-down" size={16} />} title="Install Claude Code" note="Get the official app, then come back and sign in"
@@ -93,8 +92,8 @@ export function EngineMenu({ disabled }: { disabled?: boolean }) {
           )}
           {tab === 'claude' && status?.installed && !status.signed_in && (
             <PickerRow icon={<Icon name="key-minimalistic" size={16} />} active
-              title={waiting ? 'Waiting for you to sign in…' : 'Sign in with Claude'}
-              note="Opens Anthropic's own sign-in. Phibe never sees your password or tokens."
+              title={waiting ? 'Waiting For You To Sign In...' : 'Sign in with Claude'}
+              note="Phibe Never Sees Your Password or Tokens"
               onClick={() => void signIn()} />
           )}
           {models.map((m) => (

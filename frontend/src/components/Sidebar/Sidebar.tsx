@@ -17,7 +17,7 @@ const MODULES: Module[] = [
   { path: '/', icon: 'galaxy', label: 'Horizon' },
   { path: '/projects', icon: 'projects', label: 'Projects' },
   { path: '/pings', icon: 'bell', label: 'Pings' },
-  { path: '/meeting-notes', icon: 'transcript', label: 'Meeting Minutes', soon: true },
+  { path: '/meeting-notes', icon: 'transcript', label: 'Scribe', soon: true },
   { path: '/seeds', icon: 'north-star', label: 'Atlas', soon: true },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
   { path: '/tutor', icon: 'horus-eye', label: 'Mentor', soon: true },

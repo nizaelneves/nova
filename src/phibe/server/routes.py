@@ -1172,6 +1172,35 @@ async def list_models(request: Request) -> ModelListResponse:
     )
 
 
+def _ollama_host(request: Request) -> str | None:
+    """Where Ollama listens, or None when this server does not use Ollama at all.
+
+    The engine is usually wrapped (several engines, telemetry, guardrails), so look through
+    the wrappers for the Ollama one instead of reading ``engine_id`` of the outermost layer.
+    """
+    from phibe.engine.multi import MultiEngine
+    from phibe.security.guardrails import GuardrailsEngine
+    from phibe.telemetry.instrumented_engine import InstrumentedEngine
+
+    default = "http://localhost:11434"
+    current = request.app.state.engine
+    while current is not None:
+        if isinstance(current, MultiEngine):
+            for key, inner in current._engines:
+                if key == "ollama" or getattr(inner, "engine_id", "") == "ollama":
+                    return getattr(inner, "_host", default)
+            return None
+        if isinstance(current, InstrumentedEngine):
+            current = current._inner
+        elif isinstance(current, GuardrailsEngine):
+            current = current._engine
+        else:
+            break
+    if getattr(request.app.state, "engine_name", "") == "ollama" or getattr(current, "engine_id", "") == "ollama":
+        return getattr(current, "_host", default)
+    return None
+
+
 @router.post("/v1/models/pull")
 async def pull_model(request: Request):
     """Pull / download a model from the Ollama registry."""
@@ -1180,10 +1209,8 @@ async def pull_model(request: Request):
     if not model_name:
         raise HTTPException(status_code=400, detail="'model' field is required")
 
-    engine = request.app.state.engine
-    engine_name = getattr(request.app.state, "engine_name", "")
-    # Only Ollama supports pulling
-    if engine_name != "ollama" and getattr(engine, "engine_id", "") != "ollama":
+    host = _ollama_host(request)
+    if host is None:
         raise HTTPException(
             status_code=501,
             detail="Model pulling is only supported with the Ollama engine",
@@ -1191,7 +1218,6 @@ async def pull_model(request: Request):
 
     import httpx as _httpx
 
-    host = getattr(engine, "_host", "http://localhost:11434")
     try:
         async with _httpx.AsyncClient(base_url=host, timeout=600.0) as client:
             resp = await client.post(
@@ -1208,6 +1234,51 @@ async def pull_model(request: Request):
         )
 
     return {"status": "ok", "model": model_name}
+
+
+@router.post("/v1/models/pull/stream")
+async def pull_model_stream(request: Request):
+    """Download a model and report progress: one JSON line per Ollama update.
+
+    Closing the connection (the app's Cancel) stops the download; Ollama keeps what it has
+    fetched, so pulling the same model again resumes instead of starting over.
+    """
+    body = await request.json()
+    model_name = body.get("model", "").strip()
+    if not model_name:
+        raise HTTPException(status_code=400, detail="'model' field is required")
+
+    host = _ollama_host(request)
+    if host is None:
+        raise HTTPException(
+            status_code=501,
+            detail="Model pulling is only supported with the Ollama engine",
+        )
+
+    import json as _json
+
+    import httpx as _httpx
+
+
+    async def lines():
+        try:
+            async with _httpx.AsyncClient(
+                base_url=host, timeout=_httpx.Timeout(None, connect=10.0)
+            ) as client:
+                async with client.stream(
+                    "POST", "/api/pull", json={"name": model_name, "stream": True}
+                ) as resp:
+                    if resp.status_code >= 400:
+                        text = (await resp.aread()).decode(errors="replace")[:300]
+                        yield _json.dumps({"error": f"Ollama error: {text}"}) + "\n"
+                        return
+                    async for line in resp.aiter_lines():
+                        if line.strip():
+                            yield line + "\n"
+        except _httpx.HTTPError as exc:
+            yield _json.dumps({"error": f"Ollama unreachable: {exc}"}) + "\n"
+
+    return StreamingResponse(lines(), media_type="application/x-ndjson")
 
 
 @router.post("/v1/models/preload")
@@ -1249,14 +1320,12 @@ async def preload_model(request: Request):
 @router.delete("/v1/models/{model_name:path}")
 async def delete_model(model_name: str, request: Request):
     """Delete a model from Ollama."""
-    engine = request.app.state.engine
-    engine_name = getattr(request.app.state, "engine_name", "")
-    if engine_name != "ollama" and getattr(engine, "engine_id", "") != "ollama":
+    host = _ollama_host(request)
+    if host is None:
         raise HTTPException(status_code=501, detail="Only supported with Ollama engine")
 
     import httpx as _httpx
 
-    host = getattr(engine, "_host", "http://localhost:11434")
     try:
         async with _httpx.AsyncClient(base_url=host, timeout=30.0) as client:
             resp = await client.request(
