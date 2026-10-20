@@ -1886,7 +1886,7 @@
 .isl-quote > span:first-child { color: #20e7aa; flex-shrink: 0; }
 
 /* Projects: bubbles for the clients, a hero, tabs, and a Google-style week calendar */
-.pj-wrap { max-width: 1120px; margin: 0 auto; padding: 28px 24px 60px; display: flex; flex-direction: column; gap: 18px; }
+.pj-wrap { max-width: 1120px; margin: 0 auto; padding: 8px 24px 60px; display: flex; flex-direction: column; gap: 18px; }
 .pj-wrap .fin-line { flex: none; }
 .pj-top { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
 .pj-back { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px 6px 6px; border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 999px; background: none; color: rgba(233, 236, 245, 0.7); font-size: 0.8rem; cursor: pointer; }
