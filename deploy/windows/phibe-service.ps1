@@ -16,8 +16,7 @@
       status    — show task state
 
     Arguments (install only):
-      -InstallRoot <path>  default: %LOCALAPPDATA%\Phibe (matches
-                           install.ps1's default)
+      -InstallRoot <path>  default: %LOCALAPPDATA%\Phibe 
       -ListenHost <addr>   default: 127.0.0.1 (loopback). Set to 0.0.0.0
                            ONLY if you also set $env:PHIBE_API_KEY
                            — the server refuses to start unauthenticated
@@ -69,7 +68,7 @@ function Install-Task {
     $root = Get-DefaultInstallRoot
     $srcDir = Join-Path $root 'src'
     if (-not (Test-Path $srcDir)) {
-        Write-Fail "Phibe source not found at $srcDir. Run install.ps1 first."
+        Write-Fail "Phibe source not found at $srcDir. Install the Phibe desktop app first."
     }
 
     $uvCmd = Get-Command uv -ErrorAction SilentlyContinue
@@ -78,7 +77,7 @@ function Install-Task {
         if (Test-Path $uvFallback) {
             $uvPath = $uvFallback
         } else {
-            Write-Fail "uv.exe not found on PATH or at $uvFallback. Re-run install.ps1."
+            Write-Fail "uv.exe not found on PATH or at $uvFallback. Reinstall Phibe."
         }
     } else {
         $uvPath = $uvCmd.Source

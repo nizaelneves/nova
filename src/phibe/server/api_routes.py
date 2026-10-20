@@ -27,20 +27,6 @@ class AgentMessageRequest(BaseModel):
     message: str
 
 
-class MemoryStoreRequest(BaseModel):
-    content: str
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class MemorySearchRequest(BaseModel):
-    query: str
-    top_k: int = 5
-
-
-class MemoryIndexRequest(BaseModel):
-    path: str
-
-
 class BudgetLimitsRequest(BaseModel):
     max_tokens_per_day: Optional[int] = None
     max_requests_per_hour: Optional[int] = None
@@ -184,184 +170,6 @@ async def message_agent(agent_id: str, req: AgentMessageRequest, request: Reques
         return {"status": "sent", "content": result.content}
     except ImportError:
         raise HTTPException(status_code=501, detail="Agent tools not available")
-
-
-# ---- Memory routes ----
-
-memory_router = APIRouter(prefix="/v1/memory", tags=["memory"])
-
-
-def _get_memory_backend(request: Request):
-    """Return the app-level memory backend, falling back to a fresh SQLiteMemory.
-
-    Returns ``None`` when no backend can be built.
-    """
-    backend = getattr(request.app.state, "memory_backend", None)
-    if backend is None:
-        try:
-            from phibe.tools.storage.sqlite import SQLiteMemory
-
-            backend = SQLiteMemory()
-        except Exception:
-            logger.exception("Failed to open the SQLite memory backend")
-            return None
-    return backend
-
-
-@memory_router.post("/store")
-def memory_store(req: MemoryStoreRequest, request: Request):
-    """Store content in memory."""
-    backend = _get_memory_backend(request)
-    if backend is None:
-        # Memory is intentionally disabled; report it honestly instead of a
-        # 200 that silently discards the write (#502).
-        raise HTTPException(status_code=503, detail="Memory is not configured")
-    try:
-        backend.store(req.content, metadata=req.metadata or {})
-        return {"status": "stored"}
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@memory_router.post("/search")
-def memory_search(req: MemorySearchRequest, request: Request):
-    """Search memory for relevant content."""
-    backend = _get_memory_backend(request)
-    if backend is None:
-        return {"results": []}
-    try:
-        results = backend.retrieve(req.query, top_k=req.top_k)
-        items = [
-            {
-                "content": r.content,
-                "score": getattr(r, "score", 0.0),
-                "metadata": getattr(r, "metadata", {}),
-            }
-            for r in results
-        ]
-        return {"results": items}
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@memory_router.get("/stats")
-def memory_stats(request: Request):
-    """Get memory backend statistics."""
-    backend = _get_memory_backend(request)
-    if backend is None:
-        return {"entries": 0, "backend": "none", "status": "not_configured"}
-    try:
-        return {
-            "entries": backend.count(),
-            "backend": getattr(backend, "backend_id", "unknown"),
-        }
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@memory_router.get("/config")
-async def memory_config(request: Request):
-    """Return current memory configuration.
-
-    Reports memory as *unavailable* when the backend cannot be opened, so the
-    UI can show the real cause.
-    """
-    try:
-        config = getattr(request.app.state, "config", None)
-        if config is None:
-            from phibe.core.config import load_config
-
-            config = load_config()
-        backend = getattr(request.app.state, "memory_backend", None)
-        available = True
-        detail: Optional[str] = None
-        if backend is None:
-            try:
-                from phibe.tools.storage.sqlite import SQLiteMemory
-
-                backend = SQLiteMemory()
-            except Exception as exc:
-                available = False
-                detail = str(exc)
-        return {
-            "backend_type": (
-                backend.backend_id
-                if backend is not None
-                else config.memory.default_backend
-            ),
-            "available": available,
-            "detail": detail,
-            "context_top_k": config.memory.context_top_k,
-            "context_min_score": config.memory.context_min_score,
-            "context_max_tokens": config.memory.context_max_tokens,
-            "context_from_memory": config.agent.context_from_memory,
-        }
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@memory_router.post("/index")
-def memory_index(req: MemoryIndexRequest, request: Request):
-    """Index files from a path into memory."""
-    try:
-        import os
-        from pathlib import Path
-
-        from phibe.security.file_policy import is_sensitive_file
-        from phibe.tools.storage.ingest import ingest_path
-
-        target = Path(req.path).expanduser().resolve()
-        if not target.exists():
-            raise HTTPException(status_code=404, detail=f"Path not found: {req.path}")
-
-        # Sandbox: when workspace roots are configured via PHIBE_WORKSPACE
-        # (os.pathsep-separated), only allow indexing inside them. This endpoint
-        # must not become an arbitrary-filesystem read primitive over the API.
-        workspace = os.environ.get("PHIBE_WORKSPACE", "").strip()
-        if workspace:
-            roots = [
-                Path(d).expanduser().resolve()
-                for d in workspace.split(os.pathsep)
-                if d.strip()
-            ]
-            if not any(target == root or root in target.parents for root in roots):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Path is outside the allowed workspace directories.",
-                )
-        # Never ingest sensitive files (.env, private keys, credentials, ...).
-        if target.is_file() and is_sensitive_file(target):
-            raise HTTPException(
-                status_code=403, detail="Refusing to index a sensitive file."
-            )
-
-        backend = _get_memory_backend(request)
-        if backend is None:
-            raise HTTPException(status_code=503, detail="Memory is not configured")
-
-        chunks = ingest_path(target)
-        stored = 0
-        for chunk in chunks:
-            metadata = {"source": getattr(chunk, "source", str(target))}
-            if hasattr(chunk, "metadata") and chunk.metadata:
-                metadata.update(chunk.metadata)
-            backend.store(chunk.content, metadata=metadata)
-            stored += 1
-
-        result = {"status": "indexed", "chunks_indexed": stored}
-        if stored == 0:
-            # "indexed" must never silently mean "stored nothing". Surface why
-            # so a folder of short notes doesn't look like a successful no-op
-            # (#502 follow-up).
-            result["note"] = (
-                "no content was indexed — the path contained no readable "
-                "documents with indexable text"
-            )
-        return result
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ---- Traces routes ----
@@ -1249,7 +1057,6 @@ def include_all_routes(app) -> None:
 
     app.include_router(approval_router)
     app.include_router(agents_router)
-    app.include_router(memory_router)
     app.include_router(traces_router)
     app.include_router(telemetry_router)
     app.include_router(skills_router)
@@ -1300,7 +1107,6 @@ def include_all_routes(app) -> None:
 __all__ = [
     "include_all_routes",
     "agents_router",
-    "memory_router",
     "traces_router",
     "telemetry_router",
     "skills_router",

@@ -3,6 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 import { useAppStore } from '../lib/store';
+import { Icon } from '../components/Icon';
+import { TerminalLine } from '../components/TerminalLine';
+import { summarizeAgents } from '../lib/agentsSummary';
 import {
   fetchManagedAgents,
   fetchAgentTasks,
@@ -3085,8 +3088,8 @@ export function AgentsPage() {
   // ── List View ───────────────────────────────────────────────────────────
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-10">
-      <div className="max-w-5xl mx-auto">
+    <div className="fin-root h-full overflow-y-auto">
+      <div className="fin-wrap">
       {/* Launch wizard modal */}
       {showWizard && (
         <LaunchWizard
@@ -3099,26 +3102,17 @@ export function AgentsPage() {
         />
       )}
 
-      <header className="mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-            Agents
-          </h1>
-          <button
-            onClick={() => agentManagerAvailable && setShowWizard(true)}
-            disabled={agentManagerAvailable === false}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: agentManagerAvailable === false ? 'var(--color-bg-tertiary)' : 'var(--color-accent)',
-              color: agentManagerAvailable === false ? 'var(--color-text-tertiary)' : 'var(--color-on-accent)',
-            }}
-          >
-            <Plus size={15} /> New Agent
-          </button>
+      <header className="fin-header">
+        <TerminalLine text={summarizeAgents(managedAgents, agentManagerAvailable)} />
+        <div className="fin-controls">
+          <div className="fin-actions">
+            <button type="button" className="fin-btn fin-add" disabled={agentManagerAvailable === false}
+              onClick={() => agentManagerAvailable && setShowWizard(true)}>
+              <Icon name="add-circle" size={16} />
+              New Agent
+            </button>
+          </div>
         </div>
-        <p className="text-sm mt-2 max-w-2xl" style={{ color: 'var(--color-text-secondary)' }}>
-          Long-running autonomous agents that can monitor sources, run tasks on a schedule, and message you through connected channels.
-        </p>
       </header>
 
       {agentManagerAvailable === false && (
@@ -3162,26 +3156,6 @@ export function AgentsPage() {
         ))}
       </div>
 
-      {managedAgents.length === 0 && (
-        <div className="text-center py-16" style={{ color: 'var(--color-text-tertiary)' }}>
-          <Bot size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="mb-2 font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-            No agents yet
-          </p>
-          <p className="text-sm mb-6">Create your first agent to get started with autonomous task management.</p>
-          <button
-            onClick={() => agentManagerAvailable && setShowWizard(true)}
-            disabled={agentManagerAvailable === false}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: agentManagerAvailable === false ? 'var(--color-bg-tertiary)' : 'var(--color-accent)',
-              color: agentManagerAvailable === false ? 'var(--color-text-tertiary)' : 'var(--color-on-accent)',
-            }}
-          >
-            <Plus size={15} /> Launch your first agent
-          </button>
-        </div>
-      )}
       </div>
     </div>
   );

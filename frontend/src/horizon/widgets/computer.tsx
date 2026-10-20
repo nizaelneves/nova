@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '../Card';
 import { bytes, duration, percent, sparkline, speed } from '../lib/computer';
 import { useComputer, watchComputer } from '../lib/computerFeed';
+import { SystemStatus } from '../../components/SystemStatus';
 
 const Section = ({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) => (
   <section className="hz-sec">
@@ -37,12 +38,12 @@ export function ComputerWidget() {
 
   useEffect(() => watchComputer(), []);
 
-  if (!report) return <Card title="Computer"><p className="hz-note">{failed ? 'The Phibe backend is not answering.' : 'Reading This Computer…'}</p></Card>;
+  if (!report) return <Card title="System"><p className="hz-note">{failed ? 'The Phibe backend is not answering.' : 'Reading the system…'}</p></Card>;
 
   const { cpu, memory, gpus, disks, network, battery, programs, ollama } = report;
   const list = rank === 'cpu' ? programs.by_cpu : programs.by_memory;
   return (
-    <Card title="Computer" note={report.os}>
+    <Card title="System" note={report.os}>
       <Section title="Processor" note={cpu.name.replace(/\s+with .*$/i, '').replace(/\s+\d+-Core Processor$/i, '')}>
         <div className="hz-split"><p className="hz-big">{Math.round(cpu.usage)}%<small>{cpu.cores} cores · {cpu.threads} threads{cpu.mhz ? ` · ${(cpu.mhz / 1000).toFixed(1)} GHz` : ''}</small></p><Spark history={cpuHistory} max={100} /></div>
         <div className="hz-cores" aria-label="Use of each processor thread">
@@ -93,6 +94,10 @@ export function ComputerWidget() {
           </ul>
         ) : <p className="hz-note">Ollama is not running.</p>}
         <p className="hz-note">Phibe is Using {bytes(report.phibe.memory)} Of Memory</p>
+      </Section>
+
+      <Section title="Status">
+        <SystemStatus />
       </Section>
     </Card>
   );

@@ -1,7 +1,9 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon, type IconName } from '../components/Icon';
 import { Popup } from '../components/Popup';
+import { TerminalLine } from '../components/TerminalLine';
+import { summarizePings } from '../lib/pingsSummary';
 import { ConfirmDelete } from '../components/finances/forms';
 import {
   Ping,
@@ -21,7 +23,6 @@ import {
   formatCountdown,
   isoDay,
   jsDayToBackendDay,
-  occursOn,
   pingDueDate,
   progressPercent,
   repeatSummary,
@@ -358,133 +359,11 @@ const PingCard = memo(function PingCard({ ping, now, onChanged, onEdit, onDelete
 });
 
 // ---------------------------------------------------------------------------
-// Calendar (week, Sunday to Saturday, with an hour grid)
-// ---------------------------------------------------------------------------
-
-const HOUR = 64; // px per hour
-const EVENT_H = 54;
-const EVENT_MIN = (EVENT_H / HOUR) * 60; // minutes an event box covers, for overlap checks
-
-function sundayOf(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
-}
-
-function hourLabel(h: number): string {
-  return `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;
-}
-
-const minutesOf = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
-
-/** Side-by-side lanes for events that would overlap on screen. */
-function layoutDay(items: Ping[]): { ping: Ping; lane: number; lanes: number }[] {
-  const out: { ping: Ping; lane: number; lanes: number }[] = [];
-  let cluster: typeof out = [];
-  let laneEnds: number[] = [];
-  const close = () => { cluster.forEach((c) => { c.lanes = laneEnds.length; }); out.push(...cluster); cluster = []; laneEnds = []; };
-  for (const ping of [...items].sort((a, b) => a.time.localeCompare(b.time))) {
-    const start = minutesOf(ping.time);
-    if (laneEnds.length && Math.max(...laneEnds) <= start) close();
-    let lane = laneEnds.findIndex((end) => end <= start);
-    if (lane === -1) lane = laneEnds.length;
-    laneEnds[lane] = start + EVENT_MIN;
-    cluster.push({ ping, lane, lanes: 1 });
-  }
-  close();
-  return out;
-}
-
-function WeekCalendar({ pings, now, onEdit, onDelete, onAdd }: {
-  pings: Ping[]; now: Date; onEdit: (p: Ping) => void; onDelete: (p: Ping) => void; onAdd: (day: string, time: string) => void;
-}) {
-  const [start, setStart] = useState(() => sundayOf(new Date()));
-  const scroller = useRef<HTMLDivElement>(null);
-  const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)),
-    [start],
-  );
-  const columns = useMemo(
-    () => days.map((day) => ({ iso: isoDay(day), items: layoutDay(pings.filter((p) => occursOn(p, day))) })),
-    [days, pings],
-  );
-  const end = days[6];
-  const today = isoDay(now);
-  const shift = (weeks: number) => setStart(new Date(start.getFullYear(), start.getMonth(), start.getDate() + weeks * 7));
-  const endLabel = end.toLocaleDateString('en-US', start.getMonth() === end.getMonth() ? { day: 'numeric' } : { month: 'short', day: 'numeric' });
-
-  // open near the current hour, like Google Calendar
-  useEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = Math.max(0, (new Date().getHours() - 1) * HOUR);
-  }, []);
-
-  const addAt = (iso: string, e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    const half = Math.min(47, Math.floor((y / HOUR) * 2));
-    onAdd(iso, `${String(Math.floor(half / 2)).padStart(2, '0')}:${half % 2 ? '30' : '00'}`);
-  };
-
-  return (
-    <div>
-      <div className="pg-weeknav">
-        <h3>{shortDate(start)} – {endLabel}, {end.getFullYear()}</h3>
-        <div className="pg-weeknav-btns">
-          <button type="button" aria-label="Previous week" onClick={() => shift(-1)}><Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(90deg)' }} /></button>
-          <button type="button" className="pg-today" disabled={isoDay(start) === isoDay(sundayOf(now))} onClick={() => setStart(sundayOf(new Date()))}>Today</button>
-          <button type="button" aria-label="Next week" onClick={() => shift(1)}><Icon name="alt-arrow-down" size={16} style={{ transform: 'rotate(-90deg)' }} /></button>
-        </div>
-      </div>
-
-      <div className="pg-cal" ref={scroller}>
-        <div className="pg-cal-inner">
-          <div className="pg-cal-head">
-            <span />
-            {days.map((day) => (
-              <div key={day.getTime()} className="pg-cal-dayhead" data-today={isoDay(day) === today}>
-                <span>{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                <b>{day.getDate()}</b>
-              </div>
-            ))}
-          </div>
-
-          <div className="pg-cal-body" style={{ height: 24 * HOUR, '--hour': `${HOUR}px` } as React.CSSProperties}>
-            <div className="pg-cal-hours">
-              {Array.from({ length: 23 }, (_, i) => (
-                <span key={i} style={{ top: (i + 1) * HOUR }}>{hourLabel(i + 1)}</span>
-              ))}
-            </div>
-            {columns.map(({ iso, items }) => (
-              <div key={iso} className="pg-cal-col" onClick={(e) => addAt(iso, e)}>
-                {items.map(({ ping: p, lane, lanes }) => (
-                  <div key={p.id} className="pg-event-wrap" style={{
-                    top: (minutesOf(p.time) / 60) * HOUR, height: EVENT_H,
-                    left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 4px)`,
-                  }}>
-                    <button type="button" className="pg-event" data-done={p.completed}
-                      data-late={!p.completed && pingDueDate(iso, p.time) < now} onClick={() => onEdit(p)}>
-                      <span className="pg-event-time">{p.time}{p.repeat_type !== 'none' && <Icon name="repeat" size={11} />}</span>
-                      <span className="pg-event-text">{p.text}</span>
-                    </button>
-                    <button type="button" className="pg-event-del" aria-label="Delete ping" title="Delete" onClick={() => onDelete(p)}>
-                      <Icon name="trash-bin-minimalistic" size={13} />
-                    </button>
-                  </div>
-                ))}
-                {iso === today && <div className="pg-cal-now" style={{ top: ((now.getHours() * 60 + now.getMinutes()) / 60) * HOUR }} />}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Pings view
 // ---------------------------------------------------------------------------
 
 type ListFilter = 'all' | 'upcoming' | 'month' | 'overdue' | 'recurring' | 'completed';
-type View = 'cards' | 'calendar' | 'settings';
+type View = 'cards' | 'settings';
 type Adding = { date?: string; time?: string } | null;
 
 const FILTERS: { id: ListFilter; label: string; empty: string }[] = [
@@ -498,7 +377,6 @@ const FILTERS: { id: ListFilter; label: string; empty: string }[] = [
 
 const VIEWS: { id: View; label: string; icon: IconName }[] = [
   { id: 'cards', label: 'Cards', icon: 'layers' },
-  { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -515,16 +393,10 @@ function matches(p: Ping, filter: ListFilter, now: Date): boolean {
   }
 }
 
-function summarize(open: Ping[], now: Date): string {
-  if (open.length === 0) return 'Nothing scheduled.';
-  const late = open.filter((p) => pingDueDate(p.date, p.time) < now).length;
-  return late ? `${open.length - late} coming up · ${late} overdue` : `${open.length} coming up`;
-}
-
 function PingsView({ pings, now, view, adding, onAdd, onAddClose, reload }: {
   pings: Ping[];
   now: Date;
-  view: 'cards' | 'calendar';
+  view: 'cards';
   adding: Adding;
   onAdd: (day?: string, time?: string) => void;
   onAddClose: () => void;
@@ -562,18 +434,14 @@ function PingsView({ pings, now, view, adding, onAdd, onAddClose, reload }: {
               </button>
             ))}
           </div>}
-          {view === 'cards' ? (
-            visible.length === 0 ? (
-              <div className="fin-empty">{FILTERS.find((f) => f.id === filter)?.empty}</div>
-            ) : (
-              <div className="pg-grid">
-                {visible.map((p) => (
-                  <PingCard key={p.id} ping={p} now={now} onChanged={reload} onEdit={setEditing} onDelete={setDeleting} />
-                ))}
-              </div>
-            )
+          {visible.length === 0 ? (
+            <div className="fin-empty">{FILTERS.find((f) => f.id === filter)?.empty}</div>
           ) : (
-            <WeekCalendar pings={visible} now={now} onEdit={setEditing} onDelete={setDeleting} onAdd={onAdd} />
+            <div className="pg-grid">
+              {visible.map((p) => (
+                <PingCard key={p.id} ping={p} now={now} onChanged={reload} onEdit={setEditing} onDelete={setDeleting} />
+              ))}
+            </div>
           )}
         </>
       )}
@@ -600,7 +468,7 @@ function SetRow({ icon, title, text, soon, children }: { icon: IconName; title: 
       <div className="fin-acct-main">
         <span className="pg-set-icon"><Icon name={icon} size={20} /></span>
         <div className="fin-acct-name">
-          <h4>{title}{soon && <em className="pg-soon">Coming soon</em>}</h4>
+          <h4>{title}{soon && <em className="pg-soon">Coming Soon</em>}</h4>
           <p>{text}</p>
         </div>
         {children}
@@ -633,10 +501,10 @@ function PingsSettingsTab() {
 
   return (
     <div className="fin-acct-list pg-settings">
-      <SetRow icon="bell" title="Ping Notifications" text="Turn every ping reminder on or off.">
+      <SetRow icon="bell" title="Ping Notifications" text="Turn Every Ping Reminder On or Off.">
         <Switch on={!off} label="Ping Notifications" onClick={() => void change({ notifications_enabled: off })} />
       </SetRow>
-      <SetRow icon="monitor-smartphone" title="Floating Button" text="Show pings on Phibe's floating button.">
+      <SetRow icon="monitor-smartphone" title="Floating Button" text="Show Pings On Phibe's Floating Button.">
         <Switch on={settings.floating_button_enabled} label="Floating Button" disabled={off}
           onClick={() => void change({ floating_button_enabled: !settings.floating_button_enabled })} />
       </SetRow>
@@ -645,7 +513,7 @@ function PingsSettingsTab() {
           <span className="pg-set-icon"><Icon name="clock-circle" size={20} /></span>
           <div className="fin-acct-name">
             <h4>Notify Before</h4>
-            <p>Get a heads-up ahead of the due time.</p>
+            <p>Get a Heads-Up Ahead Of the Due Time.</p>
           </div>
           <Switch on={settings.lead_enabled} label="Notify Before" disabled={off}
             onClick={() => void change({ lead_enabled: !settings.lead_enabled })} />
@@ -663,10 +531,10 @@ function PingsSettingsTab() {
           </div>
         )}
       </div>
-      <SetRow icon="plain-2" title="Telegram" text="Get pinged over Telegram." soon>
+      <SetRow icon="plain-2" title="Telegram" text="Get Pinged Over Telegram." soon>
         <Switch on={false} onClick={() => {}} label="Telegram" disabled />
       </SetRow>
-      <SetRow icon="phone-calling" title="WhatsApp" text="Get pinged over WhatsApp." soon>
+      <SetRow icon="phone-calling" title="WhatsApp" text="Get Pinged Over WhatsApp." soon>
         <Switch on={false} onClick={() => {}} label="WhatsApp" disabled />
       </SetRow>
     </div>
@@ -676,18 +544,6 @@ function PingsSettingsTab() {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-
-function PingsIcon({ size = 48 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 84 84" role="img" aria-label="Pings">
-      <rect width="84" height="84" rx="22" fill="#14123f" />
-      <circle cx="40" cy="17" r="3.5" fill="#10c3d3" />
-      <path d="M40 20c-10 0-16 8-16 18v10l-5 8h42l-5-8V38c0-10-6-18-16-18z" fill="#10c3d3" />
-      <path d="M34 60a6 6 0 0 0 12 0z" fill="#ffe3bd" />
-      <circle cx="62" cy="24" r="9" fill="#ffe3bd" stroke="#14123f" stroke-width="4" />
-    </svg>
-  );
-}
 
 /** The current time, refreshed every minute so "overdue" and the now-line stay right. */
 function useNow(): Date {
@@ -710,19 +566,11 @@ export function PingsPage() {
   }, []);
   useEffect(reload, [reload]);
 
-  const open = useMemo(() => (pings ?? []).filter((p) => !p.completed), [pings]);
-
   return (
     <div className="fin-root pg-root h-full overflow-y-auto">
       <div className="fin-wrap">
         <header className="fin-header">
-          <div className="fin-hello">
-            <PingsIcon />
-            <div>
-              <h2>Pings</h2>
-              <p>{pings ? summarize(open, now) : ' '}</p>
-            </div>
-          </div>
+          {pings && <TerminalLine text={summarizePings(pings, now)} />}
           <div className="fin-controls">
             <div className="fin-actions" role="tablist" aria-label="Pings views">
               {VIEWS.map((v) => (

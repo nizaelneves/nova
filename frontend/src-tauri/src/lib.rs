@@ -9,7 +9,7 @@ use tokio::sync::Mutex;
 const OLLAMA_PORT: u16 = 11434;
 const PHIBE_PORT: u16 = 8000;
 const DESKTOP_UV_SYNC_COMMAND: &str =
-    "uv sync --extra desktop --extra inference-cloud --extra inference-google --group desktop-native";
+    "uv sync --extra desktop --extra inference-cloud --extra inference-google";
 
 /// Small, fast model used when startup needs a default Ollama tag.
 const STARTUP_MODEL: &str = "qwen3.5:4b";
@@ -1467,10 +1467,6 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             "inference-cloud",
             "--extra",
             "inference-google",
-            // phibe_rust lives in a uv dependency group (not the published
-            // `desktop` extra) so pip installs from PyPI don't require it (#584).
-            "--group",
-            "desktop-native",
         ])
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::piped())
@@ -1823,44 +1819,6 @@ async fn fetch_learning_policy(api_url: String) -> Result<serde_json::Value, Str
         api_url
     };
     let resp = reqwest::get(format!("{}/v1/learning/policy", base))
-        .await
-        .map_err(|e| format!("Connection failed: {}", e))?;
-    resp.json()
-        .await
-        .map_err(|e| format!("Invalid response: {}", e))
-}
-
-#[tauri::command]
-async fn fetch_memory_stats(api_url: String) -> Result<serde_json::Value, String> {
-    let base = if api_url.is_empty() {
-        api_base()
-    } else {
-        api_url
-    };
-    let resp = reqwest::get(format!("{}/v1/memory/stats", base))
-        .await
-        .map_err(|e| format!("Connection failed: {}", e))?;
-    resp.json()
-        .await
-        .map_err(|e| format!("Invalid response: {}", e))
-}
-
-#[tauri::command]
-async fn search_memory(
-    api_url: String,
-    query: String,
-    top_k: u32,
-) -> Result<serde_json::Value, String> {
-    let base = if api_url.is_empty() {
-        api_base()
-    } else {
-        api_url
-    };
-    let client = reqwest::Client::new();
-    let resp = client
-        .post(format!("{}/v1/memory/search", base))
-        .json(&serde_json::json!({"query": query, "top_k": top_k}))
-        .send()
         .await
         .map_err(|e| format!("Connection failed: {}", e))?;
     resp.json()
@@ -3462,8 +3420,6 @@ pub fn run() {
             fetch_trace,
             fetch_learning_stats,
             fetch_learning_policy,
-            fetch_memory_stats,
-            search_memory,
             fetch_agents,
             fetch_models,
             run_phibe_command,

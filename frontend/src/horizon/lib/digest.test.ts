@@ -1,0 +1,59 @@
+import { describe, expect, it } from 'vitest';
+import { humanize, initials, parseDigest, sourceName, timeLabel, titleHeadline } from './digest';
+
+describe('digest', () => {
+  it('turns the sections into items and the first line into a headline', () => {
+    const d = parseDigest({
+      text: '# Good morning\nThree things matter today.\n\nMore below.',
+      sections: { hacker_news: 'A new database launched.', empty: '  ', notes: '## Notes\nYou wrote 4 notes.' },
+      sources_used: ['Hacker News', 'Anytype'],
+      generated_at: '2026-10-18T09:30:00',
+      model_used: 'qwen3.5:4b',
+    });
+    expect(d.headline).toBe('Good morning');
+    expect(d.summary).toBe('Three things matter today. More below.');
+    expect(d.items.map((i) => i.title)).toEqual(['Hacker News', 'Notes']);
+    expect(d.items[1].text).toBe('Notes\nYou wrote 4 notes.');
+    expect(d.sources).toHaveLength(2);
+  });
+
+  it('keeps a number that starts the headline but drops list markers', () => {
+    const d = parseDigest({ text: '3 new items from 2 sources\n1. First' });
+    expect(d.headline).toBe('3 New Items From 2 Sources');
+    expect(d.summary).toBe('First');
+  });
+
+  it('falls back to the paragraphs when there are no sections', () => {
+    const d = parseDigest({ text: 'Headline\n\nFirst point.\n\nSecond point.' });
+    expect(d.items.map((i) => i.text)).toEqual(['First point.', 'Second point.']);
+  });
+
+  it('shortens a long headline and copes with an empty digest', () => {
+    expect(parseDigest({ text: 'x'.repeat(200) }).headline).toHaveLength(90);
+    expect(parseDigest({}).headline).toBe('Your digest');
+  });
+
+  it('writes names, initials and times', () => {
+    expect(humanize('morning_news-feed')).toBe('Morning News Feed');
+    expect(initials('Hacker News Daily')).toBe('HN');
+    const now = new Date(2026, 9, 18, 12, 0);
+    expect(timeLabel(new Date(2026, 9, 18, 9, 5), now)).toBe('Today 09:05');
+    expect(timeLabel(new Date(2026, 9, 17, 23, 0), now)).toBe('Yesterday 23:00');
+    expect(timeLabel(new Date(2026, 9, 12, 8, 0), now)).toBe('12 Oct 08:00');
+  });
+
+  it('writes the count headline in title case', () => {
+    expect(titleHeadline('5 new items from 1 source')).toBe('5 New Items From 1 Source');
+    expect(titleHeadline('1 new item from 2 sources')).toBe('1 New Item From 2 Sources');
+    expect(titleHeadline('Good morning')).toBe('Good morning');
+  });
+
+  it('names the sources as people know them and counts the items', () => {
+    expect(sourceName('hackernews')).toBe('Hacker News');
+    expect(sourceName('gmail_imap')).toBe('Gmail');
+    expect(sourceName('daily_paper')).toBe('Daily Paper');
+    const d = parseDigest({ text: '5 New Items From 1 Source\nok', sections: { hackernews: 'x' }, sources_used: ['hackernews'] });
+    expect([d.count, d.items[0].title, d.sources]).toEqual([5, 'Hacker News', ['Hacker News']]);
+    expect(parseDigest({ text: 'Hello', sections: { a: 'x', b: 'y' } }).count).toBe(2);
+  });
+});

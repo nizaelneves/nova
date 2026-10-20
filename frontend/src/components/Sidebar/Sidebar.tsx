@@ -17,10 +17,9 @@ const MODULES: Module[] = [
   { path: '/', icon: 'galaxy', label: 'Horizon' },
   { path: '/projects', icon: 'projects', label: 'Projects' },
   { path: '/pings', icon: 'bell', label: 'Pings' },
-  { path: '/meeting-notes', icon: 'transcript', label: 'Scribe', soon: true },
-  { path: '/seeds', icon: 'north-star', label: 'Atlas', soon: true },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
-  { path: '/tutor', icon: 'horus-eye', label: 'Mentor', soon: true },
+  { path: '/agents', icon: 'bot', label: 'Agents' },
+  { path: '/connections', icon: 'plug', label: 'Connections' },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
 
@@ -93,7 +92,7 @@ export function Sidebar() {
             aria-label={expanded ? 'Hide menu names' : 'Show menu names'}
           >
             <Icon name="sidebar-minimalistic" size={20} className="rail-icon" />
-            {!expanded && <span className="rail-tip">Expand menu</span>}
+            {!expanded && <span className="rail-tip">Expand Menu</span>}
           </button>
         </div>
 

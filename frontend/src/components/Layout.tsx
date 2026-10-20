@@ -34,12 +34,11 @@ export function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const onHome = pathname === '/';
-  const onSeeds = pathname.startsWith('/seeds');
   const hasMessages = useAppStore((s) => s.messages.length > 0);
 
   return (
     <div className="flex flex-col h-full w-full overflow-hidden relative" style={{ background: 'transparent' }}>
-      {onHome || onSeeds ? <Galaxy dim={onHome && hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
+      {onHome ? <Galaxy dim={onHome && hasMessages} /> : <div className="page-glow" aria-hidden="true" />}
 
       {/* Health check banner */}
       {apiReachable === false && (

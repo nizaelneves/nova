@@ -1,55 +1,12 @@
 # Phibe on native Windows
 
-Phase-1 of the native-Windows-support RFC (#298). Mirrors the Linux
+Mirrors the Linux
 (`deploy/systemd/`) and macOS (`deploy/launchd/`) deployments — but for
 PowerShell, without WSL2 or Docker.
 
-## One-liner install
-
-In an elevated-or-regular PowerShell:
-
-```powershell
-irm https://github.com/nizaelneves/phibe | iex
-```
-
-What it does:
-
-1. Refuses non-Windows hosts and Windows < 10 1809.
-2. Checks Python 3.10 – 3.13 (3.14 has no numpy wheels yet — see #432).
-3. Checks `git` on PATH.
-4. Installs `uv` (https://astral.sh/uv) if absent.
-5. Clones the Phibe repository to `%LOCALAPPDATA%\Phibe`
-   (override with `$env:PHIBE_HOME`).
-6. Runs `uv sync --extra desktop --group desktop-native` so the FastAPI server,
-   speech backend, and native extension are importable.
-7. Optionally prompts to register a scheduled task that auto-starts the
-   server at logon.
-
-Flags (when invoked directly rather than via `irm | iex`):
-
-| Flag | Effect |
-|------|--------|
-| `-Service` | Register the scheduled task without prompting |
-| `-SkipService` | Don't prompt; don't register |
-| `-Force` | Re-run all steps even if already done |
-
-`irm | iex` can't pass `param()` args into a piped script string, so
-the same knobs are honored via env vars when the corresponding flag is
-absent:
-
-```powershell
-$env:PHIBE_SKIP_SERVICE = '1'
-irm https://github.com/nizaelneves/phibe | iex
-```
-
-The available env vars: `PHIBE_SKIP_SERVICE`, `PHIBE_SERVICE`,
-`PHIBE_FORCE`. If you need richer control, save the script first
-(`irm ... -OutFile install.ps1; .\install.ps1 -Force`).
-
 ## Manual scheduled-task setup
 
-If you skipped the prompt during install, you can register / inspect /
-remove the task with `phibe-service.ps1`:
+You can register / inspect / remove the task with `phibe-service.ps1`:
 
 ```powershell
 $srv = "$env:LOCALAPPDATA\Phibe\src\deploy\windows\phibe-service.ps1"
@@ -97,30 +54,3 @@ powershell -ExecutionPolicy Bypass -File $srv install -ListenHost 0.0.0.0
 | Default bind | `0.0.0.0` (with API key) | `127.0.0.1` (no API key) | `127.0.0.1` (no API key) |
 | Restart on failure | `Restart=on-failure RestartSec=5` | `KeepAlive=true` | `RestartCount=3 RestartInterval=PT1M` |
 | Auto-start | `multi-user.target` | `RunAtLoad=true` | `AtLogOn` trigger |
-
-## Updating
-
-To pull the latest:
-
-```powershell
-cd "$env:LOCALAPPDATA\Phibe\src"
-git pull --ff-only
-uv sync --extra desktop --group desktop-native
-```
-
-Or re-run the installer with `-Force`:
-
-```powershell
-irm https://github.com/nizaelneves/phibe | iex
-# (then re-run with the file directly, passing -Force)
-```
-
-## Uninstall
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Phibe\src\deploy\windows\phibe-service.ps1" uninstall
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Phibe"
-```
-
-Uninstalling does NOT remove `uv` (it's a separate tool — you may have
-other Python projects using it).

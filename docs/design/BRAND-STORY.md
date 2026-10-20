@@ -40,6 +40,6 @@ Product idea to explore later: a **Fibonacci digest**, where the main item comes
 
 A small badge at a corner, with priority: `!` approval pending (amber), `?` question, red dot error, `✓` task done, bell ping/reminder, pulsing ring listening. With several events, show the most important plus a count. Sounds come last and can be muted.
 
-## Presence (see also coucou-learnings.md section 13)
+## Presence
 
 Tray icon always; a draggable floating button (default visible, user can hide it to the tray) that opens a chat bubble with notifications and approvals; inside the app the avatar moves per page. The first version is an in-page floating button so it can be tested on localhost. Mobile is for much later; the focus is desktop.

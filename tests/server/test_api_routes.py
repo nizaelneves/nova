@@ -13,10 +13,6 @@ from phibe.core.events import EventBus, EventType  # noqa: E402
 from phibe.security.capabilities import CapabilityPolicy  # noqa: E402
 from phibe.server.api_routes import (  # noqa: E402
     include_all_routes,
-    memory_index,
-    memory_search,
-    memory_stats,
-    memory_store,
 )
 
 
@@ -168,30 +164,6 @@ class TestAgentRoutes:
             and event.data["tool"] == "agent_list"
             for event in app.state.bus.history
         )
-
-
-class TestMemoryRoutes:
-    # 503 is the documented response when the native ``phibe_rust``
-    # extension is absent from the venv (see TestMemoryRustMissing below).
-    # These tests are only asserting "the route is wired up", so a backend
-    # that cannot be built is tolerated the same way a 500 is.
-    _BACKEND_OPTIONAL = (200, 500, 503)
-
-    def test_blocking_memory_handlers_use_starlette_threadpool(self):
-        """Sync endpoints are automatically dispatched to worker threads."""
-        for handler in (memory_store, memory_search, memory_stats, memory_index):
-            assert not inspect.iscoroutinefunction(handler)
-
-    def test_search(self):
-        client = TestClient(_make_app())
-        resp = client.post("/v1/memory/search", json={"query": "test"})
-        # May fail if SQLite not set up, that's ok
-        assert resp.status_code in self._BACKEND_OPTIONAL
-
-    def test_stats(self):
-        client = TestClient(_make_app())
-        resp = client.get("/v1/memory/stats")
-        assert resp.status_code in self._BACKEND_OPTIONAL
 
 
 class TestBudgetRoutes:

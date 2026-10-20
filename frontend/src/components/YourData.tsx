@@ -5,6 +5,7 @@ import { ConversationList } from './Sidebar/ConversationList';
 import { Icon } from './Icon';
 import { SeedsLoader } from './SeedsLoader';
 import { disintegrate } from '../lib/disintegrate';
+import { DataSection } from './DataSection';
 
 interface VoiceEntry {
   id: string;
@@ -80,10 +81,12 @@ export function YourData() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 pb-10">
-      <div className="max-w-2xl mx-auto flex flex-col gap-4">
+    <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="fin-wrap">
+      <div className="set-grid">
+        <DataSection />
         <div className="set-section fin-card">
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Chats</h3>
+          <h3>Chats</h3>
           <p className="text-xs mt-1 mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
             Every conversation you had with Phibe. Open one to continue it, or delete it.
           </p>
@@ -103,7 +106,7 @@ export function YourData() {
         <div className="set-section fin-card">
           <div className="flex items-start justify-between gap-4 mb-1">
             <div>
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Voice history</h3>
+              <h3 className="set-inline-title">Voice history</h3>
               <p className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
                 What you said with the voice shortcut, with the recording. It stays on this computer.
               </p>
@@ -158,6 +161,7 @@ export function YourData() {
             {confirmAll ? 'Click again to delete everything' : 'Delete all voice data'}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

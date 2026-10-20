@@ -16,13 +16,12 @@ import {
   updateTask,
 } from '../../lib/tasks-api';
 import { PERSONAL_COLOR } from '../../lib/projects';
-import { RollNumber } from '../RollNumber';
 import { StrikeText } from '../StrikeText';
 import { TaskCheck } from '../TaskCheck';
 import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../../lib/tasks';
 
 export const COLUMNS: { status: Status; label: string }[] = [
-  { status: 'todo', label: 'To Do' },
+  { status: 'todo', label: 'Coming Next' },
   { status: 'doing', label: 'Doing' },
   { status: 'done', label: 'Done' },
 ];
@@ -113,20 +112,21 @@ function TaskCard({
   onOpen: () => void;
   onDragStart: (e: React.DragEvent) => void;
 }) {
+  const color = useContext(ProjectColorContext)(task.area_id);
   return (
-    <button
-      type="button"
-      draggable
-      onDragStart={onDragStart}
-      onClick={onOpen}
-      className="task-card"
-      style={priorityStyle(task)}
-    >
-      <div className="task-card-title" style={{ opacity: task.status === 'done' ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
-        <StrikeText done={task.status === 'done'}>{task.title}</StrikeText>
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap mt-2">
-        <TaskMetaChips task={task} />
+    <button type="button" draggable onDragStart={onDragStart} onClick={onOpen} className="kb-card" data-done={task.status === 'done' || undefined}>
+      <span className="kb-tag" style={{ ['--c' as string]: color }}>{task.area || 'Personal'}</span>
+      <b className="kb-title"><StrikeText done={task.status === 'done'}>{task.title}</StrikeText></b>
+      {task.notes && <p className="kb-notes">{task.notes}</p>}
+      <div className="kb-foot">
+        <span className="task-chip"><Icon name="calendar" size={11} />{formatDue(task)}</span>
+        {task.recurrence && <span className="task-chip" title="Repeats"><Icon name="repeat" size={11} /></span>}
+        {task.priority && (
+          <span className="task-chip" style={{ color: PRIORITY_COLOR[task.priority], marginLeft: 'auto' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: PRIORITY_COLOR[task.priority], display: 'inline-block' }} />
+            {task.priority[0].toUpperCase() + task.priority.slice(1)}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -175,6 +175,7 @@ export function TaskListView({
 }) {
   const now = new Date();
   const todayStr = todayLocal();
+  const [openBuckets, setOpenBuckets] = useState<Record<string, boolean>>({});
 
   const groups = useMemo(() => {
     const buckets = new Map<string, Task[]>();
@@ -194,33 +195,22 @@ export function TaskListView({
     return <div className="text-xs px-1 py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here.</div>;
   }
 
-  const doneCount = tasks.filter((t) => t.status === 'done').length;
-  const allDone = tasks.length > 0 && doneCount === tasks.length;
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="task-progress" data-complete={allDone} aria-live="polite">
-        <TaskCheck done={allDone} label={allDone ? 'All tasks done' : 'Tasks in progress'} size={18} />
-        <span>{allDone ? 'All done' : 'Progress'}</span>
-        <span className="task-progress-count">
-          <span className="sr-only">{doneCount} of {tasks.length} tasks done</span>
-          <span aria-hidden="true" style={{ display: 'inline-flex' }}>
-            <RollNumber value={doneCount} />
-            <span>/{tasks.length}</span>
-          </span>
-        </span>
-      </div>
+    <div className="flex flex-col gap-3">
       {groups.map(([bucket, items]) => (
         <div key={bucket} className="flex flex-col gap-1.5">
-          <div className="task-list-section-head">
-            {LIST_BUCKET_LABEL[bucket]}
-            <span className="task-tab-count">{items.length}</span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {items.map((t) => (
-              <TaskListRow key={t.id} task={t} onOpen={() => onOpen(t)} onToggleDone={() => onToggleDone(t)} />
-            ))}
-          </div>
+          <button type="button" className="tl-head" data-b={bucket} aria-expanded={!!openBuckets[bucket]} onClick={() => setOpenBuckets((o) => ({ ...o, [bucket]: !o[bucket] }))}>
+            <Icon name="alt-arrow-down" size={16} className="tl-chev" />
+            <b>{LIST_BUCKET_LABEL[bucket]}</b>
+            <span>{items.length}</span>
+          </button>
+          {openBuckets[bucket] && (
+            <div className="flex flex-col gap-1.5">
+              {items.map((t) => (
+                <TaskListRow key={t.id} task={t} onOpen={() => onOpen(t)} onToggleDone={() => onToggleDone(t)} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -370,7 +360,7 @@ export function TaskForm({
             Stage
             <select value={status} onChange={(e) => setStatus(e.target.value as Status)}
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={field}>
-              <option value="todo">To Do</option>
+              <option value="todo">Coming Next</option>
               <option value="doing">Doing</option>
               <option value="done">Done</option>
             </select>
@@ -474,11 +464,11 @@ export function TaskBoard({ tasks, onOpen, onMove }: { tasks: Task[]; onOpen: (t
             if (id) onMove(id, col.status);
           }}
         >
-          <div className="task-column-head">
+          <div className="kb-head" data-s={col.status}>
             {col.label}
-            <span className="task-tab-count">{board[col.status].length}</span>
+            <span>{board[col.status].length}</span>
           </div>
-          <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1">
             {board[col.status].length === 0 && (
               <div className="text-xs px-1 py-3 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here</div>
             )}

@@ -16,7 +16,7 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 /**
  * Phibe's island: the Orb's face in a small black pill attached to the top edge of the app,
- * centred, like the island of Coucou. It lives inside the Phibe window only. The eyes follow the
+ * centred. It lives inside the Phibe window only. The eyes follow the
  * cursor right away (no animation delay, only a light smoothing over a couple of frames), and the
  * pill widens to say what Phibe is doing.
  */
@@ -163,7 +163,7 @@ export function Island() {
       data-pulse={pulse}
       data-state={state}
       data-level={level}
-      style={{ ['--isl-extra' as string]: `${extra}px`, width: level === 'panel' ? 'min(580px, calc(100vw - 32px))' : level === 'card' ? 'min(440px, calc(100vw - 32px))' : wide ? 330 : 240 }}
+      style={{ ['--isl-extra' as string]: `${extra}px`, width: level === 'panel' ? 'min(580px, calc(100vw - 32px))' : level === 'card' ? 'min(400px, calc(100vw - 32px))' : wide ? 280 : 200 }}
       onClick={() => setOpen((v) => !v)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

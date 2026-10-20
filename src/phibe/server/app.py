@@ -17,6 +17,7 @@ from phibe.server.comparison import comparison_router
 from phibe.server.connectors_router import create_connectors_router
 from phibe.server.dashboard import dashboard_router
 from phibe.server.digest_routes import create_digest_router
+from phibe.server.quick_digest_routes import create_quick_digest_router
 from phibe.server.data_folder_router import create_data_folder_router
 from phibe.server.home_router import create_home_router
 from phibe.server.memory_notes_router import create_memory_notes_router
@@ -386,6 +387,7 @@ def create_app(
             app.state.auto_sync_stop.set()
 
     app.include_router(create_digest_router())
+    app.include_router(create_quick_digest_router(lambda: app.state.engine, lambda: app.state.model))
     app.include_router(upload_router)
     app.include_router(research_router)
     app.include_router(create_home_router())

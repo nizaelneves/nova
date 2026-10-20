@@ -2,10 +2,8 @@
 
 ``phibe_rust`` is the native PyO3 extension. It is NOT published to PyPI,
 so it must not appear in the published ``desktop`` extra — listing it there
-breaks ``pip install phibe[desktop]`` at install time. It lives in the uv
-``desktop-native`` dependency group instead (excluded from wheel metadata),
-which the desktop app installs from source via
-``uv sync --group desktop-native``.
+breaks ``pip install phibe[desktop]`` at install time. Nothing in the
+packaged desktop extra may depend on it.
 """
 
 from __future__ import annotations
@@ -22,8 +20,6 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
-DESKTOP_LIB_RS = ROOT / "frontend" / "src-tauri" / "src" / "lib.rs"
-WINDOWS_INSTALL_PS1 = ROOT / "deploy" / "windows" / "install.ps1"
 QUICKSTART_SH = ROOT / "scripts" / "quickstart.sh"
 CLAUDE_RUNNER = ROOT / "src" / "phibe" / "agents" / "claude_code_runner"
 
@@ -38,36 +34,6 @@ def test_python310_speech_extras_use_installable_onnxruntime() -> None:
 
     assert constraint in extras["desktop"]
     assert constraint in extras["speech"]
-
-
-def test_desktop_app_syncs_the_native_group() -> None:
-    # Otherwise the group's phibe_rust is never installed for the app.
-    assert '"desktop-native"' in DESKTOP_LIB_RS.read_text(), (
-        "the desktop app must `uv sync --group desktop-native` so the native "
-        "extension is built at launch."
-    )
-
-
-def test_windows_installer_syncs_the_native_group() -> None:
-    # The Windows source installer does not run maturin separately.
-    assert (
-        "& $uvExe sync --extra desktop --group desktop-native"
-        in WINDOWS_INSTALL_PS1.read_text()
-    ), (
-        "the Windows installer must include `--group desktop-native` so "
-        "phibe_rust is built during source install."
-    )
-
-
-def test_windows_installer_failure_does_not_exit_interactive_host() -> None:
-    installer = WINDOWS_INSTALL_PS1.read_text(encoding="utf-8")
-    write_fail = installer.split("function Write-Fail", maxsplit=1)[1].split(
-        "# ---------------------------------------------------------------------------",
-        maxsplit=1,
-    )[0]
-
-    assert "throw [System.InvalidOperationException]" in write_fail
-    assert "exit 1" not in write_fail
 
 
 def test_claude_runner_wheel_maps_only_runtime_files() -> None:

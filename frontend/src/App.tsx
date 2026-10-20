@@ -4,9 +4,6 @@ import { Layout } from './components/Layout';
 import { HorizonPage } from './pages/HorizonPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AgentsPage } from './pages/AgentsPage';
-import { SeedsPage } from './pages/SeedsPage';
-import { TutorPage } from './pages/TutorPage';
-import { MeetingNotesPage } from './pages/MeetingNotesPage';
 import { PingsPage } from './pages/PingsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { FinancesPage } from './pages/FinancesPage';
@@ -82,14 +79,12 @@ export default function App() {
           <Route index element={<HorizonPage />} />
           <Route path="settings" element={<SettingsPage />} />
           {/* Agents and Data Sources now live inside Settings. */}
-          <Route path="data-sources" element={<Navigate to="/settings?tab=data-sources" replace />} />
-          <Route path="agents" element={<Navigate to="/settings?tab=agents" replace />} />
+          <Route path="connections" element={<DataSourcesPage />} />
+          <Route path="data-sources" element={<Navigate to="/connections" replace />} />
+          <Route path="agents" element={<AgentsPage />} />
           <Route path="desk" element={<Navigate to="/" replace />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="workspaces" element={<Navigate to="/projects" replace />} />
-          <Route path="seeds" element={<SeedsPage />} />
-          <Route path="tutor" element={<TutorPage />} />
-          <Route path="meeting-notes" element={<MeetingNotesPage />} />
           <Route path="tasks" element={<Navigate to="/projects" replace />} />
           <Route path="pings" element={<PingsPage />} />
           <Route path="finances" element={<FinancesPage />} />
