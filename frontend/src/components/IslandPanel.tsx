@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AttachMenu } from './Chat/AttachMenu';
 import { EngineMenu } from './Chat/EngineMenu';
+import { TuneMenu } from './Chat/TuneMenu';
 import { Terminal } from './IslandTerminal';
 import { MicButton } from './Chat/MicButton';
 import { TimerButton } from './TimerButton';
@@ -353,13 +354,14 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
     <div className="isl-chat">
       <div className="isl-chat-head">
         <div className="isl-tools">
-          <AttachMenu disabled={answering} />
+          <TuneMenu disabled={answering} />
           <button type="button" className="composer-chip isl-model-chip" title="Choose a model (Ctrl+K)" disabled={answering}
             onClick={() => useAppStore.getState().setCommandPaletteOpen(true)}>
             <Icon name="cpu" size={13} />
             <span className="truncate">{model || 'Select model'}</span>
           </button>
           {CLI_ENGINES_ENABLED && <EngineMenu disabled={answering} />}
+          <AttachMenu disabled={answering} />
           {answering ? (
             <button type="button" className="isl-send" data-stop="true" aria-label="Stop generating" title="Stop generating" onClick={stop}>
               <Icon name="stop-circle" size={16} />

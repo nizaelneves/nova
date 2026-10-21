@@ -8,7 +8,7 @@ import { DigestPanel } from './DigestPanel';
 type Panel = 'digest' | 'calendar' | 'system';
 const BUTTONS: { id: Panel; label: string; icon: IconName }[] = [
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
-  { id: 'digest', label: 'Quick Digest', icon: 'newspaper' },
+  { id: 'digest', label: 'Quick Digest', icon: 'feed' },
   { id: 'system', label: 'System', icon: 'cpu' },
 ];
 
@@ -27,7 +27,7 @@ export function Horizon() {
     if (!open.length) return undefined;
     const away = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (!column.current?.contains(t) && !dock.current?.contains(t)) setOpen([]);
+      if (!column.current?.contains(t) && !dock.current?.contains(t) && !(t as Element).closest?.('.dr-root')) setOpen([]);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('[role="dialog"]')) setOpen([]); };
     document.addEventListener('mousedown', away);
@@ -41,6 +41,7 @@ export function Horizon() {
         {BUTTONS.map((b) => (
           <button key={b.id} type="button" className="rail-item w-11 justify-center cursor-pointer" data-active={open.includes(b.id)} aria-label={b.label} aria-expanded={open.includes(b.id)} onClick={() => toggle(b.id)}>
             <Icon name={b.icon} size={20} className="rail-icon" />
+            <span className="hz-tip" aria-hidden="true">{b.label}</span>
           </button>
         ))}
       </div>

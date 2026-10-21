@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card } from '../Card';
-import { bytes, duration, percent, sparkline, speed } from '../lib/computer';
+import { bytes, percent, sparkline } from '../lib/computer';
 import { useComputer, watchComputer } from '../lib/computerFeed';
 import { SystemStatus } from '../../components/SystemStatus';
 
@@ -33,17 +33,16 @@ export function ComputerWidget() {
   const report = useComputer((s) => s.report);
   const failed = useComputer((s) => s.failed);
   const cpuHistory = useComputer((s) => s.cpuHistory);
-  const downHistory = useComputer((s) => s.downHistory);
   const [rank, setRank] = useState<'cpu' | 'memory'>('cpu');
 
   useEffect(() => watchComputer(), []);
 
-  if (!report) return <Card title="System"><p className="hz-note">{failed ? 'The Phibe backend is not answering.' : 'Reading the system…'}</p></Card>;
+  if (!report) return <Card><p className="hz-note">{failed ? 'The Phibe backend is not answering.' : 'Reading the system…'}</p></Card>;
 
-  const { cpu, memory, gpus, disks, network, battery, programs, ollama } = report;
+  const { cpu, memory, gpus, programs, ollama } = report;
   const list = rank === 'cpu' ? programs.by_cpu : programs.by_memory;
   return (
-    <Card title="System" note={report.os}>
+    <Card note={report.os}>
       <Section title="Processor" note={cpu.name.replace(/\s+with .*$/i, '').replace(/\s+\d+-Core Processor$/i, '')}>
         <div className="hz-split"><p className="hz-big">{Math.round(cpu.usage)}%<small>{cpu.cores} cores · {cpu.threads} threads{cpu.mhz ? ` · ${(cpu.mhz / 1000).toFixed(1)} GHz` : ''}</small></p><Spark history={cpuHistory} max={100} /></div>
         <div className="hz-cores" aria-label="Use of each processor thread">
@@ -63,20 +62,6 @@ export function ComputerWidget() {
         </Section>
       ))}
 
-      <Section title="Storage">
-        {disks.map((d) => <Meter key={d.name} label={d.name} value={percent(d.used, d.total)} detail={`${bytes(d.used)} of ${bytes(d.total)}`} />)}
-      </Section>
-
-      <Section title="Network">
-        <div className="hz-split"><p className="hz-net"><span>↓ {speed(network.down)}</span><span>↑ {speed(network.up)}</span></p><Spark history={downHistory} /></div>
-      </Section>
-
-      {battery && (
-        <Section title="Battery">
-          <Meter label={battery.charging ? 'Charging' : 'On battery'} value={battery.percent} color={battery.percent <= 20 && !battery.charging ? '#ff6b6b' : ''} detail={`${battery.percent}%${!battery.charging && battery.seconds_left ? ` · ${duration(battery.seconds_left)} left` : ''}`} />
-        </Section>
-      )}
-
       <Section title="Busiest programs">
         <div className="hz-tabs2" role="tablist">
           <button type="button" role="tab" aria-selected={rank === 'cpu'} data-on={rank === 'cpu'} onClick={() => setRank('cpu')}>Processor</button>
@@ -85,6 +70,7 @@ export function ComputerWidget() {
         <ul className="hz-list">
           {list.map((p) => <li key={p.name}><span>{p.name.replace(/\.exe$/i, '')}</span><b className="hz-mono">{rank === 'cpu' ? `${p.cpu.toFixed(1)}%` : bytes(p.memory)}</b></li>)}
         </ul>
+        <p className="hz-note">Phibe is Using {bytes(report.phibe.memory)} Of Memory</p>
       </Section>
 
       <Section title="Ollama" note={ollama.running ? `Version ${ollama.version}` : undefined}>
@@ -93,7 +79,6 @@ export function ComputerWidget() {
             <li><span>Models Installed</span><b>{ollama.installed}</b></li>
           </ul>
         ) : <p className="hz-note">Ollama is not running.</p>}
-        <p className="hz-note">Phibe is Using {bytes(report.phibe.memory)} Of Memory</p>
       </Section>
 
       <Section title="Status">

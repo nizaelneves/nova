@@ -30,6 +30,23 @@ def _pid_alive(pid: int) -> bool:
     return process_alive(pid)
 
 
+def _owner_alive(pid: int) -> bool:
+    """Whether *pid* is still the server that wrote the PID file.
+
+    After a reboot Windows hands old PIDs to unrelated programs, so a live PID
+    alone proves nothing: a process that started after the file was written
+    cannot be the server that wrote it.
+    """
+    if not _pid_alive(pid):
+        return False
+    try:
+        import psutil
+
+        return psutil.Process(pid).create_time() <= _PID_FILE.stat().st_mtime + 2
+    except Exception:  # noqa: BLE001 - when unsure, trust the liveness probe
+        return True
+
+
 @contextmanager
 def _state_lock() -> Iterator[None]:
     """Serialize daemon bookkeeping across launching and supervised processes."""
@@ -81,7 +98,7 @@ def _read_pid() -> int | None:
         if pid is None:
             _PID_FILE.unlink(missing_ok=True)
             return None
-        if not _pid_alive(pid):
+        if not _owner_alive(pid):
             _clear_state_unlocked(pid)
             return None
         return pid
@@ -93,7 +110,7 @@ def _write_pid(
     """Write PID, plus the address the daemon actually bound to."""
     with _state_lock():
         existing = _read_pid_file()
-        if existing is not None and existing != pid and _pid_alive(existing):
+        if existing is not None and existing != pid and _owner_alive(existing):
             raise RuntimeError(f"Another server is already registered (PID {existing})")
         current = _read_state()
         if not ready and current.get("pid") == pid and current.get("ready", True):

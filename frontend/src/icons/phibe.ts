@@ -28,5 +28,9 @@ export const PHIBE_ICONS = {
   // A plug in a socket, and the same plug cut off: connected and disconnected.
   plug: line('<path d="M9 3v4M15 3v4M6.500 7h11v3.500a5.500 5.500 0 0 1-11 0z M12 16v5"/>'),
   'plug-off': line('<path d="M9 3v4M15 3v4M6.500 7h11v3.500a5.500 5.500 0 0 1-11 0z M12 16v5 M3.500 3.500l17 17"/>'),
+  // Two sliders: the model settings.
+  sliders: line('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'),
+  // Signal waves around a dot: the feed of the quick digest.
+  feed: line('<path d="M5 5a14 14 0 0 1 14 14M5 11a8 8 0 0 1 8 8"/><circle cx="6.500" cy="17.500" r="1.500" fill="currentColor"/>'),
   'pause-circle': line('<circle cx="12" cy="12" r="9.500"/><path d="M10 9v6M14 9v6"/>'),
 } as const;

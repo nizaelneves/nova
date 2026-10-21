@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { humanize, initials, parseDigest, sourceName, timeLabel, titleHeadline } from './digest';
+import { humanize, initials, kindCounts, parseDigest, sourceName, timeLabel, titleHeadline } from './digest';
 
 describe('digest', () => {
   it('turns the sections into items and the first line into a headline', () => {
@@ -55,5 +55,23 @@ describe('digest', () => {
     const d = parseDigest({ text: '5 New Items From 1 Source\nok', sections: { hackernews: 'x' }, sources_used: ['hackernews'] });
     expect([d.count, d.items[0].title, d.sources]).toEqual([5, 'Hacker News', ['Hacker News']]);
     expect(parseDigest({ text: 'Hello', sections: { a: 'x', b: 'y' } }).count).toBe(2);
+  });
+
+  it('turns the items of the server into small blocks and counts them by kind', () => {
+    const raw = {
+      text: '3 New Items From 2 Sources\nok',
+      items: [
+        { source: 'hackernews', source_name: 'Hacker News', kind: 'news', title: 'A new database', summary: 'Launched today.', text: 'Launched today. It is fast.', url: 'https://x.dev', time: '2026-10-20T09:00:00' },
+        { source: 'gmail', kind: 'mail', title: 'Weekly', summary: 's', text: 't' },
+        { source: 'anytype', kind: 'whatever', title: 'N', summary: '', text: '', time: 'not a date' },
+      ],
+    };
+    const d = parseDigest(raw);
+    expect(d.blocks.map((b) => [b.sourceName, b.kind])).toEqual([['Hacker News', 'news'], ['Gmail', 'mail'], ['Anytype', 'other']]);
+    expect(d.blocks[0].time?.getHours()).toBe(9);
+    expect(d.blocks[2].time).toBeNull();
+    expect(d.count).toBe(3);
+    expect(kindCounts(d.blocks)).toEqual([{ kind: 'news', count: 1 }, { kind: 'mail', count: 1 }]);
+    expect(parseDigest({ text: 'Hello' }).blocks).toEqual([]);
   });
 });

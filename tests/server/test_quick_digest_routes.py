@@ -44,6 +44,19 @@ def test_builds_a_section_per_source_and_a_headline() -> None:
     assert d["sources_used"] == ["hackernews", "anytype"] and d["model_used"] == "m:1"
 
 
+def test_every_item_becomes_a_small_block_without_asking_the_model() -> None:
+    items = {"hackernews": [{"title": "A new database", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00"}]}
+    d = build_digest(FakeEngine(), "m:1", items)
+    assert d["items"] == [{
+        "source": "hackernews", "source_name": "hackernews", "kind": "news", "title": "A new database",
+        "summary": "Launched today.", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00",
+    }]
+    stats = build_digest(FakeEngine(), "m:1", {"hackernews": [{"title": "T", "text": "Score: 568, Comments: 289"}]})["items"][0]
+    assert stats["summary"] == "568 points · 289 comments"
+    untitled = build_digest(FakeEngine(), "m:1", {"gmail": [{"title": "", "text": "Weekly news. More below."}]})["items"][0]
+    assert (untitled["title"], untitled["kind"]) == ("Weekly news.", "mail")
+
+
 def test_skips_a_source_the_model_fails_on_and_says_so_when_nothing_is_left() -> None:
     d = build_digest(FakeEngine(fail_on="anytype"), "m:1", ITEMS)
     assert list(d["sections"]) == ["hackernews"]

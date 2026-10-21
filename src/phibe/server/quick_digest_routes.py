@@ -47,7 +47,12 @@ def collect_recent(hours: int = HOURS_BACK, per_source: int = PER_SOURCE) -> Ite
                 continue
             items: List[Dict[str, str]] = []
             for doc in connector.sync(since=since):
-                items.append({"title": str(doc.title or ""), "text": str(doc.content or "")[:600]})
+                items.append({
+                    "title": str(doc.title or ""),
+                    "text": str(doc.content or "")[:600],
+                    "url": str(getattr(doc, "url", "") or ""),
+                    "time": doc.timestamp.isoformat(timespec="seconds") if getattr(doc, "timestamp", None) else "",
+                })
                 if len(items) >= per_source:
                     break
             if items:
@@ -84,6 +89,38 @@ def _display_name(key: str) -> str:
         return key
 
 
+_KINDS = {"hackernews": "news", "news_rss": "rss", "gmail": "mail", "gmail_imap": "mail", "imap": "mail", "outlook": "mail"}
+
+
+def _first_sentence(text: str, limit: int = 160) -> str:
+    """The first sentence of *text*, flattened to one line and cut at *limit* characters."""
+    stats = re.fullmatch(r"Score: (\d+), Comments: (\d+)", text.strip())
+    if stats:  # what the Hacker News connector writes for a story without a text
+        return f"{stats.group(1)} points · {stats.group(2)} comments"
+    flat = re.sub(r"\s+", " ", re.sub(r"[*_#`]+", "", text)).strip()
+    sentence = re.split(r"(?<=[.!?])\s", flat, maxsplit=1)[0]
+    return sentence if len(sentence) <= limit else sentence[: limit - 1].rstrip() + "…"
+
+
+def _item_views(items: Items) -> List[Dict[str, str]]:
+    """One small block per item for the widget: where it came from, a headline, one line and a link. No model needed."""
+    views: List[Dict[str, str]] = []
+    for source, entries in items.items():
+        for e in entries:
+            title = e.get("title", "").strip() or _first_sentence(e.get("text", ""), 80)
+            views.append({
+                "source": source,
+                "source_name": _display_name(source),
+                "kind": _KINDS.get(source, "other"),
+                "title": title,
+                "summary": _first_sentence(e.get("text", "")),
+                "text": e.get("text", ""),
+                "url": e.get("url", ""),
+                "time": e.get("time", ""),
+            })
+    return views
+
+
 def build_digest(engine: Any, model: str, items: Items) -> Dict[str, Any]:
     """Summarize every source, then the whole. Pure of I/O apart from the model calls."""
     sections: Dict[str, str] = {}
@@ -110,6 +147,7 @@ def build_digest(engine: Any, model: str, items: Items) -> Dict[str, Any]:
         "text": text,
         "sections": sections,
         "sources_used": list(sections),
+        "items": _item_views(items),
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "model_used": model,
     }

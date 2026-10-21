@@ -8,8 +8,6 @@ import { summarizeSettings } from '../lib/settingsSummary';
 import { Check, Download } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 import {
-  checkHealth,
-  fetchSpeechHealth,
   getInferenceSource,
   setInferenceSource,
   isTauri,
@@ -143,8 +141,8 @@ function AppearanceSection({
   updateSettings,
   onSaved,
 }: {
-  settings: { effects: 'full' | 'balanced' | 'off' };
-  updateSettings: (partial: { effects: 'full' | 'balanced' | 'off' }) => void;
+  settings: { effects: 'full' | 'balanced' | 'off'; floatingPhibe: boolean };
+  updateSettings: (partial: Partial<{ effects: 'full' | 'balanced' | 'off'; floatingPhibe: boolean }>) => void;
   onSaved: () => void;
 }) {
   const [draft, setDraft] = useState(settings.effects);
@@ -184,6 +182,10 @@ function AppearanceSection({
           </button>
         </div>
       </SettingRow>
+      <SettingRow label="Show Phibe On Screen">
+        <Switch on={settings.floatingPhibe} label="Show Phibe On Screen"
+          onClick={() => { updateSettings({ floatingPhibe: !settings.floatingPhibe }); onSaved(); }} />
+      </SettingRow>
     </Section>
   );
 }
@@ -195,69 +197,6 @@ const SETTINGS_TABS = [
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
 
 type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
-
-interface VoiceModelStatus {
-  model: string;
-  installed: boolean;
-  downloading: boolean;
-  size_mb: number;
-  progress: number;
-  error: string | null;
-}
-
-/** Whether the voice model is on this computer, with a button to download it (never automatic). */
-function VoiceModelRow() {
-  const [status, setStatus] = useState<VoiceModelStatus | null>(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      const res = await apiFetch('/v1/speech/model');
-      if (res.ok) setStatus(await res.json());
-    } catch {
-      setStatus(null);
-    }
-  }, []);
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  // Follow the download while it runs.
-  const busy = status?.downloading;
-  useEffect(() => {
-    if (!busy) return;
-    const id = setInterval(() => void refresh(), 2500);
-    return () => clearInterval(id);
-  }, [busy, refresh]);
-
-  const start = async () => {
-    const res = await apiFetch('/v1/speech/model/download', { method: 'POST' });
-    if (res.ok) setStatus(await res.json());
-  };
-
-  if (!status) return null;
-  const note = status.installed
-    ? `${status.model} is on this computer`
-    : status.downloading
-      ? `Downloading ${status.model}: ${Math.round(status.progress * 100)}%`
-      : status.error ?? `${status.model}, ${status.size_mb} MB. Needed to understand your voice.`;
-  return (
-    <SettingRow label="Voice model" description={note}>
-      {status.installed ? (
-        <span className="text-xs" style={{ color: 'var(--color-success)' }}>Ready</span>
-      ) : (
-        <button
-          type="button"
-          onClick={() => void start()}
-          disabled={status.downloading}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-60 disabled:cursor-default"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
-        >
-          {status.downloading ? 'Downloading…' : `Download (${status.size_mb} MB)`}
-        </button>
-      )}
-    </SettingRow>
-  );
-}
 
 interface GpuPackStatus {
   available: boolean;
@@ -301,13 +240,9 @@ function GpuPackRow({ onSaved }: { onSaved: () => void }) {
   };
 
   if (!status?.available) return null;
-  const note = status.installed
-    ? 'Uses your NVIDIA graphics card to understand your voice faster.'
-    : status.downloading
-      ? `Downloading the GPU pack: ${Math.round(status.progress * 100)}%`
-      : status.error ?? `Optional download, about ${status.size_mb / 1000} GB. Understands your voice in under a second.`;
+  const note = status.downloading ? `Downloading the GPU pack: ${Math.round(status.progress * 100)}%` : status.installed ? undefined : status.error ?? undefined;
   return (
-    <SettingRow label="Faster voice with an NVIDIA GPU" description={note}>
+    <SettingRow label="Faster Voice Using NVIDIA GPU" description={note}>
       {status.installed ? (
         <Switch on={status.enabled} label="Use the GPU for voice" onClick={() => void post('/v1/speech/gpu/enable', { enabled: !status.enabled })} />
       ) : (
@@ -445,9 +380,6 @@ export function SettingsPage() {
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const conversations = useAppStore((s) => s.conversations);
-  const serverInfo = useAppStore((s) => s.serverInfo);
-  const [healthy, setHealthy] = useState<boolean | null>(null);
-  const [speechBackendAvailable, setSpeechBackendAvailable] = useState<boolean | null>(null);
   const [saved, setSaved] = useState(false);
 
 
@@ -479,13 +411,6 @@ export function SettingsPage() {
       setSrcMsg(e?.message ?? 'Failed to save.');
     }
   }, [srcKind, customHost, customModel, customEngine, customKey]);
-
-  useEffect(() => {
-    checkHealth().then(setHealthy);
-    fetchSpeechHealth()
-      .then((h) => setSpeechBackendAvailable(h.available))
-      .catch(() => setSpeechBackendAvailable(false));
-  }, []);
 
   const showSaved = () => {
     setSaved(true);
@@ -522,12 +447,6 @@ export function SettingsPage() {
           {tab === 'general' && (
             <>
               <AppearanceSection settings={settings} updateSettings={updateSettings} onSaved={showSaved} />
-              <Section title="Floating Phibe">
-                <SettingRow label="Show Phibe On Screen">
-                  <Switch on={settings.floatingPhibe} label="Show Phibe On Screen"
-                    onClick={() => { updateSettings({ floatingPhibe: !settings.floatingPhibe }); showSaved(); }} />
-                </SettingRow>
-              </Section>
             </>
           )}
 
@@ -624,88 +543,11 @@ export function SettingsPage() {
                 <option value="off">Never</option>
               </select>
             </SettingRow>
-            <VoiceModelRow />
             <GpuPackRow onSaved={showSaved} />
           </Section>
           )}
 
           {tab === 'general' && isTauri() && <VoiceShortcutSection onSaved={showSaved} />}
-
-          {tab === 'general' && (
-          <>
-          {/* Model parameters */}
-          <Section title="Model Parameters">
-            <SettingRow label="Temperature" description={`${settings.temperature}`}>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.1"
-                value={settings.temperature}
-                onChange={(e) => { updateSettings({ temperature: parseFloat(e.target.value) }); showSaved(); }}
-                className="w-32 cursor-pointer accent-[var(--color-accent)]"
-              />
-            </SettingRow>
-            <SettingRow label="Max tokens" description={`${settings.maxTokens}`}>
-              <input
-                type="range"
-                min="256"
-                max="32768"
-                step="256"
-                value={settings.maxTokens}
-                onChange={(e) => { updateSettings({ maxTokens: parseInt(e.target.value) }); showSaved(); }}
-                className="w-32 cursor-pointer accent-[var(--color-accent)]"
-              />
-            </SettingRow>
-          </Section>
-          </>
-          )}
-
-          {/* Connection */}
-          {tab === 'general' && (
-          <Section title="Connection">
-            <SettingRow label="Server status" description={serverInfo ? `${serverInfo.engine} / ${serverInfo.model}` : 'Not connected'}>
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: healthy === true ? 'var(--color-success)' : healthy === false ? 'var(--color-error)' : 'var(--color-text-tertiary)' }}
-                />
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {healthy === true ? 'Connected' : healthy === false ? 'Disconnected' : 'Checking...'}
-                </span>
-              </div>
-            </SettingRow>
-            <SettingRow label="API URL" description="Set if backend runs on a different port or host">
-              <input
-                type="text"
-                value={settings.apiUrl}
-                onChange={(e) => { updateSettings({ apiUrl: e.target.value }); showSaved(); }}
-                placeholder="http://localhost:8000"
-                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              />
-            </SettingRow>
-            <SettingRow label="API key" description="Required only if the server was started with an API key">
-              <input
-                type="password"
-                value={settings.apiKey}
-                onChange={(e) => { updateSettings({ apiKey: e.target.value }); showSaved(); }}
-                placeholder="PHIBE_API_KEY"
-                autoComplete="off"
-                className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                }}
-              />
-            </SettingRow>
-          </Section>
-          )}
 
           {/* Synchronization */}
           {tab === 'general' && <SyncSection onSaved={showSaved} />}

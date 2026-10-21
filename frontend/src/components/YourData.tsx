@@ -106,11 +106,12 @@ export function YourData() {
         <div className="set-section fin-card">
           <div className="flex items-start justify-between gap-4 mb-1">
             <div>
-              <h3 className="set-inline-title">Voice history</h3>
+              <h3 className="set-inline-title">Voice History</h3>
               <p className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
-                What you said with the voice shortcut, with the recording. It stays on this computer.
+                What you said with the voice shortcut. It stays on this computer.
               </p>
             </div>
+            <div className="flex items-center gap-2">
             <select
               value={retention}
               onChange={(e) => void changeRetention(Number(e.target.value))}
@@ -118,8 +119,19 @@ export function YourData() {
               className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
               style={FIELD}
             >
-              {RETENTION.map((r) => <option key={r.days} value={r.days}>Keep {r.label.toLowerCase() === 'never' ? 'forever' : `for ${r.label}`}</option>)}
+              {RETENTION.map((r) => <option key={r.days} value={r.days}>{r.days === 0 ? 'Keep Forever' : `Keep For ${r.days} Days`}</option>)}
             </select>
+              <button
+                type="button"
+                onClick={() => void removeAll()}
+                disabled={!entries || entries.length === 0}
+                className="set-btn"
+                data-danger
+                data-armed={confirmAll || undefined}
+              >
+                <Icon name="trash-bin-minimalistic" size={12} /> {confirmAll ? 'Click again to confirm' : 'Clear'}
+              </button>
+            </div>
           </div>
 
           {entries === null ? (
@@ -150,17 +162,6 @@ export function YourData() {
           )}
         </div>
 
-        <div>
-          <button
-            type="button"
-            onClick={() => void removeAll()}
-            disabled={!entries || entries.length === 0}
-            className="text-sm px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-default"
-            style={{ ...FIELD, color: confirmAll ? 'var(--color-error)' : 'var(--color-text)' }}
-          >
-            {confirmAll ? 'Click again to delete everything' : 'Delete all voice data'}
-          </button>
-        </div>
       </div>
       </div>
     </div>

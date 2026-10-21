@@ -22,7 +22,7 @@ function DataFolderRow() {
   };
 
   return (
-    <SettingRow label="Phibe folder" description="Tasks, finances, memory, knowledge and settings are saved here">
+    <SettingRow label="Phibe Folder">
       <div className="flex items-center gap-2 max-w-md">
         <code className="text-xs truncate px-2 py-1 rounded" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' }} title={path ?? ''}>
           {path ?? 'Unavailable'}
@@ -97,13 +97,13 @@ export function DataSection() {
   return (
     <Section title="Data">
       <DataFolderRow />
-      <SettingRow label="Conversations" description={`${conversations.length} stored locally`}>
+      <SettingRow label="Conversations" description={`${conversations.length} Stored Locally`}>
         <div className="flex gap-2">
           <button onClick={handleExport} className="set-btn"><Download size={12} /> Export</button>
           <button onClick={handleImport} className="set-btn"><Upload size={12} /> Import</button>
         </div>
       </SettingRow>
-      <SettingRow label="Clear all data" description="Permanently delete all conversations">
+      <SettingRow label="Clear All Data" description="Delete All Conversations">
         <button onClick={handleClear} className="set-btn" data-danger data-armed={confirmClear || undefined}>
           <Trash2 size={12} /> {confirmClear ? 'Click again to confirm' : 'Clear'}
         </button>

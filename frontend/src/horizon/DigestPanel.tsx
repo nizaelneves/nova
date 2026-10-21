@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
+import { TerminalLine } from '../components/TerminalLine';
 import { apiFetch } from '../lib/api';
+import { DigestFeed } from './DigestFeed';
+import { DigestReader } from './DigestReader';
 import { SidePanel } from './SidePanel';
-import { initials, parseDigest, timeLabel, type Digest, type RawDigest } from './lib/digest';
+import { initials, kindCounts, kindLabel, parseDigest, timeLabel, type BlockKind, type Digest, type RawDigest } from './lib/digest';
 
 type Load = { kind: 'loading' } | { kind: 'empty' } | { kind: 'error'; message: string } | { kind: 'ready'; digest: Digest };
+
+const KIND_ICON: Record<BlockKind, IconName> = { news: 'newspaper', rss: 'feed', mail: 'mail', other: 'layers' };
 
 /** Reads the last digest. A 404 only means none has been written yet. */
 async function fetchDigest(): Promise<Load> {
@@ -19,12 +24,13 @@ async function fetchDigest(): Promise<Load> {
 }
 
 /**
- * The quick digest: an agent of Phibe reads your news, newsletters and the latest notes of your data sources and
- * writes the main points here (the server keeps the last one).
+ * The quick digest: an agent of Phibe reads your news, newsletters and the latest items of your sources and keeps them
+ * as small blocks that slide by on their own. A button opens all of them in a large window to read quickly.
  */
 export function DigestPanel({ open }: { open: boolean }) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
-  const [tab, setTab] = useState<'highlights' | 'sources'>('highlights');
+  const [filter, setFilter] = useState<BlockKind | 'all'>('all');
+  const [reader, setReader] = useState<{ start: string | null } | null>(null);
   const [writing, setWriting] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
@@ -53,41 +59,46 @@ export function DigestPanel({ open }: { open: boolean }) {
   }, []);
 
   const digest = load.kind === 'ready' ? load.digest : null;
+  const blocks = digest ? digest.blocks.filter((b) => filter === 'all' || b.kind === filter) : [];
   return (
-    <SidePanel open={open} label="Quick Digest">
-      {digest && !writing && (
-        <div className="dg-seg" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === 'highlights'} data-on={tab === 'highlights'} onClick={() => setTab('highlights')}><Icon name="stars" size={15} />Highlights <em>{digest.items.length}</em></button>
-          <button type="button" role="tab" aria-selected={tab === 'sources'} data-on={tab === 'sources'} onClick={() => setTab('sources')}><Icon name="database" size={15} />Sources <em>{digest.sources.length}</em></button>
-        </div>
-      )}
+    <>
+      <SidePanel open={open} label="Quick Digest">
+        {writing && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Writing Your Digest…</div>}
+        {!writing && load.kind === 'loading' && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Loading…</div>}
 
-      {writing && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Writing your digest…</div>}
-      {!writing && load.kind === 'loading' && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Loading…</div>}
-
-      {!writing && load.kind === 'empty' && (
-        <div className="dg-state dg-empty">
-          <p>No digest yet today.</p>
-          <button type="button" className="pj-add" onClick={() => void write()}><Icon name="stars" size={16} /> Write Digest</button>
-        </div>
-      )}
-
-      {!writing && load.kind === 'error' && (
-        <div className="dg-state dg-empty">
-          <p style={{ color: 'var(--color-error)' }}>{load.message}</p>
-          <button type="button" className="pj-add" onClick={() => void write()}>Try Again</button>
-        </div>
-      )}
-
-      {!writing && digest && (
-        <>
-          <div className="isl-tiles">
-            <div><b>{digest.count}</b><span>Items</span></div>
-            <div><b>{digest.sources.length}</b><span>Sources</span></div>
+        {!writing && load.kind === 'empty' && (
+          <div className="dg-state dg-empty">
+            <p>No digest yet today.</p>
+            <button type="button" className="pj-add" onClick={() => void write()}><Icon name="stars" size={16} /> Write Digest</button>
           </div>
+        )}
 
-          {tab === 'highlights' ? (
-            digest.items.length ? (
+        {!writing && load.kind === 'error' && (
+          <div className="dg-state dg-empty">
+            <p style={{ color: 'var(--color-error)' }}>{load.message}</p>
+            <button type="button" className="pj-add" onClick={() => void write()}>Try Again</button>
+          </div>
+        )}
+
+        {!writing && digest && (
+          <>
+            <TerminalLine text={digest.blocks.length ? `${digest.blocks.length} new ${digest.blocks.length === 1 ? 'item' : 'items'} from ${new Set(digest.blocks.map((b) => b.source)).size} ${new Set(digest.blocks.map((b) => b.source)).size === 1 ? 'source' : 'sources'}` : digest.headline} />
+
+            {digest.blocks.length > 0 ? (
+              <>
+                <div className="fin-actions dg-chips" role="tablist" aria-label="Kinds">
+                  <button type="button" role="tab" aria-selected={filter === 'all'} data-active={filter === 'all'} className="fin-act" aria-label="All" title="All" onClick={() => setFilter('all')}>
+                    <Icon name="widget-2" size={16} /><span>All</span>
+                  </button>
+                  {kindCounts(digest.blocks).map((k) => (
+                    <button key={k.kind} type="button" role="tab" aria-selected={filter === k.kind} data-active={filter === k.kind} className="fin-act" aria-label={kindLabel[k.kind]} title={`${kindLabel[k.kind]} (${k.count})`} onClick={() => setFilter(k.kind)}>
+                      <Icon name={KIND_ICON[k.kind]} size={16} /><span>{kindLabel[k.kind]}</span>
+                    </button>
+                  ))}
+                </div>
+                <DigestFeed blocks={blocks} now={now} onOpen={(b) => setReader({ start: b.id })} />
+              </>
+            ) : digest.items.length ? (
               <ol className="dg-list">
                 {digest.items.map((item) => (
                   <li key={item.id}>
@@ -99,19 +110,19 @@ export function DigestPanel({ open }: { open: boolean }) {
                   </li>
                 ))}
               </ol>
-            ) : <p className="dg-none">Nothing to highlight yet.</p>
-          ) : (
-            <ul className="dg-sources">
-              {digest.sources.length ? digest.sources.map((s) => <li key={s}><i />{s}</li>) : <li className="dg-none">No sources were used.</li>}
-            </ul>
-          )}
+            ) : <p className="dg-none">Nothing to highlight yet.</p>}
 
-          <footer className="dg-foot">
-            <span>{digest.model || 'Phibe'} · {timeLabel(digest.generatedAt, now)}</span>
-            <button type="button" onClick={() => void write()}><Icon name="refresh" size={14} /> Refresh</button>
-          </footer>
-        </>
-      )}
-    </SidePanel>
+            <footer className="dg-foot">
+              <span>{digest.model || 'Phibe'} · {timeLabel(digest.generatedAt, now)}</span>
+              <span className="dg-acts">
+                {digest.blocks.length > 0 && <button type="button" onClick={() => setReader({ start: null })}><Icon name="widget-2" size={14} /> Open</button>}
+                <button type="button" onClick={() => void write()}><Icon name="refresh" size={14} /> Refresh</button>
+              </span>
+            </footer>
+          </>
+        )}
+      </SidePanel>
+      {reader && digest && <DigestReader digest={digest} now={now} start={reader.start} onClose={() => setReader(null)} />}
+    </>
   );
 }

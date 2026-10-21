@@ -5,11 +5,41 @@ export interface RawDigest {
   sources_used?: string[];
   generated_at?: string;
   model_used?: string;
+  items?: RawBlock[];
+}
+
+/** One item as the server sends it: where it came from, a headline, a line, the text and a link. */
+export interface RawBlock {
+  source: string;
+  source_name?: string;
+  kind?: string;
+  title?: string;
+  summary?: string;
+  text?: string;
+  url?: string;
+  time?: string;
 }
 
 export interface DigestItem { id: string; title: string; text: string }
 
+export type BlockKind = 'news' | 'rss' | 'mail' | 'other';
+
+/** A small block of the digest: one news item, one newsletter, one message. */
+export interface DigestBlock {
+  id: string;
+  source: string;
+  sourceName: string;
+  kind: BlockKind;
+  title: string;
+  summary: string;
+  text: string;
+  url: string;
+  time: Date | null;
+}
+
 export interface Digest {
+  /** The items as small blocks, newest source first. Empty for digests written before blocks existed. */
+  blocks: DigestBlock[];
   /** How many new items were read, over all sources. */
   count: number;
   /** The first line, as a title for the day. */
@@ -58,7 +88,20 @@ export function parseDigest(raw: RawDigest): Digest {
     : (raw.text ?? '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean).slice(1).map((text, i) => ({ id: `p${i}`, title: `Highlight ${i + 1}`, text: text.replace(/^#+\s*/gm, '') }));
   if (!items.length && lines.length > 1) items.push({ id: 'summary', title: 'Summary', text: lines.slice(1).join(' ') });
   const counted = /^(\d+) new items?/i.exec(lines[0] ?? '');
+  const kinds = ['news', 'rss', 'mail'];
+  const blocks: DigestBlock[] = (raw.items ?? []).map((b, i) => ({
+    id: `${b.source}-${i}`,
+    source: b.source,
+    sourceName: b.source_name || sourceName(b.source),
+    kind: (kinds.includes(b.kind ?? '') ? b.kind : 'other') as BlockKind,
+    title: (b.title ?? '').trim(),
+    summary: (b.summary ?? '').trim(),
+    text: (b.text ?? '').trim(),
+    url: b.url ?? '',
+    time: b.time && !Number.isNaN(Date.parse(b.time)) ? new Date(b.time) : null,
+  }));
   return {
+    blocks,
     count: counted ? Number(counted[1]) : items.length,
     headline: titleHeadline(short(lines[0] ?? 'Your digest', 90)),
     summary: short(lines.slice(1).join(' '), 150),
@@ -78,3 +121,11 @@ export function timeLabel(date: Date, now: Date): string {
   if (diff === 1) return `Yesterday ${hhmm}`;
   return `${date.getDate()} ${date.toLocaleString('en', { month: 'short' })} ${hhmm}`;
 }
+
+/** How many blocks of each kind, to label the filters; only the kinds that exist are listed. */
+export function kindCounts(blocks: DigestBlock[]): { kind: BlockKind; count: number }[] {
+  const order: BlockKind[] = ['news', 'rss', 'mail'];
+  return order.map((kind) => ({ kind, count: blocks.filter((b) => b.kind === kind).length })).filter((k) => k.count > 0);
+}
+
+export const kindLabel: Record<BlockKind, string> = { news: 'News', rss: 'RSS', mail: 'E-Mails', other: 'Other' };

@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 from click.testing import CliRunner
 
 from phibe.cli import cli
-from phibe.cli.daemon_cmd import _pid_alive, _read_pid, _write_pid
+from phibe.cli.daemon_cmd import _owner_alive, _pid_alive, _read_pid, _write_pid
 
 
 class TestDaemonCommands:
@@ -207,3 +207,20 @@ class TestDaemonDetachment:
         kwargs = self._spawn_kwargs("linux")
         assert kwargs.get("start_new_session") is True
         assert "creationflags" not in kwargs or kwargs["creationflags"] == 0
+
+
+class TestReusedPid:
+    """A PID the system reused for another program is not our server."""
+
+    def test_process_started_after_the_file_is_not_the_owner(self, tmp_path: Path) -> None:
+        pid_file = tmp_path / "server.pid"
+        pid_file.write_text(str(os.getpid()))
+        os.utime(pid_file, (0, 0))  # written long before this process started
+        with patch("phibe.cli.daemon_cmd._PID_FILE", pid_file):
+            assert _owner_alive(os.getpid()) is False
+
+    def test_process_started_before_the_file_is_the_owner(self, tmp_path: Path) -> None:
+        pid_file = tmp_path / "server.pid"
+        pid_file.write_text(str(os.getpid()))  # written now, after this process started
+        with patch("phibe.cli.daemon_cmd._PID_FILE", pid_file):
+            assert _owner_alive(os.getpid()) is True
