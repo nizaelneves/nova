@@ -12,7 +12,7 @@ export function monthGrid(year: number, month: number): Date[] {
   return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
 }
 
-export interface DayEvents { tasks: Task[]; pings: Ping[]; holiday?: string }
+interface DayEvents { tasks: Task[]; pings: Ping[]; holiday?: string }
 
 /** Everything that happens on each day: tasks (a task with a start fills every day up to its due day), reminders, holidays. */
 export function eventsByDay(tasks: Task[], pings: Ping[], holidays: Holiday[]): Map<string, DayEvents> {

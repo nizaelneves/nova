@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -181,18 +180,6 @@ class QueryTrace:
         return self.query_soc_energy_joules
 
     @property
-    def total_basis_energy_joules(self) -> Optional[float]:
-        """Energy on whichever rail set this trace was measured against.
-
-        Use this rather than ``total_gpu_energy_joules`` for per-token or
-        per-watt figures: on Apple Silicon the GPU rail alone misses the CPU
-        and ANE work that actually ran.
-        """
-        if self.energy_basis == "soc":
-            return self.total_soc_energy_joules
-        return self.total_gpu_energy_joules
-
-    @property
     def total_cost_usd(self) -> Optional[float]:
         values = [t.cost_usd for t in self.turns if t.cost_usd is not None]
         return sum(values) if values else None
@@ -293,23 +280,6 @@ class QueryTrace:
             error=d.get("error"),
             error_kind=d.get("error_kind"),
         )
-
-    def save_jsonl(self, path: Path) -> None:
-        """Append this trace as a JSONL line."""
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "a") as f:
-            f.write(json.dumps(self.to_dict()) + "\n")
-
-    @classmethod
-    def load_jsonl(cls, path: Path) -> List[QueryTrace]:
-        """Load traces from a JSONL file."""
-        traces = []
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    traces.append(cls.from_dict(json.loads(line)))
-        return traces
 
     @staticmethod
     def to_hf_dataset(traces: List[QueryTrace]) -> Any:

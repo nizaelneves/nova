@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { apiFetch } from '../../lib/api';
 import { push } from './computer';
 
-export interface Report {
+interface Report {
   os: string;
   cpu: { name: string; usage: number; cores: number; threads: number; mhz: number | null; each: number[] };
   memory: { used: number; total: number; swap_used: number; swap_total: number };
@@ -14,7 +14,7 @@ export interface Report {
   ollama: { running: boolean; version?: string; installed?: number };
   phibe: { memory: number };
 }
-export interface Program { name: string; cpu: number; memory: number }
+interface Program { name: string; cpu: number; memory: number }
 
 interface Feed { report: Report | null; failed: boolean; cpuHistory: number[]; downHistory: number[] }
 

@@ -39,32 +39,12 @@ except ImportError:
     pass
 
 try:
-    import phibe.connectors.granola  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.gcontacts  # noqa: F401
-except ImportError:
-    pass
-
-try:
     import phibe.connectors.imessage  # noqa: F401
 except ImportError:
     pass
 
 try:
     import phibe.connectors.apple_notes  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.apple_music  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.apple_contacts  # noqa: F401
 except ImportError:
     pass
 
@@ -104,42 +84,12 @@ except ImportError:
     pass
 
 try:
-    import phibe.connectors.oura  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.apple_health  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.strava  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.spotify  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.google_tasks  # noqa: F401
-except ImportError:
-    pass
-
-try:
     import phibe.connectors.weather  # noqa: F401
 except ImportError:
     pass
 
 try:
     import phibe.connectors.github_notifications  # noqa: F401
-except ImportError:
-    pass
-
-try:
-    import phibe.connectors.hackernews  # noqa: F401
 except ImportError:
     pass
 

@@ -1,4 +1,4 @@
-export interface SettingsFacts {
+interface SettingsFacts {
   tab: string;
   engine: 'ollama' | 'custom';
   conversations: number;

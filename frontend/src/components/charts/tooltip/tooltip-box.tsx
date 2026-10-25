@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
 
-export interface TooltipBoxProps {
+interface TooltipBoxProps {
   /** X position in pixels (relative to container) */
   x: number;
   /** Y position in pixels (relative to container) */
@@ -232,4 +232,3 @@ function TooltipBoxInner({
 
 TooltipBox.displayName = "TooltipBox";
 
-export default TooltipBox;

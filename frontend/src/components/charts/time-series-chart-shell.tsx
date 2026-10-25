@@ -127,7 +127,7 @@ function ensureChildKey(child: ReactElement, index: number): ReactElement {
   return cloneElement(child, { key: `chart-child-${index}` });
 }
 
-export interface TimeSeriesChartInnerProps {
+interface TimeSeriesChartInnerProps {
   width: number;
   height: number;
   data: Record<string, unknown>[];

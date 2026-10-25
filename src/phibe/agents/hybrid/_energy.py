@@ -167,9 +167,4 @@ class EnergyCollector:
             self._stop.wait(period)
 
     # ---- inspection
-    @property
-    def wall_s(self) -> float:
-        return max(self._t1 - self._t0, 0.0) if self._t1 else (time.time() - self._t0)
-
-
 __all__ = ["EnergyCollector"]

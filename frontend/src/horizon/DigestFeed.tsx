@@ -6,7 +6,7 @@ const ROW = 104; // px: the height of one block, so the track can slide by whole
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** One block: the source and when, a headline, one line. */
-export function Block({ block, now, onOpen }: { block: DigestBlock; now: Date; onOpen: (b: DigestBlock) => void }) {
+function Block({ block, now, onOpen }: { block: DigestBlock; now: Date; onOpen: (b: DigestBlock) => void }) {
   return (
     <button type="button" className="dg-blk" data-kind={block.kind} onClick={() => onOpen(block)}>
       <span className="dg-blk-meta"><i />{block.sourceName}{block.time && <time>{timeLabel(block.time, now)}</time>}</span>

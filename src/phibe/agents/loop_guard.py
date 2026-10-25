@@ -110,10 +110,6 @@ class LoopGuard:
 
         return LoopVerdict(), ""
 
-    def check_response(self, content: str) -> LoopVerdict:
-        """Check whether an agent response indicates a loop. Reserved for future use."""
-        return LoopVerdict()
-
     @staticmethod
     def _is_system(msg: object) -> bool:
         """Check if a message has role == system."""

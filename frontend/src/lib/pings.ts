@@ -37,7 +37,7 @@ export function jsDayToBackendDay(jsDay: number): number {
   return (jsDay + 6) % 7;
 }
 
-export interface RepeatRule {
+interface RepeatRule {
   type: 'none' | 'weekly' | 'monthly';
   /** Every N week(s)/month(s). Defaults to 1 when omitted. */
   interval?: number;

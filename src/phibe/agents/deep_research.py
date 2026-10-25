@@ -74,13 +74,13 @@ edited. Use knowledge_sql with timestamp filters for counts, then \
 knowledge_search for highlights.
 
 **Meeting prep / debrief** — "what did I discuss with Avanika?", \
-"prepare me for my meeting with Tighe". Search Granola meeting notes \
-by participant name, summarize key topics, decisions, and action items.
+"prepare me for my meeting with Tighe". Search meeting notes and \
+calendar events by participant name, summarize key topics, decisions, and action items.
 
 **Task / follow-up finder** — "any tasks I forgot?", "what action items \
 am I behind on?". Scan meeting notes and emails for action items, \
 to-dos, deadlines, commitments. Use scan_chunks with question like \
-"extract action items, to-dos, and commitments" filtered to granola \
+"extract action items, to-dos, and commitments" filtered to notion \
 and gmail sources.
 
 **Contact analysis** — "who do I talk to most?", "who haven't I \

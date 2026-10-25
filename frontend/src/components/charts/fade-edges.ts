@@ -1,6 +1,6 @@
 export type FadeEdges = boolean | "left" | "right";
 
-export interface FadeSides {
+interface FadeSides {
   /** Whether the left edge should fade out. */
   left: boolean;
   /** Whether the right edge should fade out. */
@@ -22,7 +22,7 @@ export function resolveFadeSides(fade: FadeEdges): FadeSides {
   return { left: true, right: true, any: true };
 }
 
-export interface FadeGradientStop {
+interface FadeGradientStop {
   offset: string;
   opacity: number;
 }

@@ -535,38 +535,6 @@ def test_connect_slack_bot_token_returns_400(app, tmp_path: Path) -> None:
         _instances.pop("slack", None)
 
 
-def test_connect_granola_invalid_key_returns_400_keeps_existing(
-    app, tmp_path: Path
-) -> None:
-    """A bad Granola key is rejected 400 and the existing credential survives."""
-    import json
-    from unittest.mock import patch
-
-    from phibe.connectors.granola import GranolaConnector, GranolaKeyError
-    from phibe.server.connectors_router import _instances
-
-    creds = tmp_path / "granola.json"
-    creds.write_text(json.dumps({"token": "grl_real_existing_key"}))
-    _instances["granola"] = GranolaConnector(credentials_path=str(creds))
-    try:
-        with patch(
-            "phibe.connectors.granola._granola_api_validate_key",
-            side_effect=GranolaKeyError(
-                "Invalid API key. Check your key in Granola Settings → API."
-            ),
-        ):
-            resp = app.post(
-                "/v1/connectors/granola/connect",
-                json={"code": "fake-key-12345"},
-            )
-        assert resp.status_code == 400
-        assert "Invalid API key" in resp.json()["detail"]
-        # The previously-working credential must be untouched.
-        assert json.loads(creds.read_text())["token"] == "grl_real_existing_key"
-    finally:
-        _instances.pop("granola", None)
-
-
 @pytest.mark.parametrize(
     ("connector_id", "filename", "payload", "expected"),
     [
@@ -576,7 +544,6 @@ def test_connect_granola_invalid_key_returns_400_keeps_existing(
             {"token": "ghp_test"},
             {"token": "ghp_test"},
         ),
-        ("oura", "oura.json", {"token": "oura_test"}, {"token": "oura_test"}),
         (
             "weather",
             "weather.json",
@@ -597,7 +564,6 @@ def test_connect_persists_generic_token_connector_credentials(
     """The generic token panel must actually configure each token connector."""
 
     from phibe.connectors.github_notifications import GitHubNotificationsConnector
-    from phibe.connectors.oura import OuraConnector
     from phibe.connectors.weather import WeatherConnector
     from phibe.core.registry import ConnectorRegistry
     from phibe.server.connectors_router import _instances
@@ -607,7 +573,6 @@ def test_connect_persists_generic_token_connector_credentials(
         "github_notifications": lambda: GitHubNotificationsConnector(
             token_path=str(path)
         ),
-        "oura": lambda: OuraConnector(token_path=str(path)),
         "weather": lambda: WeatherConnector(token_path=str(path)),
     }
     instance = constructors[connector_id]()
@@ -617,7 +582,6 @@ def test_connect_persists_generic_token_connector_credentials(
             "phibe.connectors.github_notifications._github_api_get",
             [],
         ),
-        "oura": ("phibe.connectors.oura._oura_api_get", {}),
         "weather": ("phibe.connectors.weather._weather_api_get", {}),
     }
     target, result = validators[connector_id]

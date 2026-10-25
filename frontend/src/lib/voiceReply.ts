@@ -43,7 +43,7 @@ let currentUrl: string | null = null;
 let requestId = 0;
 
 /** Turn a markdown reply into plain text that sounds natural when read aloud. */
-export function cleanForSpeech(markdown: string): string {
+function cleanForSpeech(markdown: string): string {
   let text = markdown
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`([^`]*)`/g, '$1')
@@ -79,7 +79,7 @@ export function stopSpeaking(): void {
   }
 }
 
-export interface SpeakResult {
+interface SpeakResult {
   backend: string;
   notice: string;
 }

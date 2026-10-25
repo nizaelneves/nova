@@ -22,7 +22,7 @@ import { TooltipContent, type TooltipRow } from "./tooltip-content";
 import { TooltipDot } from "./tooltip-dot";
 import { TooltipIndicator } from "./tooltip-indicator";
 
-export interface ChartTooltipProps {
+interface ChartTooltipProps {
   /** Whether to show the date pill at bottom. Default: true */
   showDatePill?: boolean;
   /** Whether to show the vertical crosshair line. Default: true */
@@ -433,4 +433,3 @@ function DatePillTrackerInner({
   );
 }
 
-export default ChartTooltip;

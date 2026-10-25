@@ -563,22 +563,6 @@ class AgentManager:
         ).fetchone()
         return self._row_to_binding(row) if row else None
 
-    @_db_locked
-    def find_binding_for_channel(
-        self, channel_type: str, channel_id: str
-    ) -> Optional[Dict[str, Any]]:
-        """Find a dedicated binding for a specific channel."""
-        rows = self._conn.execute(
-            "SELECT * FROM channel_bindings WHERE channel_type = ?",
-            (channel_type,),
-        ).fetchall()
-        for row in rows:
-            binding = self._row_to_binding(row)
-            config = binding.get("config", {})
-            if config.get("channel") == channel_id:
-                return binding
-        return None
-
     # ── Templates ─────────────────────────────────────────────────
 
     @staticmethod
@@ -728,27 +712,6 @@ class AgentManager:
             (message_id,),
         )
         self._conn.commit()
-
-    @_db_locked
-    def add_agent_response(self, agent_id: str, content: str) -> dict:
-        msg_id = uuid4().hex[:16]
-        now = time.time()
-        _sql = (
-            "INSERT INTO agent_messages"
-            " (id, agent_id, direction, content, mode, status, created_at)"
-            " VALUES (?, ?, 'agent_to_user', ?, 'immediate', 'responded', ?)"
-        )
-        self._conn.execute(_sql, (msg_id, agent_id, content, now))
-        self._conn.commit()
-        return {
-            "id": msg_id,
-            "agent_id": agent_id,
-            "direction": "agent_to_user",
-            "content": content,
-            "mode": "immediate",
-            "status": "responded",
-            "created_at": now,
-        }
 
     @staticmethod
     def _row_to_message(row: sqlite3.Row) -> dict:

@@ -318,4 +318,3 @@ function SeriesBarRect({
   );
 }
 
-export default SeriesBar;

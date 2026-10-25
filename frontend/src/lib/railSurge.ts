@@ -47,7 +47,7 @@ export function tailLag(t: number, total: number): number {
   return 0;
 }
 
-export interface Span {
+interface Span {
   top: number;
   height: number;
 }

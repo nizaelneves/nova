@@ -86,7 +86,7 @@ function MarkerCircles({
   );
 }
 
-export interface StaticSeriesPointMarkerProps extends SeriesPointMarkerStyle {
+interface StaticSeriesPointMarkerProps extends SeriesPointMarkerStyle {
   cx: number;
   cy: number;
   scale?: number;
@@ -119,7 +119,7 @@ export const StaticSeriesPointMarker = memo(function StaticSeriesPointMarker({
   );
 });
 
-export interface SeriesPointMarkerProps extends SeriesPointMarkerStyle {
+interface SeriesPointMarkerProps extends SeriesPointMarkerStyle {
   dataKey: string;
   index: number;
   cx: number;

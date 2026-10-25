@@ -147,32 +147,6 @@ class TestPendingResponse:
         assert session["pending_response"] is None
 
 
-class TestExpireSessions:
-    def test_expire_clears_old_history(self, store):
-        store.get_or_create("user1", "twilio")
-        store.append_message("user1", "twilio", "user", "old message")
-        # Force the updated_at to be old
-        store._db.execute(
-            "UPDATE channel_sessions SET updated_at = datetime('now', '-25 hours')"
-        )
-        store._db.commit()
-        store.expire_sessions(max_age_hours=24)
-        session = store.get_or_create("user1", "twilio")
-        assert session["conversation_history"] == []
-
-
-class TestLastActiveChannel:
-    def test_returns_most_recent(self, store):
-        store.get_or_create("user1", "twilio")
-        store.get_or_create("user1", "slack")
-        store.append_message("user1", "slack", "user", "latest")
-        result = store.get_last_active_channel("user1")
-        assert result == "slack"
-
-    def test_returns_none_for_unknown_user(self, store):
-        assert store.get_last_active_channel("nobody") is None
-
-
 class TestInMemoryDatabase:
     """``:memory:`` is a SQLite sentinel, not a path — it must not be created.
 

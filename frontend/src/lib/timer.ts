@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 /** A countdown timer. One timer for the whole app: the island button controls it. */
 
-export interface Timer {
+interface Timer {
   running: boolean;
   endsAt: number; // when it ends, while running
   left: number; // milliseconds left, while stopped

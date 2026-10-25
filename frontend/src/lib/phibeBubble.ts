@@ -16,7 +16,7 @@ export const BUTTON_SIZE = 64;
 /** Room kept between the button and the screen edge: the listening rings reach about 20 px out. */
 export const EDGE_MARGIN = 28;
 /** How much of the button hides beyond the edge while it is tucked away. */
-export const DOCKED_HIDDEN = 0.55;
+const DOCKED_HIDDEN = 0.55;
 export const DOCK_AFTER_MS = 5000;
 
 export const DEFAULT_PLACEMENT: Placement = { edge: 'right', y: 0.82 };
@@ -98,7 +98,7 @@ export function popoverSide(p: Placement): { vertical: 'above' | 'below'; horizo
 export type BadgeKind = 'approval' | 'question' | 'error' | 'draft' | 'done' | 'ping';
 
 /** Most important first: only one badge shows, with a count when there are several things. */
-export const BADGE_PRIORITY: readonly BadgeKind[] = ['approval', 'question', 'error', 'draft', 'done', 'ping'];
+const BADGE_PRIORITY: readonly BadgeKind[] = ['approval', 'question', 'error', 'draft', 'done', 'ping'];
 
 export function topBadge(counts: Partial<Record<BadgeKind, number>>): { kind: BadgeKind; total: number } | null {
   let total = 0;

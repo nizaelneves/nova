@@ -10,7 +10,7 @@ from typing import List
 
 import pytest
 
-from phibe.connectors.autosync import start_auto_sync
+from phibe.connectors.autosync import start_auto_sync, start_source_sync
 from phibe.connectors.sync_settings import (
     SyncSettings,
     SyncSettingsError,
@@ -480,3 +480,100 @@ def test_only_on_start_does_not_repeat_just_from_toggling_the_switch(loop) -> No
     h.settings = SyncSettings(auto_enabled=True, interval_minutes=0)
     h.advance(1000)
     assert len(h.runs) == 1
+
+
+# -- a source with a rhythm of its own -------------------------------------------
+
+
+def test_a_source_can_have_its_own_interval_and_a_bad_one_is_refused(home) -> None:
+    ok = validate({"intervals": {"gmail": 60, "anytype": 1440}})
+    assert ok.intervals == {"anytype": 1440, "gmail": 60}
+    save_sync_settings(ok)
+    assert load_sync_settings().intervals == {"anytype": 1440, "gmail": 60}
+    for bad in ({"gmail": -1}, {"gmail": 1441}, {"gmail": True}, {"gmail": "60"}, ["gmail"]):
+        with pytest.raises(SyncSettingsError):
+            validate({"intervals": bad})
+
+
+def test_sources_with_their_own_interval_run_on_it_and_wait_when_switched_off() -> None:
+    ran: List[str] = []
+    settings = SyncSettings(True, 15, False, [], "03:00", {"gmail": 2})
+    stop = threading.Event()
+    thread, _ = start_source_sync(
+        ran.append,
+        get_settings=lambda: settings,
+        tick=0.01,
+        seconds_per_minute=0.05,
+        stop=stop,
+    )
+    try:
+        deadline = time.time() + 3
+        while len(ran) < 2 and time.time() < deadline:
+            time.sleep(0.02)
+        assert ran[:2] == ["gmail", "gmail"]  # armed first, then on its interval
+        settings.auto_enabled = False
+        time.sleep(0.2)
+        settled = len(ran)
+        time.sleep(0.3)
+        assert len(ran) == settled  # nothing runs while automatic sync is off
+    finally:
+        stop.set()
+        thread.join(timeout=2)
+
+
+def _run_source_loop(settings: SyncSettings, wall: List[datetime], seconds: float) -> List[str]:
+    ran: List[str] = []
+    stop = threading.Event()
+    thread, _ = start_source_sync(
+        ran.append,
+        get_settings=lambda: settings,
+        first_delay=0.05,
+        tick=0.01,
+        wall_clock=lambda: wall[0],
+        stop=stop,
+    )
+    try:
+        time.sleep(seconds)
+    finally:
+        stop.set()
+        thread.join(timeout=2)
+    return ran
+
+
+def test_a_source_set_to_only_on_start_runs_once(home) -> None:
+    settings = SyncSettings(True, 15, False, [], "03:00", {"gmail": 0})
+    ran = _run_source_loop(settings, [datetime(2026, 1, 1, 12, 0)], 0.4)
+    assert ran == ["gmail"]  # once, and not again
+
+
+def test_a_source_set_to_once_a_day_runs_at_its_own_time(home) -> None:
+    wall = [datetime(2026, 1, 1, 8, 0)]
+    settings = SyncSettings(True, 15, False, [], "03:00", {"gmail": 1440}, {"gmail": "09:30"})
+    stop = threading.Event()
+    ran: List[str] = []
+    thread, _ = start_source_sync(
+        ran.append, get_settings=lambda: settings, first_delay=0.05, tick=0.01,
+        wall_clock=lambda: wall[0], stop=stop,
+    )
+    try:
+        time.sleep(0.2)
+        assert ran == []  # before 09:30
+        wall[0] = datetime(2026, 1, 1, 9, 31)
+        time.sleep(0.2)
+        assert ran == ["gmail"]
+        time.sleep(0.2)
+        assert ran == ["gmail"]  # once that day
+        wall[0] = datetime(2026, 1, 2, 9, 31)
+        time.sleep(0.2)
+        assert ran == ["gmail", "gmail"]
+    finally:
+        stop.set()
+        thread.join(timeout=2)
+
+
+def test_daily_times_and_zero_interval_are_validated(home) -> None:
+    ok = validate({"intervals": {"gmail": 0}, "daily_times": {"gmail": "09:30"}})
+    assert ok.intervals == {"gmail": 0} and ok.daily_times == {"gmail": "09:30"}
+    for bad in ({"gmail": "9:30"}, {"gmail": 5}, ["x"]):
+        with pytest.raises(SyncSettingsError):
+            validate({"daily_times": bad})

@@ -65,10 +65,6 @@ class BetaCompetence:
         else:
             self.beta += 1.0
 
-    def update_batch(self, successes: int, failures: int) -> None:
-        self.alpha += successes
-        self.beta += failures
-
     def to_dict(self) -> Dict[str, float]:
         return {"alpha": self.alpha, "beta": self.beta}
 
@@ -183,9 +179,6 @@ class ModeMetadata:
     description: str = ""
     insights: List[RoutingInsight] = field(default_factory=list)
 
-    def add_insight(self, insight: RoutingInsight) -> None:
-        self.insights.append(insight)
-
     def to_dict(self) -> Dict[str, Any]:
         return {
             "mode": self.mode,
@@ -275,11 +268,6 @@ class Skill:
         """Get child skills in the hierarchy."""
         return [s for s in all_skills.values() if s.parent_skill_id == self.skill_id]
 
-    def is_leaf(self, all_skills: Dict[str, Skill]) -> bool:
-        """True if this skill has no children."""
-        return len(self.get_children(all_skills)) == 0
-
-
 # ---------------------------------------------------------------------------
 # AgentProfile
 # ---------------------------------------------------------------------------
@@ -317,19 +305,6 @@ class AgentProfile:
             self.skill_competence[skill_id] = BetaCompetence()
         return self.skill_competence[skill_id]
 
-    def update_competence(self, skill_id: str, success: bool) -> None:
-        """Update competence estimate for a skill."""
-        self.get_competence_dist(skill_id).update(success)
-
-    def weighted_competence(self, skill_weights: Dict[str, float]) -> float:
-        """Compute weighted competence: sum w_{t,sigma} * alpha/(alpha+beta)."""
-        if not skill_weights:
-            return 0.5
-        total = 0.0
-        for skill_id, weight in skill_weights.items():
-            total += weight * self.get_competence(skill_id)
-        return total
-
     def category_competence(self, category_prefix: str) -> float:
         """Aggregate competence on all skills under a category (skill_id prefix).
 
@@ -343,23 +318,6 @@ class AgentProfile:
             if sid.startswith(prefix)
         ]
         return sum(scores) / len(scores) if scores else 0.0
-
-    def category_competence_for_skills(self, active_skill_ids: List[str]) -> float:
-        """Category-level competence for hierarchical tie-breaking.
-
-        Extracts parent categories from active_skill_ids (e.g. 'entertainment_knowledge'
-        from 'entertainment_knowledge.episodic_competition_outcome'), computes
-        category_competence for each, returns average.
-        """
-        categories: set = set()
-        for sid in active_skill_ids:
-            cat = sid.rsplit(".", 1)[0] if "." in sid else sid
-            categories.add(cat)
-        if not categories:
-            return 0.0
-        return sum(self.category_competence(cat) for cat in categories) / len(
-            categories
-        )
 
     @property
     def overall_success_rate(self) -> float:

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface ScheduledTooltipControls<T> {
+interface ScheduledTooltipControls<T> {
   tooltipData: T | null;
   setTooltipData: React.Dispatch<React.SetStateAction<T | null>>;
   scheduleTooltip: (tooltip: T, dedupeKey?: string) => void;

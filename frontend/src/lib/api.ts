@@ -733,6 +733,10 @@ export interface SyncSettings {
   disabled_connectors: string[];
   /** Local time of day, HH:MM, used when the interval is once a day. */
   daily_time: string;
+  /** A source that keeps its own rhythm: source id to minutes. */
+  intervals: Record<string, number>;
+  /** The time of day a source runs at when its own rhythm is once a day. */
+  daily_times: Record<string, string>;
 }
 
 export interface SyncRow {

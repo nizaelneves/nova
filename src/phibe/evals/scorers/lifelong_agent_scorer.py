@@ -647,46 +647,6 @@ def _try_numeric(s: str) -> Any:
 # ====================================================================
 
 
-def extract_kg_answers(text: str) -> List[str]:
-    text = text.strip()
-
-    # Original format: Final Answer: #N (variable reference).
-    # In single-shot mode we can't resolve variables, so extract any
-    # entity IDs from the surrounding text as a best-effort fallback.
-    var_ref = re.search(
-        r"Final\s+[Aa]nswer:\s*(?:[Vv]ar(?:iable)?\s*)?#(\d+)",
-        text,
-    )
-    if var_ref:
-        # Can't resolve variable in single-shot mode — look for entity IDs
-        # in the full response as a heuristic.
-        entities = re.findall(r"[mg]\.\w+", text)
-        if entities:
-            return entities
-        return [f"#_{var_ref.group(1)}"]
-
-    m = re.search(r"(?i)final\s+answer:\s*(.+)", text, re.DOTALL)
-    if m:
-        answer_text = m.group(1).strip()
-        for stop in ("\n\n", "\nAction:", "\nThought:"):
-            pos = answer_text.find(stop)
-            if pos > 0:
-                answer_text = answer_text[:pos].strip()
-
-        entities = re.findall(r"[mg]\.\w+", answer_text)
-        if entities:
-            return entities
-
-        parts = re.split(r"[,\n;]", answer_text)
-        return [a.strip() for a in parts if a.strip()]
-
-    entities = re.findall(r"[mg]\.\w+", text)
-    if entities:
-        return entities
-
-    return [text.strip()] if text.strip() else []
-
-
 def _normalize_entity(entity: Any) -> str:
     s = str(entity).strip()
     if len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'"):

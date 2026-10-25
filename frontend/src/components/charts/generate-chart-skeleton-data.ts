@@ -1,7 +1,7 @@
 const DEFAULT_SKELETON_DATA_KEY = "value";
 const DEFAULT_SKELETON_POINT_COUNT = 7;
 
-export interface GenerateChartSkeletonDataOptions {
+interface GenerateChartSkeletonDataOptions {
   /** Key used for y values in each row. Default: `"value"`. */
   dataKey?: string;
   /** Number of points. Default: 7. */
@@ -39,4 +39,3 @@ export function generateChartSkeletonFromTarget(
   }));
 }
 
-export { DEFAULT_SKELETON_DATA_KEY, DEFAULT_SKELETON_POINT_COUNT };

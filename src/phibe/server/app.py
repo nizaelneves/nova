@@ -373,18 +373,22 @@ def create_app(
     app.include_router(cli_router)
     app.include_router(widgets_router)
     # Keep Anytype (and any other auto-synced source) up to date in the background.
-    from phibe.connectors.autosync import start_auto_sync
+    from phibe.connectors.autosync import start_auto_sync, start_source_sync
 
     app.state.auto_sync_stop = None
+    app.state.source_sync_stop = None
 
     @app.on_event("startup")
     async def _start_auto_sync() -> None:
         _, app.state.auto_sync_stop = start_auto_sync(connectors_router.run_auto_sync)
+        _, app.state.source_sync_stop = start_source_sync(connectors_router.run_source_sync)
 
     @app.on_event("shutdown")
     async def _stop_auto_sync() -> None:
         if app.state.auto_sync_stop is not None:
             app.state.auto_sync_stop.set()
+        if app.state.source_sync_stop is not None:
+            app.state.source_sync_stop.set()
 
     app.include_router(create_digest_router())
     app.include_router(create_quick_digest_router(lambda: app.state.engine, lambda: app.state.model))

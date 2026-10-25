@@ -10,7 +10,7 @@ System Settings → Privacy & Security → Full Disk Access.
 Timestamp notes
 ---------------
 The Calendar database stores timestamps as seconds since the Apple epoch
-of 2001-01-01 00:00:00 UTC (same convention as Apple Contacts).
+of 2001-01-01 00:00:00 UTC (the Apple time convention).
 """
 
 from __future__ import annotations

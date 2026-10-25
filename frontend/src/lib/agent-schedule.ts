@@ -1,16 +1,16 @@
-export interface AgentScheduleSource {
+interface AgentScheduleSource {
   config?: Record<string, unknown> | null;
   // Retained as fallbacks for compatibility with older API responses.
   schedule_type?: unknown;
   schedule_value?: unknown;
 }
 
-export interface AgentSchedule {
+interface AgentSchedule {
   type?: string;
   value?: string;
 }
 
-export interface AgentScheduleConfig {
+interface AgentScheduleConfig {
   type: string;
   value: string;
 }

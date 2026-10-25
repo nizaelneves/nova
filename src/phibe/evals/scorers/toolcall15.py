@@ -110,11 +110,6 @@ def _tools_called(tool_calls: List[Dict[str, Any]], name: str) -> List[Dict[str,
     return [tc for tc in tool_calls if tc["name"].lower() == name.lower()]
 
 
-def _has_tool(tool_calls: List[Dict[str, Any]], name: str) -> bool:
-    """Check if a specific tool was called."""
-    return len(_tools_called(tool_calls, name)) > 0
-
-
 def _arg_contains(tc: Dict[str, Any], key: str, substring: str) -> bool:
     """Check if a tool call argument contains a substring (case-insensitive)."""
     val = tc.get("arguments", {}).get(key, "")

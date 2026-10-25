@@ -43,56 +43,6 @@ class WorkflowBuilder:
         )
         return self
 
-    def add_tool(
-        self,
-        node_id: str,
-        *,
-        tool_name: str,
-        tool_args: str = "{}",
-    ) -> WorkflowBuilder:
-        self._nodes.append(
-            WorkflowNode(
-                id=node_id,
-                node_type=NodeType.TOOL,
-                config={"tool_name": tool_name, "tool_args": tool_args},
-            )
-        )
-        return self
-
-    def add_condition(
-        self,
-        node_id: str,
-        *,
-        expr: str,
-    ) -> WorkflowBuilder:
-        self._nodes.append(
-            WorkflowNode(
-                id=node_id,
-                node_type=NodeType.CONDITION,
-                condition_expr=expr,
-            )
-        )
-        return self
-
-    def add_loop(
-        self,
-        node_id: str,
-        *,
-        agent: str = "simple",
-        max_iterations: int = 10,
-        exit_condition: str = "",
-    ) -> WorkflowBuilder:
-        self._nodes.append(
-            WorkflowNode(
-                id=node_id,
-                node_type=NodeType.LOOP,
-                agent=agent,
-                max_iterations=max_iterations,
-                condition_expr=exit_condition,
-            )
-        )
-        return self
-
     def add_transform(
         self,
         node_id: str,

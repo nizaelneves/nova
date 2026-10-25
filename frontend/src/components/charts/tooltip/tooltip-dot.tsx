@@ -4,7 +4,7 @@ import { motion, useSpring, useTransform } from "motion/react";
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
 
-export interface TooltipDotProps {
+interface TooltipDotProps {
   x: number;
   y: number;
   visible: boolean;
@@ -173,4 +173,3 @@ export function TooltipDot({
 
 TooltipDot.displayName = "TooltipDot";
 
-export default TooltipDot;

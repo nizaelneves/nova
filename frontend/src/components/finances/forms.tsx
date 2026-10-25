@@ -9,9 +9,9 @@ import {
 } from '../../lib/finance/model';
 import { useFinance } from '../../lib/finance/store';
 
-export const SWATCHES = ['#20e7aa', '#10c3d3', '#60a5fa', '#8b7cf6', '#f472a6', '#ff6b6b', '#fb923c', '#f6c38f', '#fbbf24', '#94a3b8'];
+const SWATCHES = ['#20e7aa', '#10c3d3', '#60a5fa', '#8b7cf6', '#f472a6', '#ff6b6b', '#fb923c', '#f6c38f', '#fbbf24', '#94a3b8'];
 
-export const CATEGORY_ICONS: IconName[] = [
+const CATEGORY_ICONS: IconName[] = [
   'cart-large-2', 'cup-hot', 'bus', 'car', 'fuel', 'home-2', 'bill-list', 'bolt', 'phone-calling', 'heart-pulse', 'pills',
   'dumbbell-large-minimalistic', 'monitor-smartphone', 'tv', 'bag-smile', 't-shirt', 'shop-2', 'gamepad-minimalistic',
   'clapperboard-play', 'music-note-2', 'plain-2', 'book-2', 'gift', 'paw', 'card-2', 'banknote-2', 'case-minimalistic',
@@ -152,7 +152,7 @@ export function TransactionForm({ initial, onClose }: { initial?: Tx; onClose: (
 
 // -- Account ----------------------------------------------------------------------
 
-export const ACCOUNT_ICONS: IconName[] = ['wallet', 'wallet-money', 'card-2', 'banknote-2', 'safe-square', 'buildings-2', 'hand-money', 'case-minimalistic'];
+const ACCOUNT_ICONS: IconName[] = ['wallet', 'wallet-money', 'card-2', 'banknote-2', 'safe-square', 'buildings-2', 'hand-money', 'case-minimalistic'];
 
 export function AccountForm({ initial, onClose }: { initial?: Account; onClose: () => void }) {
   const saveAccount = useFinance((s) => s.saveAccount);

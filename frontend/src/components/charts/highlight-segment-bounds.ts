@@ -12,7 +12,7 @@ import type { ChartSelection } from "./use-chart-interaction";
 // that overshoots in x (curveNatural, curveBasis) a band edge can land a few
 // pixels short, slightly narrowing the bright slice but never detaching it.
 
-export interface SegmentBounds {
+interface SegmentBounds {
   /** Left edge of the highlight band, in pixels. */
   x: number;
   /** Width of the highlight band, in pixels. */

@@ -16,7 +16,6 @@ pytest.importorskip("fastapi")  # agent_manager_routes imports FastAPI at module
 from phibe.core.types import Role  # noqa: E402
 from phibe.server.agent_manager_routes import (  # noqa: E402
     _build_managed_system_prompt,
-    _instantiate_managed_tool,
     _replay_history_messages,
     _sampler_kwargs,
 )
@@ -124,54 +123,6 @@ class TestSamplerKwargs:
         assert _sampler_kwargs({"top_p": None, "repetition_penalty": 1.05}) == {
             "repetition_penalty": 1.05
         }
-
-
-class _FakeTool:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-
-
-class TestInstantiateManagedTool:
-    """#395 — tools get their dependencies injected."""
-
-    def test_memory_tool_gets_backend(self):
-        backend = object()
-        app_state = SimpleNamespace(
-            memory_backend=backend, config=None, channel_bridge=None
-        )
-        tool = _instantiate_managed_tool(
-            _FakeTool, "memory_store", engine=object(), model="m", app_state=app_state
-        )
-        assert tool.kwargs == {"backend": backend}
-
-    def test_llm_tool_gets_engine_and_model(self):
-        engine = object()
-        app_state = SimpleNamespace(
-            memory_backend=None, config=None, channel_bridge=None
-        )
-        tool = _instantiate_managed_tool(
-            _FakeTool, "llm", engine=engine, model="qwen", app_state=app_state
-        )
-        assert tool.kwargs == {"engine": engine, "model": "qwen"}
-
-    def test_channel_tool_gets_channel(self):
-        bridge = object()
-        app_state = SimpleNamespace(
-            memory_backend=None, config=None, channel_bridge=bridge
-        )
-        tool = _instantiate_managed_tool(
-            _FakeTool, "channel_send", engine=object(), model="m", app_state=app_state
-        )
-        assert tool.kwargs == {"channel": bridge}
-
-    def test_plain_tool_gets_no_injection(self):
-        app_state = SimpleNamespace(
-            memory_backend=None, config=None, channel_bridge=None
-        )
-        tool = _instantiate_managed_tool(
-            _FakeTool, "calculator", engine=object(), model="m", app_state=app_state
-        )
-        assert tool.kwargs == {}
 
 
 class TestBuildManagedSystemPrompt:

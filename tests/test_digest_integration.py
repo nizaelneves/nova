@@ -20,7 +20,7 @@ def test_full_digest_pipeline(tmp_path):
     mock_engine = MagicMock()
     mock_engine.generate.return_value = {
         "content": (
-            "Good morning, sir. You slept 7.5 hours with a readiness score of 78. "
+            "Good morning, sir. "
             "You have 2 meetings today and 5 unread emails. "
             "In the news, a new GPT-5 paper dropped on Arxiv."
         ),
@@ -32,7 +32,6 @@ def test_full_digest_pipeline(tmp_path):
     collect_result = ToolResult(
         tool_name="digest_collect",
         content=(
-            "=== HEALTH ===\n[oura] Sleep — April 1: score 78, avg HR 58 bpm\n\n"
             '=== MESSAGES ===\n[gmail] From: alice@co.com — "Q3 Review" (2h ago)\n\n'
             "=== CALENDAR ===\n[gcalendar] 10:30 AM — Team Standup (30 min)\n"
         ),

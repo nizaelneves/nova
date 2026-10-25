@@ -15,7 +15,7 @@ const DEFAULT_SHIMMER_SPEED = 1;
 const DEFAULT_SHIMMER_STROKE =
   "color-mix(in oklch, var(--foreground) 68%, transparent)";
 
-export interface GridProps {
+interface GridProps {
   /** Show horizontal grid lines. Default: true */
   horizontal?: boolean;
   /** Show vertical grid lines. Default: false */
@@ -314,4 +314,3 @@ export function Grid({
 
 Grid.displayName = "Grid";
 
-export default Grid;

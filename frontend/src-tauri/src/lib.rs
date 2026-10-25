@@ -9,7 +9,7 @@ use tokio::sync::Mutex;
 const OLLAMA_PORT: u16 = 11434;
 const PHIBE_PORT: u16 = 8000;
 const DESKTOP_UV_SYNC_COMMAND: &str =
-    "uv sync --extra desktop --extra inference-cloud --extra inference-google";
+    "uv sync --inexact --extra desktop --extra inference-cloud --extra inference-google";
 
 /// Small, fast model used when startup needs a default Ollama tag.
 const STARTUP_MODEL: &str = "qwen3.5:4b";
@@ -891,24 +891,6 @@ fn format_missing_rust_toolchain() -> String {
     )
 }
 
-fn format_extension_import_failure(root: &std::path::Path, stderr: &str) -> String {
-    let tail = uv_sync_stderr_tail(stderr, 4000);
-    format!(
-        "`phibe_rust` is still not importable after building. Last output:\n\n{}\n\n\
-         Run these manually for the full build log:\n\n\
-           cd {}\n\
-           {}\n\
-           uv run python -c \"import phibe_rust\"",
-        if tail.is_empty() {
-            "(no stderr output)"
-        } else {
-            &tail
-        },
-        root.display(),
-        DESKTOP_UV_SYNC_COMMAND,
-    )
-}
-
 fn add_cargo_bin_to_path(cmd: &mut tokio::process::Command) {
     let mut paths: Vec<std::path::PathBuf> = std::env::var_os("PATH")
         .map(|path| std::env::split_paths(&path).collect())
@@ -921,32 +903,6 @@ fn add_cargo_bin_to_path(cmd: &mut tokio::process::Command) {
     );
     if let Ok(joined) = std::env::join_paths(paths) {
         cmd.env("PATH", joined);
-    }
-}
-
-async fn verify_phibe_rust_extension(
-    root: &std::path::Path,
-    uv_bin: &str,
-) -> Result<(), String> {
-    let mut cmd = tokio::process::Command::new(uv_bin);
-    cmd.args(["run", "python", "-c", "import phibe_rust"])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::piped())
-        .current_dir(root);
-    prepare_subprocess_for_appimage(&mut cmd);
-    add_cargo_bin_to_path(&mut cmd);
-    cmd.kill_on_drop(true);
-
-    match cmd.output().await {
-        Ok(out) if out.status.success() => Ok(()),
-        Ok(out) => {
-            let stderr = String::from_utf8_lossy(&out.stderr);
-            Err(format_extension_import_failure(root, &stderr))
-        }
-        Err(e) => Err(format!(
-            "Could not verify `phibe_rust`: {}. Verify uv is installed at `{}`.",
-            e, uv_bin
-        )),
     }
 }
 
@@ -1461,6 +1417,7 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
     sync_cmd
         .args([
             "sync",
+            "--inexact",
             "--extra",
             "desktop",
             "--extra",
@@ -1489,16 +1446,6 @@ async fn boot_backend(backend: SharedBackend, status: SharedStatus) {
             return;
         }
         Ok(_) => {} // success — fall through
-    }
-
-    {
-        let mut s = status.lock().await;
-        s.detail = "Verifying Rust extension (phibe_rust)...".into();
-    }
-    if let Err(err) = verify_phibe_rust_extension(root, &uv_bin).await {
-        let mut s = status.lock().await;
-        s.error = Some(err);
-        return;
     }
 
     {
@@ -3463,7 +3410,7 @@ pub fn run() {
 mod tests {
     use super::{
         boot_plan, default_local_model, discard_pending_inference_setup_at,
-        format_extension_import_failure, format_missing_rust_toolchain, format_port_unavailable,
+        format_missing_rust_toolchain, format_port_unavailable,
         format_uv_sync_failure, format_uv_sync_spawn_error, matching_installed_model,
         model_names_match, normalize_host, parse_configured_inference_config,
         parse_ollama_model_names, persist_confirmed_inference_config_at, preferred_installed_model,
@@ -3607,18 +3554,6 @@ mod tests {
         assert!(msg.contains("link.exe"));
         assert!(msg.contains("https://rustup.rs"));
         assert!(msg.contains("Visual Studio Build Tools"));
-    }
-
-    #[test]
-    fn extension_import_failure_names_verification_command() {
-        let msg = format_extension_import_failure(
-            Path::new("C:\\Users\\me\\Phibe"),
-            "ModuleNotFoundError: No module named 'phibe_rust'",
-        );
-        assert!(msg.contains("phibe_rust"));
-        assert!(msg.contains(DESKTOP_UV_SYNC_COMMAND));
-        assert!(msg.contains("uv run python -c \"import phibe_rust\""));
-        assert!(msg.contains("ModuleNotFoundError"));
     }
 
     #[test]

@@ -5,16 +5,6 @@ from __future__ import annotations
 from typing import Optional
 
 
-def hint_no_config() -> str:
-    """Return a suggestion when no config file is found."""
-    return (
-        "[yellow]Hint:[/yellow] No config file found.\n"
-        "  Run [bold]phibe init[/bold] to detect hardware and generate "
-        "[cyan]~/.phibe/config.toml[/cyan].\n"
-        "  Or run [bold]phibe quickstart[/bold] for a guided setup."
-    )
-
-
 def hint_no_engine(engine_name: Optional[str] = None) -> str:
     """Return a suggestion when the inference engine is unreachable."""
     name = engine_name or "ollama"
@@ -27,19 +17,4 @@ def hint_no_engine(engine_name: Optional[str] = None) -> str:
         "  [dim]To use a remote engine:[/dim]\n"
         f"    [cyan]phibe config set engine.{name}.host http://<remote-ip>:<port>[/cyan]\n"
         f"    [dim]or[/dim] [cyan]export OLLAMA_HOST=http://<remote-ip>:11434[/cyan]"
-    )
-
-
-def hint_no_model(model_name: Optional[str] = None) -> str:
-    """Return a suggestion when no model is available."""
-    if model_name:
-        return (
-            f"[yellow]Hint:[/yellow] Model '{model_name}' not found.\n"
-            f"  Try: [bold]ollama pull {model_name}[/bold]\n"
-            "  Run [bold]phibe model list[/bold] to see available models."
-        )
-    return (
-        "[yellow]Hint:[/yellow] No models available.\n"
-        "  Pull a model first: [bold]ollama pull qwen3.5:4b[/bold]\n"
-        "  Run [bold]phibe model list[/bold] to see available models."
     )

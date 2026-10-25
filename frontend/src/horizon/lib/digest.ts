@@ -56,13 +56,13 @@ export interface Digest {
 const plain = (line: string): string => line.replace(/^\s*(?:[#>*\-•]+|\d+[.)])\s*/, '').replace(/[*_`]+/g, '').trim();
 
 const KNOWN: Record<string, string> = {
-  hackernews: 'Hacker News', news_rss: 'News RSS', gmail: 'Gmail', gmail_imap: 'Gmail', gcalendar: 'Google Calendar',
-  google_tasks: 'Google Tasks', apple_health: 'Apple Health', apple_music: 'Apple Music', apple_calendar: 'Apple Calendar',
-  github_notifications: 'GitHub Notifications', imessage: 'iMessage', whatsapp: 'WhatsApp', anytype: 'Anytype', oura: 'Oura',
-  slack: 'Slack', spotify: 'Spotify', notion: 'Notion', outlook: 'Outlook', strava: 'Strava', weather: 'Weather',
+  news_rss: 'News RSS', gmail: 'Gmail', gmail_imap: 'Gmail', gcalendar: 'Google Calendar',
+  apple_calendar: 'Apple Calendar',
+  github_notifications: 'GitHub Notifications', imessage: 'iMessage', whatsapp: 'WhatsApp', anytype: 'Anytype',
+  slack: 'Slack', notion: 'Notion', outlook: 'Outlook', weather: 'Weather',
 };
 
-/** A source as the user knows it: "hackernews" is "Hacker News", "gmail" is "Gmail". */
+/** A source as the user knows it: "news_rss" is "News RSS", "gmail" is "Gmail". */
 export const sourceName = (key: string): string => KNOWN[key.toLowerCase()] ?? humanize(key);
 
 /** "morning_news" becomes "Morning News". */

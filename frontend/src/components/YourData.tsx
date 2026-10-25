@@ -6,6 +6,8 @@ import { Icon } from './Icon';
 import { SeedsLoader } from './SeedsLoader';
 import { disintegrate } from '../lib/disintegrate';
 import { DataSection } from './DataSection';
+import { useAppStore } from '../lib/store';
+import { CHAT_RETENTION, getChatRetention, setChatRetention } from '../lib/chatRetention';
 
 interface VoiceEntry {
   id: string;
@@ -34,6 +36,27 @@ export function YourData() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const [chatQuery, setChatQuery] = useState('');
+  const [chatDays, setChatDays] = useState(getChatRetention);
+  const [confirmChats, setConfirmChats] = useState(false);
+  const chatCount = useAppStore((s) => s.conversations.length);
+  const pruneConversations = useAppStore((s) => s.pruneConversations);
+
+  const changeChatDays = (days: number) => {
+    setChatDays(days);
+    setChatRetention(days);
+    if (days > 0) pruneConversations(days);
+  };
+
+  const clearChats = () => {
+    if (!confirmChats) {
+      setConfirmChats(true);
+      setTimeout(() => setConfirmChats(false), 3000);
+      return;
+    }
+    pruneConversations(null);
+    setConfirmChats(false);
+    toast.success('All chats deleted');
+  };
 
   const load = useCallback(async () => {
     try {
@@ -86,10 +109,35 @@ export function YourData() {
       <div className="set-grid">
         <DataSection />
         <div className="set-section fin-card">
-          <h3>Chats</h3>
-          <p className="text-xs mt-1 mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
-            Every conversation you had with Phibe. Open one to continue it, or delete it.
-          </p>
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h3 className="set-inline-title">Chats</h3>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
+                Every conversation you had with Phibe. Open one to continue it, or delete it.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={chatDays}
+                onChange={(e) => changeChatDays(Number(e.target.value))}
+                aria-label="Keep chats for"
+                className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+                style={FIELD}
+              >
+                {CHAT_RETENTION.map((d) => <option key={d} value={d}>{d === 0 ? 'Keep Forever' : `Keep For ${d} Days`}</option>)}
+              </select>
+              <button
+                type="button"
+                onClick={clearChats}
+                disabled={chatCount === 0}
+                className="set-btn"
+                data-danger
+                data-armed={confirmChats || undefined}
+              >
+                <Icon name="trash-bin-minimalistic" size={12} /> {confirmChats ? 'Click again to confirm' : 'Clear'}
+              </button>
+            </div>
+          </div>
           <input
             value={chatQuery}
             onChange={(e) => setChatQuery(e.target.value)}

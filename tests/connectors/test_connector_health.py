@@ -19,10 +19,8 @@ _TOKEN_CONNECTORS = [
     ("outlook", "phibe.connectors.outlook", "OutlookConnector"),
     ("slack", "phibe.connectors.slack_connector", "SlackConnector"),
     ("notion", "phibe.connectors.notion", "NotionConnector"),
-    ("granola", "phibe.connectors.granola", "GranolaConnector"),
     ("gdrive", "phibe.connectors.gdrive", "GDriveConnector"),
     ("gcalendar", "phibe.connectors.gcalendar", "GCalendarConnector"),
-    ("gcontacts", "phibe.connectors.gcontacts", "GContactsConnector"),
     ("dropbox", "phibe.connectors.dropbox", "DropboxConnector"),
 ]
 

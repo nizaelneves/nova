@@ -116,12 +116,6 @@ _TOKEN_SOURCES = [
         "creds_file": "notion.json",
         "prompt_label": "Integration token (ntn_...)",
     },
-    {
-        "connector_id": "granola",
-        "display_name": "Granola",
-        "creds_file": "granola.json",
-        "prompt_label": "API key (grn_...)",
-    },
 ]
 
 
@@ -235,10 +229,6 @@ def _instantiate_connector(connector_id: str, config: Dict[str, Any]) -> Any:
         from phibe.connectors.notion import NotionConnector
 
         return NotionConnector()
-    elif connector_id == "granola":
-        from phibe.connectors.granola import GranolaConnector
-
-        return GranolaConnector()
     else:
         msg = f"Unknown connector: {connector_id}"
         raise ValueError(msg)

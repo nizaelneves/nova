@@ -64,7 +64,7 @@ function hashFract(n: number): number {
 }
 
 /** Deterministic heights (percentages of the available height) for a seed. */
-export function getSkeletonHeights(
+function getSkeletonHeights(
   count: number,
   seed = 0,
   min = HEIGHT_MIN_PCT,
@@ -179,7 +179,7 @@ function LoadingSweepMask({
 
 // ─── Line / Area loading sweep (its own re-randomizing silhouette) ───────────
 
-export interface LineLoadingSweepProps {
+interface LineLoadingSweepProps {
   /** Curve factory from the host `<Line>` / `<Area>`, so the silhouette matches
    * the chart's interpolation (step, smooth, linear, …). */
   curve: CurveFactory;
@@ -402,7 +402,7 @@ function SkeletonBars({
   );
 }
 
-export interface BarLoadingSkeletonProps {
+interface BarLoadingSkeletonProps {
   innerWidth: number;
   innerHeight: number;
   /** Number of skeleton bars. Default: 12 */
@@ -424,7 +424,7 @@ export interface BarLoadingSkeletonProps {
  * Rendered in the chart's inner coordinate space (origin at the inner top-left),
  * so a `BarChart` drops it inside its margin-translated group.
  */
-export function BarLoadingSkeleton({
+function BarLoadingSkeleton({
   innerWidth,
   innerHeight,
   barCount = DEFAULT_BAR_COUNT,

@@ -358,7 +358,7 @@ class ProactiveAgent(ToolUsingAgent):
         store.expire_stale()
 
         # --- Step 1: Collect data — only items user hasn't acted on ---
-        sources = ["gmail", "imessage", "gcalendar", "slack", "google_tasks"]
+        sources = ["gmail", "imessage", "gcalendar", "slack"]
         seen_ids = self._get_already_seen_ids(store)
         collect_call = ToolCall(
             id="proactive-collect-1",

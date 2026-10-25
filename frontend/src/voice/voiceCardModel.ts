@@ -43,7 +43,7 @@ export interface CardBadge {
   color: string;
 }
 
-export interface CardView {
+interface CardView {
   title: string;
   /** Show the red recording dot. */
   recording: boolean;

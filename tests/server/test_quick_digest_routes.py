@@ -25,7 +25,7 @@ class FakeEngine:
 
 
 ITEMS = {
-    "hackernews": [{"title": "A new database", "text": "Launched today."}],
+    "dropbox": [{"title": "A new database", "text": "Launched today."}],
     "anytype": [{"title": "Note 1", "text": "a"}, {"title": "Note 2", "text": "b"}],
 }
 
@@ -38,28 +38,26 @@ def _client(tmp_path, items=ITEMS, engine=None):
 
 def test_builds_a_section_per_source_and_a_headline() -> None:
     d = build_digest(FakeEngine(), "m:1", ITEMS)
-    assert list(d["sections"]) == ["hackernews", "anytype"]
-    assert d["sections"]["hackernews"] == "hackernews has news."  # thinking tags and markdown are gone
+    assert list(d["sections"]) == ["dropbox", "anytype"]
+    assert d["sections"]["dropbox"] == "dropbox has news."  # thinking tags and markdown are gone
     assert d["text"] == "3 New Items From 2 Sources\nBoth sources moved today."
-    assert d["sources_used"] == ["hackernews", "anytype"] and d["model_used"] == "m:1"
+    assert d["sources_used"] == ["dropbox", "anytype"] and d["model_used"] == "m:1"
 
 
 def test_every_item_becomes_a_small_block_without_asking_the_model() -> None:
-    items = {"hackernews": [{"title": "A new database", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00"}]}
+    items = {"news_rss": [{"title": "A new database", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00"}]}
     d = build_digest(FakeEngine(), "m:1", items)
     assert d["items"] == [{
-        "source": "hackernews", "source_name": "hackernews", "kind": "news", "title": "A new database",
+        "source": "news_rss", "source_name": "news_rss", "kind": "rss", "title": "A new database",
         "summary": "Launched today.", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00",
     }]
-    stats = build_digest(FakeEngine(), "m:1", {"hackernews": [{"title": "T", "text": "Score: 568, Comments: 289"}]})["items"][0]
-    assert stats["summary"] == "568 points · 289 comments"
     untitled = build_digest(FakeEngine(), "m:1", {"gmail": [{"title": "", "text": "Weekly news. More below."}]})["items"][0]
     assert (untitled["title"], untitled["kind"]) == ("Weekly news.", "mail")
 
 
 def test_skips_a_source_the_model_fails_on_and_says_so_when_nothing_is_left() -> None:
     d = build_digest(FakeEngine(fail_on="anytype"), "m:1", ITEMS)
-    assert list(d["sections"]) == ["hackernews"]
+    assert list(d["sections"]) == ["dropbox"]
     assert d["text"].startswith("1 New Item From 1 Source")
     empty = build_digest(FakeEngine(), "m:1", {})
     assert empty["sections"] == {} and empty["text"].startswith("Nothing new in your sources.")

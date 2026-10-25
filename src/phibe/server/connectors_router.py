@@ -195,7 +195,7 @@ def create_connectors_router():
         # colon-containing string is only treated as a Google credential
         # pair when it matches that format -- otherwise some other raw
         # token that happens to contain a colon could be misidentified.
-        # Non-Google providers (Spotify, Strava, ...) have no such
+        # Non-Google providers have no such
         # ambiguity: every non-Google OAuth connector only ever expects a
         # client_id:client_secret pair through this path, so any
         # colon-containing string is enough to route here.
@@ -695,7 +695,7 @@ def create_connectors_router():
                     # and set it directly (their real OAuth code-exchange runs
                     # via /oauth/start → /oauth/callback). Connectors that
                     # persist a manually-supplied credential — the Slack user
-                    # token and the Granola API key — validate inside
+                    # token — validate inside
                     # handle_callback, so route through it to guarantee the
                     # credential is verified before anything touches disk. A
                     # failed validation raises and is turned into HTTP 400
@@ -705,7 +705,7 @@ def create_connectors_router():
                     else:
                         instance.handle_callback(req.token)
 
-            elif connector_id in {"github_notifications", "oura", "anytype"}:
+            elif connector_id in {"github_notifications", "anytype"}:
                 if not req.token:
                     raise HTTPException(status_code=400, detail="A token is required")
                 # These token connectors persist their credentials themselves;
@@ -1137,7 +1137,8 @@ def create_connectors_router():
         """Start a sync for every connected connector not switched off in Settings."""
         from phibe.connectors.sync_settings import load_sync_settings
 
-        skipped = set(load_sync_settings().disabled_connectors)
+        settings = load_sync_settings()
+        skipped = set(settings.disabled_connectors) | set(settings.intervals)
         for connector_id, instance in _connected_connectors():
             if connector_id in skipped:
                 continue
@@ -1146,7 +1147,15 @@ def create_connectors_router():
             except Exception:  # noqa: BLE001 - one source must not block the rest
                 logger.exception("Automatic sync could not start for %s", connector_id)
 
+    def run_source_sync(connector_id: str) -> None:
+        """Start a sync for one connected source (the ones with a rhythm of their own)."""
+        for current, instance in _connected_connectors():
+            if current == connector_id:
+                _start_sync(current, instance)
+                return
+
     router.run_auto_sync = run_auto_sync  # type: ignore[attr-defined]
+    router.run_source_sync = run_source_sync  # type: ignore[attr-defined]
     return router
 
 

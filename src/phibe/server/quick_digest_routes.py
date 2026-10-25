@@ -79,7 +79,7 @@ def _ask(engine: Any, model: str, system: str, user: str, max_tokens: int) -> st
 
 
 def _display_name(key: str) -> str:
-    """The name of a source as its connector writes it ("Hacker News"); the key itself when it has none."""
+    """The name of a source as its connector writes it ("Notion"); the key itself when it has none."""
     try:
         from phibe.core.registry import ConnectorRegistry
 
@@ -89,14 +89,11 @@ def _display_name(key: str) -> str:
         return key
 
 
-_KINDS = {"hackernews": "news", "news_rss": "rss", "gmail": "mail", "gmail_imap": "mail", "imap": "mail", "outlook": "mail"}
+_KINDS = {"news_rss": "rss", "gmail": "mail", "gmail_imap": "mail", "imap": "mail", "outlook": "mail"}
 
 
 def _first_sentence(text: str, limit: int = 160) -> str:
     """The first sentence of *text*, flattened to one line and cut at *limit* characters."""
-    stats = re.fullmatch(r"Score: (\d+), Comments: (\d+)", text.strip())
-    if stats:  # what the Hacker News connector writes for a story without a text
-        return f"{stats.group(1)} points · {stats.group(2)} comments"
     flat = re.sub(r"\s+", " ", re.sub(r"[*_#`]+", "", text)).strip()
     sentence = re.split(r"(?<=[.!?])\s", flat, maxsplit=1)[0]
     return sentence if len(sentence) <= limit else sentence[: limit - 1].rstrip() + "…"

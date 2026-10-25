@@ -18,7 +18,7 @@ import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps } from "./series-bar";
 import { TimeSeriesChartInner } from "./time-series-chart-shell";
 
-export interface ComposedChartProps {
+interface ComposedChartProps {
   /** Data array — each row typically has a date and multiple numeric series */
   data: Record<string, unknown>[];
   /** Key for the x-axis (time). Default: "date" */
@@ -335,4 +335,3 @@ export function ComposedChart({
 
 ComposedChart.displayName = "ComposedChart";
 
-export default ComposedChart;

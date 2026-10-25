@@ -48,7 +48,7 @@ class MorningDigestAgent(ToolUsingAgent):
         # Extract digest-specific kwargs before passing to parent
         self._persona = kwargs.pop("persona", "phibe")
         self._sections = kwargs.pop(
-            "sections", ["messages", "calendar", "health", "world"]
+            "sections", ["messages", "calendar", "world"]
         )
         self._section_sources = kwargs.pop("section_sources", {})
         self._timezone = kwargs.pop("timezone", "America/Los_Angeles")
@@ -103,14 +103,13 @@ class MorningDigestAgent(ToolUsingAgent):
             "messages": [
                 "gmail",
                 "slack",
-                "google_tasks",
                 "imessage",
                 "github_notifications",
             ],
             "calendar": ["gcalendar"],
-            "health": ["oura", "apple_health"],
-            "world": ["weather", "hackernews", "news_rss"],
-            "music": ["spotify", "apple_music"],
+            "health": [],
+            "world": ["weather", "news_rss"],
+            "music": [],
         }
         sources = set()
         for section in self._sections:

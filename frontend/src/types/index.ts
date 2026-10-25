@@ -104,12 +104,6 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
-export interface ConversationStore {
-  version: 1;
-  conversations: Record<string, Conversation>;
-  activeId: string | null;
-}
-
 // --- Stream State ---
 
 export interface StreamState {

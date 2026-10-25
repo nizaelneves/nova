@@ -7,7 +7,7 @@ import type { BadgeKind } from './phibeBubble';
  * come from the server and are handled by the bubble itself.
  */
 
-export interface PhibeEvent {
+interface PhibeEvent {
   id: string;
   kind: Exclude<BadgeKind, 'approval'>;
   text: string;

@@ -15,7 +15,7 @@ import {
 // Stable + hover slices are read separately so callers can see the exact
 // subscription surface (anything calling this hook will re-render on hover).
 
-export interface HighlightSegmentResult {
+interface HighlightSegmentResult {
   xSpring: ReturnType<typeof useSpring>;
   widthSpring: ReturnType<typeof useSpring>;
   isActive: boolean;

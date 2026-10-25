@@ -72,8 +72,3 @@ def get_tool_description_override(tool_name: str) -> Optional[str]:
         _cache = _load_overrides()
     return _cache.get(tool_name)
 
-
-def clear_cache() -> None:
-    """Clear the cached overrides (useful for testing)."""
-    global _cache  # noqa: PLW0603
-    _cache = None

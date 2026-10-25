@@ -243,11 +243,6 @@ class WorkArenaTaskEnv:
 
         return obs_text, reward, self._done, info
 
-    def send_chat_message(self, message: str) -> None:
-        """Send a message from the assistant to the chat."""
-        if self._env is not None and hasattr(self._env, "chat"):
-            self._env.chat.add_message(role="assistant", msg=message)
-
     def run_tests(self) -> Tuple[bool, Dict[str, Any]]:
         """Validate the task using the native WorkArena validate() method.
 

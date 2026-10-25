@@ -130,17 +130,6 @@ class TestQueryTrace:
         assert t2.is_resolved is True
         assert t2.total_input_tokens == 250
 
-    def test_save_load_jsonl(self, tmp_path):
-        t1 = self._make_trace(query_id="q0001")
-        t2 = self._make_trace(query_id="q0002")
-        path = tmp_path / "traces.jsonl"
-        t1.save_jsonl(path)
-        t2.save_jsonl(path)
-        loaded = QueryTrace.load_jsonl(path)
-        assert len(loaded) == 2
-        assert loaded[0].query_id == "q0001"
-        assert loaded[1].query_id == "q0002"
-
     def test_tool_call_count(self):
         t = self._make_trace(
             turns=[

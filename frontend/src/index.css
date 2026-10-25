@@ -2194,7 +2194,7 @@ i[data-k='holiday'] { background: #ffb36b; }
 
 /* -- Settings: quiet dark glass, hairlines, one mint accent -- */
 .set-root .set-section { padding: 4px 20px 8px; border-radius: 22px; border: 1px solid rgba(255, 255, 255, 0.07); background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 22px 44px -28px rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); transition: border-color 0.3s; }
-.set-root .set-section:hover { border-color: rgba(255, 255, 255, 0.11); }
+.set-root .set-section:hover { border-color: var(--color-border-strong, rgba(255, 255, 255, 0.18)); }
 .set-root .set-section > h3 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 16px 0 6px; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(233, 236, 245, 0.46); }
 .set-root .set-section > h3::before { content: ''; width: 16px; height: 1px; background: linear-gradient(90deg, #20e7aa, transparent); }
 .set-root .set-row { padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, 0.045); }
@@ -2294,3 +2294,25 @@ i[data-k='holiday'] { background: #ffb36b; }
 .dg .fin-line { flex: none; margin: 0; }
 /* Two lines at most: the clamp has to sit on an inner span, because a grid item cannot be a -webkit-box. */
 .dg-blk b > span, .dr-card b > span, .dr-card-line > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ds-rhythm { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.ds-rhythm select { flex: 1; min-width: 0; height: 28px; padding: 0 10px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.04); color: var(--color-text); font-size: 0.74rem; letter-spacing: 0; text-transform: none; outline: none; cursor: pointer; }
+.ds-rhythm input { height: 28px; padding: 0 8px; border-radius: 9px; border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.04); color: var(--color-text); font-size: 0.74rem; letter-spacing: 0; outline: none; color-scheme: dark; }
+.ds-rhythm select:focus, .ds-rhythm input:focus { border-color: rgba(32, 231, 170, 0.55); }
+.ds-rhythm select option { background: #0c0c18; }
+
+/* Connections: the sync bar matches the source cards, and the cards breathe more */
+.ds-sync-bar .set-section { padding: 6px 22px 10px; border-radius: 18px; border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.18)); background: linear-gradient(180deg, rgba(32, 231, 170, 0.07), rgba(255, 255, 255, 0.04)); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); backdrop-filter: none; }
+.ds-sync-bar .set-section:hover { border-color: rgba(32, 231, 170, 0.55); }
+.ds-sync-bar .set-section > h3 { color: #20e7aa; font-weight: 700; }
+.ds-sync-bar .set-row { border-top-color: rgba(255, 255, 255, 0.1); }
+.ds-sync-bar .set-row-text b { color: var(--color-text); }
+.ds-sync-bar .set-row-text span { color: var(--color-text-secondary); }
+.ds-sync-bar select, .ds-sync-bar input { background: rgba(0, 0, 0, 0.28) !important; border-color: rgba(255, 255, 255, 0.16) !important; }
+.ds-sync-bar .set-switch { background: rgba(255, 255, 255, 0.24); }
+.ds-sync-bar .set-switch[aria-checked='true'] { background: #20e7aa; }
+.ds-sync-bar .set-btn { border-color: rgba(32, 231, 170, 0.5); color: #20e7aa; background: rgba(32, 231, 170, 0.08); }
+.ds-sync-bar { margin: 8px 0 4px; }
+.fin-actions { gap: 10px; }
+.ds-grid { gap: 20px; }
+.ds-card { gap: 8px; padding: 20px 22px; }
+.ds-top { margin-bottom: 8px; }

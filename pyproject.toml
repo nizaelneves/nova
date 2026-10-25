@@ -44,6 +44,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "import-linter>=2.0",
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "pytest-cov>=5",
@@ -253,3 +254,36 @@ select = ["E", "F", "I", "W"]
 # research_loop.py carries long prompt strings too (documented in CLAUDE.md);
 # the ignore was missing here.
 "src/phibe/agents/research_loop.py" = ["E501"]
+
+# Module boundaries. Run with `lint-imports`. A feature package may use `core` and the
+# shared building blocks, never another feature, and never the entry points above it.
+[tool.importlinter]
+root_package = "phibe"
+
+[[tool.importlinter.contracts]]
+name = "Features do not import each other"
+type = "independence"
+modules = [
+    "phibe.finances",
+    "phibe.tasks",
+    "phibe.pings",
+    "phibe.sessions",
+    "phibe.speech",
+    "phibe.prompt",
+    "phibe.operators",
+    "phibe.daemon",
+    "phibe.channels",
+]
+
+[[tool.importlinter.contracts]]
+name = "Nothing below the entry points imports them"
+type = "forbidden"
+source_modules = [
+    "phibe.core", "phibe.engine", "phibe.tools", "phibe.security", "phibe.agents",
+    "phibe.connectors", "phibe.memory", "phibe.telemetry", "phibe.traces", "phibe.skills",
+    "phibe.learning", "phibe.evals", "phibe.mcp", "phibe.finances", "phibe.tasks",
+    "phibe.pings", "phibe.sessions", "phibe.speech", "phibe.prompt", "phibe.operators",
+    "phibe.daemon", "phibe.channels", "phibe.intelligence", "phibe.scheduler", "phibe.workflow",
+]
+forbidden_modules = ["phibe.cli", "phibe.server", "phibe.sdk"]
+allow_indirect_imports = true  # `import phibe` lazily reaches sdk; only direct imports count

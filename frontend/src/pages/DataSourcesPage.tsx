@@ -7,9 +7,11 @@ import { summarizeSources } from '../lib/sourcesSummary';
 import { ToolCards } from '../components/ToolCards';
 import { CLOUD_KEY_STATUS_CHANGED } from '../components/keys';
 import { fetchAvailableTools, type ToolInfo } from '../lib/api';
+import { choiceLabel, choicesWith, DAILY, hasOwn, minutesOf, timeOf, withChoice, withDefault, withTime } from '../lib/syncRhythm';
+import { SyncBar, useSyncSettings } from '../components/SyncBar';
 import {
   FolderOpen, FileText,
-  Mail, Hash, MessageCircle, CalendarDays, Contact, StickyNote, BookText,
+  Mail, Hash, MessageCircle, CalendarDays, StickyNote, BookText,
   Package, Upload, Link2, PhoneCall,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -129,8 +131,8 @@ function InlineConnectForm({
 // Generic fallback connect panel — for any backend connector that has no
 // hardcoded SOURCE_CATALOG entry (no `steps`). Without this, expanding such
 // a connector's "+ Add" card rendered nothing at all: no button, no input,
-// no explanation, just an empty box (e.g. Spotify, Strava, Oura, GitHub
-// Notifications, Google Tasks, Weather, and the Apple/News local sources).
+// no explanation, just an empty box (e.g. GitHub
+// Notifications, Weather, and the Apple/News local sources).
 // Branches on auth_type using the same primitives the hardcoded catalog
 // entries already use (InlineConnectForm, oauth start+poll).
 // ---------------------------------------------------------------------------
@@ -506,10 +508,7 @@ const iconMap: Record<string, LucideIcon> = {
   notion: BookText,
   obsidian: FileText,
   apple_notes: StickyNote,
-  granola: FileText,
   gcalendar: CalendarDays,
-  gcontacts: Contact,
-  apple_contacts: Contact,
   upload: Upload,
 };
 
@@ -847,6 +846,7 @@ function DataSourcesSection() {
   const disconnectAbortRef = useRef<AbortController | null>(null);
   const [view, setView] = useState<SourceView>('All');
   const [tools, setTools] = useState<ToolInfo[] | null>(null);
+  const { settings: syncSettings, change: changeSync, reload: reloadSync } = useSyncSettings();
   useEffect(() => {
     const load = () => fetchAvailableTools().then(setTools).catch(() => setTools([]));
     void load();
@@ -1074,12 +1074,14 @@ function DataSourcesSection() {
       </div>
     </header>
   );
+  const syncBar = <SyncBar settings={syncSettings} change={changeSync} reload={reloadSync} />;
 
   if (isFirstLoad) {
     return (
       <div className="fin-root h-full overflow-y-auto">
         <div className="fin-wrap">
           {header}
+          {syncBar}
           <div className="flex flex-col gap-2">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="source-card data-skeleton" style={{ padding: '14px 18px', height: 60, opacity: 0.6 - i * 0.08 }} />
@@ -1225,12 +1227,16 @@ function DataSourcesSection() {
   };
 
   const shownTools = (tools ?? []).filter((t) => (view === 'All' ? true : view === 'Connected' ? t.configured : !t.configured));
-  const cards = view === 'Connected' ? connected : view === 'Disconnected' ? notConnected : [...connected, ...notConnected];
+  const nameOf = (c: (typeof connected)[number]) => metaFor(c.connector_id)?.display_name ?? c.display_name;
+  const cards = (view === 'Connected' ? connected : view === 'Disconnected' ? notConnected : [...connected, ...notConnected])
+    .slice()
+    .sort((x, y) => nameOf(x).localeCompare(nameOf(y), undefined, { sensitivity: 'base' }));
 
   return (
     <div className="fin-root h-full overflow-y-auto">
       <div className="fin-wrap">
       {header}
+      {syncBar}
       <h3 className="ds-sec">Sources</h3>
       <div className="ds-grid">
         {cards.map((c) => {
@@ -1289,6 +1295,28 @@ function DataSourcesSection() {
                     disabled={connectorActionsBusy}
                     onSyncTriggered={loadConnectors}
                   />
+                  {syncSettings && (
+                    <div className="ds-rhythm">
+                      <span>Update</span>
+                      <select
+                        value={hasOwn(syncSettings, c.connector_id) ? minutesOf(syncSettings, c.connector_id) : 'default'}
+                        onChange={(e) => void changeSync(e.target.value === 'default'
+                          ? withDefault(syncSettings, c.connector_id)
+                          : withChoice(syncSettings, c.connector_id, parseInt(e.target.value, 10)))}
+                      >
+                        <option value="default">Default</option>
+                        {choicesWith(minutesOf(syncSettings, c.connector_id)).map((m) => <option key={m} value={m}>{choiceLabel(m)}</option>)}
+                      </select>
+                      {hasOwn(syncSettings, c.connector_id) && minutesOf(syncSettings, c.connector_id) === DAILY && (
+                        <input
+                          type="time"
+                          value={timeOf(syncSettings, c.connector_id)}
+                          aria-label={`${name}: time of day`}
+                          onChange={(e) => { if (e.target.value) void changeSync(withTime(syncSettings, c.connector_id, e.target.value)); }}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
               {disconnectError?.id === c.connector_id && (

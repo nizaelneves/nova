@@ -2,7 +2,7 @@
 
 export type EffectsQuality = 'full' | 'balanced' | 'off';
 
-export interface Star {
+interface Star {
   /** Position around the centre of the field, in radians. */
   angle: number;
   /** Distance from the centre, in pixels. */
@@ -73,7 +73,7 @@ export function createStars(count: number, maxRadius: number, seed = 7): Star[] 
 }
 
 /** Gentle rotation of the whole sky, in radians per second (a full turn in about 25 minutes). */
-export const SKY_TURN_SPEED = 0.004;
+const SKY_TURN_SPEED = 0.004;
 
 /** Where a star is drawn at time `seconds`. The sky turns slowly; nearer stars turn a little faster. */
 export function starPosition(

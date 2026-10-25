@@ -20,7 +20,7 @@ import { StrikeText } from '../StrikeText';
 import { TaskCheck } from '../TaskCheck';
 import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../../lib/tasks';
 
-export const COLUMNS: { status: Status; label: string }[] = [
+const COLUMNS: { status: Status; label: string }[] = [
   { status: 'todo', label: 'Coming Next' },
   { status: 'doing', label: 'Doing' },
   { status: 'done', label: 'Done' },
@@ -29,7 +29,7 @@ export const COLUMNS: { status: Status; label: string }[] = [
 /** The colour of a project (an area id, or null for personal tasks); set by the Projects screen. */
 export const ProjectColorContext = createContext<(areaId: string | null) => string>(() => PERSONAL_COLOR);
 
-export const PRIORITY_COLOR: Record<Priority, string> = {
+const PRIORITY_COLOR: Record<Priority, string> = {
   high: 'var(--color-error)',
   medium: '#d9a441',
   low: 'var(--color-text-tertiary)',

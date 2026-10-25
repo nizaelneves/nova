@@ -5,14 +5,14 @@ describe('digest', () => {
   it('turns the sections into items and the first line into a headline', () => {
     const d = parseDigest({
       text: '# Good morning\nThree things matter today.\n\nMore below.',
-      sections: { hacker_news: 'A new database launched.', empty: '  ', notes: '## Notes\nYou wrote 4 notes.' },
-      sources_used: ['Hacker News', 'Anytype'],
+      sections: { news_rss: 'A new database launched.', empty: '  ', notes: '## Notes\nYou wrote 4 notes.' },
+      sources_used: ['News RSS', 'Anytype'],
       generated_at: '2026-10-18T09:30:00',
       model_used: 'qwen3.5:4b',
     });
     expect(d.headline).toBe('Good morning');
     expect(d.summary).toBe('Three things matter today. More below.');
-    expect(d.items.map((i) => i.title)).toEqual(['Hacker News', 'Notes']);
+    expect(d.items.map((i) => i.title)).toEqual(['News RSS', 'Notes']);
     expect(d.items[1].text).toBe('Notes\nYou wrote 4 notes.');
     expect(d.sources).toHaveLength(2);
   });
@@ -35,7 +35,7 @@ describe('digest', () => {
 
   it('writes names, initials and times', () => {
     expect(humanize('morning_news-feed')).toBe('Morning News Feed');
-    expect(initials('Hacker News Daily')).toBe('HN');
+    expect(initials('News Daily')).toBe('ND');
     const now = new Date(2026, 9, 18, 12, 0);
     expect(timeLabel(new Date(2026, 9, 18, 9, 5), now)).toBe('Today 09:05');
     expect(timeLabel(new Date(2026, 9, 17, 23, 0), now)).toBe('Yesterday 23:00');
@@ -49,11 +49,11 @@ describe('digest', () => {
   });
 
   it('names the sources as people know them and counts the items', () => {
-    expect(sourceName('hackernews')).toBe('Hacker News');
+    expect(sourceName('news_rss')).toBe('News RSS');
     expect(sourceName('gmail_imap')).toBe('Gmail');
     expect(sourceName('daily_paper')).toBe('Daily Paper');
-    const d = parseDigest({ text: '5 New Items From 1 Source\nok', sections: { hackernews: 'x' }, sources_used: ['hackernews'] });
-    expect([d.count, d.items[0].title, d.sources]).toEqual([5, 'Hacker News', ['Hacker News']]);
+    const d = parseDigest({ text: '5 New Items From 1 Source\nok', sections: { news_rss: 'x' }, sources_used: ['news_rss'] });
+    expect([d.count, d.items[0].title, d.sources]).toEqual([5, 'News RSS', ['News RSS']]);
     expect(parseDigest({ text: 'Hello', sections: { a: 'x', b: 'y' } }).count).toBe(2);
   });
 
@@ -61,17 +61,17 @@ describe('digest', () => {
     const raw = {
       text: '3 New Items From 2 Sources\nok',
       items: [
-        { source: 'hackernews', source_name: 'Hacker News', kind: 'news', title: 'A new database', summary: 'Launched today.', text: 'Launched today. It is fast.', url: 'https://x.dev', time: '2026-10-20T09:00:00' },
+        { source: 'news_rss', source_name: 'News RSS', kind: 'rss', title: 'A new database', summary: 'Launched today.', text: 'Launched today. It is fast.', url: 'https://x.dev', time: '2026-10-20T09:00:00' },
         { source: 'gmail', kind: 'mail', title: 'Weekly', summary: 's', text: 't' },
         { source: 'anytype', kind: 'whatever', title: 'N', summary: '', text: '', time: 'not a date' },
       ],
     };
     const d = parseDigest(raw);
-    expect(d.blocks.map((b) => [b.sourceName, b.kind])).toEqual([['Hacker News', 'news'], ['Gmail', 'mail'], ['Anytype', 'other']]);
+    expect(d.blocks.map((b) => [b.sourceName, b.kind])).toEqual([['News RSS', 'rss'], ['Gmail', 'mail'], ['Anytype', 'other']]);
     expect(d.blocks[0].time?.getHours()).toBe(9);
     expect(d.blocks[2].time).toBeNull();
     expect(d.count).toBe(3);
-    expect(kindCounts(d.blocks)).toEqual([{ kind: 'news', count: 1 }, { kind: 'mail', count: 1 }]);
+    expect(kindCounts(d.blocks)).toEqual([{ kind: 'rss', count: 1 }, { kind: 'mail', count: 1 }]);
     expect(parseDigest({ text: 'Hello' }).blocks).toEqual([]);
   });
 });

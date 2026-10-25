@@ -1,7 +1,7 @@
 import type { ResearchEvent, SSEEvent } from '../types';
 import { getBase, authHeaders } from './api';
 
-export interface ChatRequest {
+interface ChatRequest {
   model: string;
   messages: Array<{ role: string; content: string }>;
   stream: true;

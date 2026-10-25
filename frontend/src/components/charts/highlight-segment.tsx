@@ -9,7 +9,7 @@ import { type RefObject, useId } from "react";
 // because the bright stroke reuses the base `d`, it follows whatever curve is
 // drawn (see `highlight-segment-bounds.ts` for the band-extent caveat).
 
-export interface HighlightSegmentProps {
+interface HighlightSegmentProps {
   /** Ref to the rendered base stroke `<path>` — its `d` is re-used verbatim. */
   pathRef: RefObject<SVGPathElement | null>;
   /** Whether to render (caller gates on showHighlight + active + loaded). */
@@ -62,4 +62,3 @@ export function HighlightSegment({
 
 HighlightSegment.displayName = "HighlightSegment";
 
-export default HighlightSegment;

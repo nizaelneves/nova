@@ -17,15 +17,6 @@ from phibe.tools.storage._stubs import MemoryBackend, RetrievalResult
 _WORD_RE = re.compile(r"\w+", re.UNICODE)
 
 
-def _check_fts5(conn: sqlite3.Connection) -> bool:
-    """Return True if the SQLite build includes FTS5."""
-    try:
-        opts = conn.execute("PRAGMA compile_options").fetchall()
-        return any("FTS5" in o[0].upper() for o in opts)
-    except sqlite3.Error:
-        return False
-
-
 def _fts_query(query: str) -> str:
     """Build an OR-joined FTS5 query of quoted terms.
 

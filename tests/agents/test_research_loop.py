@@ -229,8 +229,8 @@ def test_hit_url_unknown_source_returns_empty() -> None:
 
 def _mk_hit(
     *,
-    source: str = "granola",
-    document_id: str = "granola:not_abc12345678901",
+    source: str = "notion",
+    document_id: str = "notion:not_abc12345678901",
     url: str = "",
     title: str = "Sprint Planning",
 ) -> SearchHit:
@@ -254,10 +254,10 @@ def _mk_hit(
 def test_build_sources_prefers_stored_url_over_reconstruction() -> None:
     """When the connector stored a URL, the client gets it verbatim.
 
-    The doc_id-based reconstruction is a *fallback* — sources like Granola
+    The doc_id-based reconstruction is a *fallback* — sources like Notion
     that supply the URL at ingest time must surface it unchanged.
     """
-    stored = "https://notes.granola.ai/d/e98b5d85-ff57-46ac-a0ce-849fc68d086f"
+    stored = "https://www.notion.so/e98b5d85-ff57-46ac-a0ce-849fc68d086f"
     sources = build_sources_for_client([_mk_hit(url=stored)])
     assert sources[0]["url"] == stored
 
@@ -277,17 +277,17 @@ def test_build_sources_falls_back_to_reconstruction_when_url_missing() -> None:
     assert sources[0]["url"] == "https://acme.slack.com/archives/C123/p1710500000000100"
 
 
-def test_hit_url_granola_not_reconstructible() -> None:
-    """Granola doc_ids cannot reconstruct a web URL.
+def test_hit_url_notion_not_reconstructible() -> None:
+    """Notion doc_ids cannot reconstruct a web URL.
 
-    The Granola web app uses a UUID that is different from the API
-    ``note_id`` embedded in our doc_id. Citation URLs for Granola must
+    The Notion web app uses a UUID that is different from the API
+    ``note_id`` embedded in our doc_id. Citation URLs for Notion must
     come from the stored ``SearchHit.url`` (populated at ingest time from
     the API's ``web_url`` field). ``_hit_url`` therefore returns empty.
     """
-    assert _hit_url("granola", "granola:not_abc12345678901") == ""
-    assert _hit_url("granola", "granola:") == ""
-    assert _hit_url("granola", "") == ""
+    assert _hit_url("notion", "notion:not_abc12345678901") == ""
+    assert _hit_url("notion", "notion:") == ""
+    assert _hit_url("notion", "") == ""
 
 
 # ---------------------------------------------------------------------------
@@ -298,10 +298,10 @@ def test_hit_url_granola_not_reconstructible() -> None:
 def test_search_with_sources_filter_is_passed_through(
     stub_search: MagicMock,
 ) -> None:
-    """A search tool call carrying ``sources=['granola']`` reaches HybridSearch.
+    """A search tool call carrying ``sources=['notion']`` reaches HybridSearch.
 
-    Without this propagation, "tell me about my Granola notes" returns Gmail
-    emails that mention Granola instead of actual meeting notes.
+    Without this propagation, "tell me about my Notion notes" returns Gmail
+    emails that mention Notion instead of actual meeting notes.
     """
     engine = _MockEngine(
         responses=[
@@ -314,7 +314,7 @@ def test_search_with_sources_filter_is_passed_through(
                         "arguments": json.dumps(
                             {
                                 "query": "recent meetings",
-                                "sources": ["granola"],
+                                "sources": ["notion"],
                             }
                         ),
                     }
@@ -326,11 +326,11 @@ def test_search_with_sources_filter_is_passed_through(
     )
 
     agent = ResearchAgent(engine, stub_search, model="mock", max_iterations=2)
-    result = agent.run("tell me about my recent meetings from Granola")
+    result = agent.run("tell me about my recent meetings from Notion")
 
     stub_search.search.assert_called_once()
     kwargs = stub_search.search.call_args.kwargs
-    assert kwargs.get("sources") == ["granola"]
+    assert kwargs.get("sources") == ["notion"]
     # And the loop terminates with the synthesized answer.
     assert "Here are your recent meetings." in result.answer
 
@@ -371,25 +371,25 @@ def test_tool_schema_sources_lists_known_connectors() -> None:
     """The ``sources`` parameter description enumerates the common connector IDs.
 
     Without explicit IDs in the description the planner makes up names like
-    "Granola" or "Slack workspace" instead of the lowercase connector IDs the
+    "Notion" or "Slack workspace" instead of the lowercase connector IDs the
     backend filter actually matches against.
     """
     sources_prop = SEARCH_TOOL_SPEC["function"]["parameters"]["properties"]["sources"]
     desc = sources_prop["description"]
-    for connector_id in ("granola", "slack", "gmail", "notion"):
+    for connector_id in ("notion", "slack", "gmail", "notion"):
         assert connector_id in desc
 
 
 def test_system_prompt_mandates_sources_extraction() -> None:
     """The system prompt has a directive telling the planner to extract sources.
 
-    Without it, the model treats "from my Granola notes" as a topical cue
-    rather than a hard filter, and returns email about Granola instead of
-    Granola records.
+    Without it, the model treats "from my Notion notes" as a topical cue
+    rather than a hard filter, and returns email about Notion instead of
+    Notion records.
     """
     assert "sources=" in SYSTEM_PROMPT
     # Synonym mapping for the most-common alias.
-    assert "granola" in SYSTEM_PROMPT.lower()
+    assert "notion" in SYSTEM_PROMPT.lower()
     assert "meeting notes" in SYSTEM_PROMPT.lower()
     # The dynamic placeholder is what's interpolated per-run.
     assert "{available_sources}" in SYSTEM_PROMPT
@@ -422,12 +422,12 @@ def test_available_sources_override_appears_in_prompt(
         stub_search,
         model="mock",
         max_iterations=1,
-        available_sources=["gmail", "slack", "granola"],
+        available_sources=["gmail", "slack", "notion"],
     )
     agent.run("hi")
     sys_content = engine.calls[0]["messages"][0].content
     # The connected-sources blurb is interpolated verbatim.
-    assert "gmail, slack, granola" in sys_content
+    assert "gmail, slack, notion" in sys_content
     # And the prompt no longer hard-codes a static "Valid IDs include..."
     # enumeration of unconnected sources — those that aren't in the
     # available_sources list shouldn't appear in any *listing*. (Rule 4a
@@ -445,7 +445,7 @@ def test_available_sources_fall_back_to_store(stub_search: MagicMock) -> None:
     instance that exposes a ``_store`` with ``distinct_sources()``.
     """
     fake_store = MagicMock()
-    fake_store.distinct_sources.return_value = ["granola", "slack"]
+    fake_store.distinct_sources.return_value = ["notion", "slack"]
     stub_search._store = fake_store
 
     engine = _MockEngine(responses=[_text_response("ok")])
@@ -454,7 +454,7 @@ def test_available_sources_fall_back_to_store(stub_search: MagicMock) -> None:
 
     fake_store.distinct_sources.assert_called_once()
     sys_content = engine.calls[0]["messages"][0].content
-    assert "granola, slack" in sys_content
+    assert "notion, slack" in sys_content
 
 
 def test_available_sources_empty_message_when_nothing_connected(
@@ -493,7 +493,7 @@ def test_shape_results_for_model_respects_ref_offset() -> None:
     disambiguate ``[5]`` across calls — which breaks the renumbering pass
     that runs over the final synthesis.
     """
-    hits = [_mk_hit(title=f"t{i}", document_id=f"granola:{i}") for i in range(3)]
+    hits = [_mk_hit(title=f"t{i}", document_id=f"notion:{i}") for i in range(3)]
     shaped = shape_results_for_model(hits, ref_offset=20)
     refs = [h["ref"] for h in shaped["hits"]]
     assert refs == [21, 22, 23]
@@ -501,12 +501,12 @@ def test_shape_results_for_model_respects_ref_offset() -> None:
 
 def test_build_sources_for_client_respects_ref_offset() -> None:
     """``build_sources_for_client`` agrees with ``shape_results_for_model``."""
-    hits = [_mk_hit(title=f"t{i}", document_id=f"granola:{i}") for i in range(3)]
+    hits = [_mk_hit(title=f"t{i}", document_id=f"notion:{i}") for i in range(3)]
     sources = build_sources_for_client(hits, ref_offset=10)
     assert [s["ref"] for s in sources] == [11, 12, 13]
     # And the connector source is carried so the renumbered final list
-    # can show "Granola • Sprint Planning" style chips.
-    assert all(s["source"] == "granola" for s in sources)
+    # can show "Notion • Sprint Planning" style chips.
+    assert all(s["source"] == "notion" for s in sources)
 
 
 def test_renumber_citations_first_appearance_order() -> None:
@@ -572,8 +572,8 @@ def test_final_answer_event_carries_renumbered_sources(
     """
     # Two hits returned by the search. The synthesis cites the second one
     # twice and the first one once, in the order [2] [1] [2].
-    hit_a = _mk_hit(title="A", document_id="granola:a", url="https://a")
-    hit_b = _mk_hit(title="B", document_id="granola:b", url="https://b")
+    hit_a = _mk_hit(title="A", document_id="notion:a", url="https://a")
+    hit_b = _mk_hit(title="B", document_id="notion:b", url="https://b")
     stub_search.search.return_value = [hit_a, hit_b]
 
     engine = _MockEngine(
@@ -604,7 +604,7 @@ def test_final_answer_event_carries_renumbered_sources(
         model="mock",
         max_iterations=2,
         on_event=on_event,
-        available_sources=["granola"],
+        available_sources=["notion"],
     )
     result = agent.run("anything")
 

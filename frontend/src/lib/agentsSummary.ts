@@ -1,4 +1,4 @@
-export interface AgentState {
+interface AgentState {
   status: string;
 }
 

@@ -5,7 +5,7 @@
  * plain "Santander" first. The backend persists the match as `logo_key` on
  * create/rename; this copy exists only to show a live preview while typing.
  */
-export type LogoKey = 'santander' | 'santander_empresas' | 'c6' | 'caixa';
+type LogoKey = 'santander' | 'santander_empresas' | 'c6' | 'caixa';
 
 export function matchLogoKey(name: string): LogoKey | null {
   const n = (name || '').toLowerCase();

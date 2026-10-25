@@ -1,7 +1,7 @@
 /** Quick notes of each workspace, kept on this device, newest first. */
-export interface Note { id: string; text: string; at: string }
+interface Note { id: string; text: string; at: string }
 
-export type NoteStore = Record<string, Note[]>;
+type NoteStore = Record<string, Note[]>;
 
 const KEY = 'phibe-project-notes';
 const MAX = 50;

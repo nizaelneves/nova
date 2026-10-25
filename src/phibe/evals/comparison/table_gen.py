@@ -38,10 +38,6 @@ class MixedCommitError(TableGenError):
     """Raised when one (framework, model, benchmark) cell has multiple commits."""
 
 
-class NoResultsError(TableGenError):
-    """Raised when no valid summary files were loaded."""
-
-
 class _MetricStats(BaseModel):
     mean: float
     std: float
@@ -180,18 +176,10 @@ def _render_booktabs(
     return fragment, standalone
 
 
-T1_FRAMEWORKS_ORDER = [
-    "openclaw",
-    "hermes",
-    "phibe",
-    "phibe-distilled",
-]
-
-
 def _build_t1(frame: ResultsFrame) -> Tuple[str, str]:
     """T1: Portability triangulation.
 
-    Rows: 4 frameworks (in T1_FRAMEWORKS_ORDER).
+    Rows: 4 frameworks (openclaw, hermes, phibe, phibe-distilled).
     Cols: 8 benchmarks + Avg.
     Cells: accuracy mean (across all models in cell, weighted equally).
     """

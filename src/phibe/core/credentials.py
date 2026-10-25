@@ -51,29 +51,6 @@ TOOL_CREDENTIALS: dict[str, list[str]] = {
 }
 
 
-# Keys that unlock or upgrade a tool but are not prerequisites for it. Every
-# key in TOOL_CREDENTIALS is otherwise treated as required — by the Settings UI,
-# by ``phibe doctor``, and by anything else reading credential status — which
-# leaves no way to describe a tool that also works without one. ``web_search``
-# is the first such tool: the You.com keyless tier serves it with no key at all,
-# and both listed keys only raise limits or result quality.
-OPTIONAL_TOOL_CREDENTIALS: dict[str, frozenset[str]] = {
-    "anytype": frozenset({"ANYTYPE_URL", "ANYTYPE_API_VERSION"}),
-    "web_search": frozenset({"TAVILY_API_KEY", "YOUDOTCOM_API_KEY"}),
-}
-
-
-def is_credential_optional(tool_name: str, key: str) -> bool:
-    """Return whether ``key`` is an upgrade for ``tool_name`` rather than required."""
-    return key in OPTIONAL_TOOL_CREDENTIALS.get(tool_name, frozenset())
-
-
-def get_required_credentials(tool_name: str) -> list[str]:
-    """Return only the keys ``tool_name`` cannot run without."""
-    optional = OPTIONAL_TOOL_CREDENTIALS.get(tool_name, frozenset())
-    return [k for k in TOOL_CREDENTIALS.get(tool_name, []) if k not in optional]
-
-
 def load_credentials(path: Path | None = None) -> dict[str, dict[str, str]]:
     """Load credentials, preserving malformed input as a recoverable backup."""
     p = Path(path) if path else _default_path()
@@ -165,8 +142,7 @@ def delete_credential(
 def get_credential_status(tool_name: str) -> dict[str, bool]:
     """Return {KEY: bool} for each declared key indicating if set in env.
 
-    Includes optional keys; use :func:`is_credential_optional` to tell whether a
-    missing key actually blocks the tool.
+    Includes optional keys.
     """
     keys = TOOL_CREDENTIALS.get(tool_name, [])
     return {k: bool(os.environ.get(k)) for k in keys}

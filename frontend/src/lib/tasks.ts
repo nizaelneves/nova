@@ -25,7 +25,7 @@ export function isSameLocalDay(a: Date, b: Date): boolean {
 // List view grouping
 // ---------------------------------------------------------------------------
 
-export type ListBucket = 'overdue' | 'today' | 'tomorrow' | 'week' | 'later' | 'done';
+type ListBucket = 'overdue' | 'today' | 'tomorrow' | 'week' | 'later' | 'done';
 
 export const LIST_BUCKET_ORDER: ListBucket[] = ['overdue', 'today', 'tomorrow', 'week', 'later', 'done'];
 

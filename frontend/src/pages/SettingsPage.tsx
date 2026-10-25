@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router';
 import { shortcutFromEvent } from '../lib/shortcutKeys';
-import { Section, SettingRow } from '../components/settingsParts';
+import { Section, SettingRow, Switch } from '../components/settingsParts';
 import { YourData } from '../components/YourData';
 import { TerminalLine } from '../components/TerminalLine';
 import { summarizeSettings } from '../lib/settingsSummary';
@@ -12,128 +12,10 @@ import {
   setInferenceSource,
   isTauri,
   apiFetch,
-  fetchSyncSettings,
-  saveSyncSettings,
-  syncAllConnectors,
   type InferenceSource,
-  type SyncSettings,
 } from '../lib/api';
 import { toast } from 'sonner';
 import { Icon, type IconName } from '../components/Icon';
-
-const SYNC_INTERVALS = [5, 15, 30, 60, 180, 360, 720, 1440];
-
-function intervalLabel(minutes: number): string {
-  if (minutes === 0) return 'Only when Phibe starts';
-  if (minutes < 60) return `Every ${minutes} minutes`;
-  if (minutes === 60) return 'Every hour';
-  if (minutes % 60 === 0 && minutes < 1440) return `Every ${minutes / 60} hours`;
-  if (minutes === 1440) return 'Once a day';
-  return `Every ${minutes} minutes`;
-}
-
-function Switch({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      role="switch"
-      aria-checked={on}
-      aria-label={label}
-      className="set-switch"
-    >
-      <span />
-    </button>
-  );
-}
-
-/** How and when connected sources (Anytype and the others) are kept up to date. */
-function SyncSection({ onSaved }: { onSaved: () => void }) {
-  const [settings, setSettings] = useState<SyncSettings | null>(null);
-  const [syncing, setSyncing] = useState(false);
-
-  const reload = useCallback(() => {
-    fetchSyncSettings().then(setSettings).catch(() => setSettings(null));
-  }, []);
-  useEffect(reload, [reload]);
-
-  const change = async (changes: Partial<SyncSettings>) => {
-    try {
-      setSettings(await saveSyncSettings(changes));
-      onSaved();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save');
-      reload();
-    }
-  };
-
-  const syncNow = async () => {
-    setSyncing(true);
-    try {
-      await syncAllConnectors();
-      setTimeout(() => { reload(); setSyncing(false); }, 2500);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not start the sync');
-      setSyncing(false);
-    }
-  };
-
-  if (!settings) {
-    return (
-      <Section title="Synchronization">
-        <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
-      </Section>
-    );
-  }
-  const selectableIntervals = [0, ...SYNC_INTERVALS];
-  const intervals = selectableIntervals.includes(settings.interval_minutes)
-    ? selectableIntervals
-    : [...selectableIntervals, settings.interval_minutes].sort((a, b) => a - b);
-  return (
-    <Section title="Synchronization">
-      <SettingRow label="Automatic Sync" description="Works In The Background">
-        <Switch on={settings.auto_enabled} label="Automatic Sync" onClick={() => change({ auto_enabled: !settings.auto_enabled })} />
-      </SettingRow>
-      <SettingRow label="How Often">
-        <select
-          value={settings.interval_minutes}
-          disabled={!settings.auto_enabled}
-          onChange={(e) => change({ interval_minutes: parseInt(e.target.value, 10) })}
-          className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer disabled:opacity-50"
-          style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-        >
-          {intervals.map((m) => (
-            <option key={m} value={m}>{intervalLabel(m)}</option>
-          ))}
-        </select>
-      </SettingRow>
-      {settings.interval_minutes === 1440 && (
-        <SettingRow label="At What Time">
-          <input
-            type="time"
-            value={settings.daily_time}
-            disabled={!settings.auto_enabled}
-            onChange={(e) => { if (e.target.value) void change({ daily_time: e.target.value }); }}
-            className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer disabled:opacity-50"
-            style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
-          />
-        </SettingRow>
-      )}
-      <SettingRow label="" description="Sync Every Connected Source">
-        <button
-          type="button"
-          onClick={syncNow}
-          disabled={syncing}
-          className="flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-lg cursor-pointer disabled:opacity-60"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }}
-        >
-          <Icon name="refresh" size={14} className={syncing ? 'animate-spin' : undefined} />
-          {syncing ? 'Syncing…' : 'Sync Now'}
-        </button>
-      </SettingRow>
-    </Section>
-  );
-}
 
 /** Effects (background stars, the face animation) — picked here, applied on Save. */
 function AppearanceSection({
@@ -269,26 +151,34 @@ interface VoiceSettingsData {
 }
 
 const DEFAULT_VOICE_SHORTCUT = 'Ctrl+Alt+P';
+const VOICE_KEY = 'phibe-voice-settings';
+const VOICE_DEFAULTS: VoiceSettingsData = { shortcut: DEFAULT_VOICE_SHORTCUT, silence_secs: 7, countdown_secs: 5, custom_words: [], mic: null };
 const FIELD_STYLE: React.CSSProperties = { background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' };
 
-/** The global voice shortcut, microphone, silence timing and custom words (desktop app only). */
-function VoiceShortcutSection({ onSaved }: { onSaved: () => void }) {
+/** The global voice shortcut and the timing of its card as rows of the Voice card. In the browser the choices are only remembered here; the global shortcut itself exists in the desktop app. */
+function VoiceShortcutRows({ onSaved }: { onSaved: () => void }) {
   const [data, setData] = useState<VoiceSettingsData | null>(null);
-  const [mics, setMics] = useState<string[]>([]);
   const [recording, setRecording] = useState(false);
-  const [words, setWords] = useState('');
 
   useEffect(() => {
+    if (!isTauri()) {
+      try { setData({ ...VOICE_DEFAULTS, ...JSON.parse(localStorage.getItem(VOICE_KEY) ?? '{}') }); } catch { setData(VOICE_DEFAULTS); }
+      return;
+    }
     void (async () => {
       const { invoke } = await import('@tauri-apps/api/core');
       const current = await invoke<VoiceSettingsData>('voice_settings_get');
       setData(current);
-      setWords(current.custom_words.join('\n'));
-      setMics(await invoke<string[]>('voice_list_mics'));
     })().catch(() => setData(null));
   }, []);
 
   const save = useCallback(async (next: VoiceSettingsData) => {
+    if (!isTauri()) {
+      try { localStorage.setItem(VOICE_KEY, JSON.stringify(next)); } catch { /* kept until the page closes */ }
+      setData(next);
+      onSaved();
+      return;
+    }
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const kept = await invoke<VoiceSettingsData>('voice_settings_set', { next });
@@ -318,11 +208,10 @@ function VoiceShortcutSection({ onSaved }: { onSaved: () => void }) {
   }, [recording, data, save]);
 
   if (!data) return null;
-  const mic = data.mic && mics.includes(data.mic) ? data.mic : '';
 
   return (
-    <Section title="Global Voice">
-      <SettingRow label="Voice shortcut" description="Works from any app: press to talk, press again to send. Esc cancels.">
+    <>
+      <SettingRow label="Voice Shortcut">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -339,36 +228,17 @@ function VoiceShortcutSection({ onSaved }: { onSaved: () => void }) {
           )}
         </div>
       </SettingRow>
-      <SettingRow label="Microphone" description="The one Phibe listens to with the shortcut.">
-        <select value={mic} onChange={(e) => void save({ ...data, mic: e.target.value || null })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer max-w-[16rem]" style={FIELD_STYLE}>
-          <option value="">Windows default</option>
-          {mics.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
-      </SettingRow>
-      <SettingRow label="Silence before the countdown" description="How long Phibe waits when you stop talking.">
+      <SettingRow label="Silence Before Countdown">
         <select value={data.silence_secs} onChange={(e) => void save({ ...data, silence_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
           {[3, 5, 7, 10, 15, 20].map((s) => <option key={s} value={s}>{s} seconds</option>)}
         </select>
       </SettingRow>
-      <SettingRow label="Countdown" description="Then the card closes; what you said is kept as a draft.">
+      <SettingRow label="Countdown">
         <select value={data.countdown_secs} onChange={(e) => void save({ ...data, countdown_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
           {[3, 5, 8, 10].map((s) => <option key={s} value={s}>{s} seconds</option>)}
         </select>
       </SettingRow>
-      <div className="pt-3">
-        <div className="text-sm" style={{ color: 'var(--color-text)' }}>Custom words</div>
-        <div className="text-xs mt-0.5 mb-2" style={{ color: 'var(--color-text-tertiary)' }}>Names and brands Phibe should spell right, one per line.</div>
-        <textarea
-          value={words}
-          onChange={(e) => setWords(e.target.value)}
-          onBlur={() => void save({ ...data, custom_words: words.split('\n') })}
-          rows={4}
-          placeholder={'eKyte\nRed Shield'}
-          className="w-full text-sm px-3 py-2 rounded-lg outline-none"
-          style={FIELD_STYLE}
-        />
-      </div>
-    </Section>
+    </>
   );
 }
 
@@ -513,7 +383,7 @@ export function SettingsPage() {
 
           {/* Speech */}
           {tab === 'general' && (
-          <Section title="Speech">
+          <Section title="Voice">
             <SettingRow label="Speech-To-Text" description="Dictation">
               <button
                 onClick={() => { updateSettings({ speechEnabled: !settings.speechEnabled }); showSaved(); }}
@@ -543,14 +413,11 @@ export function SettingsPage() {
                 <option value="off">Never</option>
               </select>
             </SettingRow>
+            <VoiceShortcutRows onSaved={showSaved} />
             <GpuPackRow onSaved={showSaved} />
           </Section>
           )}
 
-          {tab === 'general' && isTauri() && <VoiceShortcutSection onSaved={showSaved} />}
-
-          {/* Synchronization */}
-          {tab === 'general' && <SyncSection onSaved={showSaved} />}
 
           {/* About */}
           {tab === 'about' && (

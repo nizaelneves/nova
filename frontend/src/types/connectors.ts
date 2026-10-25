@@ -266,23 +266,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
     ],
   },
   {
-    connector_id: 'granola',
-    display_name: 'Granola',
-    auth_type: 'oauth',
-    category: 'documents',
-    icon: 'Mic',
-    color: 'text-amber-400',
-    description: 'AI meeting notes',
-    unitLabel: 'meeting notes',
-    steps: [
-      { label: 'Open the Granola desktop app. Click the gear icon (Settings) in the bottom-left corner, then click "API"' },
-      { label: 'Click "Generate API Key" (or copy your existing key). Paste the key below' },
-    ],
-    inputFields: [
-      { name: 'token', placeholder: 'grn_...', type: 'password' },
-    ],
-  },
-  {
     connector_id: 'imessage',
     display_name: 'iMessage',
     auth_type: 'local',
@@ -398,40 +381,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
     ],
   },
   {
-    connector_id: 'gcontacts',
-    display_name: 'Google Contacts',
-    auth_type: 'oauth',
-    category: 'pim',
-    icon: 'Users',
-    color: 'text-blue-400',
-    description: 'People and contact info',
-    unitLabel: 'contacts',
-    steps: [
-      {
-        label: 'Go to Google Cloud Console → use the same project as Google Drive (or create a new one)',
-        url: 'https://console.cloud.google.com/projectcreate',
-        urlLabel: 'Open Console',
-      },
-      {
-        label: 'Enable the People API: click the link below, select your project, then click "Enable"',
-        url: 'https://console.cloud.google.com/apis/library/people.googleapis.com',
-        urlLabel: 'Enable People API',
-      },
-      {
-        label: 'Go to Credentials → "+ Create Credentials" → "OAuth client ID" → Application type: "Desktop app" → "Create". Copy the Client ID and Client Secret',
-        url: 'https://console.cloud.google.com/apis/credentials',
-        urlLabel: 'Open Credentials',
-      },
-      {
-        label: 'Paste the Client ID and Client Secret below',
-      },
-    ],
-    inputFields: [
-      { name: 'email', placeholder: 'Client ID', type: 'text' },
-      { name: 'password', placeholder: 'Client Secret', type: 'password' },
-    ],
-  },
-  {
     connector_id: 'apple_notes',
     display_name: 'Apple Notes',
     auth_type: 'local',
@@ -449,27 +398,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
       },
       {
         label: 'Toggle the switch ON next to each app you added. Close and reopen your terminal (or restart Phibe). Apple Notes will be detected automatically — no credentials needed',
-      },
-    ],
-  },
-  {
-    connector_id: 'apple_contacts',
-    display_name: 'Apple Contacts',
-    auth_type: 'local',
-    category: 'pim',
-    icon: 'Users',
-    color: 'text-orange-400',
-    description: 'macOS Contacts app',
-    unitLabel: 'contacts',
-    steps: [
-      {
-        label: 'Open the Apple menu () → System Settings → Privacy & Security (in the left sidebar) → scroll down and click "Full Disk Access"',
-      },
-      {
-        label: 'Click the "+" button at the bottom of the list. Navigate to Applications → Utilities → select "Terminal.app" (or iTerm2/Warp if you use those). If you\'re using the desktop app, also add "Phibe.app" from Applications',
-      },
-      {
-        label: 'Toggle the switch ON next to each app you added. Close and reopen your terminal (or restart Phibe). Apple Contacts will be detected automatically — no credentials needed',
       },
     ],
   },

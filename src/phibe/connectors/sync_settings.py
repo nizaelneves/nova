@@ -41,6 +41,10 @@ class SyncSettings:
     disabled_connectors: List[str] = field(default_factory=list)
     # Local time of day (HH:MM) used when the interval is "once a day".
     daily_time: str = "03:00"
+    # A source that keeps its own rhythm, in minutes, instead of the one above.
+    intervals: Dict[str, int] = field(default_factory=dict)
+    # Local time of day (HH:MM) for a source whose own rhythm is "once a day".
+    daily_times: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -83,8 +87,27 @@ def validate(data: Dict[str, Any]) -> SyncSettings:
     disabled = data.get("disabled_connectors", defaults.disabled_connectors)
     if not isinstance(disabled, list) or not all(isinstance(i, str) for i in disabled):
         raise SyncSettingsError("disabled_connectors must be a list of names")
+    own = data.get("intervals", defaults.intervals)
+    if not isinstance(own, dict) or not all(
+        isinstance(k, str)
+        and isinstance(v, int)
+        and not isinstance(v, bool)
+        and (v == ON_START_ONLY_MINUTES or MIN_INTERVAL_MINUTES <= v <= MAX_INTERVAL_MINUTES)
+        for k, v in own.items()
+    ):
+        raise SyncSettingsError(
+            f"intervals must map a source to {ON_START_ONLY_MINUTES} (only on start) or a "
+            f"whole number of minutes from {MIN_INTERVAL_MINUTES} to {MAX_INTERVAL_MINUTES}"
+        )
+    times = data.get("daily_times", defaults.daily_times)
+    if not isinstance(times, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) and _TIME_RE.match(v) for k, v in times.items()
+    ):
+        raise SyncSettingsError("daily_times must map a source to a time like 03:00")
     return SyncSettings(
         auto_enabled=data.get("auto_enabled", defaults.auto_enabled),
+        intervals=dict(sorted(own.items())),
+        daily_times=dict(sorted(times.items())),
         interval_minutes=interval,
         on_start=data.get("on_start", defaults.on_start),
         daily_time=daily_time,

@@ -117,11 +117,6 @@ class TestLoopGuard:
         system_count = sum(1 for m in result if getattr(m, "role", None) == "system")
         assert system_count == 1
 
-    def test_check_response_returns_unblocked(self):
-        guard, _ = self._make_guard()
-        v = guard.check_response("some content")
-        assert not v.blocked
-
     def test_disabled_loop_guard(self):
         from phibe.agents.loop_guard import LoopGuard, LoopGuardConfig
 

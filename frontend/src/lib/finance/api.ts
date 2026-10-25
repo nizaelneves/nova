@@ -2,7 +2,7 @@ import { apiFetch } from '../api';
 import type { Account, BankCard, Category, Goal, Overview, Range, Tx } from './model';
 
 /** An error from the finances API; `message` is the server's own explanation. */
-export class FinanceApiError extends Error {}
+class FinanceApiError extends Error {}
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await apiFetch(`/api/finances${path}`, init);
@@ -24,7 +24,7 @@ const send = (method: 'POST' | 'PUT', body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-export interface FinanceState {
+interface FinanceState {
   accounts: Account[];
   cards: BankCard[];
   categories: Category[];

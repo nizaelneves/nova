@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import secrets
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 from phibe.a2a.protocol import (
     A2AResponse,
@@ -152,17 +152,5 @@ class A2AServer:
             ).to_dict()
         task.state = TaskState.CANCELED
         return A2AResponse(result=task.to_dict(), request_id=req_id).to_dict()
-
-    def get_routes(self) -> List[Dict[str, Any]]:
-        """Return route definitions for mounting in a web framework."""
-        return [
-            {
-                "path": "/.well-known/agent.json",
-                "method": "GET",
-                "handler": "agent_card",
-            },
-            {"path": "/a2a/tasks", "method": "POST", "handler": "handle_request"},
-        ]
-
 
 __all__ = ["A2AServer"]

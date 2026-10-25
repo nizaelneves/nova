@@ -98,38 +98,3 @@ class VLLMStudentRunner:
             tokens_used=tokens,
             trace_id=f"distill_{session_id}_{hash(query) % 10000}",
         )
-
-
-def build_benchmark_samples_from_traces(
-    trace_store: Any,
-    *,
-    limit: int = 50,
-    min_feedback: float | None = None,
-) -> list:
-    """Build PersonalBenchmarkSample objects from the trace store.
-
-    Pulls recent traces (optionally filtered by feedback score) and
-    converts them into benchmark samples the teacher can reference.
-    """
-    from phibe.learning.optimize.personal.synthesizer import (
-        PersonalBenchmarkSample,
-    )
-
-    traces = trace_store.list_traces(limit=limit)
-    samples = []
-    for t in traces:
-        fb = getattr(t, "feedback", None)
-        if min_feedback is not None and (fb is None or fb < min_feedback):
-            continue
-        samples.append(
-            PersonalBenchmarkSample(
-                trace_id=t.trace_id,
-                query=t.query,
-                reference_answer=t.result[:2000] if t.result else "",
-                agent=t.agent,
-                category="benchmark",
-                feedback_score=fb if fb is not None else 0.0,
-            )
-        )
-    logger.info("Built %d benchmark samples from traces", len(samples))
-    return samples

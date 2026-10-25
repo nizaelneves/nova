@@ -93,7 +93,7 @@ export interface LineConfig {
  * Lives in its own context so cold consumers (Grid, YAxis, PatternArea, …)
  * can subscribe to the stable slice and skip re-rendering on every hover.
  */
-export interface ChartHoverContextValue {
+interface ChartHoverContextValue {
   // Tooltip state
   tooltipData: TooltipData | null;
   setTooltipData: Dispatch<SetStateAction<TooltipData | null>>;
@@ -117,7 +117,7 @@ export interface ChartHoverContextValue {
   setHoveredCandleIndex?: (index: number | null) => void;
 }
 
-export interface ChartContextValue extends ChartHoverContextValue {
+interface ChartContextValue extends ChartHoverContextValue {
   // Data
   data: Record<string, unknown>[];
   /** Decimated subset for SVG path rendering; equals `data` when no decimation is needed. */
@@ -222,7 +222,7 @@ export interface ChartContextValue extends ChartHoverContextValue {
  * (data, scales, dimensions, animation state, layout config). Consumers that
  * subscribe via `useChartStable()` skip re-renders on every mouse move.
  */
-export type ChartStableContextValue = Omit<
+type ChartStableContextValue = Omit<
   ChartContextValue,
   keyof ChartHoverContextValue
 >;
@@ -425,4 +425,3 @@ export function useChart(): ChartContextValue {
   return { ...stable, ...hover };
 }
 
-export default ChartStableContext;

@@ -35,7 +35,6 @@ import os
 import re
 import shutil
 import tempfile
-import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -172,14 +171,6 @@ def _parse_plan(text: str, n_workers: int):
 
 
 # ---------- Worker pool ----------
-
-
-def _vllm_alive(base_url: str) -> bool:
-    try:
-        with urllib.request.urlopen(base_url.rstrip("/") + "/models", timeout=3) as r:
-            return r.status == 200
-    except Exception:
-        return False
 
 
 def _default_pool(

@@ -13,7 +13,7 @@ import {
   LINE_LOADING_PULSE_EASE,
 } from "./line-loading-timing";
 
-export interface UseGridShimmerOptions {
+interface UseGridShimmerOptions {
   innerWidth: number;
   shimmer: boolean;
   shimmerLength: number;

@@ -348,20 +348,6 @@ class ApprovalStore:
             )
         self._conn.commit()
 
-    def clear_permission(self, permission_key: str) -> None:
-        self._conn.execute(
-            "DELETE FROM permission_memory WHERE permission_key = ?",
-            (permission_key,),
-        )
-        self._conn.commit()
-
-    def list_permissions(self) -> List[PermissionRule]:
-        rows = self._conn.execute(
-            "SELECT permission_key, decision, times_approved, times_denied, "
-            "last_updated, notes FROM permission_memory ORDER BY last_updated DESC"
-        ).fetchall()
-        return [PermissionRule.from_row(r) for r in rows]
-
     def get_seen_ids(self) -> set:
         """Return all doc_ids and message_ids previously queued (any status).
 

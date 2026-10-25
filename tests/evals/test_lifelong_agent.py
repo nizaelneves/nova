@@ -27,7 +27,6 @@ from phibe.evals.scorers.lifelong_agent_scorer import (
     _parse_text_answer,
     build_db,
     compare_tuple_lists,
-    extract_kg_answers,
     extract_sql,
     values_match,
 )
@@ -426,35 +425,6 @@ class TestScorerOS:
         # With Docker: ok=True/False, scorable=True
         if meta.get("scorable") is False:
             assert ok is None
-
-
-# ---------------------------------------------------------------------------
-# KG answer extraction
-# ---------------------------------------------------------------------------
-
-
-class TestExtractKGAnswers:
-    def test_entity_id(self) -> None:
-        assert extract_kg_answers("Final Answer: m.02h8b9t") == ["m.02h8b9t"]
-
-    def test_multiple(self) -> None:
-        result = extract_kg_answers("Final Answer: m.001, m.002")
-        assert set(result) == {"m.001", "m.002"}
-
-    def test_g_prefix(self) -> None:
-        result = extract_kg_answers("Final Answer: g.11b7n")
-        assert result == ["g.11b7n"]
-
-    def test_text_answer(self) -> None:
-        result = extract_kg_answers("Final Answer: New York City")
-        assert "New York City" in result
-
-    def test_no_final_answer(self) -> None:
-        result = extract_kg_answers("The answer is m.001")
-        assert "m.001" in result
-
-    def test_empty_text(self) -> None:
-        assert extract_kg_answers("") == []
 
 
 # ---------------------------------------------------------------------------
@@ -971,19 +941,6 @@ class TestRunnerEpisodeMode:
 
 
 class TestKGVariableReference:
-    def test_variable_ref_in_scorer(self) -> None:
-        """Scorer should handle Final Answer: #N format."""
-        # When a variable ref is given and entity IDs are elsewhere in text
-        result = extract_kg_answers(
-            "I found the answer.\nThe entity m.02h8b9t matches.\nFinal Answer: #2"
-        )
-        assert "m.02h8b9t" in result
-
-    def test_variable_ref_no_entities(self) -> None:
-        """Variable ref with no entity IDs should return the ref."""
-        result = extract_kg_answers("Final Answer: #3")
-        assert result == ["#_3"]
-
     def test_variable_ref_in_env(self) -> None:
         """KG environment should resolve variable references."""
         from phibe.evals.environments.lifelong_agent_env import KGEnvironment
@@ -1007,13 +964,6 @@ class TestKGVariableReference:
         assert done
 
         env.close()
-
-    def test_variable_ref_with_var_keyword(self) -> None:
-        """Should handle 'Final Answer: Variable #2' format."""
-        result = extract_kg_answers(
-            "Based on my analysis, m.001 is the answer.\nFinal Answer: Variable #2"
-        )
-        assert "m.001" in result
 
 
 # ---------------------------------------------------------------------------

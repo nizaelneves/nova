@@ -1589,14 +1589,14 @@ class DigestConfig:
     tts_backend: str = "cartesia"
     messages: DigestSectionConfig = field(
         default_factory=lambda: DigestSectionConfig(
-            sources=["gmail", "slack", "google_tasks"]
+            sources=["gmail", "slack"]
         )
     )
     calendar: DigestSectionConfig = field(
         default_factory=lambda: DigestSectionConfig(sources=["gcalendar"])
     )
     health: DigestSectionConfig = field(
-        default_factory=lambda: DigestSectionConfig(sources=["oura", "apple_health"])
+        default_factory=lambda: DigestSectionConfig(sources=[])
     )
     world: DigestSectionConfig = field(
         default_factory=lambda: DigestSectionConfig(sources=[])

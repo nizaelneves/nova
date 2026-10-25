@@ -1,6 +1,6 @@
 export type IndicatorFadeEdges = "both" | "none" | "top" | "bottom";
 
-export interface VerticalFadeSides {
+interface VerticalFadeSides {
   top: boolean;
   bottom: boolean;
   any: boolean;
@@ -21,7 +21,7 @@ export function resolveVerticalFadeSides(
   return { top: false, bottom: true, any: true };
 }
 
-export interface IndicatorFadeGradientStop {
+interface IndicatorFadeGradientStop {
   offset: string;
   opacity: number;
 }

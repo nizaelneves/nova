@@ -3,7 +3,7 @@ import type { MistState } from '../components/PhibeMist';
 /** How fast the mist moves: 1 is the usual pace; thinking stirs it up, listening a little. Smaller means faster. */
 export const paceOf = (state: MistState): number => (state === 'thinking' ? 0.55 : state === 'listening' ? 0.85 : 1);
 
-export interface Bar { x: number; h: number }
+interface Bar { x: number; h: number }
 
 const BAR_XS = Array.from({ length: 22 }, (_, i) => -104 + i * 9.5);
 /** A fixed, even-looking spread of phases so every bar moves on its own. */

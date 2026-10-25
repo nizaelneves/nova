@@ -33,7 +33,7 @@ export function resolveLineLoadingPulseMode(
   }
 }
 
-export interface LineLoadingPulseStrokeProps {
+interface LineLoadingPulseStrokeProps {
   pathD: string;
   mode?: LineLoadingPulseMode;
   /** Bumps to restart loop cycles without remounting the stroke. */
@@ -215,4 +215,3 @@ export function LineLoadingPulseStroke({
 
 LineLoadingPulseStroke.displayName = "LineLoadingPulseStroke";
 
-export default LineLoadingPulseStroke;

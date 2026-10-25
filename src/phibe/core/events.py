@@ -172,11 +172,6 @@ class EventBus:
         with self._lock:
             return list(self._history)
 
-    def clear_history(self) -> None:
-        """Discard all recorded events."""
-        with self._lock:
-            self._history.clear()
-
 
 # ---------------------------------------------------------------------------
 # Module-level singleton

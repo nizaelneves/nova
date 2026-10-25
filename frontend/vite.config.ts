@@ -18,6 +18,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // The app is used from localhost while it changes often; a cached copy of the UI only gets in the way.
+      selfDestroying: true,
       manifest: {
         name: 'Phibe',
         short_name: 'Phibe',

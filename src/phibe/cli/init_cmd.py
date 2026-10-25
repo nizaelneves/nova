@@ -483,19 +483,16 @@ honorific = "sir"
 tts_backend = "cartesia"
 voice_id = "c8f7835e-28a3-4f0c-80d7-c1302ac62aae"
 voice_speed = 1.2
-sections = ["health", "messages", "calendar", "world"]
-
-[digest.health]
-sources = ["oura"]
+sections = ["messages", "calendar", "world"]
 
 [digest.messages]
-sources = ["gmail", "google_tasks", "imessage"]
+sources = ["gmail", "imessage"]
 
 [digest.calendar]
 sources = ["gcalendar"]
 
 [digest.world]
-sources = ["hackernews", "news_rss"]
+sources = ["news_rss"]
 """
         target = DEFAULT_CONFIG_PATH
         existing = target.read_text(encoding="utf-8")

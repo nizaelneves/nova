@@ -10,6 +10,14 @@ export function Section({ title, children }: { title: string; children: ReactNod
 }
 
 
+export function Switch({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick} role="switch" aria-checked={on} aria-label={label} className="set-switch">
+      <span />
+    </button>
+  );
+}
+
 export function SettingRow({ label, description, children }: { label: string; description?: string; children: ReactNode }) {
   return (
     <div className="set-row">

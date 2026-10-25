@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getChatRetention, keptChats } from './chatRetention';
 import type {
   Conversation,
   ChatMessage,
@@ -17,7 +18,7 @@ import { isCliModel, isEmbedOnlyModel } from './model-capabilities';
 import { CLI_ENGINES_ENABLED } from './features';
 import { serializeToolCallArguments } from './tool-call';
 
-export interface CachedConnector {
+interface CachedConnector {
   connector_id: string;
   display_name: string;
   connected: boolean;
@@ -25,7 +26,7 @@ export interface CachedConnector {
   auth_type: string;
 }
 
-export interface AgentEvent {
+interface AgentEvent {
   type: string;
   timestamp: number;
   data: Record<string, unknown>;
@@ -85,7 +86,18 @@ function saveConversations(store: ConversationStore): void {
   localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(store));
 }
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+/** Drop chats older than *days* days (all of them when null), saving the rest. */
+function pruneStored(days: number | null, keepId: string | null): ConversationStore {
+  const store = loadConversations();
+  const kept = keptChats(store.conversations, days, keepId);
+  if (Object.keys(kept).length === Object.keys(store.conversations).length) return store;
+  store.conversations = kept;
+  if (store.activeId && !kept[store.activeId]) store.activeId = null;
+  saveConversations(store);
+  return store;
+}
+
+type ThemeMode = 'light' | 'dark' | 'system';
 
 interface Settings {
   theme: ThemeMode;
@@ -185,6 +197,8 @@ interface AppState {
   createConversation: (model?: string) => string;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
+  /** Remove chats older than *days* days, or all of them with null. */
+  pruneConversations: (days: number | null) => void;
   renameConversation: (id: string, title: string) => void;
   loadMessages: (conversationId: string | null) => void;
   addMessage: (conversationId: string, message: ChatMessage) => void;
@@ -249,7 +263,8 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => {
-  const initial = loadConversations();
+  const retention = getChatRetention();
+  const initial = retention > 0 ? pruneStored(retention, null) : loadConversations();
   const convList = Object.values(initial.conversations).sort(
     (a, b) => b.updatedAt - a.updatedAt,
   );
@@ -382,6 +397,17 @@ export const useAppStore = create<AppState>((set, get) => {
         conversations: convList,
         activeId: store.activeId,
         messages: activeConv ? activeConv.messages : [],
+      });
+    },
+
+    pruneConversations: (days: number | null) => {
+      const streaming = get().streamState;
+      const store = pruneStored(days, streaming.isStreaming ? streaming.conversationId : null);
+      const active = store.activeId ? store.conversations[store.activeId] : null;
+      set({
+        conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt),
+        activeId: store.activeId,
+        messages: active ? active.messages : [],
       });
     },
 

@@ -73,8 +73,8 @@ _K8S_DOCS = [
         author="",
     ),
     Document(
-        doc_id="granola-001",
-        source="granola",
+        doc_id="notion-001",
+        source="notion",
         doc_type="meeting_notes",
         content=(
             "Meeting notes: Sarah presented the Kubernetes migration plan."
@@ -211,7 +211,7 @@ def test_search_finds_cross_platform_data(tmp_path):
     content = tool_result.content
     sources_found = {
         label
-        for label in ("slack", "gmail", "gdrive", "granola", "gcalendar")
+        for label in ("slack", "gmail", "gdrive", "notion", "gcalendar")
         if f"[{label}]" in content
     }
 

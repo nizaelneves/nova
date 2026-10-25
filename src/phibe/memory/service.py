@@ -237,9 +237,6 @@ class MemoryService:
     def list_facts(self) -> List[Fact]:
         return self._store.list()
 
-    def clear_facts(self) -> int:
-        return self._store.clear()
-
     def fact_count(self) -> int:
         return self._store.count()
 

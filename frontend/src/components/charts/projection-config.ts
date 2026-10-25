@@ -13,7 +13,7 @@ import {
 } from "./projection-utils";
 import { normalizeYAxisId } from "./y-axis-scales";
 
-export interface ProjectionLineConfig {
+interface ProjectionLineConfig {
   yAxisId: string;
   data: ProjectionPoint[];
 }

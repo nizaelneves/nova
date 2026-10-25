@@ -95,7 +95,7 @@ export const EMPTY_OVERVIEW: Overview = {
 const pad = (n: number) => String(n).padStart(2, '0');
 export const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 export const parse = (s: string) => new Date(`${s}T00:00:00`);
-export const addDays = (s: string, n: number) => {
+const addDays = (s: string, n: number) => {
   const d = parse(s);
   d.setDate(d.getDate() + n);
   return iso(d);

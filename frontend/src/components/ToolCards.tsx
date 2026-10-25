@@ -9,7 +9,7 @@ const CATEGORY_ICON: Record<string, IconName> = {
 };
 
 /** "web_search" becomes "Web Search". */
-export const toolTitle = (name: string): string => name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const toolTitle = (name: string): string => name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** The keys of a tool the user has to add by hand (the cloud model keys live in the island). */
 const ownKeys = (t: ToolInfo): string[] => t.credential_keys.filter((k) => !CLOUD_KEYS.has(k));
@@ -18,7 +18,7 @@ const ownKeys = (t: ToolInfo): string[] => t.credential_keys.filter((k) => !CLOU
 export function ToolCards({ tools }: { tools: ToolInfo[] }) {
   return (
     <div className="ds-grid">
-      {tools.map((t) => {
+      {[...tools].sort((x, y) => toolTitle(x.name).localeCompare(toolTitle(y.name), undefined, { sensitivity: 'base' })).map((t) => {
         const keys = ownKeys(t);
         return (
           <div key={t.name} className="ds-card ds-tool" data-on={t.configured || undefined}>

@@ -7,7 +7,7 @@ const TICKER_ITEM_HEIGHT = 24;
 /** Full scroll stacks are skipped above this count — single label + instant updates. */
 const COMPACT_TICKER_THRESHOLD = 60;
 
-export interface DateTickerProps {
+interface DateTickerProps {
   currentIndex: number;
   labels: string[];
   visible: boolean;
@@ -147,4 +147,3 @@ export function DateTicker({ currentIndex, labels, visible }: DateTickerProps) {
 
 DateTicker.displayName = "DateTicker";
 
-export default DateTicker;

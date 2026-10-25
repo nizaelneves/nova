@@ -141,22 +141,16 @@ _CONFIG_STORE_PATHS: tuple[tuple[str, str, str, Status], ...] = (
 )
 
 PERSONAL_DIGEST_SOURCES = {
-    "apple_health",
     "dropbox",
     "gcalendar",
-    "gcontacts",
     "gdrive",
     "github",
     "gmail",
-    "google_tasks",
     "imessage",
     "notion",
     "obsidian",
-    "oura",
     "outlook",
     "slack",
-    "spotify",
-    "strava",
     "whatsapp",
 }
 
@@ -1521,11 +1515,6 @@ def _has_external_surface(config: Any | None, active_tools: set[str]) -> bool:
     ):
         return True
     return _has_cloud_api_surface(config, active_tools)
-
-
-def _has_cloud_or_api_surface(config: Any | None, active_tools: set[str]) -> bool:
-    """Backward-compatible alias for external-or-cloud surface detection."""
-    return _has_external_surface(config, active_tools)
 
 
 def _derive_verdict(findings: Iterable[DataBoundaryFinding]) -> str:

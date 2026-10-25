@@ -406,56 +406,6 @@ class TelemetryAggregator:
             per_engine=engine_stats,
         )
 
-    def per_batch_stats(
-        self,
-        *,
-        since: Optional[float] = None,
-        until: Optional[float] = None,
-        exclude_warmup: bool = False,
-    ) -> List[Dict[str, Any]]:
-        """Aggregate telemetry by batch_id.
-
-        Returns list of dicts with batch_id, total_requests, total_tokens,
-        total_energy_joules, energy_per_token_joules.
-        """
-        clauses: list[str] = ["batch_id != ''"]
-        params: list[Any] = []
-        if since is not None:
-            clauses.append("timestamp >= ?")
-            params.append(since)
-        if until is not None:
-            clauses.append("timestamp <= ?")
-            params.append(until)
-        if exclude_warmup:
-            clauses.append("is_warmup = 0")
-        where = " WHERE " + " AND ".join(clauses)
-
-        sql = (
-            "SELECT batch_id,"
-            " COUNT(*) AS total_requests,"
-            " SUM(prompt_tokens + completion_tokens) AS total_tokens,"
-            " SUM(energy_joules) AS total_energy_joules"
-            f" FROM telemetry{where}"
-            " GROUP BY batch_id ORDER BY total_requests DESC"
-        )
-        rows = self._conn.execute(sql, params).fetchall()
-        results: List[Dict[str, Any]] = []
-        for r in rows:
-            total_tokens = r["total_tokens"] or 0
-            total_energy = r["total_energy_joules"] or 0.0
-            results.append(
-                {
-                    "batch_id": r["batch_id"],
-                    "total_requests": r["total_requests"],
-                    "total_tokens": total_tokens,
-                    "total_energy_joules": total_energy,
-                    "energy_per_token_joules": (
-                        total_energy / total_tokens if total_tokens > 0 else 0.0
-                    ),
-                }
-            )
-        return results
-
     def export_records(
         self,
         *,

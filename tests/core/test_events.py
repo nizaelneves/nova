@@ -88,12 +88,6 @@ class TestEventBus:
         bus.publish(EventType.INFERENCE_START)
         assert len(bus.history) == 0
 
-    def test_clear_history(self) -> None:
-        bus = EventBus(record_history=True)
-        bus.publish(EventType.AGENT_TURN_START)
-        bus.clear_history()
-        assert len(bus.history) == 0
-
     def test_publish_returns_event(self) -> None:
         bus = EventBus()
         event = bus.publish(EventType.TELEMETRY_RECORD, {"k": "v"})

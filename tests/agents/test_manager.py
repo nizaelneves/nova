@@ -381,12 +381,6 @@ class TestMessageQueue:
         messages = manager.list_messages(agent["id"])
         assert messages[0]["status"] == "delivered"
 
-    def test_add_agent_response(self, manager):
-        agent = manager.create_agent(name="test", agent_type="simple")
-        manager.send_message(agent["id"], "What did you find?", mode="immediate")
-        resp = manager.add_agent_response(agent["id"], "Found 3 papers")
-        assert resp["direction"] == "agent_to_user"
-
     def test_store_agent_response_with_tool_calls(self, manager):
         """Tool calls captured during a turn must survive a list_messages
         round-trip so the UI can re-render them after a page reload."""

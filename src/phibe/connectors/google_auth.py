@@ -1,6 +1,6 @@
 """Shared Google OAuth helpers: access token read + one-shot 401 refresh.
 
-All Google connectors (Gmail, Calendar, Contacts, Drive, Tasks) authenticate
+All Google connectors (Gmail, Calendar, Drive) authenticate
 with the same OAuth flow and store identical token payloads at
 ``~/.phibe/connectors/*.json`` — typically a shared ``google.json`` file
 plus per-product copies. They all need the same refresh-on-401 behavior, so

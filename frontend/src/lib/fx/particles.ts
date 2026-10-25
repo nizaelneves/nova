@@ -35,7 +35,7 @@ export type ParticleMode = 'out' | 'in';
 export type Glyph = 'num' | 'px';
 
 /** Pixels sit on a grid this many px wide, like a dot-matrix. */
-export const PIXEL_GRID = 3;
+const PIXEL_GRID = 3;
 
 export interface Particle {
   mode: ParticleMode;
@@ -57,7 +57,7 @@ export interface Particle {
   size: number;
 }
 
-export interface Wind {
+interface Wind {
   /** Direction the dust drifts, in radians (0 = right, -PI/2 = up). */
   angle: number;
   /** Typical speed in px per second. */
@@ -65,7 +65,7 @@ export interface Wind {
 }
 
 /** Dust drifting to the right and a little upward, as in the "dissolving" references. */
-export const DEFAULT_WIND: Wind = { angle: -0.45, speed: 70 };
+const DEFAULT_WIND: Wind = { angle: -0.45, speed: 70 };
 
 const blank = (mode: ParticleMode): Particle => ({
   mode, glyph: 'num', value: 1, age: 0, life: 1, x: 0, y: 0, vx: 0, vy: 0, sx: 0, sy: 0, tx: 0, ty: 0, size: 9,
@@ -143,7 +143,7 @@ export function stepParticle(p: Particle, dt: number): void {
   }
 }
 
-export const isAlive = (p: Particle): boolean => p.age < p.life;
+const isAlive = (p: Particle): boolean => p.age < p.life;
 
 /** 0 to 1. Dust fades as it flies away; gathering numbers fade in, then melt into the surface. */
 export function alphaOf(p: Particle): number {

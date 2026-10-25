@@ -293,15 +293,6 @@ class TelemetryStore:
         if batch_full or stale:
             self._flush_unlocked()
 
-    def list_recent(self, limit: int = 50) -> list[dict[str, Any]]:
-        """Return recent telemetry rows as dictionaries."""
-        with self._lock:
-            self._flush_unlocked()
-            return self._select_dicts_unlocked(
-                "SELECT * FROM telemetry ORDER BY timestamp DESC LIMIT ?",
-                (limit,),
-            )
-
     def subscribe_to_bus(self, bus: EventBus) -> None:
         """Subscribe to ``TELEMETRY_RECORD`` events on *bus*."""
         with self._lock:
@@ -350,18 +341,6 @@ class TelemetryStore:
         with self._lock:
             self._flush_unlocked()
             return self._conn.execute(sql).fetchall()
-
-    def _select_dicts(self, sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
-        with self._lock:
-            self._flush_unlocked()
-            return self._select_dicts_unlocked(sql, params)
-
-    def _select_dicts_unlocked(
-        self, sql: str, params: tuple[Any, ...]
-    ) -> list[dict[str, Any]]:
-        cur = self._conn.execute(sql, params)
-        columns = [desc[0] for desc in cur.description]
-        return [dict(zip(columns, row)) for row in cur.fetchall()]
 
 
 __all__ = ["TelemetryStore"]

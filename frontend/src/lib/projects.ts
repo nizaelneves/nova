@@ -28,7 +28,7 @@ export function summarize(tasks: Task[], now: Date): string {
   return `${open.length} open ${open.length === 1 ? 'task' : 'tasks'}, ${overdue} overdue and ${today} due today. Next up: ${next.title}.`;
 }
 
-export type Counters = { open: number; openToday: number; done: number; doneWeek: number; overdue: number };
+type Counters = { open: number; openToday: number; done: number; doneWeek: number; overdue: number };
 
 /** The numbers on top of the Projects home: what is open, what is done, what is late, and the recent change in each. */
 export function counters(tasks: Task[], now: Date): Counters {

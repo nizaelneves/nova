@@ -14,7 +14,7 @@ import {
 // biome-ignore lint/suspicious/noExplicitAny: d3 curve factory type
 type CurveFactory = any;
 
-export interface UseAnimatedSeriesPathOptions {
+interface UseAnimatedSeriesPathOptions {
   renderData: Record<string, unknown>[];
   xAccessor: (datum: Record<string, unknown>) => Date;
   xScale: (value: Date) => number | undefined;

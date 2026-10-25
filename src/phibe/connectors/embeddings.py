@@ -13,7 +13,7 @@ so ingestion never fails because a sidecar service is down.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import requests
 
@@ -129,15 +129,6 @@ class OllamaEmbedder:
             )
             return None
         return arr.tobytes()
-
-    def embed_batch(self, texts: List[str]) -> List[Optional[bytes]]:
-        """Embed a list of strings sequentially.
-
-        Ollama's HTTP API serves one prompt per call; on the same host the
-        round-trip overhead is negligible relative to model inference.
-        """
-        return [self.embed(t) for t in texts]
-
 
 # ---------------------------------------------------------------------------
 # Deserialisation helper (used by verification + future retrieval code)

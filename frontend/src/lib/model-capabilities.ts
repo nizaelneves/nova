@@ -58,9 +58,9 @@ export const EFFORT_LABELS: Record<EffortLevel, string> = {
 
 // ── How well a model can "Think" (reason step by step) ──────────────────
 
-export type ThinkLevel = 'strong' | 'good' | 'basic' | 'none' | 'unknown';
+type ThinkLevel = 'strong' | 'good' | 'basic' | 'none' | 'unknown';
 
-export interface ThinkSupport {
+interface ThinkSupport {
   level: ThinkLevel;
   label: string;
   hint: string;

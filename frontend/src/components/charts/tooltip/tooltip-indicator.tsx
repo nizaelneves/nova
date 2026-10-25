@@ -10,14 +10,14 @@ import {
   resolveVerticalFadeSides,
 } from "../indicator-fade";
 
-export type IndicatorWidth =
+type IndicatorWidth =
   | number // Pixel width
   | "line" // 1px line (default)
   | "thin" // 2px
   | "medium" // 4px
   | "thick"; // 8px
 
-export interface TooltipIndicatorProps {
+interface TooltipIndicatorProps {
   /** X position in pixels (center of the indicator) */
   x: number;
   /** Height of the indicator */
@@ -208,4 +208,3 @@ function TooltipIndicatorInner({
 
 TooltipIndicator.displayName = "TooltipIndicator";
 
-export default TooltipIndicator;

@@ -10,7 +10,7 @@ import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 
 const X_AXIS_POSITION_TWEEN_MS = DEFAULT_Y_DOMAIN_TWEEN_MS;
 
-export interface XAxisProps {
+interface XAxisProps {
   /** Number of ticks to show (including first and last). Default: 5. */
   numTicks?: number;
   /** Width of the date ticker box for fade calculation. Default: 50 */
@@ -312,7 +312,7 @@ function isBetterTickLayout(
  * Picks tick indices with the most even on-screen spacing. Tries
  * `targetCount ± 1` and evaluates every gap layout when feasible.
  */
-export function selectEvenlySpacedIndices(
+function selectEvenlySpacedIndices(
   length: number,
   targetCount: number,
   options?: {
@@ -664,4 +664,3 @@ const XAxisInner = memo(function XAxisInner({
 
 XAxis.displayName = "XAxis";
 
-export default XAxis;

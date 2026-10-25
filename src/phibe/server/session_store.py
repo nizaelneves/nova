@@ -8,7 +8,7 @@ import sqlite3
 import threading
 from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from phibe.core.paths import get_config_dir
 
@@ -172,28 +172,6 @@ class SessionStore:
     @_db_locked
     def clear_pending_response(self, sender_id: str, channel_type: str) -> None:
         self.set_pending_response(sender_id, channel_type, None)
-
-    @_db_locked
-    def expire_sessions(self, max_age_hours: int = 24) -> int:
-        cur = self._db.execute(
-            "UPDATE channel_sessions "
-            "SET conversation_history = '[]', "
-            "pending_response = NULL "
-            "WHERE updated_at < datetime('now', ? || ' hours')",
-            (f"-{max_age_hours}",),
-        )
-        self._db.commit()
-        return cur.rowcount
-
-    @_db_locked
-    def get_last_active_channel(self, sender_id: str) -> Optional[str]:
-        row = self._db.execute(
-            "SELECT channel_type FROM channel_sessions "
-            "WHERE sender_id = ? "
-            "ORDER BY updated_at DESC LIMIT 1",
-            (sender_id,),
-        ).fetchone()
-        return row["channel_type"] if row else None
 
     @_db_locked
     def get_notification_targets(self) -> List[Dict[str, str]]:

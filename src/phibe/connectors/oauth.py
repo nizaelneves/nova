@@ -1,7 +1,7 @@
 """Shared OAuth 2.0 helpers for all connectors.
 
 Provides:
-- ``OAuthProvider`` registry with configs for Google, Strava, Spotify
+- ``OAuthProvider`` registry with configs for Google
 - Generic ``run_connector_oauth()`` that opens browser + catches callback
 - URL builder, token persistence, and token cleanup utilities
 """
@@ -34,7 +34,7 @@ _CONNECTORS_DIR = DEFAULT_CONFIG_DIR / "connectors"
 class OAuthProvider:
     """Configuration for an OAuth 2.0 provider."""
 
-    name: str  # "google", "strava", "spotify"
+    name: str  # "google"
     display_name: str
     auth_endpoint: str
     token_endpoint: str
@@ -53,7 +53,7 @@ class OAuthProvider:
 
 
 # Combined scopes for all Google connectors so a single OAuth consent
-# authorises Drive, Calendar, Contacts, Gmail, and Tasks at once.
+# authorises Drive, Calendar and Gmail at once.
 GOOGLE_ALL_SCOPES: List[str] = [
     "openid",
     "email",
@@ -61,11 +61,9 @@ GOOGLE_ALL_SCOPES: List[str] = [
     "https://www.googleapis.com/auth/drive.readonly",
     # calendar (not .readonly) so the proactive agent can accept/decline events.
     "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/contacts.readonly",
     # gmail.modify (a superset of gmail.readonly) so the proactive agent
     # can trash and label-modify (archive) emails after user approval.
     "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/tasks.readonly",
 ]
 
 OAUTH_PROVIDERS: Dict[str, OAuthProvider] = {
@@ -81,42 +79,14 @@ OAUTH_PROVIDERS: Dict[str, OAuthProvider] = {
         connector_ids=(
             "gdrive",
             "gcalendar",
-            "gcontacts",
             "gmail",
-            "google_tasks",
         ),
         credential_files=(
             "google.json",
             "gdrive.json",
             "gcalendar.json",
-            "gcontacts.json",
             "gmail.json",
-            "google_tasks.json",
         ),
-    ),
-    "strava": OAuthProvider(
-        name="strava",
-        display_name="Strava",
-        auth_endpoint="https://www.strava.com/oauth/authorize",
-        token_endpoint="https://www.strava.com/oauth/token",
-        scopes=["activity:read_all"],
-        setup_url="https://www.strava.com/settings/api",
-        setup_hint="Create an API Application (callback domain: localhost)",
-        connector_ids=("strava",),
-        credential_files=("strava.json",),
-    ),
-    "spotify": OAuthProvider(
-        name="spotify",
-        display_name="Spotify",
-        auth_endpoint="https://accounts.spotify.com/authorize",
-        token_endpoint="https://accounts.spotify.com/api/token",
-        scopes=["user-read-recently-played"],
-        setup_url="https://developer.spotify.com/dashboard",
-        setup_hint=("Create an app, add redirect URI: http://127.0.0.1:8888/callback"),
-        callback_port=8888,
-        token_auth="basic",
-        connector_ids=("spotify",),
-        credential_files=("spotify.json",),
     ),
 }
 
@@ -391,160 +361,6 @@ def exchange_google_token(
     resp.raise_for_status()
     tokens = resp.json()
     require_access_token(tokens)
-    return tokens
-
-
-def run_oauth_flow(
-    client_id: str,
-    client_secret: str,
-    scopes: List[str],
-    credentials_path: str,
-    redirect_uri: str = _DEFAULT_REDIRECT_URI,
-) -> Dict[str, Any]:
-    """Run the full OAuth flow: browser consent, callback, token exchange.
-
-    Steps:
-
-    1. Build consent URL
-    2. Start localhost callback server
-    3. Open browser to consent URL
-    4. Wait for Google to redirect with ``?code=...``
-    5. Exchange code for ``access_token`` + ``refresh_token``
-    6. Save tokens to *credentials_path*
-    7. Return the tokens dict
-
-    Parameters
-    ----------
-    client_id:
-        OAuth 2.0 client ID.
-    client_secret:
-        OAuth 2.0 client secret.
-    scopes:
-        List of OAuth scopes to request.
-    credentials_path:
-        Where to persist the resulting tokens.
-    redirect_uri:
-        Local callback URI.  Defaults to ``http://localhost:8789/callback``.
-
-    Returns
-    -------
-    dict
-        Token response from Google (``access_token``, ``refresh_token``, etc.).
-
-    Raises
-    ------
-    RuntimeError
-        If the user denies authorization or the callback times out.
-    """
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-    from urllib.parse import parse_qs, urlparse
-
-    auth_url = build_google_auth_url(
-        client_id=client_id,
-        redirect_uri=redirect_uri,
-        scopes=scopes,
-    )
-
-    # Mutable containers used by the callback handler closure.
-    auth_code: List[str] = []
-    error: List[str] = []
-
-    class _CallbackHandler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802 — required override name
-            parsed = urlparse(self.path)
-            params = parse_qs(parsed.query)
-
-            if "code" in params:
-                auth_code.append(params["code"][0])
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.end_headers()
-                self.wfile.write(
-                    b"<html><body><h2>Authorization successful!</h2>"
-                    b"<p>You can close this tab and return to Phibe.</p>"
-                    b"</body></html>"
-                )
-            elif "error" in params:
-                error.append(params["error"][0])
-                self.send_response(400)
-                self.send_header("Content-Type", "text/html")
-                self.end_headers()
-                self.wfile.write(
-                    b"<html><body><h2>Authorization failed</h2>"
-                    b"<p>Please try again.</p></body></html>"
-                )
-            else:
-                self.send_response(400)
-                self.end_headers()
-
-        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
-            pass  # Suppress HTTP request logs
-
-    # Parse port from redirect_uri
-    port = int(urlparse(redirect_uri).port or 8789)
-
-    # Kill any stale listener on the port before starting
-    import socket
-
-    test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        test_sock.bind(("127.0.0.1", port))
-        test_sock.close()
-    except OSError:
-        # Port in use — try to free it
-        test_sock.close()
-        import subprocess
-
-        subprocess.run(
-            ["lsof", "-t", "-i", f":{port}"],
-            capture_output=True,
-        )
-        # Wait briefly and retry
-        import time
-
-        time.sleep(1)
-
-    server = HTTPServer(("127.0.0.1", port), _CallbackHandler)
-    server.timeout = 120  # 2 minute timeout
-
-    # Open the consent page in the user's default browser
-    open_browser(auth_url)
-
-    # Wait for the callback (blocking, with per-request timeout)
-    while not auth_code and not error:
-        server.handle_request()
-
-    server.server_close()
-
-    if error:
-        raise RuntimeError(f"OAuth authorization failed: {error[0]}")
-    if not auth_code:
-        raise RuntimeError("OAuth authorization timed out")
-
-    # Exchange the authorization code for tokens
-    tokens = exchange_google_token(
-        code=auth_code[0],
-        client_id=client_id,
-        client_secret=client_secret,
-        redirect_uri=redirect_uri,
-    )
-
-    # Persist tokens together with client credentials (needed for refresh)
-    token_payload = {
-        "access_token": tokens.get("access_token", ""),
-        "refresh_token": tokens.get("refresh_token", ""),
-        "token_type": tokens.get("token_type", "Bearer"),
-        "expires_in": tokens.get("expires_in", 3600),
-        "client_id": client_id,
-        "client_secret": client_secret,
-    }
-    save_tokens(credentials_path, token_payload)
-
-    # Also save to the shared Google credentials file so that all Google
-    # connectors can use this token without a separate OAuth flow.
-    if credentials_path != _SHARED_GOOGLE_CREDENTIALS_PATH:
-        save_tokens(_SHARED_GOOGLE_CREDENTIALS_PATH, token_payload)
-
     return tokens
 
 

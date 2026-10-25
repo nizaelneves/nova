@@ -35,7 +35,7 @@ export function labelOf(p: PullProgress): string {
 
 export const sizeText = (bytes: number): string => (bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(0, Math.round(bytes / 1e6))} MB`);
 
-export type PullResult = { result: 'done' } | { result: 'cancelled' } | { result: 'error'; message: string };
+type PullResult = { result: 'done' } | { result: 'cancelled' } | { result: 'error'; message: string };
 
 interface PullState {
   /** The model being downloaded, or null. One download at a time. */

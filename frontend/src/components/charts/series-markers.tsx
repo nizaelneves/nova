@@ -16,7 +16,7 @@ import {
   StaticSeriesPointMarker,
 } from "./series-point-marker";
 
-export interface SeriesMarkersProps extends SeriesPointMarkerStyle {
+interface SeriesMarkersProps extends SeriesPointMarkerStyle {
   dataKey: string;
   /** Marker fill color. Defaults to series stroke or chart palette color. */
   fill?: string;
@@ -291,4 +291,3 @@ function SeriesMarkersActiveHighlight({
   );
 }
 
-export default SeriesMarkers;

@@ -17,7 +17,7 @@ def store(tmp_path: Path) -> KnowledgeStore:
     ks.store(
         "Hello from Alice again", source="imessage", author="Alice", doc_type="message"
     )
-    ks.store("Meeting notes Q1", source="granola", author="Bob", doc_type="document")
+    ks.store("Meeting notes Q1", source="notion", author="Bob", doc_type="document")
     ks.store("Email about Spain trip", source="gmail", author="Carol", doc_type="email")
     return ks
 

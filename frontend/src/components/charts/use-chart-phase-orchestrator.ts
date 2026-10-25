@@ -7,7 +7,7 @@ import {
   resolveRestingChartPhase,
 } from "./chart-phase";
 
-export interface UseChartPhaseOrchestratorOptions {
+interface UseChartPhaseOrchestratorOptions {
   chartStatus: ChartStatus;
   targetData: Record<string, unknown>[];
   skeletonData: Record<string, unknown>[];

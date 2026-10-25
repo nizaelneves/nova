@@ -18,13 +18,11 @@ from phibe.tools._stubs import BaseTool, ToolSpec
 # ---------------------------------------------------------------------------
 
 _SECTION_ORDER: List[tuple] = [
-    ("HEALTH", {"oura", "apple_health", "strava"}),
     (
         "MESSAGES",
         {
             "gmail",
             "gmail_imap",
-            "google_tasks",
             "slack",
             "imessage",
             "whatsapp",
@@ -34,8 +32,7 @@ _SECTION_ORDER: List[tuple] = [
         },
     ),
     ("CALENDAR", {"gcalendar"}),
-    ("WORLD", {"weather", "hackernews", "news_rss"}),
-    ("MUSIC", {"spotify", "apple_music"}),
+    ("WORLD", {"weather", "news_rss"}),
 ]
 
 _CONNECTOR_TO_SECTION: Dict[str, str] = {}
@@ -47,18 +44,6 @@ for _section_name, _ids in _SECTION_ORDER:
 # ---------------------------------------------------------------------------
 # Per-connector human-readable formatters
 # ---------------------------------------------------------------------------
-
-
-def _format_duration(seconds: float) -> str:
-    """Format seconds as 'Xh Ym'."""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    parts = []
-    if hours:
-        parts.append(f"{hours}h")
-    if minutes or not parts:
-        parts.append(f"{minutes}m")
-    return " ".join(parts)
 
 
 def _time_ago(ts: datetime) -> str:
@@ -77,11 +62,6 @@ def _time_ago(ts: datetime) -> str:
     return f"{days}d ago"
 
 
-def _format_date(ts: datetime) -> str:
-    """Format a datetime as 'April 1' style."""
-    return ts.strftime("%B %-d") if hasattr(ts, "strftime") else str(ts)
-
-
 def _format_time(ts: datetime) -> str:
     """Format a datetime as '10:30 AM' style."""
     return ts.strftime("%-I:%M %p") if hasattr(ts, "strftime") else str(ts)
@@ -93,68 +73,6 @@ def _parse_content_json(doc: Document) -> Dict[str, Any]:
         return json.loads(doc.content)
     except (json.JSONDecodeError, TypeError):
         return {}
-
-
-def _format_oura(doc: Document) -> str:
-    """Format an Oura Ring document into a readable line."""
-    data = _parse_content_json(doc)
-    data_type = doc.metadata.get("data_type", "")
-    day = doc.metadata.get("day", "")
-    day_str = day or _format_date(doc.timestamp)
-
-    if data_type == "sleep":
-        hr = data.get("average_heart_rate", "?")
-        hrv = data.get("average_hrv", data.get("average_heart_rate_variability", "?"))
-        total = data.get("total_sleep_duration")
-        awake = data.get("awake_time")
-        score = data.get("score")
-        parts = []
-        if score is not None:
-            parts.append(f"score {score}")
-        parts.append(f"avg HR {hr} bpm")
-        if hrv != "?":
-            parts.append(f"HRV {hrv}")
-        if total is not None:
-            parts.append(f"{_format_duration(total)} total sleep")
-        if awake is not None:
-            parts.append(f"awake {_format_duration(awake)}")
-        return f"[oura] Sleep — {day_str}: {', '.join(parts)}"
-
-    if data_type == "daily_readiness":
-        score = data.get("score", "?")
-        temp = data.get(
-            "temperature_deviation",
-            data.get("temperature_trend_deviation"),
-        )
-        line = f"[oura] Readiness — {day_str}: score {score}"
-        if temp is not None:
-            sign = "+" if temp >= 0 else ""
-            line += f", temperature deviation {sign}{temp}"
-        return line
-
-    if data_type == "daily_activity":
-        steps = data.get("steps", "?")
-        cal = data.get("total_calories", data.get("active_calories", "?"))
-        score = data.get("score")
-        parts = []
-        if score is not None:
-            parts.append(f"score {score}")
-        parts.append(f"steps {steps}")
-        parts.append(f"calories {cal}")
-        return f"[oura] Activity — {day_str}: {', '.join(parts)}"
-
-    # Fallback for unknown Oura doc types
-    return f"[oura] {doc.title}"
-
-
-def _format_apple_health(doc: Document) -> str:
-    """Format an Apple Health document."""
-    return f"[apple_health] {doc.title}"
-
-
-def _format_strava(doc: Document) -> str:
-    """Format a Strava activity document."""
-    return f"[strava] {doc.title}"
 
 
 def _format_gmail(doc: Document) -> str:
@@ -180,22 +98,6 @@ def _format_gmail_imap(doc: Document) -> str:
     subject = doc.title or "(no subject)"
     ago = _time_ago(doc.timestamp)
     return f'[gmail id={doc.doc_id}] From: {sender} — "{subject}" ({ago})'
-
-
-def _format_google_tasks(doc: Document) -> str:
-    """Format a Google Tasks document."""
-    title = doc.title or "Untitled Task"
-    status = doc.metadata.get("status", "")
-    due = doc.metadata.get("due", "")
-    parts = [f"[google_tasks] {title}"]
-    extras = []
-    if due:
-        extras.append(f"due {due}")
-    if status == "completed":
-        extras.append("completed")
-    if extras:
-        parts.append(f"({', '.join(extras)})")
-    return " ".join(parts)
 
 
 def _format_slack(doc: Document) -> str:
@@ -279,18 +181,6 @@ def _format_gcalendar(doc: Document) -> str:
     return f"[gcalendar id={doc.doc_id}] {time_str} — {title}{time_range}"
 
 
-def _format_spotify(doc: Document) -> str:
-    """Format a Spotify recently-played track — returns 'Track — Artist'."""
-    # doc.title is already "Track — Artist" from the connector
-    return doc.title
-
-
-def _format_apple_music(doc: Document) -> str:
-    """Format an Apple Music track — returns 'Track — Artist'."""
-    # doc.title is already "Track — Artist" from the connector
-    return doc.title
-
-
 def _format_weather(doc: Document) -> str:
     """Format a weather document."""
     data = _parse_content_json(doc)
@@ -315,13 +205,6 @@ def _format_github_notifications(doc: Document) -> str:
     return f"[github] {title}{repo_str}{reason_str} ({ago})"
 
 
-def _format_hackernews(doc: Document) -> str:
-    """Format a Hacker News story."""
-    score = doc.metadata.get("score", "?")
-    comments = doc.metadata.get("descendants", "?")
-    return f"[hackernews] {doc.title} (score {score}, {comments} comments)"
-
-
 def _format_news_rss(doc: Document) -> str:
     """Format an RSS news item."""
     feed_name = doc.metadata.get("feed_name", "")
@@ -335,12 +218,8 @@ def _format_news_rss(doc: Document) -> str:
 
 # Map connector IDs to their formatting functions
 _FORMATTERS: Dict[str, Any] = {
-    "oura": _format_oura,
-    "apple_health": _format_apple_health,
-    "strava": _format_strava,
     "gmail": _format_gmail,
     "gmail_imap": _format_gmail_imap,
-    "google_tasks": _format_google_tasks,
     "slack": _format_slack,
     "imessage": _format_imessage,
     "whatsapp": _format_whatsapp,
@@ -349,10 +228,7 @@ _FORMATTERS: Dict[str, Any] = {
     "gcalendar": _format_gcalendar,
     "weather": _format_weather,
     "github_notifications": _format_github_notifications,
-    "hackernews": _format_hackernews,
     "news_rss": _format_news_rss,
-    "spotify": _format_spotify,
-    "apple_music": _format_apple_music,
 }
 
 
@@ -366,24 +242,6 @@ def _format_doc(source: str, doc: Document) -> str:
             pass
     # Fallback: connector name + title
     return f"[{source}] {doc.title}"
-
-
-def _format_music_section(
-    collected_docs: Dict[str, List[Document]],
-    music_connectors: set,
-) -> List[str]:
-    """Format music connectors as grouped lists instead of per-track lines."""
-    lines: List[str] = []
-    for source in sorted(music_connectors):
-        docs = collected_docs.get(source, [])
-        if not docs:
-            continue
-        tracks = []
-        for doc in docs:
-            tracks.append(doc.title)
-        label = "Recently played" if source == "spotify" else "Library"
-        lines.append(f"[{source}] {label}: {', '.join(tracks)}")
-    return lines
 
 
 def _filter_unanswered_threads(docs: List[Document]) -> List[Document]:
@@ -444,7 +302,7 @@ class DigestCollectTool(BaseTool):
                         "items": {"type": "string"},
                         "description": (
                             "List of connector IDs to fetch from "
-                            "(e.g., ['gmail', 'oura', 'gcalendar'])."
+                            "(e.g., ['gmail', 'slack', 'gcalendar'])."
                         ),
                     },
                     "hours_back": {
@@ -535,15 +393,9 @@ class DigestCollectTool(BaseTool):
 
             section_lines: List[str] = []
 
-            if section_name == "MUSIC":
-                # Music gets special grouped formatting
-                section_lines = _format_music_section(
-                    collected_docs, section_connectors
-                )
-            else:
-                for source in section_sources:
-                    for doc in collected_docs[source]:
-                        section_lines.append(_format_doc(source, doc))
+            for source in section_sources:
+                for doc in collected_docs[source]:
+                    section_lines.append(_format_doc(source, doc))
 
             if section_lines:
                 summary_parts.append(f"=== {section_name} ===")

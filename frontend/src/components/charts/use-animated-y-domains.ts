@@ -110,7 +110,7 @@ function tweenDomains({
   return control;
 }
 
-export interface UseAnimatedYDomainsOptions {
+interface UseAnimatedYDomainsOptions {
   enabled: boolean;
   durationMs: number;
   chartPhase: ChartPhase;

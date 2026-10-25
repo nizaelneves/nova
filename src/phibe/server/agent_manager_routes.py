@@ -12,10 +12,7 @@ from phibe.agents.tool_resolver import (
     BROWSER_SUB_TOOLS as _BROWSER_SUB_TOOLS,
 )
 from phibe.agents.tool_resolver import (
-    build_deep_research_tools,
-    instantiate_registered_tool,
     resolve_agent_tools,
-    resolve_tool_specs,
 )
 from phibe.agents.tool_resolver import (
     ensure_registries_populated as _ensure_registries_populated,
@@ -113,11 +110,6 @@ class SendMessageRequest(BaseModel):
     content: str
     mode: str = "queued"
     stream: bool = False  # SSE streaming mode
-
-
-class FeedbackRequest(BaseModel):
-    score: float
-    reason: Optional[str] = None
 
 
 def _resolve_memory_backend(config: Any) -> Any:
@@ -470,12 +462,6 @@ def build_tools_list() -> List[Dict[str, Any]]:
     return items
 
 
-def _resolve_tool_specs(tool_config: Any) -> List[Dict[str, Any]]:
-    """Compatibility wrapper for callers of the former route-local helper."""
-
-    return resolve_tool_specs(tool_config)
-
-
 # Per-agent sampler params forwarded to the engine when present in config.
 # The OpenAI-compat engine passes **kwargs straight through to the upstream
 # payload, so these reach local servers (vLLM / mlx_lm / etc.) that support
@@ -577,45 +563,6 @@ def _replay_history_messages(
                     Message(role=Role.ASSISTANT, content=m.get("content") or "")
                 )
     return messages
-
-
-def _instantiate_managed_tool(
-    tool_cls: Any,
-    name: str,
-    *,
-    engine: Any,
-    model: str,
-    app_state: Any,
-) -> Any:
-    """Compatibility adapter for tests and non-managed route callers."""
-
-    memory_backend = _get_or_create_memory_backend(
-        app_state,
-        getattr(app_state, "config", None) if app_state is not None else None,
-    )
-    channel_backend = None
-    if app_state is not None:
-        channel_backend = getattr(app_state, "channel_backend", None) or getattr(
-            app_state, "channel_bridge", None
-        )
-    return instantiate_registered_tool(
-        tool_cls,
-        name,
-        engine=engine,
-        model=model,
-        memory_backend=memory_backend,
-        channel_backend=channel_backend,
-    )
-
-
-def _build_deep_research_tools(
-    engine: Any,
-    model: str,
-    knowledge_db_path: str = "",
-) -> list[Any]:
-    """Compatibility wrapper for existing channel and server integrations."""
-
-    return build_deep_research_tools(engine, model, knowledge_db_path)
 
 
 def _merge_tool_call_fragments(

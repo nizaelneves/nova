@@ -1,4 +1,4 @@
-export interface SourceCount {
+interface SourceCount {
   connected: boolean;
   chunks: number;
   /** The last sync of this source failed. */

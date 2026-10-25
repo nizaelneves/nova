@@ -48,10 +48,10 @@ export interface TaskCreate {
   recurrence?: Recurrence | null;
 }
 
-export type TaskUpdate = Partial<TaskCreate>;
+type TaskUpdate = Partial<TaskCreate>;
 
 /** An error from the tasks API. `detail` is the raw JSON body when it wasn't a plain string. */
-export class TasksApiError extends Error {
+class TasksApiError extends Error {
   detail: unknown;
   constructor(message: string, detail: unknown) {
     super(message);
@@ -91,8 +91,6 @@ export const deleteArea = (id: string, moveTo?: string): Promise<void> =>
 
 export const fetchKanban = (areaId?: string): Promise<Record<Status, Task[]>> =>
   tasksJson<{ columns: Record<Status, Task[]> }>(`/kanban${areaId ? `?area_id=${areaId}` : ''}`).then((r) => r.columns);
-
-export const fetchSummary = (): Promise<Record<'today' | 'upcoming' | 'overdue', number>> => tasksJson('/summary');
 
 export const createTask = (body: TaskCreate): Promise<Task> => tasksJson('', { ...json(body), method: 'POST' });
 export const updateTask = (id: string, body: TaskUpdate): Promise<Task> =>

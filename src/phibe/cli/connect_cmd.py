@@ -134,7 +134,7 @@ def _connect_source(registry: object, source: str, path: str = "") -> None:
             console.print(f"[red]OAuth flow failed for {source}: {exc}[/red]")
 
     elif auth_type == "token":
-        # Token-based connectors (e.g. Oura) — prompt for personal access token
+        # Token-based connectors — prompt for personal access token
         import json
         from pathlib import Path
 

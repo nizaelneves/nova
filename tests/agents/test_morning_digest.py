@@ -29,7 +29,7 @@ def test_morning_digest_run(tmp_path):
     # Mock collect result
     mock_collect_result = ToolResult(
         tool_name="digest_collect",
-        content="=== WORLD ===\n[hackernews] AtlasDB 1.0 Released — 241 points\n",
+        content="=== WORLD ===\n[news_rss] AtlasDB 1.0 Released — 241 points\n",
         success=True,
         metadata={"total_items": 2},
     )
@@ -48,7 +48,7 @@ def test_morning_digest_run(tmp_path):
         tools=[],
         persona="phibe",
         sections=["world"],
-        section_sources={"world": ["hackernews", "news_rss"]},
+        section_sources={"world": ["news_rss", "news_rss"]},
         digest_store_path=str(tmp_path / "digest.db"),
     )
 
@@ -63,7 +63,7 @@ def test_morning_digest_run(tmp_path):
     assert "Good morning" in result.content
     assert result.turns == 1
     assert len(result.tool_results) == 2
-    assert set(result.metadata["sources_used"]) == {"hackernews", "news_rss"}
+    assert set(result.metadata["sources_used"]) == {"news_rss", "news_rss"}
     prompt = "\n".join(
         message.text for message in mock_engine.generate.call_args.args[0]
     ).casefold()

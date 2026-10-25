@@ -11,7 +11,7 @@ export interface Stage {
   name: string;
 }
 
-export interface PlaybookStep {
+interface PlaybookStep {
   id: string;
   title: string;
   stageId: string;
@@ -75,7 +75,7 @@ export interface WorkspacesData {
 
 const STORAGE_KEY = 'phibe-workspaces';
 
-export const DEFAULT_STAGES: Stage[] = [
+const DEFAULT_STAGES: Stage[] = [
   { id: 'stage-briefing', name: 'Briefing' },
   { id: 'stage-copy', name: 'Copywriting' },
   { id: 'stage-design', name: 'Design' },
@@ -85,7 +85,7 @@ export const DEFAULT_STAGES: Stage[] = [
 
 const step = (id: string, title: string, stageId: string, days: number): PlaybookStep => ({ id, title, stageId, days });
 
-export const DEFAULT_PLAYBOOKS: Playbook[] = [
+const DEFAULT_PLAYBOOKS: Playbook[] = [
   {
     id: 'pb-paid-traffic',
     name: 'Paid traffic',
@@ -113,7 +113,7 @@ export const DEFAULT_PLAYBOOKS: Playbook[] = [
   },
 ];
 
-export const DEFAULT_TEMPLATES: Template[] = [
+const DEFAULT_TEMPLATES: Template[] = [
   {
     id: 'tpl-briefing',
     kind: 'Briefing',
@@ -222,7 +222,7 @@ export function addDays(date: string, days: number): string {
   return new Date(d.getTime() + days * DAY_MS).toISOString().slice(0, 10);
 }
 
-export function isDate(value: unknown): value is string {
+function isDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 }
 
@@ -312,7 +312,7 @@ export function saveWorkspaces(data: WorkspacesData): void {
 // ---------------------------------------------------------------- scheduling
 
 /** Lays playbook steps one after another from `start`, each lasting its days. */
-export function scheduleSteps(playbook: Playbook, start: string): ActivityStep[] {
+function scheduleSteps(playbook: Playbook, start: string): ActivityStep[] {
   let cursor = start;
   return playbook.steps.map((s) => {
     const begin = cursor;
@@ -366,18 +366,7 @@ export function removeWorkspace(data: WorkspacesData, id: string): WorkspacesDat
   };
 }
 
-export function toggleWorkspacePlaybook(data: WorkspacesData, workspaceId: string, playbookId: string): WorkspacesData {
-  return {
-    ...data,
-    workspaces: data.workspaces.map((w) => {
-      if (w.id !== workspaceId) return w;
-      const has = w.playbookIds.includes(playbookId);
-      return { ...w, playbookIds: has ? w.playbookIds.filter((p) => p !== playbookId) : [...w.playbookIds, playbookId] };
-    }),
-  };
-}
-
-export interface NewActivity {
+interface NewActivity {
   workspaceId: string;
   title: string;
   playbookId: string | null;
@@ -482,120 +471,10 @@ export function removeStage(data: WorkspacesData, id: string): WorkspacesData {
   };
 }
 
-// playbooks (global)
-
-export function addPlaybook(data: WorkspacesData, name: string): WorkspacesData {
-  const trimmed = name.trim();
-  if (!trimmed) return data;
-  return { ...data, playbooks: [...data.playbooks, { id: uid('pb'), name: trimmed, description: '', steps: [] }] };
-}
-
-export function updatePlaybook(data: WorkspacesData, id: string, patch: Partial<Pick<Playbook, 'name' | 'description'>>): WorkspacesData {
-  return {
-    ...data,
-    playbooks: data.playbooks.map((p) => {
-      if (p.id !== id) return p;
-      const name = patch.name !== undefined && patch.name.trim() ? patch.name.trim() : p.name;
-      return { ...p, ...patch, name };
-    }),
-  };
-}
-
-export function removePlaybook(data: WorkspacesData, id: string): WorkspacesData {
-  return {
-    ...data,
-    playbooks: data.playbooks.filter((p) => p.id !== id),
-    workspaces: data.workspaces.map((w) => ({ ...w, playbookIds: w.playbookIds.filter((p) => p !== id) })),
-  };
-}
-
 export function addPlaybookStep(data: WorkspacesData, playbookId: string, title: string, stageId: string, days: number): WorkspacesData {
   const trimmed = title.trim();
   if (!trimmed) return data;
   const stage = data.stages.some((s) => s.id === stageId) ? stageId : data.stages[0].id;
   const created: PlaybookStep = { id: uid('ps'), title: trimmed, stageId: stage, days: Number.isFinite(days) && days > 0 ? Math.round(days) : 1 };
   return { ...data, playbooks: data.playbooks.map((p) => (p.id === playbookId ? { ...p, steps: [...p.steps, created] } : p)) };
-}
-
-export function updatePlaybookStep(
-  data: WorkspacesData,
-  playbookId: string,
-  stepId: string,
-  patch: Partial<Pick<PlaybookStep, 'title' | 'stageId' | 'days'>>,
-): WorkspacesData {
-  return {
-    ...data,
-    playbooks: data.playbooks.map((p) =>
-      p.id !== playbookId
-        ? p
-        : {
-            ...p,
-            steps: p.steps.map((s) => {
-              if (s.id !== stepId) return s;
-              const next = { ...s, ...patch };
-              if (!next.title.trim()) next.title = s.title;
-              if (!Number.isFinite(next.days) || next.days < 1) next.days = s.days;
-              next.days = Math.round(next.days);
-              return next;
-            }),
-          },
-    ),
-  };
-}
-
-export function movePlaybookStep(data: WorkspacesData, playbookId: string, stepId: string, dir: -1 | 1): WorkspacesData {
-  return {
-    ...data,
-    playbooks: data.playbooks.map((p) => {
-      if (p.id !== playbookId) return p;
-      const i = p.steps.findIndex((s) => s.id === stepId);
-      const j = i + dir;
-      if (i < 0 || j < 0 || j >= p.steps.length) return p;
-      const steps = [...p.steps];
-      [steps[i], steps[j]] = [steps[j], steps[i]];
-      return { ...p, steps };
-    }),
-  };
-}
-
-export function removePlaybookStep(data: WorkspacesData, playbookId: string, stepId: string): WorkspacesData {
-  return {
-    ...data,
-    playbooks: data.playbooks.map((p) => (p.id === playbookId ? { ...p, steps: p.steps.filter((s) => s.id !== stepId) } : p)),
-  };
-}
-
-export function playbookDays(playbook: Playbook): number {
-  return playbook.steps.reduce((sum, s) => sum + s.days, 0);
-}
-
-// templates
-
-export function addTemplate(data: WorkspacesData, input: { kind: string; name: string; body: string }): WorkspacesData {
-  const name = input.name.trim();
-  if (!name) return data;
-  const created: Template = { id: uid('tpl'), kind: input.kind.trim() || 'Other', name, body: input.body, builtIn: false };
-  return { ...data, templates: [...data.templates, created] };
-}
-
-export function updateTemplate(data: WorkspacesData, id: string, patch: Partial<Pick<Template, 'kind' | 'name' | 'body'>>): WorkspacesData {
-  return {
-    ...data,
-    templates: data.templates.map((t) => {
-      if (t.id !== id) return t;
-      const name = patch.name !== undefined && patch.name.trim() ? patch.name.trim() : t.name;
-      return { ...t, ...patch, name };
-    }),
-  };
-}
-
-export function removeTemplate(data: WorkspacesData, id: string): WorkspacesData {
-  return { ...data, templates: data.templates.filter((t) => t.id !== id) };
-}
-
-/** A copy the user can edit freely; the original stays as shipped. */
-export function duplicateTemplate(data: WorkspacesData, id: string): WorkspacesData {
-  const source = data.templates.find((t) => t.id === id);
-  if (!source) return data;
-  return { ...data, templates: [...data.templates, { ...source, id: uid('tpl'), name: `${source.name} (copy)`, builtIn: false }] };
 }

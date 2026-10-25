@@ -14,9 +14,9 @@ from phibe.core.registry import ToolRegistry
 @pytest.fixture()
 def store(tmp_path: Path) -> KnowledgeStore:
     ks = KnowledgeStore(str(tmp_path / "test.db"))
-    ks.store("Met with Sequoia about Series A", source="granola", doc_type="document")
-    ks.store("Fundraising discussion with a16z", source="granola", doc_type="document")
-    ks.store("Weekly standup notes", source="granola", doc_type="document")
+    ks.store("Met with Sequoia about Series A", source="notion", doc_type="document")
+    ks.store("Fundraising discussion with a16z", source="notion", doc_type="document")
+    ks.store("Weekly standup notes", source="notion", doc_type="document")
     ks.store("Trip to Spain with family", source="imessage", doc_type="message")
     return ks
 

@@ -5,8 +5,6 @@ import { Icon, type IconName } from './Icon';
 const FALLBACK: Record<string, IconName> = {
   upload: 'upload-minimalistic',
   weather: 'layers',
-  oura: 'target',
-  granola: 'document-text',
 };
 
 /**

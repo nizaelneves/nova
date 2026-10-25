@@ -43,7 +43,7 @@ def test_generic_exchange_rejects_response_without_access_token() -> None:
         pytest.raises(RuntimeError, match="access_token"),
     ):
         _exchange_token(
-            OAUTH_PROVIDERS["spotify"],
+            OAUTH_PROVIDERS["google"],
             "authorization-code",
             "client-id",
             "client-secret",
@@ -109,27 +109,6 @@ def test_gcalendar_handle_callback_persists_creds_no_background_flow(
 
     creds = str(tmp_path / "gcalendar.json")
     conn = GCalendarConnector(credentials_path=creds)
-
-    with patch("phibe.core.open_browser") as mock_browser:
-        conn.handle_callback("test-id.apps.googleusercontent.com:test-secret")
-
-    mock_browser.assert_not_called()
-    tokens = load_tokens(creds)
-    assert tokens is not None
-    assert tokens["client_id"] == "test-id.apps.googleusercontent.com"
-    assert tokens["client_secret"] == "test-secret"
-    assert conn.is_connected() is False
-
-
-def test_gcontacts_handle_callback_persists_creds_no_background_flow(
-    tmp_path: Path,
-) -> None:
-    """Sibling connector shares the fix: creds saved, no browser thread (#512)."""
-    from phibe.connectors.gcontacts import GContactsConnector
-    from phibe.connectors.oauth import load_tokens
-
-    creds = str(tmp_path / "gcontacts.json")
-    conn = GContactsConnector(credentials_path=creds)
 
     with patch("phibe.core.open_browser") as mock_browser:
         conn.handle_callback("test-id.apps.googleusercontent.com:test-secret")
