@@ -50,7 +50,6 @@ def _low_noise_config():
     config.scheduler.db_path = ""
     config.skills.index_dir = ""
     config.memory_files.soul_path = ""
-    config.memory_files.memory_path = ""
     config.memory_files.user_path = ""
     return config
 

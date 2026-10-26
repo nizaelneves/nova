@@ -558,7 +558,7 @@ class AgentExecutor:
                 state_kwargs["memory_backend"] = getattr(
                     self._system, "memory_backend", None
                 )
-            # Wire SOUL.md / MEMORY.md / USER.md persona files into persistent
+            # Wire SOUL.md / USER.md persona files into persistent
             # agents, mirroring the one-shot `phibe ask` path so they no
             # longer apply to CLI calls only (#376).
             cfg = getattr(self._system, "config", None)

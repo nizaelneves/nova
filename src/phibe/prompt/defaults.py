@@ -15,8 +15,3 @@ def default_soul() -> str:
 def default_user() -> str:
     """Return the default ``USER.md`` text (who the user is)."""
     return (_DIR / "default_user.md").read_text(encoding="utf-8")
-
-
-def default_memory() -> str:
-    """Return the default (empty) ``MEMORY.md`` text."""
-    return "# Agent Memory\n\n"

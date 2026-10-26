@@ -127,7 +127,7 @@ class TestSamplerKwargs:
 
 class TestBuildManagedSystemPrompt:
     """#431 — the streaming managed-agent path must run the agent's
-    system_prompt through SystemPromptBuilder so SOUL.md / MEMORY.md /
+    system_prompt through SystemPromptBuilder so SOUL.md /
     USER.md persona files are injected (parity with the CLI/ask path),
     instead of using the raw config system_prompt verbatim.
     """

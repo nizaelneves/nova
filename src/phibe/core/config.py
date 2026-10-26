@@ -1502,9 +1502,6 @@ class MemoryFilesConfig:
     """Persistent memory-file paths and nudge settings."""
 
     soul_path: str = field(default_factory=lambda: str(get_config_dir() / "SOUL.md"))
-    memory_path: str = field(
-        default_factory=lambda: str(get_config_dir() / "MEMORY.md")
-    )
     user_path: str = field(default_factory=lambda: str(get_config_dir() / "USER.md"))
     nudge_interval: int = 10
     persona_name: str = ""  # named persona dir under <config-dir>/personas/<name>/
@@ -1516,7 +1513,6 @@ class SystemPromptConfig:
 
     prefix: str = ""
     soul_max_chars: int = 4000
-    memory_max_chars: int = 2500
     user_max_chars: int = 1500
     skill_desc_max_chars: int = 60
     truncation_strategy: str = "head_tail"

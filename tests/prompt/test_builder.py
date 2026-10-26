@@ -25,7 +25,6 @@ def test_build_frozen_prefix(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
@@ -33,7 +32,6 @@ def test_build_frozen_prefix(memory_dir: Path):
     prompt = builder.build()
     assert "Phibe" in prompt
     assert "helpful research assistant" in prompt
-    assert "concise answers" in prompt
     assert "Alice" in prompt
 
 
@@ -47,7 +45,6 @@ def test_config_prefix_prepended(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(prefix="ALWAYS ANSWER AS PHIBE."),
@@ -71,7 +68,6 @@ def test_empty_prefix_leaves_prompt_unchanged(memory_dir: Path):
             agent_template="You are Phibe.",
             memory_files_config=MemoryFilesConfig(
                 soul_path=str(memory_dir / "SOUL.md"),
-                memory_path=str(memory_dir / "MEMORY.md"),
                 user_path=str(memory_dir / "USER.md"),
             ),
             system_prompt_config=SystemPromptConfig(prefix=prefix),
@@ -91,13 +87,12 @@ def test_frozen_prefix_stability(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
     )
     first = builder.build()
-    (memory_dir / "MEMORY.md").write_text("- CHANGED CONTENT")
+    (memory_dir / "USER.md").write_text("- CHANGED CONTENT")
     second = builder.build()
     assert first == second
 
@@ -110,7 +105,6 @@ def test_char_limit_truncation(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(soul_max_chars=100),
@@ -128,7 +122,6 @@ def test_skill_index_in_prompt(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
@@ -146,7 +139,6 @@ def test_dynamic_section_appended(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
@@ -163,7 +155,6 @@ def test_sections_expose_prompt_metadata(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
@@ -176,7 +167,6 @@ def test_sections_expose_prompt_metadata(memory_dir: Path):
     assert [section.name for section in sections] == [
         "agent_template",
         "soul",
-        "memory",
         "user",
         "session_context",
         "previous_state",
@@ -194,14 +184,13 @@ def test_sections_keep_frozen_file_content_stable(memory_dir: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(memory_dir / "SOUL.md"),
-            memory_path=str(memory_dir / "MEMORY.md"),
             user_path=str(memory_dir / "USER.md"),
         ),
         system_prompt_config=SystemPromptConfig(),
     )
 
     first = builder.sections()
-    (memory_dir / "MEMORY.md").write_text("- CHANGED CONTENT")
+    (memory_dir / "USER.md").write_text("- CHANGED CONTENT")
     second = builder.sections()
 
     assert first == second
@@ -214,7 +203,6 @@ def test_missing_files_handled(tmp_path: Path):
         agent_template="You are Phibe.",
         memory_files_config=MemoryFilesConfig(
             soul_path=str(tmp_path / "missing_soul.md"),
-            memory_path=str(tmp_path / "missing_memory.md"),
             user_path=str(tmp_path / "missing_user.md"),
         ),
         system_prompt_config=SystemPromptConfig(),

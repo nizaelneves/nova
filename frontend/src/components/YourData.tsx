@@ -5,7 +5,7 @@ import { ConversationList } from './Sidebar/ConversationList';
 import { Icon } from './Icon';
 import { SeedsLoader } from './SeedsLoader';
 import { disintegrate } from '../lib/disintegrate';
-import { DataSection } from './DataSection';
+import { ChatTransfer, DataSection } from './DataSection';
 import { useAppStore } from '../lib/store';
 import { CHAT_RETENTION, getChatRetention, setChatRetention } from '../lib/chatRetention';
 
@@ -117,6 +117,7 @@ export function YourData() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <ChatTransfer />
               <select
                 value={chatDays}
                 onChange={(e) => changeChatDays(Number(e.target.value))}

@@ -526,7 +526,7 @@ class Phibe:
             existing = agent_kwargs.get("tools", [])
             agent_kwargs["tools"] = digest_tools + list(existing)
 
-        # Wire the SystemPromptBuilder so SOUL.md / MEMORY.md / USER.md reach
+        # Wire the SystemPromptBuilder so SOUL.md / USER.md reach
         # the model — mirrors ``cli/ask.py`` and ``cli/serve.py``. Guarded so
         # agents whose ``__init__`` doesn't accept the kwarg opt out.
         import inspect as _inspect

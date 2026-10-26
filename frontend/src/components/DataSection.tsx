@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, Trash2, Upload } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { fetchDataFolder, openDataFolder } from '../lib/api';
 import { useAppStore } from '../lib/store';
 import { Icon } from './Icon';
@@ -42,11 +42,8 @@ function DataFolderRow() {
   );
 }
 
-/** The folder of Phibe, and a way to take the conversations out, bring them back or wipe them. */
-export function DataSection() {
-  const conversations = useAppStore((s) => s.conversations);
-  const [confirmClear, setConfirmClear] = useState(false);
-
+/** Buttons to take the chats out as a file, or bring them back from one. */
+export function ChatTransfer() {
   const handleExport = () => {
     const data = localStorage.getItem('phibe-conversations') || '{}';
     const blob = new Blob([data], { type: 'application/json' });
@@ -83,31 +80,19 @@ export function DataSection() {
     input.click();
   };
 
-  const handleClear = () => {
-    if (!confirmClear) {
-      setConfirmClear(true);
-      setTimeout(() => setConfirmClear(false), 3000);
-      return;
-    }
-    localStorage.removeItem('phibe-conversations');
-    useAppStore.getState().loadConversations();
-    setConfirmClear(false);
-  };
+  return (
+    <>
+      <button type="button" onClick={handleExport} className="set-btn"><Download size={12} /> Export</button>
+      <button type="button" onClick={handleImport} className="set-btn"><Upload size={12} /> Import</button>
+    </>
+  );
+}
 
+/** Where Phibe keeps its files on this computer. */
+export function DataSection() {
   return (
     <Section title="Data">
       <DataFolderRow />
-      <SettingRow label="Conversations" description={`${conversations.length} Stored Locally`}>
-        <div className="flex gap-2">
-          <button onClick={handleExport} className="set-btn"><Download size={12} /> Export</button>
-          <button onClick={handleImport} className="set-btn"><Upload size={12} /> Import</button>
-        </div>
-      </SettingRow>
-      <SettingRow label="Clear All Data" description="Delete All Conversations">
-        <button onClick={handleClear} className="set-btn" data-danger data-armed={confirmClear || undefined}>
-          <Trash2 size={12} /> {confirmClear ? 'Click again to confirm' : 'Clear'}
-        </button>
-      </SettingRow>
     </Section>
   );
 }

@@ -2385,3 +2385,14 @@ i[data-k='event'] { background: #60a5fa; }
 .cs-google { display: grid; gap: 8px; justify-items: start; margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.07); font-size: 0.78rem; }
 .cs-google p { margin: 0; }
 .cs-google[data-ok] { border-color: transparent; background: none; padding: 0; color: var(--color-text-tertiary); font-size: 0.74rem; }
+.ps-text { display: block; width: 100%; min-height: 300px; resize: vertical; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--color-border); background: rgba(255, 255, 255, 0.03); color: var(--color-text); font-family: var(--term-font); font-size: 0.8rem; line-height: 1.6; outline: none; }
+.ps-text:focus { border-color: rgba(32, 231, 170, 0.55); }
+.ps-count { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--color-text-tertiary); }
+.ps-count b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.ps-count[data-near] b { color: #fbbf24; }
+.ps-count[data-full] b { color: #ff8a8a; }
+.ps-prompt { display: grid; gap: 14px; max-height: calc(100vh - 120px); overflow-y: auto; }
+.ps-prompt section { display: grid; gap: 6px; }
+.ps-prompt h5 { display: flex; justify-content: space-between; margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); }
+.ps-prompt h5 span { font-weight: 400; letter-spacing: 0; text-transform: none; }
+.ps-prompt pre { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); font-family: var(--term-font); font-size: 0.74rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-text-secondary); }

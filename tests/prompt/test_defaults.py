@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from phibe.prompt.defaults import default_memory, default_soul, default_user
+from phibe.prompt.defaults import default_soul, default_user
 
 
 def test_default_soul_defines_phibe_and_how_to_address_the_user() -> None:
@@ -18,10 +18,6 @@ def test_default_user_profile_names_the_user() -> None:
     assert "Nizael Neves" in default_user()
 
 
-def test_default_memory_is_empty_template() -> None:
-    assert default_memory().startswith("# Agent Memory")
-
-
 def test_seed_memory_files_writes_persona_files(tmp_path: Path, monkeypatch) -> None:
     from phibe.cli import _bootstrap
 
@@ -31,5 +27,5 @@ def test_seed_memory_files_writes_persona_files(tmp_path: Path, monkeypatch) -> 
 
     assert (tmp_path / "SOUL.md").read_text(encoding="utf-8") == default_soul()
     assert (tmp_path / "USER.md").read_text(encoding="utf-8") == default_user()
-    assert (tmp_path / "MEMORY.md").exists()
+    assert not (tmp_path / "MEMORY.md").exists()
     assert (tmp_path / "skills").is_dir()

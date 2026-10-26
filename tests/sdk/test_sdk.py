@@ -174,7 +174,6 @@ class TestPhibeAsk:
 
         cfg = PhibeConfig()
         cfg.memory_files.soul_path = str(soul)
-        cfg.memory_files.memory_path = ""
         cfg.memory_files.user_path = ""
         cfg.agent.context_from_memory = False
 

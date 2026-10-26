@@ -1,5 +1,5 @@
 """Regression: ``phibe serve`` must wire the ``SystemPromptBuilder`` into the
-agent it constructs, so SOUL.md / MEMORY.md / USER.md reach the model over HTTP.
+agent it constructs, so SOUL.md / USER.md reach the model over HTTP.
 
 ``cli/ask.py`` (and ``cli/chat_cmd.py`` and the managed-agent executor) have
 wired the builder since the persona system landed. The serve path never did, so
@@ -122,7 +122,7 @@ def test_serve_wires_persona_builder_into_served_agent(
     # persona files never reach the model over HTTP.
     assert agent._prompt_builder is not None, (
         f"serve constructed {agent_name} without a prompt_builder — SOUL.md / "
-        "MEMORY.md / USER.md would be silently dropped on the HTTP path."
+        "USER.md would be silently dropped on the HTTP path."
     )
     assert "SERVE_PERSONA_SENTINEL" in agent._prompt_builder.build(), (
         "prompt_builder is wired on serve, but its built prompt omits SOUL.md"

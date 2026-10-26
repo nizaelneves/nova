@@ -51,7 +51,6 @@ EXPECTED_LOCAL_ACCESS_TOOLS = {
     "docker_shell_exec",
     "db_query",
     "knowledge_sql",
-    "memory_manage",
     "repl",
     "code_interpreter_docker",
     "git_status",
@@ -149,7 +148,6 @@ def _low_noise_config():
     config.scheduler.db_path = ""
     config.skills.index_dir = ""
     config.memory_files.soul_path = ""
-    config.memory_files.memory_path = ""
     config.memory_files.user_path = ""
     return config
 

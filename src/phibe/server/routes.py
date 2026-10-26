@@ -78,7 +78,7 @@ def _ensure_identity_prompt(messages: list[Message], app_config) -> list[Message
     Resolution of the identity text: the config comes from ``app.state`` when
     wired, otherwise ``load_config()``; the prompt itself is assembled by
     ``SystemPromptBuilder`` from ``agent.default_system_prompt`` plus the
-    persona files (SOUL.md/MEMORY.md/USER.md), matching
+    persona files (SOUL.md/USER.md), matching
     ``_build_managed_system_prompt`` in ``agent_manager_routes.py``. Config
     resolution is wrapped so a broken/missing config degrades to "no
     injection" rather than crashing the endpoint, but the failure is logged
@@ -291,6 +291,17 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
                 "Complexity analysis failed",
                 exc_info=True,
             )
+
+    # Sources (RSS, mail, calendar...) found for this question, on this turn only.
+    if query_text_for_complexity:
+        from phibe.connectors.chat_sources import sources_block
+
+        extra = await asyncio.to_thread(sources_block, query_text_for_complexity)
+        if extra:
+            for m in reversed(request_body.messages):
+                if m.role == "user" and m.content:
+                    m.content = f"{m.content}\n\n{extra}"
+                    break
 
     if request_body.stream:
         # When the client passes `tools`, stream the model's raw

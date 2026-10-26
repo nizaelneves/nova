@@ -84,10 +84,6 @@ except ImportError:
     pass
 
 try:
-    import phibe.tools.memory_manage  # noqa: F401
-except ImportError:
-    pass
-try:
     import phibe.tools.user_profile_manage  # noqa: F401
 except ImportError:
     pass

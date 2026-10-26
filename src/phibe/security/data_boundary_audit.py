@@ -122,7 +122,6 @@ LOCAL_STORE_CANDIDATES: tuple[tuple[str, str, str, Status], ...] = (
     ("vault-key", "Vault encryption key", ".vault_key", "warn"),
     ("embeddings-store", "Embeddings store", "embeddings", "warn"),
     ("soul-file", "SOUL memory file", "SOUL.md", "warn"),
-    ("memory-file", "MEMORY memory file", "MEMORY.md", "warn"),
     ("user-file", "USER memory file", "USER.md", "warn"),
 )
 
@@ -209,7 +208,6 @@ LOCAL_ACCESS_TOOLS = {
     "kg_query",
     "knowledge_sql",
     "memory_index",
-    "memory_manage",
     "memory_retrieve",
     "memory_search",
     "memory_store",

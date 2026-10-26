@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { shortcutFromEvent } from '../lib/shortcutKeys';
 import { Section, SettingRow, Switch } from '../components/settingsParts';
 import { YourData } from '../components/YourData';
+import { PhibeSystem } from '../components/PhibeSystem';
 import { TerminalLine } from '../components/TerminalLine';
 import { summarizeSettings } from '../lib/settingsSummary';
 import { Check, Download } from 'lucide-react';
@@ -74,6 +75,7 @@ function AppearanceSection({
 
 const SETTINGS_TABS = [
   { id: 'general', label: 'General', icon: 'settings' },
+  { id: 'phibe-system', label: 'System', icon: 'stars' },
   { id: 'your-data', label: 'Your Data', icon: 'database' },
   { id: 'about', label: 'About', icon: 'info-circle' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[];
@@ -310,7 +312,8 @@ export function SettingsPage() {
       </div>
 
       {tab === 'your-data' && <YourData />}
-      {tab !== 'your-data' && (
+      {tab === 'phibe-system' && <PhibeSystem />}
+      {tab !== 'your-data' && tab !== 'phibe-system' && (
       <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="fin-wrap">
         <div className="set-grid">

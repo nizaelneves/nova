@@ -475,7 +475,7 @@ def _run_agent(
         )
     )
 
-    # Wire the SystemPromptBuilder so SOUL.md / MEMORY.md / USER.md persona
+    # Wire the SystemPromptBuilder so SOUL.md / USER.md persona
     # files actually reach the model. Only passed to agents whose __init__
     # explicitly accepts a `prompt_builder` kwarg. Agents with specialized
     # prompt machinery opt in by naming and forwarding the parameter.
@@ -833,7 +833,7 @@ def ask(
     # Honor `agent.default_agent` from config when --agent was not explicitly
     # passed. Pass `--agent ""` to opt out and use direct-to-engine mode.
     # Without this fallback, `[agent].default_system_prompt` and the
-    # SOUL.md / MEMORY.md / USER.md persona system are silently bypassed for
+    # SOUL.md / USER.md persona system are silently bypassed for
     # the most common command (`phibe ask "..."`).
     agent_explicitly_set = agent_name is not None
     if agent_name is None:

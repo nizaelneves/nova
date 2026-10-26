@@ -45,8 +45,6 @@ EXPECTED_TOOLS = {
     "http_request",
     # shell_exec.py
     "shell_exec",
-    # memory_manage.py
-    "memory_manage",
     # user_profile_manage.py
     "user_profile_manage",
     # skill_manage.py

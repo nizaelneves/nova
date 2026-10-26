@@ -51,6 +51,23 @@ class SystemPromptBuilder:
         self._frozen_prefix: Optional[str] = None
         self._frozen_sections: Optional[list[PromptSection]] = None
 
+    def instructions_path(self) -> Optional[Path]:
+        """INSTRUCTIONS.md beside SOUL.md: the user's own base instructions, replacing the built-in ones."""
+        soul = self._mf_config.soul_path
+        return Path(soul).expanduser().parent / "INSTRUCTIONS.md" if soul else None
+
+    def instructions_override(self) -> str:
+        path = self.instructions_path()
+        try:
+            return path.read_text(encoding="utf-8").strip() if path else ""
+        except OSError:
+            return ""
+
+    def reload(self) -> None:
+        """Read the persona files again the next time the prompt is built."""
+        self._frozen_prefix = None
+        self._frozen_sections = None
+
     def build(self) -> str:
         if self._frozen_prefix is None:
             self._frozen_prefix = self._build_frozen_prefix()
@@ -90,7 +107,7 @@ class SystemPromptBuilder:
         return self._frozen_sections
 
     def _persona_sections(self) -> list[str]:
-        """The SOUL / MEMORY / USER sections (no agent template, no skills)."""
+        """The SOUL / USER sections (no agent template, no skills)."""
         sections: list[str] = []
         soul = self._load_file(
             self._mf_config.soul_path,
@@ -98,12 +115,6 @@ class SystemPromptBuilder:
         )
         if soul:
             sections.append(f"## Agent Persona\n\n{soul}")
-        memory = self._load_file(
-            self._mf_config.memory_path,
-            self._sp_config.memory_max_chars,
-        )
-        if memory:
-            sections.append(f"## Agent Memory\n\n{memory}")
         user = self._load_file(
             self._mf_config.user_path,
             self._sp_config.user_max_chars,
@@ -113,7 +124,7 @@ class SystemPromptBuilder:
         return sections
 
     def persona_sections(self) -> str:
-        """Just the SOUL / MEMORY / USER persona, joined.
+        """Just the SOUL / USER persona, joined.
 
         For agents that assemble their own system prompt (monitor_operative,
         operative) and want to *append* persona without letting the builder
@@ -138,11 +149,12 @@ class SystemPromptBuilder:
                     cache_segment="frozen_prefix",
                 )
             )
-        if self._agent_template:
+        template = self.instructions_override() or self._agent_template
+        if template:
             sections.append(
                 PromptSection(
                     name="agent_template",
-                    content=self._agent_template,
+                    content=template,
                     source="agent_template",
                     cache_segment="frozen_prefix",
                 )
@@ -193,13 +205,6 @@ class SystemPromptBuilder:
             heading="Agent Persona",
             path_str=self._mf_config.soul_path,
             max_chars=self._sp_config.soul_max_chars,
-        )
-        self._append_file_section(
-            sections=sections,
-            name="memory",
-            heading="Agent Memory",
-            path_str=self._mf_config.memory_path,
-            max_chars=self._sp_config.memory_max_chars,
         )
         self._append_file_section(
             sections=sections,
@@ -263,14 +268,13 @@ class SystemPromptBuilder:
         """Resolve persona_name to effective file paths.
         - "" (empty) -> use mf's existing paths (global default, unchanged)
         - "none"      -> empty paths (opt-out, no persona injected)
-        - "<name>"    -> ~/.phibe/personas/<name>/{SOUL,MEMORY,USER}.md
+        - "<name>"    -> ~/.phibe/personas/<name>/{SOUL,USER}.md
         """
         if not mf.persona_name:
             return mf
         if mf.persona_name == "none":
             return MemoryFilesConfig(
                 soul_path="",
-                memory_path="",
                 user_path="",
                 nudge_interval=mf.nudge_interval,
             )
@@ -283,7 +287,6 @@ class SystemPromptBuilder:
         base = get_config_dir() / "personas" / name
         return MemoryFilesConfig(
             soul_path=str(base / "SOUL.md"),
-            memory_path=str(base / "MEMORY.md"),
             user_path=str(base / "USER.md"),
             nudge_interval=mf.nudge_interval,
             persona_name=name,

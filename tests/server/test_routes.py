@@ -1350,7 +1350,7 @@ class TestIdentityPromptInjection:
     def test_direct_injects_soul_persona_when_present(self, tmp_path):
         """Regression: /v1/chat/completions previously injected only the bare
         ``default_system_prompt`` blurb via a hand-rolled lookup, bypassing
-        ``SystemPromptBuilder`` entirely — so SOUL.md/MEMORY.md/USER.md
+        ``SystemPromptBuilder`` entirely — so SOUL.md/USER.md
         persona files never applied to this path, unlike ``phibe ask`` and
         the managed-agent routes. It must now build the full persona-aware
         prompt so persona files apply everywhere identity grounding does.
@@ -1364,7 +1364,7 @@ class TestIdentityPromptInjection:
         engine = _make_capturing_engine(captured)
         cfg = _identity_config()
         cfg.memory_files = MemoryFilesConfig(
-            soul_path=str(soul), memory_path="", user_path=""
+            soul_path=str(soul), user_path=""
         )
         client = TestClient(create_app(engine, "test-model", config=cfg))
 

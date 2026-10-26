@@ -26,7 +26,7 @@ from phibe.core.config import (
     recommend_engine,
     recommend_model,
 )
-from phibe.prompt.defaults import default_memory, default_soul, default_user
+from phibe.prompt.defaults import default_soul, default_user
 
 # Engines supported by ``phibe init --engine``.
 _SUPPORTED_ENGINES = [
@@ -510,10 +510,6 @@ sources = ["news_rss"]
     soul_path = DEFAULT_CONFIG_DIR / "SOUL.md"
     if not soul_path.exists():
         soul_path.write_text(default_soul(), encoding="utf-8")
-
-    memory_path = DEFAULT_CONFIG_DIR / "MEMORY.md"
-    if not memory_path.exists():
-        memory_path.write_text(default_memory(), encoding="utf-8")
 
     user_path = DEFAULT_CONFIG_DIR / "USER.md"
     if not user_path.exists():

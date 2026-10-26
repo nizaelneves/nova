@@ -390,7 +390,7 @@ def serve(
                     )
                 )
 
-                # Wire the SystemPromptBuilder so SOUL.md / MEMORY.md / USER.md
+                # Wire the SystemPromptBuilder so SOUL.md / USER.md
                 # reach the model on the SERVE path too. ``ask.py`` has done
                 # this since the persona system landed; ``serve.py`` never did,
                 # so an agent served over HTTP silently answered as a generic

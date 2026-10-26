@@ -20,7 +20,8 @@ from phibe.server.digest_routes import create_digest_router
 from phibe.server.quick_digest_routes import create_quick_digest_router
 from phibe.server.data_folder_router import create_data_folder_router
 from phibe.server.home_router import create_home_router
-from phibe.server.memory_notes_router import create_memory_notes_router
+from phibe.server.persona_files_router import create_persona_files_router
+from phibe.server.chat_sources_router import create_chat_sources_router
 from phibe.server.finances_routes import (
     create_finances_router,
     get_shared_finance_store,
@@ -396,7 +397,8 @@ def create_app(
     app.include_router(research_router)
     app.include_router(create_home_router())
     app.include_router(create_data_folder_router())
-    app.include_router(create_memory_notes_router())
+    app.include_router(create_persona_files_router())
+    app.include_router(create_chat_sources_router())
     app.include_router(create_voice_router())
     app.include_router(create_tasks_router(lambda: get_shared_store(app)))
     app.include_router(create_finances_router(lambda: get_shared_finance_store(app)))

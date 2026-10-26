@@ -15,14 +15,13 @@ def test_empty_persona_passes_through_global_defaults():
 
 def test_none_persona_disables_all_files():
     out = SystemPromptBuilder._resolve_persona(MemoryFilesConfig(persona_name="none"))
-    assert out.soul_path == "" and out.memory_path == "" and out.user_path == ""
+    assert out.soul_path == "" and out.user_path == ""
 
 
 def test_named_persona_resolves_to_personas_dir():
     out = SystemPromptBuilder._resolve_persona(MemoryFilesConfig(persona_name="coder"))
     base = str(get_config_dir() / "personas" / "coder")
     assert out.soul_path == f"{base}/SOUL.md"
-    assert out.memory_path == f"{base}/MEMORY.md"
     assert out.user_path == f"{base}/USER.md"
 
 

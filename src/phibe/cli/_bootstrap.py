@@ -23,7 +23,7 @@ from phibe.core.config import (
     recommend_engine,
     recommend_model,
 )
-from phibe.prompt.defaults import default_memory, default_soul, default_user
+from phibe.prompt.defaults import default_soul, default_user
 
 # Marker used to redact secret values in __repr__.
 _REDACTED_PLACEHOLDER = "***redacted***"
@@ -165,12 +165,10 @@ def write_initial_config(
 
 
 def _seed_memory_files() -> None:
-    """Create SOUL.md / MEMORY.md / USER.md / skills/ if absent."""
+    """Create SOUL.md / USER.md / skills/ if absent."""
     home = _cfg.DEFAULT_CONFIG_DIR
     if not (home / "SOUL.md").exists():
         (home / "SOUL.md").write_text(default_soul(), encoding="utf-8")
-    if not (home / "MEMORY.md").exists():
-        (home / "MEMORY.md").write_text(default_memory(), encoding="utf-8")
     if not (home / "USER.md").exists():
         (home / "USER.md").write_text(default_user(), encoding="utf-8")
     (home / "skills").mkdir(exist_ok=True)

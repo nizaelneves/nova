@@ -221,7 +221,7 @@ class TestAskAgentOption:
         The default ``PhibeConfig`` sets ``default_agent = "simple"``, so
         ``phibe ask "..."`` should route through SimpleAgent rather than
         the direct-to-engine path. Without this fallback, persona settings
-        (``default_system_prompt`` and SOUL.md/MEMORY.md/USER.md) would be
+        (``default_system_prompt`` and SOUL.md/USER.md) would be
         silently bypassed.
         """
         result = runner.invoke(cli, ["ask", "Hello"])
@@ -445,7 +445,7 @@ class TestBuildTools:
 
 
 class TestPersonaFilesReachModel:
-    """End-to-end coverage for SOUL.md / MEMORY.md / USER.md integration.
+    """End-to-end coverage for SOUL.md / USER.md integration.
 
     Without these tests, the ``SystemPromptBuilder`` and the persona files
     documented in the README are present in the codebase but never reach
@@ -461,15 +461,12 @@ class TestPersonaFilesReachModel:
         # Write a SOUL.md with a unique sentinel string we can grep for
         soul = tmp_path / "SOUL.md"
         soul.write_text("PERSONA_SENTINEL_zh_phibe", encoding="utf-8")
-        memory = tmp_path / "MEMORY.md"
-        memory.write_text("MEMORY_SENTINEL", encoding="utf-8")
         user = tmp_path / "USER.md"
         user.write_text("USER_SENTINEL", encoding="utf-8")
 
         cfg = PhibeConfig()
         cfg.traces.enabled = False
         cfg.memory_files.soul_path = str(soul)
-        cfg.memory_files.memory_path = str(memory)
         cfg.memory_files.user_path = str(user)
         cfg.agent.default_system_prompt = "BASELINE_TEMPLATE"
         # Disable memory context injection so it doesn't add another SYSTEM
@@ -504,7 +501,6 @@ class TestPersonaFilesReachModel:
         joined = "\n".join(m.content for m in system_messages)
         assert "BASELINE_TEMPLATE" in joined
         assert "PERSONA_SENTINEL_zh_phibe" in joined
-        assert "MEMORY_SENTINEL" in joined
         assert "USER_SENTINEL" in joined
 
     def test_orchestrator_accepts_persona_prompt_builder(

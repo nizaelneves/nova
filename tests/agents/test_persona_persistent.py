@@ -1,6 +1,6 @@
 """Persona files reach persistent agents, not just one-shot `phibe ask` (#376).
 
-SOUL.md / MEMORY.md / USER.md are loaded by `phibe ask` via SystemPromptBuilder.
+SOUL.md / USER.md are loaded by `phibe ask` via SystemPromptBuilder.
 Persistent agents (monitor_operative, operative) assemble their own system
 prompt and previously ignored these files entirely. These tests verify the
 persona is now appended to their prompt without replacing their specialized
@@ -18,7 +18,6 @@ def _builder_with_soul(tmp_path, text="You are Kira."):
     soul.write_text(text, encoding="utf-8")
     mf = MemoryFilesConfig(
         soul_path=str(soul),
-        memory_path=str(tmp_path / "MEMORY.md"),  # absent → ignored
         user_path=str(tmp_path / "USER.md"),  # absent → ignored
     )
     return SystemPromptBuilder(
@@ -44,7 +43,6 @@ class TestPersonaSections:
     def test_persona_sections_empty_when_no_files(self, tmp_path):
         mf = MemoryFilesConfig(
             soul_path=str(tmp_path / "nope.md"),
-            memory_path=str(tmp_path / "nope2.md"),
             user_path=str(tmp_path / "nope3.md"),
         )
         builder = SystemPromptBuilder(agent_template="T", memory_files_config=mf)

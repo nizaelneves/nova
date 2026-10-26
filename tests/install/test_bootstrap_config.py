@@ -62,7 +62,6 @@ def test_writes_seed_files_if_absent(tmp_phibe_home: Path) -> None:
     hw = HardwareInfo(platform="linux", cpu_brand="x", cpu_count=1, ram_gb=4.0)
     _bootstrap.write_initial_config(hardware=hw, engine="ollama", model="qwen3.5:2b")
     assert (tmp_phibe_home / "SOUL.md").exists()
-    assert (tmp_phibe_home / "MEMORY.md").exists()
     assert (tmp_phibe_home / "USER.md").exists()
     assert (tmp_phibe_home / "skills").is_dir()
 

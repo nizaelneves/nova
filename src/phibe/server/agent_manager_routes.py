@@ -481,7 +481,7 @@ def _build_managed_system_prompt(system_prompt: str, app_config: Any) -> str:
     """Build the streaming managed-agent system prompt via SystemPromptBuilder.
 
     Routes the agent's own ``system_prompt`` through the same builder the
-    CLI/ask path uses, so SOUL.md / MEMORY.md / USER.md persona files are
+    CLI/ask path uses, so SOUL.md / USER.md persona files are
     injected for streaming chat too (#431). Returns the assembled prompt
     (caller decides whether to append a SYSTEM message); an agent with
     neither persona nor template yields an empty string, preserving the
@@ -862,7 +862,7 @@ async def _stream_managed_agent(
     # Build conversation messages from history + current input
     llm_messages: List[Message] = []
 
-    # Wire the SystemPromptBuilder to inject SOUL.md / MEMORY.md / USER.md
+    # Wire the SystemPromptBuilder to inject SOUL.md / USER.md
     # persona files (parity with the CLI/ask path) — see #431.
     app_config = getattr(app_state, "config", None)
     if app_config is None:
