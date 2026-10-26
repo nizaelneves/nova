@@ -119,21 +119,7 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
       void invoke('voice_toggle');
       return;
     }
-    if (!speechEnabled || !speech.available) {
-      toast.error(!speechEnabled ? 'Enable speech in Settings first' : 'Speech backend not configured');
-      return;
-    }
-    if (speech.state === 'recording') {
-      try {
-        const text = await speech.stopRecording();
-        if (text) setPendingVoice({ id: Date.now(), text, mode: 'send' });
-      } catch {
-        // The error is shown by the speech hook.
-      }
-    } else if (speech.state === 'idle') {
-      stopSpeaking();
-      await speech.startRecording();
-    }
+    window.dispatchEvent(new Event('phibe:voice-toggle')); // the voice card of the page listens
   };
 
   // A message spoken with the voice shortcut: the island takes it and opens itself, so the answer can be read.

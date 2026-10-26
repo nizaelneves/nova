@@ -51,20 +51,20 @@ export function useSpeech() {
 
       // Measure the loudness while recording, only for the voice card.
       const audio = new AudioContext();
+      void audio.resume(); // a context made after an await can start suspended, which reads as silence
       const analyser = audio.createAnalyser();
       analyser.fftSize = 512;
       audio.createMediaStreamSource(stream).connect(analyser);
       const samples = new Uint8Array(analyser.fftSize);
-      let frame = 0;
+      // A timer, not an animation frame: frames stop in a hidden or small window and the silence check would go blind.
       const measure = () => {
         analyser.getByteTimeDomainData(samples);
         let sum = 0;
         for (const v of samples) sum += ((v - 128) / 128) ** 2;
         levelRef.current = Math.min(1, Math.sqrt(sum / samples.length) * 4);
-        frame = requestAnimationFrame(measure);
       };
-      measure();
-      meterRef.current = { stop: () => { cancelAnimationFrame(frame); void audio.close(); } };
+      const timer = setInterval(measure, 50);
+      meterRef.current = { stop: () => { clearInterval(timer); void audio.close(); } };
       setState('recording');
     } catch (err) {
       const name = err instanceof DOMException ? err.name : 'Error';
