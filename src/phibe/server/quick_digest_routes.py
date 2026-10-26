@@ -51,6 +51,7 @@ def collect_recent(hours: int = HOURS_BACK, per_source: int = PER_SOURCE) -> Ite
                     "title": str(doc.title or ""),
                     "text": str(doc.content or "")[:600],
                     "url": str(getattr(doc, "url", "") or ""),
+                    "origin": str((getattr(doc, "metadata", None) or {}).get("feed_name") or ""),  # which feed or channel
                     "time": doc.timestamp.isoformat(timespec="seconds") if getattr(doc, "timestamp", None) else "",
                 })
                 if len(items) >= per_source:
@@ -114,6 +115,7 @@ def _item_views(items: Items) -> List[Dict[str, str]]:
                 "text": e.get("text", ""),
                 "url": e.get("url", ""),
                 "time": e.get("time", ""),
+                "origin": e.get("origin", ""),
             })
     return views
 

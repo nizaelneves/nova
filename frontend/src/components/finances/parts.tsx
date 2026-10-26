@@ -257,16 +257,16 @@ export function TransactionsTable({ txs, cats, onViewAll }: { txs: Tx[]; cats: C
             <tbody>
               {txs.map((t) => {
                 const c = byId.get(t.categoryId);
-                const label = t.kind === 'savings' ? 'Savings' : t.kind === 'transfer' ? 'Transfer' : c?.name ?? 'Uncategorized';
+                const label = t.kind === 'savings' ? 'Savings' : t.kind === 'transfer' ? 'Transfer' : t.kind === 'payment' ? 'Card payment' : c?.name ?? 'Uncategorized';
                 const tint = c?.color ?? (t.kind === 'savings' ? '#f6c38f' : '#94a3b8');
-                const sign = t.kind === 'expense' ? '−' : t.kind === 'transfer' ? '⇄' : '+';
+                const sign = t.kind === 'expense' || t.kind === 'payment' ? '−' : t.kind === 'transfer' ? '⇄' : '+';
                 return (
                   <tr key={t.id}>
                     <td>{parse(t.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                     <td>{t.description}</td>
                     <td><span className="fin-chip" style={{ color: tint, background: `${tint}22` }}>{label}</span></td>
                     <td>{METHOD[t.method]}</td>
-                    <td className={`r fin-amt ${t.kind === 'expense' ? 'neg' : t.kind === 'transfer' ? '' : 'pos'}`}>{sign} {money(t.amount)}</td>
+                    <td className={`r fin-amt ${t.kind === 'expense' ? 'neg' : t.kind === 'transfer' || t.kind === 'payment' ? '' : 'pos'}`}>{sign} {money(t.amount)}</td>
                   </tr>
                 );
               })}

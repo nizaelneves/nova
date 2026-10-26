@@ -50,7 +50,10 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 // -- Transaction: income, expense or transfer between accounts -----------------
 
 export function TransactionForm({ initial, onClose }: { initial?: Tx; onClose: () => void }) {
-  const { accounts, cards, categories, saveTx } = useFinance();
+  const { accounts, cards, categories, recurring, saveTx, saveRecurring, stopRecurring } = useFinance();
+  const [repeat, setRepeat] = useState<'none' | 'monthly' | 'installments'>('none');
+  const [installments, setInstallments] = useState('12');
+  const rule = recurring.find((r) => r.id === initial?.recurringId && r.active);
   const [kind, setKind] = useState<'income' | 'expense' | 'transfer'>(
     initial && (initial.kind === 'income' || initial.kind === 'expense' || initial.kind === 'transfer') ? initial.kind : 'expense',
   );
@@ -67,6 +70,7 @@ export function TransactionForm({ initial, onClose }: { initial?: Tx; onClose: (
   const needsCard = kind !== 'transfer' && (method === 'debit' || method === 'credit');
   const eligible = cards.filter((c) => (method === 'credit' ? c.mode !== 'debit' : c.mode !== 'credit'));
   const cats = categories.filter((c) => c.kind === kind);
+  const repeatable = kind === 'expense' && !initial; // income and transfers do not repeat
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +85,22 @@ export function TransactionForm({ initial, onClose }: { initial?: Tx; onClose: (
       if (!categoryId) err.category = 'Choose a category';
       if (needsCard && !cardId) err.card = 'Choose a Card';
     }
+    const parts = Number(installments);
+    if (repeatable && repeat === 'installments' && !(Number.isInteger(parts) && parts >= 2 && parts <= 120)) err.installments = 'Use 2 to 120 installments';
     setErrors(err);
     if (Object.keys(err).length) return;
     const card = cards.find((c) => c.id === cardId);
+    if (repeatable && repeat !== 'none') {
+      if (await saveRecurring({
+        date, description: description.trim(), categoryId, amount: cents!, method,
+        accountId: needsCard && card ? card.accountId : accountId, cardId: needsCard ? cardId : undefined,
+        installments: repeat === 'installments' ? parts : null,
+      })) {
+        toast.success(repeat === 'installments' ? `${parts} installments scheduled` : 'Monthly expense added');
+        onClose();
+      }
+      return;
+    }
     if (await saveTx({
       id: initial?.id, date, kind: kind as TxKind, amount: cents!,
       description: kind === 'transfer' ? description.trim() || 'Transfer' : description.trim(),
@@ -144,7 +161,63 @@ export function TransactionForm({ initial, onClose }: { initial?: Tx; onClose: (
             )}
           </>
         )}
+        {repeatable && (
+          <>
+            <Field label="Recurring">
+              {/* Nothing is selected until the user picks one; picking the same option again clears it. */}
+              <Segmented value={repeat} onChange={(r) => setRepeat(r === repeat ? 'none' : r)}
+                options={[{ id: 'monthly', label: 'Every Month' }, { id: 'installments', label: 'Installments' }]} />
+            </Field>
+            {repeat === 'installments' && (
+              <Field label="Number of installments" error={errors.installments}>
+                <input inputMode="numeric" value={installments} onChange={(e) => setInstallments(e.target.value)} placeholder="12" />
+              </Field>
+            )}
+          </>
+        )}
+        {rule && (
+          <p className="fin-hint">
+            Repeats every month{rule.total ? ` (${rule.made} of ${rule.total} installments recorded)` : ''}.{' '}
+            <button type="button" className="fin-link-add" onClick={async () => { if (await stopRecurring(rule.id)) { toast.success('Stopped repeating'); onClose(); } }}>Stop repeating</button>
+          </p>
+        )}
         <Actions onClose={onClose} label={initial ? 'Save Changes' : 'Add'} />
+      </form>
+    </Popup>
+  );
+}
+
+// -- Paying a credit card bill ahead of its closing date ------------------------------------
+
+export function PayCardForm({ card, initial, onClose }: { card: BankCard; initial?: Tx; onClose: () => void }) {
+  const { accounts, saveTx } = useFinance();
+  const [amount, setAmount] = useState(String((initial?.amount ?? card.used) / 100).replace('.', ','));
+  const [date, setDate] = useState(initial?.date ?? iso(new Date()));
+  const [accountId, setAccountId] = useState(initial?.accountId ?? card.accountId);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cents = parseCents(amount);
+    const err: Record<string, string> = {};
+    if (!cents || cents <= 0) err.amount = 'Enter an amount greater than zero';
+    if (!date) err.date = 'Pick a date';
+    setErrors(err);
+    if (Object.keys(err).length) return;
+    if (await saveTx({ id: initial?.id, date, kind: 'payment', amount: cents!, description: '', categoryId: '', accountId, method: 'pix', cardId: card.id })) {
+      toast.success(`${money(cents!)} paid on ${card.name}`);
+      onClose();
+    }
+  };
+  return (
+    <Popup title={initial ? `Edit Payment on ${card.name}` : `Pay ${card.name}`} onClose={onClose}>
+      <form className="fin-form" onSubmit={submit} noValidate>
+        <p className="fin-hint">{money(card.used)} of {money(card.limit)} is in use. What you pay now frees that part of the limit right away.</p>
+        <div className="fin-row">
+          <Field label="Amount" error={errors.amount}><input autoFocus inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></Field>
+          <Field label="Date" error={errors.date}><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        </div>
+        <Field label="Paid from"><select value={accountId} onChange={(e) => setAccountId(e.target.value)}>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></Field>
+        <Actions onClose={onClose} label={initial ? 'Save Changes' : 'Pay'} />
       </form>
     </Popup>
   );

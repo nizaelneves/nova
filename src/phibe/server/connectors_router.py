@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import threading
 from functools import wraps
@@ -114,7 +115,7 @@ def create_connectors_router():
     this package.
     """
     try:
-        from fastapi import APIRouter, HTTPException
+        from fastapi import APIRouter, HTTPException, Query
     except ImportError as exc:
         raise ImportError(
             "fastapi and pydantic are required for the connectors router"
@@ -306,6 +307,8 @@ def create_connectors_router():
 
     def _translate_sync_error(raw: str) -> str:
         """Map common backend exceptions to a short user-facing message."""
+        if "turned off in your Google Cloud project" in raw:
+            return raw
         if "401" in raw or "Unauthorized" in raw:
             return "Authentication failed — credentials may have expired."
         if "403" in raw or "Forbidden" in raw:
@@ -517,6 +520,87 @@ def create_connectors_router():
             raise HTTPException(status_code=422, detail=str(exc))
         save_sync_settings(settings)
         return settings.to_dict()
+
+    @router.get("/permissions")
+    async def get_permissions():
+        """What Phibe may do with each source: its level and what each level adds (empty: the source is only read)."""
+        from phibe.connectors import permissions
+
+        from phibe.connectors.oauth import _CONNECTORS_DIR, google_access, remember_token_scope
+
+        _ensure_connectors_registered()
+        saved = permissions.all_levels()
+        out: Dict[str, Any] = {}
+        for key in ConnectorRegistry.keys():
+            level = saved.get(key, "read")
+            entry: Dict[str, Any] = {"level": level, "actions": getattr(ConnectorRegistry.get(key), "permission_actions", {})}
+            path = _CONNECTORS_DIR / f"{key}.json"
+            if key in ("gdrive", "gcalendar", "gmail") and path.exists():
+                tokens = await asyncio.to_thread(remember_token_scope, str(path))
+                if tokens.get("access_token"):
+                    entry["google"] = google_access(key, level, tokens)
+            out[key] = entry
+        return out
+
+    @router.put("/{connector_id}/permissions")
+    async def put_permission(connector_id: str, body: Dict[str, Any]):
+        """Set the level of one source. Only the Phibe screen does this; the agents have no tool for it."""
+        from phibe.connectors import permissions
+
+        _ensure_connectors_registered()
+        if not ConnectorRegistry.contains(connector_id):
+            raise HTTPException(status_code=404, detail=f"Connector '{connector_id}' not found")
+        if not getattr(ConnectorRegistry.get(connector_id), "permission_actions", None):
+            raise HTTPException(status_code=400, detail="Phibe only reads this source: there is nothing to allow")
+        try:
+            permissions.set_level(connector_id, str(body.get("level")))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        return {"level": permissions.level_of(connector_id)}
+
+    @router.get("/{connector_id}/actions")
+    async def get_actions(connector_id: str, limit: int = 8):
+        """The latest things Phibe tried to change in this source, allowed or blocked."""
+        from phibe.connectors import permissions
+
+        return {"actions": permissions.recent(connector_id, max(1, min(limit, 50)))}
+
+    @router.get("/gcalendar/events")
+    async def get_calendar_events(start: str = Query(alias="from"), end: str = Query(alias="to")):
+        """The Google Calendar events from day *from* to day *to* (YYYY-MM-DD), for the Calendar widget."""
+        _ensure_connectors_registered()
+        instance = _get_or_create("gcalendar")
+        if not instance.is_connected():
+            return {"events": []}
+        try:
+            return {"events": await asyncio.to_thread(instance.events_between, start, end)}
+        except Exception as exc:  # noqa: BLE001 - the widget shows what it has and says what went wrong
+            return {"events": [], "error": _translate_sync_error(str(exc))}
+
+    @router.get("/news_rss/feeds")
+    async def get_rss_feeds():
+        _ensure_connectors_registered()
+        return {"feeds": _get_or_create("news_rss").feeds()}
+
+    @router.put("/news_rss/feeds")
+    async def put_rss_feeds(body: Dict[str, Any]):
+        """Replace the RSS feed list, so feeds can be added or removed without disconnecting."""
+        _ensure_connectors_registered()
+        instance = _get_or_create("news_rss")
+        if not instance.is_connected():
+            raise HTTPException(status_code=409, detail="RSS is not connected")
+        feeds = body.get("feeds")
+        if not isinstance(feeds, list):
+            raise HTTPException(status_code=400, detail="feeds must be a list")
+        try:
+            instance.configure(instance.resolve_feeds(feeds))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        try:
+            _start_sync("news_rss", instance)  # bring in the new feed's items
+        except Exception:  # noqa: BLE001 - the list is saved; the next sync picks it up
+            logger.exception("Could not start the RSS sync after the feeds changed")
+        return {"feeds": instance.feeds()}
 
     @router.post("/sync-all")
     @_serialized_sync
@@ -731,7 +815,7 @@ def create_connectors_router():
                     raise HTTPException(
                         status_code=400, detail="At least one RSS feed URL is required"
                     )
-                instance.configure(feeds)
+                instance.configure(instance.resolve_feeds(feeds))
 
             else:
                 # Generic: try to store token or credentials if the instance
@@ -867,9 +951,11 @@ def create_connectors_router():
         """
         from urllib.parse import urlencode
 
+        from phibe.connectors import permissions
         from phibe.connectors.oauth import (
             get_client_credentials,
             get_provider_for_connector,
+            google_scopes,
         )
 
         _ensure_connectors_registered()
@@ -897,7 +983,12 @@ def create_connectors_router():
             "client_id": client_id,
             "redirect_uri": callback_url,
             "response_type": "code",
-            "scope": " ".join(provider.scopes),
+            # Google: only what the source's level needs. Other providers ask for their fixed list.
+            "scope": " ".join(
+                google_scopes(connector_id, permissions.level_of(connector_id))
+                if provider.name == "google"
+                else provider.scopes
+            ),
             **provider.extra_auth_params,
         }
         auth_url = f"{provider.auth_endpoint}?{urlencode(params)}"
@@ -982,10 +1073,18 @@ def create_connectors_router():
             "expires_in": tokens.get("expires_in", 3600),
             "client_id": client_id,
             "client_secret": client_secret,
+            "scope": tokens.get("scope", ""),
         }
 
-        for filename in provider.credential_files:
-            save_tokens(str(_CONNECTORS_DIR / filename), payload)
+        if provider.name == "google":
+            # One consent per source, so each token holds only what that source's level needs.
+            from phibe.connectors.oauth import keep_only_google_client_in_shared_file
+
+            save_tokens(str(_CONNECTORS_DIR / f"{connector_id}.json"), payload)
+            keep_only_google_client_in_shared_file()
+        else:
+            for filename in provider.credential_files:
+                save_tokens(str(_CONNECTORS_DIR / filename), payload)
 
         # Clear cached instance so it picks up new credentials
         _instances.pop(connector_id, None)

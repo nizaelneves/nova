@@ -1,4 +1,5 @@
 import type { Ping } from '../../lib/api';
+import type { CalendarEvent } from '../../lib/connectors-api';
 import type { Holiday } from '../../lib/holidaysBR';
 import type { Task } from '../../lib/tasks-api';
 
@@ -12,14 +13,14 @@ export function monthGrid(year: number, month: number): Date[] {
   return Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
 }
 
-interface DayEvents { tasks: Task[]; pings: Ping[]; holiday?: string }
+interface DayEvents { tasks: Task[]; pings: Ping[]; events: CalendarEvent[]; holiday?: string }
 
-/** Everything that happens on each day: tasks (a task with a start fills every day up to its due day), reminders, holidays. */
-export function eventsByDay(tasks: Task[], pings: Ping[], holidays: Holiday[]): Map<string, DayEvents> {
+/** Everything that happens on each day: tasks (a task with a start fills every day up to its due day), reminders, calendar events, holidays. */
+export function eventsByDay(tasks: Task[], pings: Ping[], holidays: Holiday[], events: CalendarEvent[] = []): Map<string, DayEvents> {
   const days = new Map<string, DayEvents>();
   const at = (day: string): DayEvents => {
     let entry = days.get(day);
-    if (!entry) { entry = { tasks: [], pings: [] }; days.set(day, entry); }
+    if (!entry) { entry = { tasks: [], pings: [], events: [] }; days.set(day, entry); }
     return entry;
   };
   for (const t of tasks) {
@@ -28,6 +29,9 @@ export function eventsByDay(tasks: Task[], pings: Ping[], holidays: Holiday[]): 
     for (let d = new Date(`${from}T00:00`), guard = 0; isoDay(d) <= to && guard < 400; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1), guard += 1) at(isoDay(d)).tasks.push(t);
   }
   for (const p of pings) if (!p.completed) at(p.date).pings.push(p);
+  for (const e of events) {
+    for (let d = new Date(`${e.date}T00:00`), guard = 0; isoDay(d) <= e.end_date && guard < 400; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1), guard += 1) at(isoDay(d)).events.push(e);
+  }
   for (const h of holidays) at(h.date).holiday = h.name;
   return days;
 }

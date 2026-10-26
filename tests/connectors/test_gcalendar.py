@@ -191,3 +191,30 @@ def test_registry() -> None:
     assert ConnectorRegistry.contains("gcalendar")
     cls = ConnectorRegistry.get("gcalendar")
     assert cls.connector_id == "gcalendar"
+
+
+def test_events_between_gives_the_widget_small_events_and_skips_holiday_calendars(tmp_path):
+    from unittest.mock import patch
+
+    from phibe.connectors.gcalendar import GCalendarConnector
+
+    connector = GCalendarConnector(credentials_path=str(tmp_path / "gcal.json"))
+    calendars = {"items": [{"id": "me@gmail.com"}, {"id": "pt.brazilian#holiday@group.v.calendar.google.com"}]}
+    events = {"items": [
+        {"id": "a", "summary": "Dentist", "start": {"dateTime": "2026-10-26T09:30:00-03:00"}, "end": {"dateTime": "2026-10-26T10:30:00-03:00"}, "htmlLink": "https://g/a"},
+        {"id": "b", "start": {"date": "2026-10-28"}, "end": {"date": "2026-10-30"}},  # all day, 28th and 29th
+        {"id": "c", "summary": "Gone", "status": "cancelled", "start": {"date": "2026-10-27"}, "end": {"date": "2026-10-28"}},
+    ]}
+    asked = []
+
+    def fake_call(fn, _path, *args, **kwargs):
+        asked.append(args[0] if args else None)
+        return calendars if fn.__name__ == "_gcal_api_calendars_list" else events
+
+    with patch("phibe.connectors.gcalendar.call_with_refresh", side_effect=fake_call):
+        got = connector.events_between("2026-10-25", "2026-10-31")
+    assert asked.count("me@gmail.com") == 1 and not any("holiday" in str(a) for a in asked)  # holidays are not asked for
+    assert got == [
+        {"id": "me@gmail.com:a", "title": "Dentist", "date": "2026-10-26", "end_date": "2026-10-26", "all_day": False, "time": "09:30", "url": "https://g/a"},
+        {"id": "me@gmail.com:b", "title": "(No title)", "date": "2026-10-28", "end_date": "2026-10-29", "all_day": True, "time": "", "url": ""},
+    ]

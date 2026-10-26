@@ -153,3 +153,113 @@ def test_import_only_into_an_empty_store(store) -> None:
     assert store.transactions()[0]["id"] == "t"
     with pytest.raises(FinanceError, match="already hold"):
         store.import_state(data)
+
+
+# -- recurring expenses and card payments -------------------------------------------------
+
+
+def _rule(account, **over):
+    return {"date": "2026-08-31", "description": "Ame Credit Card Agreement", "categoryId": "bills",
+            "amount": 25_000, "method": "pix", "accountId": account["id"], **over}
+
+
+def test_installments_are_recorded_as_each_one_comes_due(store, setup) -> None:
+    a, *_ = setup
+    store.save_recurring(_rule(a, installments=4), today="2026-10-05")
+    txs = sorted(store.transactions(), key=lambda t: t["date"])
+    assert [(t["date"], t["description"]) for t in txs] == [
+        ("2026-08-31", "Ame Credit Card Agreement (1/4)"),
+        ("2026-09-30", "Ame Credit Card Agreement (2/4)"),  # September has 30 days
+        ("2026-10-31", "Ame Credit Card Agreement (3/4)"),  # the next one is already on the timeline
+    ]
+    assert store.generate_due("2026-10-05") == 0  # repeating changes nothing
+    store.generate_due("2026-12-31")
+    assert len(store.transactions()) == 4
+    store.generate_due("2027-06-01")
+    assert len(store.transactions()) == 4  # the last installment was the fourth
+    assert store.recurring()[0]["active"] is False
+
+
+def test_a_recurring_expense_without_an_end_keeps_going_until_stopped(store, setup) -> None:
+    a, *_ = setup
+    rule = store.save_recurring(_rule(a, date="2026-10-01", description="Gym"), today="2026-10-05")
+    assert [t["date"] for t in store.transactions()] == ["2026-11-01", "2026-10-01"]  # this month's and the next one
+    store.generate_due("2026-12-02")
+    assert len(store.transactions()) == 4  # Oct, Nov, Dec and January ahead
+    store.stop_recurring(rule["id"])
+    store.generate_due("2027-03-01")
+    assert len(store.transactions()) == 4  # stopping keeps what was recorded
+    assert store.recurring() == []
+
+
+def test_a_recurring_expense_is_checked_like_any_expense(store, setup) -> None:
+    a, b, card, debit, _ = setup
+    with pytest.raises(FinanceError):
+        store.save_recurring(_rule(a, method="credit"), today="2026-10-05")  # credit needs a card
+    with pytest.raises(FinanceError):
+        store.save_recurring(_rule(a, installments=1), today="2026-10-05")
+    store.save_recurring(_rule(a, method="credit", cardId=card["id"], installments=3), today="2026-10-05")
+    assert {t["cardId"] for t in store.transactions()} == {card["id"]}
+    store.delete_card(card["id"])
+    assert store.recurring() == [] and store.generate_due("2027-01-01") == 0  # its rule went with the card
+
+
+def test_old_databases_get_the_recurring_column(tmp_path) -> None:
+    import sqlite3
+
+    db = sqlite3.connect(tmp_path / "old.db")
+    db.executescript(
+        "CREATE TABLE transactions (id TEXT PRIMARY KEY, date TEXT NOT NULL, description TEXT NOT NULL,"
+        " category_id TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL, amount INTEGER NOT NULL, account_id TEXT NOT NULL,"
+        " to_account_id TEXT, method TEXT NOT NULL, card_id TEXT, goal_id TEXT);"
+        "INSERT INTO transactions VALUES ('t','2026-01-01','Old','', 'expense', 100, 'a', NULL, 'pix', NULL, NULL);"
+    )
+    db.commit()
+    db.close()
+    s = FinanceStore(tmp_path / "old.db")
+    assert s.transactions()[0]["recurringId"] is None
+    s.close()
+
+
+def test_paying_a_card_early_frees_its_limit_and_moves_the_money(store, setup) -> None:
+    from phibe.finances import calc
+
+    a, _, card, _, _ = setup
+    store.save_transaction(_tx(date="2026-10-02", amount=300_000, method="credit", cardId=card["id"]))
+    def shape():
+        return next(c for c in store.cards() if c["id"] == card["id"])
+
+    assert calc.card_used(shape(), store.transactions(), "2026-10-05") == 300_000
+    before = calc.account_balance(a, store.transactions(), "2026-10-05")
+    store.save_transaction({"kind": "payment", "date": "2026-10-05", "amount": 100_000, "cardId": card["id"], "accountId": a["id"]})
+    txs = store.transactions()
+    assert calc.card_used(shape(), txs, "2026-10-05") == 200_000  # limit is free again, before the bill closes
+    assert calc.account_balance(a, txs, "2026-10-05") == before - 100_000
+    assert calc.totals(txs, "2026-10-01", "2026-10-31")["expenses"] == 300_000  # not counted a second time
+
+
+def test_a_card_payment_cannot_be_more_than_is_owed_or_for_a_debit_card(store, setup) -> None:
+    a, _, card, debit, _ = setup
+    store.save_transaction(_tx(date="2026-10-02", amount=10_000, method="credit", cardId=card["id"]))
+    with pytest.raises(FinanceError):
+        store.save_transaction({"kind": "payment", "date": "2026-10-05", "amount": 10_001, "cardId": card["id"], "accountId": a["id"]})
+    with pytest.raises(FinanceError):
+        store.save_transaction({"kind": "payment", "date": "2026-10-05", "amount": 100, "cardId": debit["id"], "accountId": a["id"]})
+    ok = store.save_transaction({"kind": "payment", "date": "2026-10-05", "amount": 10_000, "cardId": card["id"], "accountId": a["id"]})
+    store.save_transaction({**ok, "amount": 4_000})  # editing it does not count it twice
+
+
+def test_a_charge_dated_later_shows_up_at_once_so_it_can_be_stopped(store, setup) -> None:
+    a, *_ = setup
+    rule = store.save_recurring(_rule(a, date="2026-10-26", description="Vivo Controle"), today="2026-10-25")
+    (tx,) = store.transactions()
+    assert (tx["date"], tx["recurringId"]) == ("2026-10-26", rule["id"])
+    assert store.generate_due("2026-10-25") == 0
+
+
+def test_the_card_filter_lists_debit_and_credit_through_a_card(store, setup) -> None:
+    a, _, card, _, _ = setup
+    store.save_transaction(_tx(description="Pix", accountId=a["id"]))
+    store.save_transaction(_tx(description="Debit", method="debit", cardId=card["id"]))
+    store.save_transaction(_tx(description="Credit", method="credit", cardId=card["id"]))
+    assert sorted(t["description"] for t in store.transactions(kind="card")) == ["Credit", "Debit"]

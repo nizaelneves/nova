@@ -14,6 +14,7 @@ import httpx
 
 from phibe.connectors._stubs import BaseConnector, Document, SyncStatus
 from phibe.connectors.google_auth import call_with_refresh
+from phibe.connectors.permissions import requires
 from phibe.connectors.oauth import (
     GOOGLE_ALL_SCOPES,
     build_google_auth_url,
@@ -109,6 +110,7 @@ def _gcal_api_events_list(
     *,
     page_token: Optional[str] = None,
     time_min: Optional[str] = None,
+    time_max: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Call the Calendar ``events.list`` endpoint for a single calendar.
 
@@ -123,6 +125,8 @@ def _gcal_api_events_list(
     time_min:
         Lower bound (exclusive) for an event's end time (RFC3339 timestamp).
         When omitted the API returns all events.
+    time_max:
+        Upper bound (exclusive) for an event's start time (RFC3339 timestamp).
 
     Returns
     -------
@@ -139,6 +143,8 @@ def _gcal_api_events_list(
         params["pageToken"] = page_token
     if time_min:
         params["timeMin"] = time_min
+    if time_max:
+        params["timeMax"] = time_max
 
     resp = httpx.get(
         f"{_GCAL_API_BASE}/calendars/{calendar_id}/events",
@@ -232,6 +238,9 @@ def _parse_event_timestamp(event: Dict[str, Any]) -> datetime:
 
 @ConnectorRegistry.register("gcalendar")
 class GCalendarConnector(BaseConnector):
+    # What each permission level adds, shown in the source's settings.
+    permission_actions = {"write": ["Accept and decline invitations"]}
+
     """Connector that syncs events from Google Calendar via the REST API v3.
 
     Authentication is handled through Google OAuth 2.0.  Tokens are stored
@@ -428,6 +437,54 @@ class GCalendarConnector(BaseConnector):
         self._items_synced = synced
         self._last_sync = datetime.now()
 
+    def events_between(self, start: str, end: str) -> List[Dict[str, Any]]:
+        """The events of every calendar from day *start* to day *end* (``YYYY-MM-DD``, both included).
+
+        A small shape for the Calendar widget: ``id``, ``title``, ``date`` (first day), ``end_date`` (last day),
+        ``all_day``, ``time`` (``HH:MM`` or empty) and ``url``. Google's own holiday calendars are left out;
+        the widget already shows the holidays of Brazil.
+        """
+        first = datetime.fromisoformat(f"{start}T00:00:00").astimezone()
+        last = datetime.fromisoformat(f"{end}T00:00:00").astimezone() + timedelta(days=1)
+        calendars = call_with_refresh(_gcal_api_calendars_list, self._credentials_path).get("items", [])
+        found: List[Dict[str, Any]] = []
+        for calendar in calendars:
+            calendar_id = calendar.get("id", "")
+            if not calendar_id or "#holiday@" in calendar_id:
+                continue
+            page_token: Optional[str] = None
+            while True:
+                resp = call_with_refresh(
+                    _gcal_api_events_list,
+                    self._credentials_path,
+                    calendar_id,
+                    page_token=page_token,
+                    time_min=first.isoformat(),
+                    time_max=last.isoformat(),
+                )
+                for event in resp.get("items", []):
+                    if event.get("status") == "cancelled" or not event.get("id"):
+                        continue
+                    begins, ends = event.get("start", {}), event.get("end", {})
+                    all_day = "date" in begins
+                    day = (begins.get("date") or begins.get("dateTime", ""))[:10]
+                    last_day = (ends.get("date") or ends.get("dateTime", ""))[:10] or day
+                    if all_day and last_day > day:  # Google ends an all-day event on the day after it
+                        last_day = (datetime.fromisoformat(last_day) - timedelta(days=1)).date().isoformat()
+                    found.append({
+                        "id": f"{calendar_id}:{event['id']}",
+                        "title": event.get("summary") or "(No title)",
+                        "date": day,
+                        "end_date": max(day, last_day),
+                        "all_day": all_day,
+                        "time": "" if all_day else begins.get("dateTime", "")[11:16],
+                        "url": event.get("htmlLink", ""),
+                    })
+                page_token = resp.get("nextPageToken")
+                if not page_token:
+                    break
+        return sorted(found, key=lambda e: (e["date"], e["time"]))
+
     def _get_token(self) -> str:
         tokens = load_tokens(self._credentials_path)
         if not tokens:
@@ -437,6 +494,7 @@ class GCalendarConnector(BaseConnector):
             raise RuntimeError("Google Calendar token missing")
         return token
 
+    @requires("write")
     def accept_event(self, event_id: str, calendar_id: str = "primary") -> None:
         """Accept a calendar invite by setting responseStatus to 'accepted'."""
         token = self._get_token()
@@ -454,6 +512,7 @@ class GCalendarConnector(BaseConnector):
             updated.append({"email": user_email, "responseStatus": "accepted"})
         _gcal_api_event_patch(token, calendar_id, event_id, {"attendees": updated})
 
+    @requires("write")
     def decline_event(self, event_id: str, calendar_id: str = "primary") -> None:
         """Decline a calendar invite by setting responseStatus to 'declined'."""
         token = self._get_token()

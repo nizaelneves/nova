@@ -3,7 +3,7 @@
  *  cycles) is worked out by the server; see `src/phibe/finances/calc.py`. */
 import type { IconName } from '../../components/Icon';
 
-export type TxKind = 'income' | 'expense' | 'savings' | 'transfer';
+export type TxKind = 'income' | 'expense' | 'savings' | 'transfer' | 'payment'; // payment: paying a credit card bill
 export type PayMethod = 'cash' | 'pix' | 'debit' | 'credit';
 
 export interface Category {
@@ -58,6 +58,17 @@ export interface Tx {
   method: PayMethod;
   cardId?: string | null; // debit and credit only
   goalId?: string | null; // savings only
+  recurringId?: string | null; // recorded by a recurring expense
+}
+
+/** A monthly expense. `total` is the number of installments, or null when it repeats until stopped. */
+export interface Recurring {
+  id: string;
+  description: string;
+  amount: number;
+  total: number | null;
+  made: number;
+  active: boolean;
 }
 
 export interface Range {

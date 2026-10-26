@@ -1,5 +1,5 @@
 import { apiFetch } from '../api';
-import type { Account, BankCard, Category, Goal, Overview, Range, Tx } from './model';
+import type { Account, BankCard, Category, Goal, Overview, PayMethod, Range, Recurring, Tx } from './model';
 
 /** An error from the finances API; `message` is the server's own explanation. */
 class FinanceApiError extends Error {}
@@ -29,6 +29,7 @@ interface FinanceState {
   cards: BankCard[];
   categories: Category[];
   goals: Goal[];
+  recurring: Recurring[];
 }
 
 export const fetchState = () => call<FinanceState>('/state');
@@ -36,7 +37,7 @@ export const fetchState = () => call<FinanceState>('/state');
 export const fetchOverview = (r: Range) =>
   call<Overview>(`/overview?from=${r.from}&to=${r.to}&preset=${r.preset}`);
 
-export interface TxQuery { range: Range; kind?: Tx['kind'] | 'all'; q?: string }
+export interface TxQuery { range: Range; kind?: Tx['kind'] | 'all' | 'card'; q?: string } // 'card': any transaction made with a card
 
 export function fetchTransactions({ range, kind, q }: TxQuery) {
   const p = new URLSearchParams({ from: range.from, to: range.to });
@@ -59,7 +60,14 @@ export const saveCategory = (c: Draft<Category>) => upsert('/categories', c);
 export const saveGoal = (g: Draft<Pick<Goal, 'id' | 'name' | 'target' | 'color'>>) => upsert('/goals', g);
 export const saveTransaction = (t: Draft<Tx>) => upsert('/transactions', t);
 
-export const remove = (kind: 'accounts' | 'cards' | 'categories' | 'goals' | 'transactions', id: string) =>
+export interface RecurringInput {
+  date: string; description: string; categoryId: string; amount: number;
+  accountId?: string; method: PayMethod; cardId?: string;
+  installments: number | null; // null: every month until stopped
+}
+export const saveRecurring = (r: RecurringInput) => call('/recurring', send('POST', r));
+
+export const remove = (kind: 'accounts' | 'cards' | 'categories' | 'goals' | 'transactions' | 'recurring', id: string) =>
   call<void>(`/${kind}/${id}`, { method: 'DELETE' });
 
 export const importState = (data: Record<string, unknown>) => call<Record<string, number>>('/import', send('POST', data));

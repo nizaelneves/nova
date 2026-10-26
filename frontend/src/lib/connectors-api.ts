@@ -160,3 +160,80 @@ export async function triggerSync(id: string): Promise<{ connector_id: string; c
   }
   return res.json();
 }
+
+/** A saved feed, with what the last sync learned: how many items it had, or what went wrong. */
+export interface RssFeed { name: string; url: string; items?: number; error?: string; checked?: string }
+
+export async function getRssFeeds(): Promise<RssFeed[]> {
+  const res = await apiFetch('/v1/connectors/news_rss/feeds');
+  if (!res.ok) throw new Error(`Failed to load the feeds: ${res.status}`);
+  return (await res.json()).feeds;
+}
+
+/** Save the whole list; the server checks every address and returns the list it kept. */
+export async function saveRssFeeds(feeds: RssFeed[]): Promise<RssFeed[]> {
+  const res = await apiFetch('/v1/connectors/news_rss/feeds', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feeds }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || `Could not save the feeds: ${res.status}`);
+  }
+  return (await res.json()).feeds;
+}
+
+/** One Google Calendar event, as the Calendar widget needs it. `date` and `end_date` are the first and last day. */
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;
+  end_date: string;
+  all_day: boolean;
+  time: string; // HH:MM, empty for an all-day event
+  url: string;
+}
+
+/** The events of the connected Google Calendar from day *from* to day *to* (YYYY-MM-DD). `error` says what went wrong, in words. */
+export async function fetchCalendarEvents(from: string, to: string): Promise<{ events: CalendarEvent[]; error?: string }> {
+  const res = await apiFetch(`/v1/connectors/gcalendar/events?from=${from}&to=${to}`);
+  if (!res.ok) throw new Error(`Could not read the calendar: ${res.status}`);
+  return res.json();
+}
+
+export type Level = 'read' | 'write' | 'all';
+/** What Phibe may do with a source: its level, and what the levels above Read add (empty: the source is only read). */
+export interface Permission {
+  level: Level;
+  actions: { write?: string[]; all?: string[] };
+  /** Google sources only: what Google lets the saved token do, against what the level needs. `granted` is null when unknown. */
+  google?: { expected: string[]; granted: string[] | null; needs_authorization: boolean };
+}
+export interface ConnectorAction { at: number; action: string; needed: Level; level: Level; allowed: boolean; detail: string }
+
+export async function getPermissions(): Promise<Record<string, Permission>> {
+  const res = await apiFetch('/v1/connectors/permissions');
+  if (!res.ok) throw new Error(`Could not read the permissions: ${res.status}`);
+  return res.json();
+}
+
+export async function setPermission(id: string, level: Level): Promise<Level> {
+  const res = await apiFetch(`/v1/connectors/${encodeURIComponent(id)}/permissions`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || `Could not save the permission: ${res.status}`);
+  }
+  return (await res.json()).level;
+}
+
+/** The latest changes Phibe tried to make in a source, allowed or blocked. */
+export async function getConnectorActions(id: string): Promise<ConnectorAction[]> {
+  const res = await apiFetch(`/v1/connectors/${encodeURIComponent(id)}/actions`);
+  if (!res.ok) throw new Error(`Could not read the actions: ${res.status}`);
+  return (await res.json()).actions;
+}

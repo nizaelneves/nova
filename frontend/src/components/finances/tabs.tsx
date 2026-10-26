@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../Icon';
 import { logoUrl } from '../../lib/bank-logos';
 import { type Account, type BankCard, type Category, type Goal, type Range, type Tx, money, parse, rootOf } from '../../lib/finance/model';
 import { useCategoryTotals, useFinance, useTransactions } from '../../lib/finance/store';
-import { AccountForm, CardForm, CategoryForm, ConfirmDelete, GoalForm, SavingForm, TransactionForm } from './forms';
+import { AccountForm, CardForm, CategoryForm, ConfirmDelete, GoalForm, PayCardForm, SavingForm, TransactionForm } from './forms';
 
 function Mini({ icon, label, onClick, danger }: { icon: IconName; label: string; onClick: () => void; danger?: boolean }) {
   return (
@@ -27,7 +27,7 @@ function Heading({ title, hint, children }: { title: string; hint?: string; chil
 
 // -- Accounts: quiet rows, the logo up front, cards listed underneath -------------------
 
-function CardLine({ card, onEdit, onDelete }: { card: BankCard; onEdit: () => void; onDelete: () => void }) {
+function CardLine({ card, onPay, onEdit, onDelete }: { card: BankCard; onPay: () => void; onEdit: () => void; onDelete: () => void }) {
   const credit = card.mode !== 'debit';
   const pct = credit && card.limit ? Math.min(100, Math.round((card.used / card.limit) * 100)) : 0;
   return (
@@ -45,6 +45,7 @@ function CardLine({ card, onEdit, onDelete }: { card: BankCard; onEdit: () => vo
       ) : (
         <span className="fin-cardline-use quiet">Spends straight from the account</span>
       )}
+      {credit ? <button type="button" className="fin-btn-quiet fin-pay" aria-label={`Pay ${card.name}`} onClick={onPay}><Icon name="wallet-money" size={14} />Pay</button> : <span />}
       <span className="fin-minis"><Mini icon="pen" label={`Edit ${card.name}`} onClick={onEdit} /><Mini icon="trash-bin-minimalistic" label={`Delete ${card.name}`} onClick={onDelete} danger /></span>
     </li>
   );
@@ -52,7 +53,7 @@ function CardLine({ card, onEdit, onDelete }: { card: BankCard; onEdit: () => vo
 
 export function AccountsTab() {
   const { accounts, cards, deleteAccount, deleteCard } = useFinance();
-  const [modal, setModal] = useState<null | { t: 'account'; a?: Account } | { t: 'card'; c?: BankCard; acc?: string } | { t: 'saving' } | { t: 'del-acc'; a: Account } | { t: 'del-card'; c: BankCard }>(null);
+  const [modal, setModal] = useState<null | { t: 'account'; a?: Account } | { t: 'card'; c?: BankCard; acc?: string } | { t: 'pay'; c: BankCard } | { t: 'saving' } | { t: 'del-acc'; a: Account } | { t: 'del-card'; c: BankCard }>(null);
   const close = () => setModal(null);
 
   return (
@@ -81,7 +82,7 @@ export function AccountsTab() {
               </div>
               <ul className="fin-acct-cards">
                 {mine.map((c) => (
-                  <CardLine key={c.id} card={c} onEdit={() => setModal({ t: 'card', c })} onDelete={() => setModal({ t: 'del-card', c })} />
+                  <CardLine key={c.id} card={c} onPay={() => setModal({ t: 'pay', c })} onEdit={() => setModal({ t: 'card', c })} onDelete={() => setModal({ t: 'del-card', c })} />
                 ))}
                 <li><button type="button" className="fin-link-add" onClick={() => setModal({ t: 'card', acc: a.id })}><Icon name="add-circle" size={15} />Add Card</button></li>
               </ul>
@@ -92,6 +93,7 @@ export function AccountsTab() {
 
       {modal?.t === 'account' && <AccountForm initial={modal.a} onClose={close} />}
       {modal?.t === 'card' && <CardForm initial={modal.c} accountId={modal.acc} onClose={close} />}
+      {modal?.t === 'pay' && <PayCardForm card={modal.c} onClose={close} />}
       {modal?.t === 'saving' && <SavingForm onClose={close} />}
       {modal?.t === 'del-acc' && (
         <ConfirmDelete title={`Delete ${modal.a.name}?`} onClose={close}
@@ -166,7 +168,7 @@ const METHOD = { cash: 'Cash', pix: 'Pix', debit: 'Debit', credit: 'Credit' } as
 
 export function TransactionsTab({ range, initialKind }: { range: Range; initialKind: Tx['kind'] | 'all' }) {
   const { categories, accounts, cards, deleteTx } = useFinance();
-  const [kind, setKind] = useState<Tx['kind'] | 'all'>(initialKind);
+  const [kind, setKind] = useState<Tx['kind'] | 'all' | 'card'>(initialKind);
   const [q, setQ] = useState('');
   const [modal, setModal] = useState<null | { t: 'edit'; tx: Tx } | { t: 'del'; tx: Tx }>(null);
   const txs = useTransactions({ range, kind, q });
@@ -179,6 +181,7 @@ export function TransactionsTab({ range, initialKind }: { range: Range; initialK
     const card = cards.find((c) => c.id === t.cardId);
     const acc = accounts.find((a) => a.id === t.accountId);
     if (t.kind === 'transfer') return `${acc?.name ?? '?'} → ${accounts.find((a) => a.id === t.toAccountId)?.name ?? '?'}`;
+    if (t.kind === 'payment') return `${acc?.name ?? '?'} → ${card?.name ?? '?'}`;
     return `${METHOD[t.method]} · ${card?.name ?? acc?.name ?? ''}`;
   };
 
@@ -188,8 +191,8 @@ export function TransactionsTab({ range, initialKind }: { range: Range; initialK
       <div className="fin-toolbar">
         <label className="fin-search"><Icon name="magnifer" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search transactions" aria-label="Search transactions" /></label>
         <div className="fin-filter">
-          {(['all', 'income', 'expense', 'savings', 'transfer'] as const).map((k) => (
-            <button key={k} type="button" data-active={kind === k} onClick={() => setKind(k)}>{k === 'all' ? 'All' : k === 'transfer' ? 'Transfers' : k[0].toUpperCase() + k.slice(1)}</button>
+          {(['all', 'income', 'expense', 'card', 'savings', 'transfer'] as const).map((k) => (
+            <button key={k} type="button" data-active={kind === k} onClick={() => setKind(k)}>{k === 'all' ? 'All' : k === 'transfer' ? 'Transfers' : k === 'card' ? 'Card Expenses' : k[0].toUpperCase() + k.slice(1)}</button>
           ))}
         </div>
       </div>
@@ -206,14 +209,14 @@ export function TransactionsTab({ range, initialKind }: { range: Range; initialK
               {rows.map((t) => {
                 const cat = categories.find((c) => c.id === t.categoryId);
                 const root = rootOf(categories, t.categoryId);
-                const icon: IconName = t.kind === 'savings' ? 'wallet-money' : t.kind === 'transfer' ? 'transfer-horizontal' : cat?.icon ?? 'tag';
-                const color = t.kind === 'savings' ? '#f6c38f' : t.kind === 'transfer' ? '#94a3b8' : root?.color ?? '#94a3b8';
+                const icon: IconName = t.kind === 'savings' || t.kind === 'payment' ? 'wallet-money' : t.kind === 'transfer' ? 'transfer-horizontal' : cat?.icon ?? 'tag';
+                const color = t.kind === 'savings' ? '#f6c38f' : t.kind === 'transfer' || t.kind === 'payment' ? '#94a3b8' : root?.color ?? '#94a3b8';
                 return (
                   <div key={t.id} className="fin-tx">
                     <span className="fin-tx-icon" style={{ color, background: `${color}24` }}><Icon name={icon} size={18} /></span>
                     <div className="fin-tx-main">
                       <b>{t.description}</b>
-                      <p>{t.kind === 'savings' ? 'Savings' : t.kind === 'transfer' ? 'Transfer' : cat?.name ?? 'Uncategorized'} · {where(t)}</p>
+                      <p>{t.kind === 'savings' ? 'Savings' : t.kind === 'transfer' ? 'Transfer' : t.kind === 'payment' ? 'Card payment' : cat?.name ?? 'Uncategorized'}{t.recurringId ? ' · Recurring' : ''} · {where(t)}</p>
                     </div>
                     <span className="fin-minis"><Mini icon="pen" label="Edit" onClick={() => setModal({ t: 'edit', tx: t })} /><Mini icon="trash-bin-minimalistic" label="Delete" onClick={() => setModal({ t: 'del', tx: t })} danger /></span>
                     <span className={`fin-amt ${t.kind === 'expense' ? 'neg' : t.kind === 'income' ? 'pos' : ''}`}>{t.kind === 'expense' ? '−' : t.kind === 'income' ? '+' : ''} {money(t.amount)}</span>
@@ -226,7 +229,9 @@ export function TransactionsTab({ range, initialKind }: { range: Range; initialK
       </div>
       {modal?.t === 'edit' && (modal.tx.kind === 'savings'
         ? <SavingForm initial={modal.tx} onClose={() => setModal(null)} />
-        : <TransactionForm initial={modal.tx} onClose={() => setModal(null)} />)}
+        : modal.tx.kind === 'payment' && cards.some((c) => c.id === modal.tx.cardId)
+          ? <PayCardForm card={cards.find((c) => c.id === modal.tx.cardId)!} initial={modal.tx} onClose={() => setModal(null)} />
+          : <TransactionForm initial={modal.tx} onClose={() => setModal(null)} />)}
       {modal?.t === 'del' && (
         <ConfirmDelete title="Delete this transaction?" message={`${modal.tx.description}, ${money(modal.tx.amount)} on ${shortDate(modal.tx.date)}.`} onClose={() => setModal(null)}
           onConfirm={async () => { if (await deleteTx(modal.tx.id)) toast.success('Transaction deleted'); }} />

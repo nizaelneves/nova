@@ -657,6 +657,8 @@ def test_connect_weather_requires_location(app, tmp_path: Path) -> None:
 
 def test_connect_news_rss_requires_and_persists_feeds(app, tmp_path: Path) -> None:
     """A local connector with required setup cannot claim success for ``{}``."""
+    from unittest.mock import patch
+
     from phibe.connectors.news_rss import NewsRSSConnector
     from phibe.server.connectors_router import _instances
 
@@ -666,10 +668,11 @@ def test_connect_news_rss_requires_and_persists_feeds(app, tmp_path: Path) -> No
     _instances["news_rss"] = instance
     try:
         assert app.post("/v1/connectors/news_rss/connect", json={}).status_code == 400
-        resp = app.post(
-            "/v1/connectors/news_rss/connect",
-            json={"config": {"feeds": [{"url": "https://example.com/feed.xml"}]}},
-        )
+        with patch("phibe.connectors.news_rss._fetch_feed", return_value="<rss><channel></channel></rss>"):
+            resp = app.post(
+                "/v1/connectors/news_rss/connect",
+                json={"config": {"feeds": [{"url": "https://example.com/feed.xml"}]}},
+            )
         assert resp.status_code == 200, resp.text
         assert resp.json()["connected"] is True
         assert json.loads(path.read_text())["feeds"] == [
@@ -677,3 +680,51 @@ def test_connect_news_rss_requires_and_persists_feeds(app, tmp_path: Path) -> No
         ]
     finally:
         _instances.pop("news_rss", None)
+
+
+def test_rss_feeds_can_be_changed_without_disconnecting(app, tmp_path: Path) -> None:
+    from unittest.mock import patch
+
+    from phibe.connectors.news_rss import NewsRSSConnector
+    from phibe.server.connectors_router import _instances
+
+    instance = NewsRSSConnector(config_path=str(tmp_path / "news_rss.json"))
+    instance.sync = lambda **_kwargs: iter(())
+    _instances["news_rss"] = instance
+    first = {"name": "A", "url": "https://example.com/a.xml"}
+    second = {"name": "B", "url": "https://example.org/b.xml"}
+    try:
+        # the first request registers the connectors again, which reloads their modules; patch after that
+        assert app.put("/v1/connectors/news_rss/feeds", json={"feeds": [first]}).status_code == 409  # not connected
+        with (
+            patch("phibe.security.ssrf.check_ssrf", return_value=None),
+            patch.dict(
+                NewsRSSConnector.resolve_feeds.__globals__,
+                {"_resolve_host_addresses": lambda *_a: ("93.184.216.34",), "_fetch_feed": lambda _u: "<rss><channel></channel></rss>"},
+            ),
+        ):
+            instance.configure([first])
+            assert app.get("/v1/connectors/news_rss/feeds").json() == {"feeds": [first]}
+            added = app.put("/v1/connectors/news_rss/feeds", json={"feeds": [first, second]})
+            assert added.status_code == 200, added.text
+            assert added.json()["feeds"] == [first, second]
+            removed = app.put("/v1/connectors/news_rss/feeds", json={"feeds": [second]})
+            assert removed.json()["feeds"] == [second]
+            assert app.put("/v1/connectors/news_rss/feeds", json={"feeds": []}).status_code == 400  # the last one stays
+            assert app.put("/v1/connectors/news_rss/feeds", json={"feeds": "x"}).status_code == 400
+        assert instance.is_connected()
+    finally:
+        _instances.pop("news_rss", None)
+
+
+def test_permissions_are_listed_and_changed_only_where_a_source_can_write(app, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
+    listed = app.get("/v1/connectors/permissions").json()
+    assert listed["gmail"]["level"] == "read" and "all" in listed["gmail"]["actions"]
+    assert listed["notion"]["actions"] == {}  # a source that is only read has nothing to allow
+    assert app.put("/v1/connectors/gmail/permissions", json={"level": "write"}).json() == {"level": "write"}
+    assert app.get("/v1/connectors/permissions").json()["gmail"]["level"] == "write"
+    assert app.put("/v1/connectors/gmail/permissions", json={"level": "root"}).status_code == 422
+    assert app.put("/v1/connectors/notion/permissions", json={"level": "write"}).status_code == 400
+    assert app.put("/v1/connectors/nope/permissions", json={"level": "write"}).status_code == 404
+    assert app.get("/v1/connectors/gmail/actions").json() == {"actions": []}

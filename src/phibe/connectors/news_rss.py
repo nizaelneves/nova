@@ -1,4 +1,4 @@
-"""News/RSS connector — aggregate headlines from RSS and Atom feeds.
+"""RSS connector — aggregate headlines from RSS and Atom feeds.
 
 Uses stdlib xml.etree.ElementTree for parsing (no extra dependencies).
 Config file lists feeds to follow. All HTTP calls are in module-level
@@ -10,11 +10,14 @@ from __future__ import annotations
 import http.client
 import ipaddress
 import json
+import re
 import socket
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from html import unescape
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 from urllib.parse import urljoin, urlparse
@@ -27,6 +30,8 @@ from phibe.core.registry import ConnectorRegistry
 
 _DEFAULT_CONFIG_PATH = str(DEFAULT_CONFIG_DIR / "connectors" / "news_rss.json")
 _MAX_REDIRECTS = 5
+# What the last sync learned about a feed, kept next to its name and address.
+_STATUS_KEYS = ("items", "error", "checked")
 _MAX_FEED_BYTES = 10 * 1024 * 1024
 
 
@@ -230,6 +235,20 @@ def _fetch_feed(url: str) -> str:
     raise ValueError(f"RSS feed exceeded {_MAX_REDIRECTS} redirects")
 
 
+def _fetch_feed_retrying(url: str, attempts: int = 3) -> str:
+    """Fetch a feed, trying again when the site answers with an error that passes. YouTube's feed addresses
+    sometimes answer 404 or 500 and then work a moment later; other sites are retried only on 429 and 5xx."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return _fetch_feed(url)
+        except httpx.HTTPStatusError as exc:
+            code = exc.response.status_code
+            passing = code == 429 or code >= 500 or (code == 404 and "youtube.com/feeds" in url)
+            if attempt == attempts or not passing:
+                raise
+            time.sleep(attempt)
+
+
 def _parse_rss_items(xml_text: str, max_items: int = 5) -> List[Dict[str, str]]:
     """Parse RSS or Atom XML and return up to *max_items* entries."""
     root = ET.fromstring(xml_text)
@@ -256,7 +275,11 @@ def _parse_rss_items(xml_text: str, max_items: int = 5) -> List[Dict[str, str]]:
                 break
             link_el = entry_el.find("atom:link", ns)
             link_href = link_el.get("href", "") if link_el is not None else ""
-            summary = entry_el.findtext("{http://www.w3.org/2005/Atom}summary") or ""
+            summary = (
+                entry_el.findtext("{http://www.w3.org/2005/Atom}summary")
+                or entry_el.findtext("{http://search.yahoo.com/mrss/}group/{http://search.yahoo.com/mrss/}description")
+                or ""
+            )
             updated = entry_el.findtext("{http://www.w3.org/2005/Atom}updated") or ""
             items.append(
                 {
@@ -270,6 +293,51 @@ def _parse_rss_items(xml_text: str, max_items: int = 5) -> List[Dict[str, str]]:
             )
 
     return items
+
+
+def _looks_like_feed(text: str) -> bool:
+    head = text.lstrip()[:1000].lower()
+    return "<rss" in head or "<feed" in head or "<rdf:rdf" in head
+
+
+def _feed_link_in_page(page: str, page_url: str) -> Optional[str]:
+    """The feed a web page announces in its head (`<link rel="alternate" type="application/rss+xml">`)."""
+    for tag in re.findall(r"<link\b[^>]*>", page, re.I):
+        attrs = {k.lower(): v for k, v in re.findall(r"""([\w:-]+)\s*=\s*["']([^"']*)["']""", tag)}
+        kind = attrs.get("type", "").lower()
+        if "alternate" in attrs.get("rel", "").lower().split() and kind in ("application/rss+xml", "application/atom+xml"):
+            if attrs.get("href"):
+                return urljoin(page_url, unescape(attrs["href"]))
+    return None
+
+
+def _feed_title(xml_text: str) -> Optional[str]:
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return None
+    title = root.findtext("channel/title") or root.findtext("{http://www.w3.org/2005/Atom}title")
+    return title.strip() if title and title.strip() else None
+
+
+def _resolve_feed(url: str) -> Dict[str, str]:
+    """The feed behind an address: the address itself when it is a feed, else the one its page announces."""
+    try:
+        text, feed_url = _fetch_feed_retrying(url), url
+        if not _looks_like_feed(text):
+            feed_url = _feed_link_in_page(text, url) or ""
+            if not feed_url:
+                raise ValueError(f"No RSS feed was found at {url}")
+            _validate_feed_url(feed_url)
+            text = _fetch_feed_retrying(feed_url)
+    except httpx.HTTPError as exc:
+        raise ValueError(f"Could not read {url}: {exc}") from exc
+    return {"name": _feed_title(text) or urlparse(feed_url).netloc, "url": feed_url}
+
+
+def _aware(moment: datetime) -> datetime:
+    """The moment with a time zone (a date without one is taken as UTC), so dates can be compared."""
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
 
 
 def _parse_pub_date(date_str: str) -> Optional[datetime]:
@@ -291,7 +359,7 @@ class NewsRSSConnector(BaseConnector):
     """Aggregate headlines from configured RSS/Atom feeds."""
 
     connector_id = "news_rss"
-    display_name = "News / RSS"
+    display_name = "RSS"
     auth_type = "local"
 
     def __init__(self, *, config_path: str = _DEFAULT_CONFIG_PATH) -> None:
@@ -303,17 +371,47 @@ class NewsRSSConnector(BaseConnector):
         data = json.loads(self._config_path.read_text(encoding="utf-8"))
         return data.get("feeds", [])
 
-    def configure(self, feeds: List[Dict[str, Any]]) -> None:
-        """Validate and persist RSS feed configuration from the connect UI."""
-        normalized: List[Dict[str, str]] = []
+    def feeds(self) -> List[Dict[str, str]]:
+        """The saved feeds, or none when the source is not set up."""
+        try:
+            return self._load_config()
+        except (OSError, json.JSONDecodeError):
+            return []
+
+    def resolve_feeds(self, feeds: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Turn what the user typed into real feeds. A page that announces a feed (a YouTube channel,
+        a blog) becomes that feed, named after it; feeds that are already saved are kept as they are."""
+        saved = {f["url"]: f for f in self.feeds()}
+        out: List[Dict[str, Any]] = []
         for feed in feeds:
             if not isinstance(feed, dict):
                 continue
             url = str(feed.get("url", "")).strip()
             _validate_feed_url(url)
+            name = str(feed.get("name", "")).strip()
+            if url in saved:
+                out.append({"name": name or saved[url]["name"], "url": url})
+            else:
+                found = _resolve_feed(url)
+                out.append({"name": name or found["name"], "url": found["url"]})
+        return out
+
+    def configure(self, feeds: List[Dict[str, Any]]) -> None:
+        """Validate and persist the whole feed list (the connect form and the feed manager both use it)."""
+        normalized: List[Dict[str, Any]] = []
+        saved = {f["url"]: f for f in self.feeds()}
+        for feed in feeds:
+            if not isinstance(feed, dict):
+                continue
+            url = str(feed.get("url", "")).strip()
+            _validate_feed_url(url)
+            if any(f["url"] == url for f in normalized):
+                continue  # the same feed twice is one feed
             parsed = urlparse(url)
             name = str(feed.get("name", "")).strip() or parsed.netloc
-            normalized.append({"name": name, "url": url})
+            entry = {"name": name, "url": url}
+            entry.update({k: saved[url][k] for k in _STATUS_KEYS if url in saved and k in saved[url]})
+            normalized.append(entry)
         if not normalized:
             raise ValueError("At least one RSS feed URL is required")
         from phibe.security.file_utils import secure_write_json
@@ -338,24 +436,43 @@ class NewsRSSConnector(BaseConnector):
     ) -> Iterator[Document]:
         """Yield Documents for recent items across all configured feeds."""
         feeds = self._load_config()
+        results: Dict[str, Dict[str, Any]] = {}  # by the address saved when the sync began
+        checked = datetime.now().isoformat(timespec="seconds")
 
         for feed in feeds:
             feed_name = feed.get("name", "Unknown Feed")
-            feed_url = feed.get("url", "")
+            feed_url = saved_url = feed.get("url", "")
             if not feed_url:
                 continue
 
             try:
-                xml_text = _fetch_feed(feed_url)
-            except (httpx.HTTPError, ValueError):
+                xml_text = _fetch_feed_retrying(feed_url)
+                if not _looks_like_feed(xml_text):  # a web page was saved: follow it to its feed
+                    found = _resolve_feed(feed_url)
+                    if feed_name == urlparse(feed_url).netloc:
+                        feed_name = found["name"]
+                    feed_url = found["url"]
+                    xml_text = _fetch_feed_retrying(feed_url)
+                items = _parse_rss_items(xml_text)
+            except httpx.HTTPStatusError as exc:
+                reason = f"The site answered {exc.response.status_code}"
+            except httpx.HTTPError:
+                reason = "Could not connect to the site"
+            except ET.ParseError:
+                reason = "Not a valid feed"
+            except ValueError as exc:
+                reason = str(exc)[:120]
+            else:
+                results[saved_url] = {"name": feed_name, "url": feed_url, "items": len(items), "error": "", "checked": checked}
+                reason = ""
+            if reason:
+                results[saved_url] = {"items": 0, "error": reason, "checked": checked}
                 continue
-
-            items = _parse_rss_items(xml_text)
             for item in items:
                 pub_dt = _parse_pub_date(item["pubDate"])
 
                 # Filter by since if the date is parseable
-                if since and pub_dt and pub_dt.replace(tzinfo=None) < since:
+                if since and pub_dt and _aware(pub_dt) < _aware(since):
                     continue
 
                 title = item["title"] or "Untitled"
@@ -372,8 +489,22 @@ class NewsRSSConnector(BaseConnector):
                     metadata={"feed_name": feed_name},
                 )
 
+        self._save_results(results)
         self._status.state = "idle"
         self._status.last_sync = datetime.now()
+
+    def _save_results(self, results: Dict[str, Dict[str, Any]]) -> None:
+        """Write what the sync learned next to each feed. The list is read again first, so a feed the user
+        added or removed while the sync ran is kept as it is now."""
+        merged: List[Dict[str, Any]] = []
+        for feed in self.feeds():
+            feed = {**feed, **results.get(feed["url"], {})}
+            if all(f["url"] != feed["url"] for f in merged):
+                merged.append(feed)
+        if merged:
+            from phibe.security.file_utils import secure_write_json
+
+            secure_write_json(self._config_path, {"feeds": merged})
 
     def sync_status(self) -> SyncStatus:
         return self._status

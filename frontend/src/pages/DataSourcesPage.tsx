@@ -7,8 +7,8 @@ import { summarizeSources } from '../lib/sourcesSummary';
 import { ToolCards } from '../components/ToolCards';
 import { CLOUD_KEY_STATUS_CHANGED } from '../components/keys';
 import { fetchAvailableTools, type ToolInfo } from '../lib/api';
-import { choiceLabel, choicesWith, DAILY, hasOwn, minutesOf, timeOf, withChoice, withDefault, withTime } from '../lib/syncRhythm';
 import { SyncBar, useSyncSettings } from '../components/SyncBar';
+import { ConnectorSettings, LEVEL_LABEL } from '../components/ConnectorSettings';
 import {
   FolderOpen, FileText,
   Mail, Hash, MessageCircle, CalendarDays, StickyNote, BookText,
@@ -18,7 +18,8 @@ import type { LucideIcon } from 'lucide-react';
 import { SOURCE_CATALOG } from '../types/connectors';
 import { ConnectorLogo } from '../components/ConnectorLogo';
 import type { ConnectRequest, ConnectorMeta, SyncStatus, OAuthSetupInfo } from '../types/connectors';
-import { listConnectors, connectSource, disconnectSourceUntilComplete, getConnector, getSyncStatus, triggerSync, startServerOAuth } from '../lib/connectors-api';
+import { listConnectors, connectSource, disconnectSourceUntilComplete, getConnector, getSyncStatus, triggerSync, startServerOAuth, getPermissions, setPermission, type Level, type Permission } from '../lib/connectors-api';
+import { toast } from 'sonner';
 
 // ---------------------------------------------------------------------------
 // Inline connect form (reused from AgentsPage pattern)
@@ -847,6 +848,40 @@ function DataSourcesSection() {
   const [view, setView] = useState<SourceView>('All');
   const [tools, setTools] = useState<ToolInfo[] | null>(null);
   const { settings: syncSettings, change: changeSync, reload: reloadSync } = useSyncSettings();
+  const [perms, setPerms] = useState<Record<string, Permission>>({});
+  const [settingsFor, setSettingsFor] = useState<string | null>(null);
+  const [syncingNow, setSyncingNow] = useState(false);
+  useEffect(() => { getPermissions().then(setPerms).catch(() => setPerms({})); }, []);
+  const [authorizing, setAuthorizing] = useState(false);
+  /** Opens Google's consent for what the source's level needs, then waits until the saved token matches it. */
+  const authorize = async (id: string) => {
+    setAuthorizing(true);
+    window.open(`${getBase()}/v1/connectors/${encodeURIComponent(id)}/oauth/start`, '_blank', 'width=600,height=700');
+    try {
+      for (const deadline = Date.now() + 180_000; Date.now() < deadline;) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const latest = await getPermissions().catch(() => null);
+        if (latest && latest[id]?.google && !latest[id].google!.needs_authorization) {
+          setPerms(latest);
+          toast.success('Google access updated');
+          return;
+        }
+      }
+      toast.error('Google did not confirm in time. Try again.');
+    } finally {
+      setAuthorizing(false);
+    }
+  };
+  const changeLevel = async (id: string, level: Level): Promise<boolean> => {
+    try {
+      await setPermission(id, level);
+      setPerms(await getPermissions()); // Google's agreement with the new level is worked out by the server
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save the permission');
+      return false;
+    }
+  };
   useEffect(() => {
     const load = () => fetchAvailableTools().then(setTools).catch(() => setTools([]));
     void load();
@@ -1262,6 +1297,8 @@ function DataSourcesSection() {
                     {isExpanded ? 'Close' : '+ Add'}
                   </button>
                 ) : (
+                  <span className="ds-ctl">
+                  {on && <button type="button" className="ds-gear" aria-label={`${name} settings`} title="Settings" onClick={() => setSettingsFor(c.connector_id)}><Icon name="settings" size={16} /></button>}
                   <button
                     type="button"
                     role="switch"
@@ -1280,10 +1317,12 @@ function DataSourcesSection() {
                   >
                     <i />
                   </button>
+                  </span>
                 )}
               </div>
               <div className="ds-name">{name}</div>
               <div className="ds-desc">{meta?.description ?? (on ? 'Connected' : 'Not connected')}</div>
+              {on && !isUpload && <span className="ds-perm" data-level={perms[c.connector_id]?.level ?? 'read'}>{LEVEL_LABEL[perms[c.connector_id]?.level ?? 'read']}</span>}
 
               {on && (
                 <div className="ds-sync">
@@ -1295,28 +1334,6 @@ function DataSourcesSection() {
                     disabled={connectorActionsBusy}
                     onSyncTriggered={loadConnectors}
                   />
-                  {syncSettings && (
-                    <div className="ds-rhythm">
-                      <span>Update</span>
-                      <select
-                        value={hasOwn(syncSettings, c.connector_id) ? minutesOf(syncSettings, c.connector_id) : 'default'}
-                        onChange={(e) => void changeSync(e.target.value === 'default'
-                          ? withDefault(syncSettings, c.connector_id)
-                          : withChoice(syncSettings, c.connector_id, parseInt(e.target.value, 10)))}
-                      >
-                        <option value="default">Default</option>
-                        {choicesWith(minutesOf(syncSettings, c.connector_id)).map((m) => <option key={m} value={m}>{choiceLabel(m)}</option>)}
-                      </select>
-                      {hasOwn(syncSettings, c.connector_id) && minutesOf(syncSettings, c.connector_id) === DAILY && (
-                        <input
-                          type="time"
-                          value={timeOf(syncSettings, c.connector_id)}
-                          aria-label={`${name}: time of day`}
-                          onChange={(e) => { if (e.target.value) void changeSync(withTime(syncSettings, c.connector_id, e.target.value)); }}
-                        />
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
               {disconnectError?.id === c.connector_id && (
@@ -1345,6 +1362,31 @@ function DataSourcesSection() {
           <ToolCards tools={shownTools} />
         </>
       )}
+      {settingsFor && (() => {
+        const c = cards.find((x) => x.connector_id === settingsFor);
+        if (!c) return null;
+        const sync = syncStatuses[c.connector_id];
+        const meta = metaFor(c.connector_id);
+        const items = sync?.items_synced ?? c.chunks;
+        const last = formatTimeAgo(sync?.last_sync);
+        return (
+          <ConnectorSettings
+            id={c.connector_id}
+            name={meta?.display_name ?? c.display_name}
+            permission={perms[c.connector_id] ?? { level: 'read', actions: {} }}
+            onLevel={(level) => changeLevel(c.connector_id, level)}
+            onAuthorize={() => void authorize(c.connector_id)}
+            authorizing={authorizing}
+            sync={syncSettings}
+            onChangeSync={changeSync}
+            statusLine={sync?.error ? `Error: ${sync.error}` : sync?.state === 'syncing' ? 'Syncing…' : items > 0 ? `${items.toLocaleString()} ${meta?.unitLabel || 'items'}${last ? ` · Last synced ${last}` : ''}` : 'Not synced yet'}
+            syncing={syncingNow || sync?.state === 'syncing'}
+            onSyncNow={async () => { setSyncingNow(true); try { await triggerSync(c.connector_id); } catch (e) { toast.error(e instanceof Error ? e.message : 'Sync failed'); } finally { setSyncingNow(false); void loadConnectors(); void loadSyncStatuses(); } }}
+            onDisconnect={() => { setSettingsFor(null); setConfirmOff(c.connector_id); }}
+            onClose={() => setSettingsFor(null)}
+          />
+        );
+      })()}
       </div>
     </div>
   );

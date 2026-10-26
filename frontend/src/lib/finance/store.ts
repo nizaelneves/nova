@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 import * as api from './api';
-import type { Account, BankCard, Category, Goal, Overview, Range, Tx } from './model';
+import type { Account, BankCard, Category, Goal, Overview, Range, Recurring, Tx } from './model';
 import { EMPTY_OVERVIEW } from './model';
 
 const LEGACY_KEY = 'phibe-finance'; // where finances were kept before the server held them
@@ -35,6 +35,7 @@ interface FinanceState {
   cards: BankCard[];
   categories: Category[];
   goals: Goal[];
+  recurring: Recurring[];
   loaded: boolean;
   version: number;
   load: () => Promise<void>;
@@ -48,6 +49,8 @@ interface FinanceState {
   deleteCategory: (id: string) => Promise<boolean>;
   saveGoal: (g: Parameters<typeof api.saveGoal>[0]) => Promise<boolean>;
   deleteGoal: (id: string) => Promise<boolean>;
+  saveRecurring: (r: Parameters<typeof api.saveRecurring>[0]) => Promise<boolean>;
+  stopRecurring: (id: string) => Promise<boolean>;
 }
 
 export const useFinance = create<FinanceState>()((set, get) => {
@@ -67,7 +70,7 @@ export const useFinance = create<FinanceState>()((set, get) => {
     }
   };
   return {
-    accounts: [], cards: [], categories: [], goals: [], loaded: false, version: 0,
+    accounts: [], cards: [], categories: [], goals: [], recurring: [], loaded: false, version: 0,
     load: async () => {
       try {
         await refresh();
@@ -94,6 +97,8 @@ export const useFinance = create<FinanceState>()((set, get) => {
     deleteCategory: (id) => act(() => api.remove('categories', id)),
     saveGoal: (g) => act(() => api.saveGoal(g)),
     deleteGoal: (id) => act(() => api.remove('goals', id)),
+    saveRecurring: (r) => act(() => api.saveRecurring(r)),
+    stopRecurring: (id) => act(() => api.remove('recurring', id)),
   };
 });
 

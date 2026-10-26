@@ -7,6 +7,7 @@ export function Popup({
   onClose,
   wide,
   hideTitle,
+  topGap = 28,
   children,
 }: {
   title: string;
@@ -14,6 +15,8 @@ export function Popup({
   wide?: boolean;
   /** Keep `title` for screen readers but do not draw it. */
   hideTitle?: boolean;
+  /** With the title hidden, the space kept above the content for the close button, in px. */
+  topGap?: number;
   children: React.ReactNode;
 }) {
   useEffect(() => {
@@ -44,7 +47,7 @@ export function Popup({
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" /></svg>
         </button>
-        {hideTitle ? <div style={{ height: 8 }} /> : <h4 className="text-sm font-semibold mb-3 pr-8" style={{ color: 'var(--color-heading)' }}>{title}</h4>}
+        {hideTitle ? <div style={{ height: topGap }} /> : <h4 className="text-sm font-semibold mb-3 pr-8" style={{ color: 'var(--color-heading)' }}>{title}</h4>}
         {children}
       </div>
     </div>

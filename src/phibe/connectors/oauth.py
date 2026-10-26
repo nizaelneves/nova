@@ -91,6 +91,76 @@ OAUTH_PROVIDERS: Dict[str, OAuthProvider] = {
 }
 
 
+_GOOGLE_API = "https://www.googleapis.com/auth/"
+
+# The Google permissions each source asks for, by what Phibe may do with it (see connectors/permissions.py).
+# Delete in Gmail is "move to the trash", which gmail.modify allows, so Can Write and Full Access ask the same.
+_GOOGLE_SCOPES: Dict[str, Dict[str, List[str]]] = {
+    "gdrive": {"read": [_GOOGLE_API + "drive.readonly"]},
+    "gcalendar": {
+        "read": [_GOOGLE_API + "calendar.readonly"],
+        "write": [_GOOGLE_API + "calendar.readonly", _GOOGLE_API + "calendar.events"],
+    },
+    "gmail": {"read": [_GOOGLE_API + "gmail.readonly"], "write": [_GOOGLE_API + "gmail.modify"]},
+}
+
+
+def google_scopes(connector_id: str, level: str) -> List[str]:
+    """What to ask Google for so a source can do what its level allows, and nothing more."""
+    steps = _GOOGLE_SCOPES[connector_id]
+    chosen = steps["read"] if level == "read" else steps.get(level) or steps.get("write") or steps["read"]
+    return ["openid", "email", "profile", *chosen]
+
+
+def _api_scopes(scope: str) -> set:
+    return {s for s in scope.split() if s.startswith(_GOOGLE_API) and "userinfo" not in s}
+
+
+def google_access(connector_id: str, level: str, tokens: Dict[str, Any]) -> Dict[str, Any]:
+    """What Google lets this source do (from the saved token) against what its level needs.
+
+    ``granted`` is ``None`` when the token does not say; ``needs_authorization`` is true when they differ,
+    either because Google allows more than the level (narrow it) or less (the level needs a new consent).
+    """
+    expected = _api_scopes(" ".join(google_scopes(connector_id, level)))
+    scope = tokens.get("scope")
+    if not isinstance(scope, str) or not scope:
+        return {"expected": sorted(expected), "granted": None, "needs_authorization": False}
+    granted = _api_scopes(scope)
+    return {"expected": sorted(expected), "granted": sorted(granted), "needs_authorization": granted != expected}
+
+
+def remember_token_scope(path: str) -> Dict[str, Any]:
+    """The saved token of *path*. One saved before Phibe kept the scope gets it from Google once and keeps it."""
+    tokens = load_tokens(path) or {}
+    if tokens.get("scope") or not tokens.get("access_token"):
+        return tokens
+    import httpx
+
+    try:
+        token = tokens["access_token"]
+        for attempt in (1, 2):
+            info = httpx.get("https://oauth2.googleapis.com/tokeninfo", params={"access_token": token}, timeout=15.0)
+            if info.status_code == 200 or attempt == 2:
+                break
+            token = refresh_google_token(path) or token  # the access token had expired
+        if info.status_code == 200 and info.json().get("scope"):
+            tokens = {**(load_tokens(path) or tokens), "scope": info.json()["scope"]}
+            save_tokens(path, tokens)
+    except (httpx.HTTPError, OSError, ValueError):
+        pass  # offline: the scope stays unknown for now
+    return tokens
+
+
+def keep_only_google_client_in_shared_file() -> None:
+    """The shared google.json keeps the client id and secret and no token, so a source cannot fall back to a
+    token with more access than its own. Only done once every Google source has a file of its own."""
+    own = [_CONNECTORS_DIR / f"{c}.json" for c in _GOOGLE_SCOPES]
+    shared = load_tokens(_SHARED_GOOGLE_CREDENTIALS_PATH)
+    if shared and all(p.exists() for p in own):
+        save_tokens(_SHARED_GOOGLE_CREDENTIALS_PATH, {k: shared[k] for k in ("client_id", "client_secret") if k in shared})
+
+
 def get_provider_for_connector(connector_id: str) -> Optional[OAuthProvider]:
     """Return the OAuthProvider that covers *connector_id*, or ``None``."""
     for provider in OAUTH_PROVIDERS.values():

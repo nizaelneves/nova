@@ -240,6 +240,7 @@ def test_oauth_callback_exchanges_and_connects(
         "refresh_token": "1//REAL",
         "token_type": "Bearer",
         "expires_in": 3600,
+        "scope": "openid https://www.googleapis.com/auth/drive.readonly",
     }
     with patch.object(oauth_mod, "_exchange_token", return_value=fake_tokens) as ex:
         resp = client.get("/v1/connectors/gdrive/oauth/callback?code=authcode123")
@@ -248,11 +249,15 @@ def test_oauth_callback_exchanges_and_connects(
     assert "Connected!" in resp.text
     ex.assert_called_once()
 
-    # Access token written to ALL Google credential files.
-    for filename in _ALL_GOOGLE_FILES:
-        saved = json.loads((hermetic_connectors / filename).read_text())
-        assert saved["access_token"] == "ya29.REAL"
-        assert saved["refresh_token"] == "1//REAL"
+    # One consent per source: the token (and the scope Google gave) is kept for this source only.
+    saved = json.loads((hermetic_connectors / "gdrive.json").read_text())
+    assert saved["access_token"] == "ya29.REAL" and saved["refresh_token"] == "1//REAL"
+    assert "drive.readonly" in saved["scope"]
+    for filename in ("gcalendar.json", "gmail.json"):
+        assert "access_token" not in json.loads((hermetic_connectors / filename).read_text())
+    # The shared file keeps the client id and secret and no token.
+    shared = json.loads((hermetic_connectors / "google.json").read_text())
+    assert set(shared) == {"client_id", "client_secret"}
 
     # The connector now reports connected, and GET /connectors agrees.
     from phibe.connectors.gdrive import GDriveConnector
@@ -285,3 +290,83 @@ def test_oauth_callback_exchange_failure_renders_error(
 
     assert resp.status_code == 500
     assert "Token Exchange Failed" in resp.text
+
+
+# -- one consent per source, asking Google only for what the source's level needs ---------------
+
+
+def test_google_scopes_follow_the_level_and_never_ask_for_more() -> None:
+    from phibe.connectors.oauth import google_scopes
+
+    api = "https://www.googleapis.com/auth/"
+    only = lambda cid, lvl: {s.removeprefix(api) for s in google_scopes(cid, lvl) if s.startswith(api)}  # noqa: E731
+    assert only("gmail", "read") == {"gmail.readonly"}
+    assert only("gmail", "write") == only("gmail", "all") == {"gmail.modify"}  # delete is "to the trash"
+    assert only("gcalendar", "read") == {"calendar.readonly"}
+    assert only("gcalendar", "write") == {"calendar.readonly", "calendar.events"}
+    assert all(only("gdrive", lvl) == {"drive.readonly"} for lvl in ("read", "write", "all"))
+    assert google_scopes("gmail", "read")[:3] == ["openid", "email", "profile"]
+
+
+def test_google_access_compares_what_the_token_allows_with_what_the_level_needs() -> None:
+    from phibe.connectors.oauth import google_access
+
+    api = "https://www.googleapis.com/auth/"
+    legacy = {"scope": f"openid {api}gmail.modify {api}calendar {api}drive.readonly {api}userinfo.email"}
+    assert google_access("gmail", "read", legacy)["needs_authorization"] is True  # Google allows more than Read Only
+    assert google_access("gmail", "write", legacy)["needs_authorization"] is True  # still also Calendar and Drive
+    assert google_access("gmail", "write", {"scope": f"openid {api}gmail.modify"})["needs_authorization"] is False
+    assert google_access("gmail", "write", {"scope": f"{api}gmail.readonly"})["needs_authorization"] is True  # needs a new consent
+    unknown = google_access("gmail", "read", {})
+    assert (unknown["granted"], unknown["needs_authorization"]) == (None, False)
+
+
+def test_a_token_saved_without_its_scope_gets_it_from_google_once(tmp_path: Path) -> None:
+    from phibe.connectors.oauth import remember_token_scope, save_tokens
+
+    path = str(tmp_path / "gmail.json")
+    save_tokens(path, {"access_token": "t", "refresh_token": "r"})
+    reply = type("R", (), {"status_code": 200, "json": lambda self: {"scope": "openid https://www.googleapis.com/auth/gmail.modify"}})()
+    with patch("httpx.get", return_value=reply) as ask:
+        assert "gmail.modify" in remember_token_scope(path)["scope"]
+        assert "gmail.modify" in remember_token_scope(path)["scope"]  # the second time it is read from the file
+    assert ask.call_count == 1
+    save_tokens(path, {"access_token": "t"})
+    with patch("httpx.get", side_effect=OSError("offline")):
+        assert "scope" not in remember_token_scope(path)  # offline: unknown, nothing broken
+
+
+def test_the_google_consent_asks_only_for_the_scopes_of_the_sources_level(
+    client: TestClient, hermetic_connectors: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from urllib.parse import parse_qs, urlparse
+
+    from phibe.connectors import permissions
+
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
+    client.post("/v1/connectors/gmail/connect", json={"code": _CLIENT_PAIR})
+
+    def asked() -> list[str]:
+        resp = client.get("/v1/connectors/gmail/oauth/start", follow_redirects=False)
+        return parse_qs(urlparse(resp.headers["location"]).query)["scope"][0].split()
+
+    assert [s.rsplit("/", 1)[-1] for s in asked() if "googleapis" in s] == ["gmail.readonly"]
+    permissions.set_level("gmail", "write")
+    assert [s.rsplit("/", 1)[-1] for s in asked() if "googleapis" in s] == ["gmail.modify"]
+
+
+def test_the_permissions_list_says_whether_google_agrees(
+    client: TestClient, hermetic_connectors: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from phibe.connectors import permissions
+    from phibe.connectors.oauth import save_tokens
+
+    monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
+    save_tokens(
+        str(hermetic_connectors / "gmail.json"),
+        {"access_token": "t", "scope": "openid https://www.googleapis.com/auth/gmail.modify"},
+    )
+    google = client.get("/v1/connectors/permissions").json()["gmail"]["google"]
+    assert google["needs_authorization"] is True and google["expected"] == ["https://www.googleapis.com/auth/gmail.readonly"]
+    permissions.set_level("gmail", "write")
+    assert client.get("/v1/connectors/permissions").json()["gmail"]["google"]["needs_authorization"] is False

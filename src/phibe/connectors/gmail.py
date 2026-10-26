@@ -18,6 +18,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 import httpx
 
 from phibe.connectors._stubs import BaseConnector, Document, SyncStatus
+from phibe.connectors.permissions import requires
 from phibe.connectors.google_auth import (
     GoogleAuthError,
 )
@@ -331,6 +332,12 @@ def _select_channel(label_ids: List[str]) -> Optional[str]:
 
 @ConnectorRegistry.register("gmail")
 class GmailConnector(BaseConnector):
+    # What each permission level adds, shown in the source's settings.
+    permission_actions = {
+        "write": ["Archive e-mails"],
+        "all": ["Delete e-mails (they go to the trash)"],
+    }
+
     """Connector that syncs emails from Gmail via the REST API.
 
     Authentication is handled through Google OAuth 2.0.  Tokens are stored
@@ -562,10 +569,12 @@ class GmailConnector(BaseConnector):
             token = self._refresh_token()
             return fn(token, *args, **kwargs)
 
+    @requires("all")
     def delete_message(self, msg_id: str) -> None:
         """Move a message to Trash (recoverable for 30 days)."""
         self._call_with_refresh(_gmail_api_trash_message, msg_id)
 
+    @requires("write")
     def archive_message(self, msg_id: str) -> None:
         """Archive a message by removing the INBOX label."""
         self._call_with_refresh(

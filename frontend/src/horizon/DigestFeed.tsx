@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { timeLabel, type DigestBlock } from './lib/digest';
+import { fromLabel, timeLabel, type DigestBlock } from './lib/digest';
 
-const ROW = 104; // px: the height of one block, so the track can slide by whole blocks
+const ROW = 118; // px: the height of one block (the .dg-blk height in index.css), so the track can slide by whole blocks
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -9,7 +9,7 @@ const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefe
 function Block({ block, now, onOpen }: { block: DigestBlock; now: Date; onOpen: (b: DigestBlock) => void }) {
   return (
     <button type="button" className="dg-blk" data-kind={block.kind} onClick={() => onOpen(block)}>
-      <span className="dg-blk-meta"><i />{block.sourceName}{block.time && <time>{timeLabel(block.time, now)}</time>}</span>
+      <span className="dg-blk-meta"><i /><span className="dg-blk-from" title={fromLabel(block)}>{fromLabel(block)}</span>{block.time && <time>{timeLabel(block.time, now)}</time>}</span>
       <b><span>{block.title}</span></b>
       <span className="dg-blk-line">{block.summary}</span>
     </button>

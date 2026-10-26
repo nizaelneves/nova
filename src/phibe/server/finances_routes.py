@@ -54,6 +54,17 @@ class TransactionBody(BaseModel):
     goalId: Optional[str] = None
 
 
+class RecurringBody(BaseModel):
+    date: str = ""
+    description: str = ""
+    categoryId: str = ""
+    amount: int = 0
+    accountId: Optional[str] = None
+    method: str = "pix"
+    cardId: Optional[str] = None
+    installments: Optional[int] = None  # None = every month until stopped
+
+
 class ImportBody(BaseModel):
     accounts: List[Dict[str, Any]] = []
     cards: List[Dict[str, Any]] = []
@@ -77,11 +88,18 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
     def today_or(value: Optional[str]) -> str:
         return value or date.today().isoformat()
 
+    def fresh(now: Optional[str] = None) -> FinanceStore:
+        """The store, with every recurring charge that has come due already recorded."""
+        store = get_store()
+        store.generate_due(today_or(now))
+        return store
+
     # -- reads, with the numbers worked out here -----------------------------------
 
     @router.get("/state")
     def state(today: Optional[str] = None) -> Dict[str, Any]:
-        store, now = get_store(), today_or(today)
+        now = today_or(today)
+        store = fresh(now)
         txs = store.transactions()
         accounts = [{**a, "balance": calc.account_balance(a, txs, now)} for a in store.accounts()]
         cards = [
@@ -92,7 +110,10 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
             {**g, "saved": calc.goal_saved(txs, g["id"]), "monthsLeft": calc.months_left(g, txs, now)}
             for g in store.goals()
         ]
-        return {"accounts": accounts, "cards": cards, "categories": store.categories(), "goals": goals}
+        return {
+            "accounts": accounts, "cards": cards, "categories": store.categories(), "goals": goals,
+            "recurring": store.recurring(),
+        }
 
     @router.get("/overview")
     def overview(
@@ -100,7 +121,7 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
         end: str = Query(alias="to"),
         preset: str = "custom",
     ) -> Dict[str, Any]:
-        store = get_store()
+        store = fresh()
         txs, accounts = store.transactions(), store.accounts()
         prev_start, prev_end = calc.previous_range(preset, start, end)
         now, before = calc.totals(txs, start, end), calc.totals(txs, prev_start, prev_end)
@@ -127,11 +148,11 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
         kind: Optional[str] = None,
         q: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return {"transactions": get_store().transactions(start, end, kind, q)}
+        return {"transactions": fresh().transactions(start, end, kind, q)}
 
     @router.get("/category-totals")
     def category_totals(kind: str, start: str = Query(alias="from"), end: str = Query(alias="to")) -> Dict[str, Any]:
-        store = get_store()
+        store = fresh()
         return {"totals": calc.category_totals(store.transactions(), store.categories(), kind, start, end)}
 
     # -- writes ------------------------------------------------------------------------
@@ -195,6 +216,14 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
     @router.delete("/transactions/{item_id}", status_code=204)
     def remove_transaction(item_id: str) -> None:
         guarded(lambda: get_store().delete_transaction(item_id))
+
+    @router.post("/recurring", status_code=201)
+    def add_recurring(body: RecurringBody) -> Dict[str, Any]:
+        return guarded(lambda: get_store().save_recurring(body.model_dump(), today_or(None)))
+
+    @router.delete("/recurring/{item_id}", status_code=204)
+    def stop_recurring(item_id: str) -> None:
+        guarded(lambda: get_store().stop_recurring(item_id))
 
     @router.post("/import")
     def import_state(body: ImportBody) -> Dict[str, int]:

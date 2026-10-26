@@ -45,11 +45,12 @@ def test_builds_a_section_per_source_and_a_headline() -> None:
 
 
 def test_every_item_becomes_a_small_block_without_asking_the_model() -> None:
-    items = {"news_rss": [{"title": "A new database", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00"}]}
+    items = {"news_rss": [{"title": "A new database", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00", "origin": "Sandeco"}]}
     d = build_digest(FakeEngine(), "m:1", items)
     assert d["items"] == [{
         "source": "news_rss", "source_name": "news_rss", "kind": "rss", "title": "A new database",
         "summary": "Launched today.", "text": "Launched today. It is fast.", "url": "https://x.dev", "time": "2026-10-20T09:00:00",
+        "origin": "Sandeco",
     }]
     untitled = build_digest(FakeEngine(), "m:1", {"gmail": [{"title": "", "text": "Weekly news. More below."}]})["items"][0]
     assert (untitled["title"], untitled["kind"]) == ("Weekly news.", "mail")

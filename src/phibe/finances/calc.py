@@ -33,6 +33,11 @@ def _clamp_day(year: int, month: int, day: int) -> date:
     return first.replace(day=min(day, calendar.monthrange(first.year, first.month)[1]))
 
 
+def nth_month(start: date, k: int) -> date:
+    """The date *k* months after *start*, on the same day of the month (the last day when the month is shorter)."""
+    return _clamp_day(start.year, start.month + k, start.day)
+
+
 # -- Periods -------------------------------------------------------------------
 
 
@@ -202,13 +207,14 @@ def card_cycle(card: Dict[str, Any], today: str) -> Dict[str, str]:
 
 
 def card_used(card: Dict[str, Any], txs: List[Tx], today: str) -> int:
-    """Credit used in the current cycle."""
+    """Credit used in the current cycle: what was spent on credit minus what was already paid."""
     cycle = card_cycle(card, today)
-    return sum(
-        t["amount"]
-        for t in txs
-        if t["cardId"] == card["id"]
-        and t["method"] == "credit"
-        and t["kind"] == "expense"
-        and cycle["start"] <= t["date"] <= cycle["close"]
-    )
+    spent = paid = 0
+    for t in txs:
+        if t["cardId"] != card["id"] or not cycle["start"] <= t["date"] <= cycle["close"]:
+            continue
+        if t["kind"] == "expense" and t["method"] == "credit":
+            spent += t["amount"]
+        elif t["kind"] == "payment":
+            paid += t["amount"]
+    return max(0, spent - paid)

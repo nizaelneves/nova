@@ -112,6 +112,13 @@ def call_with_refresh(
     try:
         return api_fn(token, *args, **kwargs)
     except httpx.HTTPStatusError as exc:
+        if exc.response is not None and exc.response.status_code == 403 and "SERVICE_DISABLED" in exc.response.text:
+            raise httpx.HTTPStatusError(
+                "This Google API is turned off in your Google Cloud project: enable it under APIs & Services, "
+                "wait a minute and sync again.",
+                request=exc.request,
+                response=exc.response,
+            ) from exc
         if exc.response is None or exc.response.status_code != 401:
             raise
         logger.info(

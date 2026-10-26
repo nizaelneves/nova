@@ -78,3 +78,17 @@ def test_real_app_serves_finances(tmp_path, monkeypatch) -> None:
     app_client = TestClient(create_app(SimpleNamespace(engine_id="fake", health=lambda: True), "fake"))
     assert app_client.get("/api/finances/state").status_code == 200
     assert (tmp_path / "home" / "finance.db").exists()
+
+
+def test_recurring_expense_over_http(client) -> None:
+    acc = _post(client, "accounts", {"name": "C6 Bank", "opening": 100_000})
+    body = {"date": "2026-08-31", "description": "Ame Credit Card Agreement", "categoryId": "bills", "amount": 25_000,
+            "method": "pix", "accountId": acc["id"], "installments": 3}
+    rule = _post(client, "recurring", body)
+    state = client.get("/api/finances/state", params={"today": "2026-10-05"}).json()
+    assert [r["id"] for r in state["recurring"]] == [rule["id"]]
+    txs = client.get("/api/finances/transactions", params={"from": "2026-08-01", "to": "2026-12-31"}).json()["transactions"]
+    assert all(t["recurringId"] == rule["id"] for t in txs) and len(txs) >= 1
+    assert client.delete(f"/api/finances/recurring/{rule['id']}").status_code == 204
+    assert client.delete(f"/api/finances/recurring/{rule['id']}").status_code == 404
+    assert client.post("/api/finances/recurring", json={**body, "installments": 1}).status_code == 422

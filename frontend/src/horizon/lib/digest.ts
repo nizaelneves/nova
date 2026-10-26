@@ -18,6 +18,7 @@ export interface RawBlock {
   text?: string;
   url?: string;
   time?: string;
+  origin?: string; // the feed or channel inside the source
 }
 
 export interface DigestItem { id: string; title: string; text: string }
@@ -35,6 +36,7 @@ export interface DigestBlock {
   text: string;
   url: string;
   time: Date | null;
+  origin: string;
 }
 
 export interface Digest {
@@ -56,13 +58,13 @@ export interface Digest {
 const plain = (line: string): string => line.replace(/^\s*(?:[#>*\-•]+|\d+[.)])\s*/, '').replace(/[*_`]+/g, '').trim();
 
 const KNOWN: Record<string, string> = {
-  news_rss: 'News RSS', gmail: 'Gmail', gmail_imap: 'Gmail', gcalendar: 'Google Calendar',
+  news_rss: 'RSS', gmail: 'Gmail', gmail_imap: 'Gmail', gcalendar: 'Google Calendar',
   apple_calendar: 'Apple Calendar',
   github_notifications: 'GitHub Notifications', imessage: 'iMessage', whatsapp: 'WhatsApp', anytype: 'Anytype',
   slack: 'Slack', notion: 'Notion', outlook: 'Outlook', weather: 'Weather',
 };
 
-/** A source as the user knows it: "news_rss" is "News RSS", "gmail" is "Gmail". */
+/** A source as the user knows it: "news_rss" is "RSS", "gmail" is "Gmail". */
 export const sourceName = (key: string): string => KNOWN[key.toLowerCase()] ?? humanize(key);
 
 /** "morning_news" becomes "Morning News". */
@@ -98,6 +100,7 @@ export function parseDigest(raw: RawDigest): Digest {
     summary: (b.summary ?? '').trim(),
     text: (b.text ?? '').trim(),
     url: b.url ?? '',
+    origin: (b.origin ?? '').trim(),
     time: b.time && !Number.isNaN(Date.parse(b.time)) ? new Date(b.time) : null,
   }));
   return {
@@ -127,5 +130,8 @@ export function kindCounts(blocks: DigestBlock[]): { kind: BlockKind; count: num
   const order: BlockKind[] = ['news', 'rss', 'mail'];
   return order.map((kind) => ({ kind, count: blocks.filter((b) => b.kind === kind).length })).filter((k) => k.count > 0);
 }
+
+/** "RSS" or, when the item says which feed it is from, "RSS · Sandeco". */
+export const fromLabel = (b: Pick<DigestBlock, 'sourceName' | 'origin'>): string => (b.origin ? `${b.sourceName} · ${b.origin}` : b.sourceName);
 
 export const kindLabel: Record<BlockKind, string> = { news: 'News', rss: 'RSS', mail: 'E-Mails', other: 'Other' };

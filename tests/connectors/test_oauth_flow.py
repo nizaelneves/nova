@@ -160,3 +160,21 @@ def test_gdrive_auth_url_returns_consent_url_with_client_id(
     url = conn.auth_url()
     assert "accounts.google.com" in url
     assert "test-id.apps.googleusercontent.com" in url
+
+
+def test_a_google_api_that_is_switched_off_gets_a_plain_message(tmp_path):
+    import httpx
+    import pytest
+
+    from phibe.connectors.google_auth import call_with_refresh
+
+    request = httpx.Request("GET", "https://gmail.googleapis.com/x")
+    response = httpx.Response(403, request=request, text='{"error": {"status": "PERMISSION_DENIED", "details": [{"reason": "SERVICE_DISABLED"}]}}')
+
+    def api(_token):
+        raise httpx.HTTPStatusError("403 Forbidden", request=request, response=response)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("phibe.connectors.google_auth.current_access_token", lambda _p: "t")
+        with pytest.raises(httpx.HTTPStatusError, match="turned off in your Google Cloud project"):
+            call_with_refresh(api, str(tmp_path / "x.json"))

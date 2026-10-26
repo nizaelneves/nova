@@ -28,4 +28,12 @@ describe('mini calendar', () => {
     expect(days.get('2026-10-13')?.pings).toEqual([]); // a finished reminder is left out
     expect(days.get('2026-10-12')?.holiday).toBe('Nossa Senhora Aparecida');
   });
+
+  it('puts Google Calendar events on their days, an all-day event on each day it covers', () => {
+    const event = (id: string, date: string, end_date: string, all_day = false) => ({ id, title: id, date, end_date, all_day, time: '', url: '' });
+    const days = eventsByDay([], [], [], [event('dentist', '2026-10-26', '2026-10-26'), event('trip', '2026-10-28', '2026-10-30', true)]);
+    expect(days.get('2026-10-26')?.events.map((e) => e.id)).toEqual(['dentist']);
+    expect(['2026-10-28', '2026-10-29', '2026-10-30'].map((d) => days.get(d)?.events.length)).toEqual([1, 1, 1]);
+    expect(days.get('2026-10-31')).toBeUndefined();
+  });
 });

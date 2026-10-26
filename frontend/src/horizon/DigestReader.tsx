@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../components/Icon';
-import { kindCounts, kindLabel, timeLabel, type BlockKind, type Digest, type DigestBlock } from './lib/digest';
+import { fromLabel, kindCounts, kindLabel, timeLabel, type BlockKind, type Digest, type DigestBlock } from './lib/digest';
 
 const CLOSE_MS = 300;
 
@@ -71,7 +71,7 @@ export function DigestReader({ digest, now, start, onClose }: { digest: Digest; 
             {shown.length === 0 && <p className="dg-none">Nothing here yet.</p>}
             {shown.map((b) => (
               <button key={b.id} type="button" className="dr-card" data-kind={b.kind} data-current={b.id === current?.id} onClick={() => setSelected(b.id)} onDoubleClick={() => b.url && window.open(b.url, '_blank', 'noopener,noreferrer')}>
-                <span className="dg-blk-meta"><i />{b.sourceName}{b.time && <time>{timeLabel(b.time, now)}</time>}</span>
+                <span className="dg-blk-meta"><i /><span className="dg-blk-from" title={fromLabel(b)}>{fromLabel(b)}</span>{b.time && <time>{timeLabel(b.time, now)}</time>}</span>
                 <b><span>{b.title}</span></b>
                 <span className="dr-card-line"><span>{b.summary}</span></span>
               </button>
@@ -81,7 +81,7 @@ export function DigestReader({ digest, now, start, onClose }: { digest: Digest; 
           <article className="dr-read">
             {current ? (
               <>
-                <span className="dg-blk-meta" data-kind={current.kind}><i />{current.sourceName}{current.time && <time>{timeLabel(current.time, now)}</time>}</span>
+                <span className="dg-blk-meta" data-kind={current.kind}><i /><span className="dg-blk-from" title={fromLabel(current)}>{fromLabel(current)}</span>{current.time && <time>{timeLabel(current.time, now)}</time>}</span>
                 <h3>{current.title}</h3>
                 <p>{current.text || current.summary}</p>
                 {current.url && (
