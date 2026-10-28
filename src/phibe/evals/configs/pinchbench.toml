@@ -22,5 +22,5 @@ agent = "native_react"
 tools = [
     "file_read", "file_write", "web_search", "shell_exec",
     "code_interpreter", "browser_navigate", "image_generate",
-    "calculator", "http_request", "pdf_extract",
+    "calculator", "http_request", "markitdown",
 ]

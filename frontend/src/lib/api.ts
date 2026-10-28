@@ -910,7 +910,14 @@ export const savePingsSettings = (changes: Partial<PingsSettings>): Promise<Ping
   });
 
 /** File types Phibe can read when you add them with the "+" button. */
-export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx', '.xlsx'];
+export const KNOWLEDGE_FILE_TYPES = ['.txt', '.md', '.csv', '.pdf', '.docx', '.xlsx', '.pptx', '.html', '.htm', '.json', '.xml'];
+
+/** One file as Markdown, without saving it anywhere (the chat's Add File keeps it with the conversation). */
+export async function convertFileToMarkdown(file: File): Promise<{ name: string; markdown: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  return syncJson<{ name: string; markdown: string }>('/v1/connectors/upload/convert', { method: 'POST', body: form });
+}
 
 /** Adds files to Phibe's knowledge, so it can use them in answers. Returns how many chunks were added. */
 export async function addFilesToKnowledge(files: File[]): Promise<number> {

@@ -95,6 +95,14 @@ export interface ChatMessage {
   audio?: { url: string };
 }
 
+/** A file added to one conversation: kept as Markdown with it, used as context there, deletable. */
+export interface ConversationFile {
+  id: string;
+  name: string;
+  markdown: string;
+  addedAt: number;
+}
+
 export interface Conversation {
   id: string;
   title: string;
@@ -102,6 +110,7 @@ export interface Conversation {
   updatedAt: number;
   model: string;
   messages: ChatMessage[];
+  files?: ConversationFile[];
 }
 
 // --- Stream State ---

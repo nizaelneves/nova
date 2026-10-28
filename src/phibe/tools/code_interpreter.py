@@ -11,9 +11,9 @@ Security model (defense in depth):
    no ``.pyc``, no ``site``), a sanitized environment, and POSIX resource
    limits (CPU + address space + no new files) applied in a ``preexec_fn``.
 3. **Outer sandbox** — on a server this tool should run inside the Docker
-   sandbox (see ``code_interpreter_docker`` / ``deploy/docker/Dockerfile.sandbox``)
-   or be disabled entirely. AST validation is a filter, not a jail: the Docker
-   boundary is the real containment for untrusted code.
+   sandbox (see ``deploy/docker/Dockerfile.sandbox``) or be disabled entirely.
+   AST validation is a filter, not a jail: the Docker boundary is the real
+   containment for untrusted code.
 """
 
 from __future__ import annotations

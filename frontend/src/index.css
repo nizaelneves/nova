@@ -2396,3 +2396,8 @@ i[data-k='event'] { background: #60a5fa; }
 .ps-prompt h5 { display: flex; justify-content: space-between; margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); }
 .ps-prompt h5 span { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .ps-prompt pre { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); font-family: var(--term-font); font-size: 0.74rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-text-secondary); }
+
+.isl-files { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 4px 0; font-family: var(--term-font); }
+.isl-file { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; padding: 3px 4px 3px 9px; border-radius: 999px; border: 1px solid rgba(32, 231, 170, 0.28); background: rgba(32, 231, 170, 0.08); font-size: 0.7rem; color: rgba(255, 255, 255, 0.8); }
+.isl-file button { width: 18px; height: 18px; border-radius: 50%; line-height: 16px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
+.isl-file button:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }

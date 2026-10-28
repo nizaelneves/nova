@@ -7,6 +7,7 @@ import { streamChat, streamResearch } from './sse';
 import { generateId, useAppStore } from './store';
 import { serializeToolCallArguments } from './tool-call';
 import { speakReply, stopSpeaking } from './voiceReply';
+import { fileContext } from './docContext';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -72,6 +73,9 @@ export function useChat() {
       role: m.role,
       content: m.content,
     }));
+    // The files of this conversation go to the model with this message only, not into the saved chat.
+    const attached = fileContext(useAppStore.getState().conversations.find((c) => c.id === convId)?.files, content);
+    if (attached && apiMessages.length > 0) apiMessages[apiMessages.length - 1].content += attached;
 
     const assistantMsg: ChatMessage = {
       id: generateId(),

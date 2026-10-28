@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import io
 import logging
 import uuid
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
+from phibe.connectors.markitdown_convert import UnsupportedDocument, extension, to_markdown
 from phibe.connectors.store import KnowledgeStore
 from phibe.core.config import DEFAULT_CONFIG_DIR
 
@@ -20,9 +21,6 @@ router = APIRouter(prefix="/v1/connectors/upload", tags=["upload"])
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-_ALLOWED_EXTENSIONS = {".txt", ".md", ".csv", ".pdf", ".docx", ".xlsx"}
-
 
 def _chunk_text(text: str, max_chars: int = 1000) -> List[str]:
     """Split *text* into ~max_chars pieces at paragraph boundaries."""
@@ -55,75 +53,14 @@ def _chunk_text(text: str, max_chars: int = 1000) -> List[str]:
     return final
 
 
-def _extract_text_from_pdf(data: bytes) -> str:
-    """Extract text from a PDF using pdfplumber or PyPDF2."""
-    # Try pdfplumber first
+def _keep_markdown(doc_id: str, filename: str, text: str) -> None:
+    """Keep the converted .md next to the data, named after the file, so it can be opened or deleted."""
     try:
-        import pdfplumber  # type: ignore[import-untyped]
-
-        with pdfplumber.open(io.BytesIO(data)) as pdf:
-            pages = [p.extract_text() or "" for p in pdf.pages]
-        return "\n\n".join(pages)
-    except ImportError:
-        pass
-
-    # Fall back to PyPDF2
-    try:
-        from PyPDF2 import PdfReader  # type: ignore[import-untyped]
-
-        reader = PdfReader(io.BytesIO(data))
-        pages = [p.extract_text() or "" for p in reader.pages]
-        return "\n\n".join(pages)
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "PDF parsing requires pdfplumber or PyPDF2. "
-                "Install one with: pip install pdfplumber"
-            ),
-        )
-
-
-def _extract_text_from_docx(data: bytes) -> str:
-    """Extract text from a .docx file using python-docx."""
-    try:
-        from docx import Document  # type: ignore[import-untyped]
-
-        doc = Document(io.BytesIO(data))
-        return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "DOCX parsing requires python-docx. "
-                "Install with: pip install python-docx"
-            ),
-        )
-
-
-def _extract_text_from_xlsx(data: bytes) -> str:
-    """Extract text from an .xlsx workbook using openpyxl, sheet by sheet."""
-    try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
-
-        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-        sheets: List[str] = []
-        for sheet in wb.worksheets:
-            rows: List[str] = []
-            for row in sheet.iter_rows(values_only=True):
-                cells = [str(c) for c in row if c is not None]
-                if cells:
-                    rows.append("\t".join(cells))
-            if rows:
-                sheets.append(f"# {sheet.title}\n" + "\n".join(rows))
-        return "\n\n".join(sheets)
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "XLSX parsing requires openpyxl. Install with: pip install openpyxl"
-            ),
-        )
+        folder = DEFAULT_CONFIG_DIR / "documents"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"{doc_id[:8]}-{Path(filename).stem}.md").write_text(text, encoding="utf-8")
+    except OSError:
+        logger.debug("could not keep the markdown copy", exc_info=True)
 
 
 def _get_store() -> KnowledgeStore:
@@ -188,41 +125,22 @@ async def ingest_files(
 
     for upload in files:
         filename = upload.filename or "untitled"
-        ext = ""
-        if "." in filename:
-            ext = "." + filename.rsplit(".", 1)[-1].lower()
-
-        if ext not in _ALLOWED_EXTENSIONS:
-            allowed = ", ".join(sorted(_ALLOWED_EXTENSIONS))
-            raise HTTPException(
-                status_code=400,
-                detail=(f"Unsupported file type: {ext}. Allowed: {allowed}"),
-            )
-
+        ext = extension(filename)
         data = await upload.read()
+        try:
+            text = to_markdown(data, filename)
+        except UnsupportedDocument as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except Exception as exc:  # noqa: BLE001 - a corrupt file must not become a 500
+            raise HTTPException(status_code=422, detail=f"Could not read {filename}: {exc}")
 
-        # Parse content based on extension
-        if ext in (".txt", ".md", ".csv"):
-            try:
-                text = data.decode("utf-8")
-            except UnicodeDecodeError:
-                text = data.decode("latin-1")
-        elif ext == ".pdf":
-            text = _extract_text_from_pdf(data)
-        elif ext == ".docx":
-            text = _extract_text_from_docx(data)
-        elif ext == ".xlsx":
-            text = _extract_text_from_xlsx(data)
-        else:
-            continue
-
-        text = text.strip()
         if not text:
             continue
 
         doc_id = str(uuid.uuid4())
         doc_title = title or filename
         chunks = _chunk_text(text)
+        _keep_markdown(doc_id, filename, text)
 
         for idx, chunk in enumerate(chunks):
             store.store(
@@ -243,3 +161,23 @@ async def ingest_files(
         )
 
     return IngestResponse(chunks_added=total_chunks)
+
+
+class ConvertResponse(BaseModel):
+    name: str
+    markdown: str
+
+
+@router.post("/convert", response_model=ConvertResponse)
+async def convert_file(file: UploadFile = File(...)) -> ConvertResponse:
+    """Convert one file to Markdown and give it back, without indexing it (for the chat's Add File)."""
+    filename = file.filename or "untitled"
+    try:
+        text = to_markdown(await file.read(), filename)
+    except UnsupportedDocument as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=422, detail=f"Could not read {filename}: {exc}")
+    if not text:
+        raise HTTPException(status_code=422, detail=f"{filename} has no text to read")
+    return ConvertResponse(name=filename, markdown=text)

@@ -28,8 +28,6 @@ EXPECTED_TOOLS = {
     "get_weather",
     # code_interpreter.py
     "code_interpreter",
-    # code_interpreter_docker.py
-    "code_interpreter_docker",
     # repl.py
     "repl",
     # storage_tools.py
@@ -59,7 +57,7 @@ EXPECTED_TOOLS = {
     # db_query.py
     "db_query",
     # pdf_tool.py
-    "pdf_extract",
+    "markitdown",
     # image_tool.py
     "image_generate",
     # audio_tool.py

@@ -86,12 +86,14 @@ server = [
     "uvicorn>=0.30",
     "pydantic>=2.0",
     "python-multipart>=0.0.9",
+    "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
 ]
 desktop = [
     "fastapi>=0.110",
     "uvicorn>=0.30",
     "pydantic>=2.0",
     "python-multipart>=0.0.9",
+    "markitdown[pdf,docx,xlsx,pptx]>=0.1.5",
     "faster-whisper>=1.0",
     # 1.24.x declares Python 3.10 support but publishes no cp310 wheels (#917).
     "onnxruntime<1.24; python_version < '3.11'",

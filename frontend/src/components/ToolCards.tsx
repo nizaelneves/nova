@@ -8,8 +8,12 @@ const CATEGORY_ICON: Record<string, IconName> = {
   media: 'clapperboard-play', system: 'cpu', web: 'link-round', search: 'magnifer',
 };
 
-/** "web_search" becomes "Web Search". */
-const toolTitle = (name: string): string => name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const ACRONYMS = new Set(['llm', 'db', 'http', 'sql', 'pdf']);
+const NAMES: Record<string, string> = { markitdown: 'MarkItDown' };
+
+/** "web_search" becomes "Web Search"; acronyms stay in capitals ("db_query" is "DB Query"). */
+const toolTitle = (name: string): string =>
+  NAMES[name] ?? name.split('_').map((w) => (ACRONYMS.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
 
 /** The keys of a tool the user has to add by hand (the cloud model keys live in the island). */
 const ownKeys = (t: ToolInfo): string[] => t.credential_keys.filter((k) => !CLOUD_KEYS.has(k));

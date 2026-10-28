@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { addFilesToKnowledge, KNOWLEDGE_FILE_TYPES } from '../../lib/api';
+import { convertFileToMarkdown, KNOWLEDGE_FILE_TYPES } from '../../lib/api';
+import { useAppStore } from '../../lib/store';
 import { Icon } from '../Icon';
 import { PickerModal, PickerRow } from '../PickerModal';
 
-/** The "+" button: opens a pop-up to add files (spreadsheets, documents) so Phibe can use them. */
+/** The "+" button: adds files (documents, spreadsheets) to this conversation only. They are kept with it, as Markdown, until you remove them. */
 export function AttachMenu({ disabled }: { disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -18,12 +19,13 @@ export function AttachMenu({ disabled }: { disabled?: boolean }) {
     setOpen(false);
     setBusy(true);
     try {
-      const chunks = await addFilesToKnowledge(files);
-      toast.success(
-        chunks > 0
-          ? `Phibe read ${files.length} file${files.length > 1 ? 's' : ''} (${chunks} parts saved)`
-          : 'The file had no text to read',
-      );
+      const app = useAppStore.getState();
+      const convId = app.activeId ?? app.createConversation(app.selectedModel);
+      for (const file of files) {
+        const done = await convertFileToMarkdown(file);
+        useAppStore.getState().addConversationFile(convId, { id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: done.name, markdown: done.markdown, addedAt: Date.now() });
+      }
+      toast.success(`Phibe read ${files.length} file${files.length > 1 ? 's' : ''}; ${files.length > 1 ? 'they stay' : 'it stays'} with this chat`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not add the file', { duration: 8000 });
     } finally {

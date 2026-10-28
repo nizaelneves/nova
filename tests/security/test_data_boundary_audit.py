@@ -52,7 +52,6 @@ EXPECTED_LOCAL_ACCESS_TOOLS = {
     "db_query",
     "knowledge_sql",
     "repl",
-    "code_interpreter_docker",
     "git_status",
     "git_diff",
     "git_commit",
@@ -66,7 +65,7 @@ EXPECTED_LOCAL_ACCESS_TOOLS = {
     "skill_manage",
     "channel_list",
     "channel_status",
-    "pdf_extract",
+    "markitdown",
     "kg_add_entity",
     "kg_add_relation",
     "kg_query",
@@ -907,7 +906,6 @@ def test_cloud_api_outbound_tools_emit_frontend_scope_note(tmp_path, tool_name):
 @pytest.mark.parametrize(
     "tool_name",
     [
-        "code_interpreter_docker",
         "git_status",
         "git_diff",
         "git_commit",

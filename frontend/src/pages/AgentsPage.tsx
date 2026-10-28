@@ -207,7 +207,7 @@ const CATEGORY_MAP: Record<string, string> = {
 const TOOL_NAME_FALLBACK: Record<string, string> = {
   file_read: 'Files & Data',
   file_write: 'Files & Data',
-  pdf_extract: 'Files & Data',
+  markitdown: 'Files & Data',
   db_query: 'Files & Data',
   http_request: 'Files & Data',
   apply_patch: 'Code & Dev',
@@ -229,7 +229,7 @@ const POPULAR_TOOLS = new Set([
   'telegram', 'whatsapp',
   'web_search', 'browser',
   'code_interpreter', 'shell_exec', 'git_status', 'git_diff',
-  'file_read', 'file_write', 'pdf_extract',
+  'file_read', 'file_write', 'markitdown',
   'retrieval', 'memory_store',
   'think', 'llm', 'calculator',
   'image_generate',

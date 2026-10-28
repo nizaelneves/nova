@@ -48,11 +48,6 @@ except ImportError:
     pass
 
 try:
-    import phibe.tools.code_interpreter_docker  # noqa: F401
-except ImportError:
-    pass
-
-try:
     import phibe.tools.repl  # noqa: F401
 except ImportError:
     pass
@@ -114,7 +109,7 @@ except ImportError:
     pass
 
 try:
-    import phibe.tools.pdf_tool  # noqa: F401
+    import phibe.tools.markitdown_tool  # noqa: F401
 except ImportError:
     pass
 

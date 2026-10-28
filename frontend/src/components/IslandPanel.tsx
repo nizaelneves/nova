@@ -10,6 +10,7 @@ import { Icon, type IconName } from './Icon';
 import { useSpeech } from '../hooks/useSpeech';
 import { approveAction, completePing, denyAction, fetchPings, isTauri } from '../lib/api';
 import type { Ping, PendingApproval } from '../lib/api';
+import type { ConversationFile } from '../types';
 import { disintegrate } from '../lib/disintegrate';
 import { CLI_ENGINES_ENABLED } from '../lib/features';
 import { useAppStore } from '../lib/store';
@@ -31,6 +32,7 @@ const SECTIONS: { id: IslandSection; label: string; icon: IconName }[] = [
 
 /** The suggestion in the empty message box; Tab accepts it. */
 const SUGGESTION = 'How can I assist you today?';
+const NO_FILES: ConversationFile[] = [];
 
 /** How risky an action is, from quiet to loud. */
 const TIER: Record<PendingApproval['tier'], { label: string; color: string }> = {
@@ -119,7 +121,21 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
       void invoke('voice_toggle');
       return;
     }
-    window.dispatchEvent(new Event('phibe:voice-toggle')); // the voice card of the page listens
+    if (!speechEnabled || !speech.available) {
+      toast.error(!speechEnabled ? 'Enable speech in Settings first' : 'Speech backend not configured');
+      return;
+    }
+    if (speech.state === 'recording') {
+      try {
+        const text = await speech.stopRecording();
+        if (text) setPendingVoice({ id: Date.now(), text, mode: 'send' });
+      } catch {
+        // The error is shown by the speech hook.
+      }
+    } else if (speech.state === 'idle') {
+      stopSpeaking();
+      await speech.startRecording();
+    }
   };
 
   // A message spoken with the voice shortcut: the island takes it and opens itself, so the answer can be read.
@@ -303,6 +319,7 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
   const stuck = useRef(true); // keep following the answer unless the reader scrolled up
 
   const answering = stream.isStreaming && stream.conversationId === activeId;
+  const files = useAppStore((s) => s.conversations.find((c) => c.id === s.activeId)?.files) ?? NO_FILES;
   const last = messages[messages.length - 1];
 
   useEffect(() => { input.current?.focus(); }, []);
@@ -407,6 +424,17 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
           decide={(id, action) => decide(id, action)} />
       </div>
 
+      {files.length > 0 && (
+        <div className="isl-files">
+          {files.map((f) => (
+            <span key={f.id} className="isl-file" title={`${f.markdown.length.toLocaleString()} characters`}>
+              <Icon name="paperclip" size={11} />
+              <span className="truncate">{f.name}</span>
+              <button type="button" aria-label={`Remove ${f.name}`} onClick={() => activeId && useAppStore.getState().removeConversationFile(activeId, f.id)}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="isl-composer">
         <span className="isl-prompt" aria-hidden="true">❯</span>
         <div className="isl-field">

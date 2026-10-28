@@ -12,6 +12,7 @@ import type {
   StreamState,
   ToolCallInfo,
   TokenUsage,
+  ConversationFile,
 } from '../types';
 import type { ManagedAgent } from './api';
 import { isCliModel, isEmbedOnlyModel } from './model-capabilities';
@@ -202,6 +203,9 @@ interface AppState {
   renameConversation: (id: string, title: string) => void;
   loadMessages: (conversationId: string | null) => void;
   addMessage: (conversationId: string, message: ChatMessage) => void;
+  /** Attach a file (already converted to Markdown) to a conversation, or take one away. */
+  addConversationFile: (conversationId: string, file: ConversationFile) => void;
+  removeConversationFile: (conversationId: string, fileId: string) => void;
   updateLastAssistant: (
     conversationId: string,
     content: string,
@@ -419,6 +423,24 @@ export const useAppStore = create<AppState>((set, get) => {
       const store = loadConversations();
       const conv = store.conversations[conversationId];
       set({ messages: conv ? conv.messages : [] });
+    },
+
+    addConversationFile: (conversationId: string, file: ConversationFile) => {
+      const store = loadConversations();
+      const conv = store.conversations[conversationId];
+      if (!conv) return;
+      conv.files = [...(conv.files ?? []), file];
+      saveConversations(store);
+      set({ conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt) });
+    },
+
+    removeConversationFile: (conversationId: string, fileId: string) => {
+      const store = loadConversations();
+      const conv = store.conversations[conversationId];
+      if (!conv) return;
+      conv.files = (conv.files ?? []).filter((f) => f.id !== fileId);
+      saveConversations(store);
+      set({ conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt) });
     },
 
     addMessage: (conversationId: string, message: ChatMessage) => {
