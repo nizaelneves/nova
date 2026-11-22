@@ -11,6 +11,7 @@ export interface NoteSummary {
   deleted_at: number | null;
   tags: string[];
   linked_from?: { id: string; title: string }[];
+  linked_to?: { id: string; title: string }[]; // the notes it points at (a bookmark's backlinks are mostly these)
 }
 
 export interface Note extends NoteSummary {
@@ -95,6 +96,10 @@ export const createBookmark = (url: string): Promise<Note> => json('/v1/notes/bo
 export const deleteNoteFile = (name: string): Promise<unknown> => json(`/v1/notes/files/${name}`, { method: 'DELETE' });
 export const setFileTags = (name: string, tags: string[]): Promise<unknown> =>
   json(`/v1/notes/files/${name}/tags`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tags }) });
+export const setFileNotes = (name: string, notes: string[]): Promise<unknown> =>
+  json(`/v1/notes/files/${name}/notes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes }) });
+export const unlinkNotes = (src: string, dst: string): Promise<unknown> =>
+  json(`/v1/notes/links?src=${src}&dst=${dst}`, { method: 'DELETE' });
 export const createTag = (name: string): Promise<unknown> => json('/v1/notes/tags', { ...post, body: JSON.stringify({ name }) });
 export const editTag = (name: string, change: { new_name?: string; color?: string }): Promise<unknown> =>
   json('/v1/notes/tags', { ...patch, body: JSON.stringify({ name, ...change }) });

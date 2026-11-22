@@ -2,15 +2,16 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
-import { Icon } from '../components/Icon';
+import { Icon, type IconName } from '../components/Icon';
 import { disintegrate } from '../lib/disintegrate';
 import { CollectionEditor, TagEditor } from '../components/notes/Organize';
 import { GraphView } from '../components/notes/GraphView';
 import { AttachmentsTable, CollectionsTable, NotesTable, setTagColors } from '../components/notes/SetTable';
 import { TagsManager } from '../components/notes/TagsManager';
+import { FileView } from '../components/notes/FileView';
 import {
   type Attachment, type CollectionCount, type Note, type NoteDraft, type RelatedNote, type NoteSummary, type NotesStatus, type SearchHit, type TagCount,
-  createBookmark, createCollection, createNote, deleteCollection, deleteNoteFile, setFileTags, getNote, listAttachments, listCollections, listNotes, listTags,
+  createBookmark, createCollection, createNote, deleteCollection, deleteNoteFile, setFileNotes, setFileTags, unlinkNotes, getNote, listAttachments, listCollections, listNotes, listTags,
   notesStatus, patchNote, reindexNotes, relatedNotes, restoreNote, searchNotes, setNoteCollections, trashNote, uploadNoteFile,
 } from '../lib/notes-api';
 import { mentionedNoteId, plainSnippet, tidyMarkdown, whenText, withoutTitle } from '../lib/notes';
@@ -49,6 +50,7 @@ export function NotesPage() {
   const [newCollection, setNewCollection] = useState<string | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set()); // rows ticked, to delete several at once
   const [sure, setSure] = useState(false);
+  const [viewing, setViewing] = useState<Attachment | null>(null); // a file opened inside Memoir
   const fileInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<NotesStatus | null>(null);
   const [query, setQuery] = useState('');
@@ -170,7 +172,7 @@ export function NotesPage() {
   };
 
   const pick = async (id: string) => { await flush(); setEditing(false); setQuery(''); setOpenId(id); };
-  const go = async (to: Scope) => { await flush(); setScope(to); setQuery(''); setOpenId(null); setEditing(false); setNewBookmark(null); setNewCollection(null); setPicked(new Set()); setSure(false); };
+  const go = async (to: Scope) => { await flush(); setScope(to); setQuery(''); setOpenId(null); setEditing(false); setNewBookmark(null); setNewCollection(null); setPicked(new Set()); setSure(false); setViewing(null); };
 
   /** A note was made: show it in edit mode. */
   const show = (created: Note, edit: boolean) => {
@@ -229,10 +231,10 @@ export function NotesPage() {
     return job ? `Indexing ${job.done}/${job.total || '…'}` : null;
   }, [status]);
   const scopeTitle = scope.kind === 'all' ? 'All Notes' : scope.kind === 'bookmarks' ? 'Bookmarks' : scope.kind === 'pages' ? 'Pages' : scope.kind === 'collections' ? 'Collections' : scope.kind === 'files' ? 'Files' : scope.kind === 'images' ? 'Images' : scope.kind === 'videos' ? 'Videos' : scope.kind === 'tags' ? 'Tags' : scope.kind === 'trash' ? 'Trash' : scope.kind === 'graph' ? 'Graph' : scope.name;
-  const scopeIcon = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'layers' : scope.kind === 'files' ? 'paperclip' : scope.kind === 'images' ? 'eye' : scope.kind === 'videos' ? 'play-stream' : scope.kind === 'tags' ? 'tag' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'trash-bin-minimalistic' : scope.kind === 'graph' ? 'widget-2' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'notes-minimalistic';
+  const scopeIcon: IconName = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'ph-folders' : scope.kind === 'files' ? 'lucide-files' : scope.kind === 'images' ? 'lucide-images' : scope.kind === 'videos' ? 'tabler-player-play' : scope.kind === 'tags' ? 'lucide-tags' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'trash-bin-minimalistic' : scope.kind === 'graph' ? 'ph-graph' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'lucide-library';
   const canEdit = !!note && !note.deleted_at;
 
-  const NavItem = ({ to, icon, label, count }: { to: Scope; icon: 'play-stream' | 'notes-minimalistic' | 'book-2' | 'link-round' | 'folder' | 'tag' | 'trash-bin-minimalistic' | 'widget-2' | 'layers' | 'paperclip' | 'eye' | 'document-text'; label: string; count?: number }) => (
+  const NavItem = ({ to, icon, label, count }: { to: Scope; icon: IconName; label: string; count?: number }) => (
     <button type="button" className="nt-nav" data-active={!openId && same(scope, to)} onClick={() => void go(to)}>
       <Icon name={icon} size={16} />
       <span className="truncate">{label}</span>
@@ -253,6 +255,9 @@ export function NotesPage() {
   const known = tags.map((t) => t.name); // most used first
   useEffect(() => { setTagColors(Object.fromEntries(tags.filter((t) => t.color).map((t) => [t.name, t.color as string]))); }, [tags]);
   const changeNoteTags = (id: string, list: string[]) => { patchNote(id, { tags: list }).then(() => refreshAll()).catch((e) => toast.error(message(e))); };
+  const changeFileLinks = (name: string, ids: string[]) => { setFileNotes(name, ids).then(() => refreshSide()).catch((e) => toast.error(message(e))); };
+  const unlink = (src: string, dst: string) => { unlinkNotes(src, dst).then(() => refreshAll()).catch((e) => toast.error(message(e))); };
+  const noteOptions = catalog.map((n) => ({ id: n.id, title: n.title })).filter((n) => n.title);
   const changeFileTags = (name: string, list: string[]) => { setFileTags(name, list).then(() => refreshSide()).catch((e) => toast.error(message(e))); };
   const fileCounts: Record<string, number> = {};
   attachments.forEach((a) => (a.tags ?? []).forEach((t) => { fileCounts[t] = (fileCounts[t] ?? 0) + 1; }));
@@ -298,7 +303,7 @@ export function NotesPage() {
   const heading = (
     <header className="nt-set-head">
       <h1><Icon name={scopeIcon} size={26} /> {scopeTitle}</h1>
-      <p>{filesScope || scope.kind === 'collections' ? '' : notes ? `${notes.length} ${notes.length === 1 ? 'Note' : 'Notes'}` : 'Loading…'}</p>
+      <p>{scope.kind === 'collections' ? `${collections.length} ${collections.length === 1 ? 'Collection' : 'Collections'}` : scope.kind === 'files' ? `${files.length} ${files.length === 1 ? 'File' : 'Files'}` : scope.kind === 'images' ? `${images.length} ${images.length === 1 ? 'Image' : 'Images'}` : scope.kind === 'videos' ? `${videos.length} ${videos.length === 1 ? 'Video' : 'Videos'}` : notes ? `${notes.length} ${notes.length === 1 ? 'Note' : 'Notes'}` : 'Loading…'}</p>
       {scope.kind !== 'trash' && (
         <div className="nt-set-actions">
           {filesScope ? (
@@ -337,17 +342,17 @@ export function NotesPage() {
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search" aria-label="Search Notes" />
           {query && <button type="button" aria-label="Clear Search" onClick={() => setQuery('')}><Icon name="close-circle" size={15} /></button>}
         </div>
-        <NavItem to={{ kind: 'all' }} icon="notes-minimalistic" label="All Notes" count={status?.notes} />
-        <div className="nt-graphlink"><NavItem to={{ kind: 'graph' }} icon="widget-2" label="Graph" /></div>
+        <NavItem to={{ kind: 'all' }} icon="lucide-library" label="All Notes" count={status?.notes} />
+        <div className="nt-graphlink"><NavItem to={{ kind: 'graph' }} icon="ph-graph" label="Graph" /></div>
         <h4 className="nt-types-h">Types</h4>
         <div className="nt-types">
           <NavItem to={{ kind: 'bookmarks' }} icon="link-round" label="Bookmarks" count={status?.bookmarks} />
-          <NavItem to={{ kind: 'collections' }} icon="layers" label="Collections" count={collections.length} />
-          <NavItem to={{ kind: 'files' }} icon="paperclip" label="Files" count={files.length} />
-          <NavItem to={{ kind: 'images' }} icon="eye" label="Images" count={images.length} />
+          <NavItem to={{ kind: 'collections' }} icon="ph-folders" label="Collections" count={collections.length} />
+          <NavItem to={{ kind: 'files' }} icon="lucide-files" label="Files" count={files.length} />
+          <NavItem to={{ kind: 'images' }} icon="lucide-images" label="Images" count={images.length} />
           <NavItem to={{ kind: 'pages' }} icon="document-text" label="Pages" count={status?.pages} />
-          <NavItem to={{ kind: 'videos' }} icon="play-stream" label="Videos" count={videos.length} />
-          <NavItem to={{ kind: 'tags' }} icon="tag" label="Tags" count={tags.length} />
+          <NavItem to={{ kind: 'videos' }} icon="tabler-player-play" label="Videos" count={videos.length} />
+          <NavItem to={{ kind: 'tags' }} icon="lucide-tags" label="Tags" count={tags.length} />
         </div>
         <div className="nt-state">
           {progress && <span className="nt-progress">{progress}</span>}
@@ -376,6 +381,8 @@ export function NotesPage() {
             onOpenNote={(id) => void pick(id)}
             onOpenGroup={(n) => void go(n.type === 'tag' ? { kind: 'tag', name: n.label } : { kind: 'collection', id: n.id.replace('collection:', ''), name: n.label })}
           />
+        ) : !openId && viewing ? (
+          <FileView file={viewing} onClose={() => setViewing(null)} onOpenNote={(id) => { setViewing(null); void pick(id); }} />
         ) : !openId && scope.kind === 'tags' ? (
           <div className="nt-set">
             <TagsManager tags={tags} fileCounts={fileCounts} onOpen={(name) => void go({ kind: 'tag', name })} onChanged={refreshSide} />
@@ -386,14 +393,14 @@ export function NotesPage() {
             {scope.kind === 'collections' ? (
               <CollectionsTable rows={collections} picked={picked} onPick={togglePick} onOpen={(c) => void go({ kind: 'collection', id: c.id, name: c.name })} />
             ) : filesScope ? (
-              <AttachmentsTable rows={scope.kind === 'images' ? images : scope.kind === 'videos' ? videos : files} picked={picked} onPick={togglePick} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
+              <AttachmentsTable onView={setViewing} noteOptions={noteOptions} onLinks={changeFileLinks} rows={scope.kind === 'images' ? images : scope.kind === 'videos' ? videos : files} picked={picked} onPick={togglePick} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
             ) : notes === null ? <p className="nt-empty">Loading…</p>
               : notes.length === 0 ? <p className="nt-empty">{scope.kind === 'trash' ? 'The Trash Is Empty' : 'No Notes Here Yet'}</p>
-                : <NotesTable rows={notes} known={known} onTags={changeNoteTags} picked={picked} onPick={togglePick} onOpen={(id) => void pick(id)} onTag={(name) => void go({ kind: 'tag', name })} newLabel={scope.kind === 'bookmarks' ? 'New Bookmark' : 'New Page'} onNew={scope.kind === 'trash' ? undefined : scope.kind === 'bookmarks' ? () => setNewBookmark('') : () => void startNew()} />}
+                : <NotesTable onUnlink={unlink} rows={notes} known={known} onTags={changeNoteTags} picked={picked} onPick={togglePick} onOpen={(id) => void pick(id)} onTag={(name) => void go({ kind: 'tag', name })} newLabel={scope.kind === 'bookmarks' ? 'New Bookmark' : 'New Page'} onNew={scope.kind === 'trash' ? undefined : scope.kind === 'bookmarks' ? () => setNewBookmark('') : () => void startNew()} />}
             {scope.kind === 'tag' && attachments.some((a) => a.tags?.includes(scope.name)) && (
               <>
                 <h4 className="nt-types-h">Files With This Tag</h4>
-                <AttachmentsTable rows={attachments.filter((a) => a.tags?.includes(scope.name))} picked={picked} onPick={togglePick} selectable={false} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
+                <AttachmentsTable onView={setViewing} noteOptions={noteOptions} onLinks={changeFileLinks} rows={attachments.filter((a) => a.tags?.includes(scope.name))} picked={picked} onPick={togglePick} selectable={false} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
               </>
             )}
           </div>

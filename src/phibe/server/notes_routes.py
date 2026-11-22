@@ -44,6 +44,10 @@ class TagBody(BaseModel):
     color: Optional[str] = None
 
 
+class FileNotes(BaseModel):
+    notes: List[str] = []
+
+
 class FileTags(BaseModel):
     tags: List[str] = []
 
@@ -343,15 +347,18 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
         names = note_files.labels()
         sizes = dict(note_files.on_disk())
         tag_map = note_files.tags_map()
+        link_map = note_files.links_map()
+        titles = get_store().titles_of({i for ids in link_map.values() for i in ids})
         seen = {r["name"] for r in rows}
         for r in rows:
             r["label"] = r["label"] or names.get(r["name"], "")
             r["size"] = sizes.get(r["name"], 0)
             r["tags"] = tag_map.get(r["name"], [])
+            r["notes"] = [{"id": i, "title": titles[i]} for i in link_map.get(r["name"], []) if i in titles]  # only what the user connected
         for name, size in sorted(sizes.items()):
             if name not in seen:
                 ext = name.rsplit(".", 1)[-1]
-                rows.append({"name": name, "ext": ext, "label": names.get(name, ""), "image": ext in {"png", "jpg", "jpeg", "gif", "webp", "avif"}, "notes": [], "size": size, "tags": tag_map.get(name, [])})
+                rows.append({"name": name, "ext": ext, "label": names.get(name, ""), "image": ext in {"png", "jpg", "jpeg", "gif", "webp", "avif"}, "notes": [{"id": i, "title": titles[i]} for i in link_map.get(name, []) if i in titles], "size": size, "tags": tag_map.get(name, [])})
         return [r for r in rows if r["name"] in sizes]  # a file that is gone from the disk is not listed
 
     @router.post("/files")
@@ -369,6 +376,18 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
         if note_files.path_of(name) is None:
             raise HTTPException(status_code=404, detail="file not found")
         return {"tags": note_files.set_tags(name, body.tags)}
+
+    @router.put("/files/{name}/notes")
+    def set_file_notes(name: str, body: FileNotes) -> Dict[str, List[str]]:
+        if note_files.path_of(name) is None:
+            raise HTTPException(status_code=404, detail="file not found")
+        return {"notes": note_files.set_links(name, body.notes)}
+
+    @router.delete("/links")
+    def delete_link(src: str, dst: str) -> Dict[str, bool]:
+        if not get_store().unlink(src, dst):
+            raise HTTPException(status_code=404, detail="no such link")
+        return {"ok": True}
 
     @router.delete("/files/{name}")
     def delete_file(name: str) -> Dict[str, bool]:

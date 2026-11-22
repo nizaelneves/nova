@@ -8,7 +8,6 @@ import { TAG_COLORS, tagStyle } from './SetTable';
 /** Tags in one place: search them, see how much each is used, and rename, colour, merge or delete with one click. */
 export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: TagCount[]; fileCounts: Record<string, number>; onOpen: (name: string) => void; onChanged: () => void }) {
   const [query, setQuery] = useState('');
-  const [byName, setByName] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [palette, setPalette] = useState<string | null>(null);
@@ -17,15 +16,15 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     const rows = tags.filter((t) => !q || t.name.toLowerCase().includes(q));
-    return byName ? [...rows].sort((a, b) => a.name.localeCompare(b.name)) : rows; // the API sends them most used first
-  }, [tags, query, byName]);
+    return [...rows].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [tags, query]);
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : 'Something Went Wrong');
   const done = (msg?: string) => { if (msg) toast.success(msg); onChanged(); };
 
   return (
     <div className="nt-tagsman">
       <header className="nt-set-head">
-        <h1><Icon name="tag" size={26} /> Tags</h1>
+        <h1><Icon name="lucide-tags" size={26} /> Tags</h1>
         <p>{tags.length} {tags.length === 1 ? 'Tag' : 'Tags'}</p>
         <div className="nt-set-actions">
           {adding === null
@@ -37,10 +36,6 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
       </header>
       <div className="nt-tagbar">
         <div className="nt-search"><Icon name="magnifer" size={15} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find A Tag" aria-label="Find A Tag" /></div>
-        <div className="nt-seg" role="group" aria-label="Sort">
-          <button type="button" data-on={!byName} onClick={() => setByName(false)}>Most Used</button>
-          <button type="button" data-on={byName} onClick={() => setByName(true)}>A–Z</button>
-        </div>
       </div>
       {shown.length === 0 ? <p className="nt-empty">{tags.length === 0 ? 'No Tags Yet' : 'No Tag Matches'}</p> : (
         <div className="nt-taggrid">

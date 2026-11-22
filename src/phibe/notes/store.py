@@ -350,13 +350,46 @@ class NotesStore:
             ).fetchall():
                 if len(back[dst]) < 3 and all(b["id"] != src for b in back[dst]):
                     back[dst].append({"id": src, "title": title})
+        to: Dict[str, List[Dict[str, str]]] = {i: [] for i in ids}
+        for i in range(0, len(ids), 500):
+            chunk = ids[i : i + 500]
+            for src, dst, title in self._conn.execute(
+                "SELECT l.src, n.id, n.title FROM links l JOIN notes n ON n.id = l.dst "
+                f"WHERE n.deleted_at IS NULL AND l.src IN ({','.join('?' * len(chunk))}) ORDER BY n.title",
+                chunk,
+            ).fetchall():
+                if len(to[src]) < 3 and all(b["id"] != dst for b in to[src]):
+                    to[src].append({"id": dst, "title": title})
         out = []
         for r in rows:
             d = dict(r)
             d["tags"] = self.tags_of(d["id"])
             d["linked_from"] = back[d["id"]]
+            d["linked_to"] = to[d["id"]]
             out.append(d)
         return out
+
+    def titles_of(self, ids: Iterable[str]) -> Dict[str, str]:
+        """The titles of the live notes among these ids."""
+        ids = list(ids)
+        if not ids:
+            return {}
+        rows = self._conn.execute(f"SELECT id, title FROM notes WHERE deleted_at IS NULL AND id IN ({','.join('?' * len(ids))})", ids).fetchall()
+        return {r[0]: r[1] for r in rows}
+
+    @_serialized
+    def unlink(self, src: str, dst: str) -> bool:
+        """Take away the link from ``src`` to ``dst``. A link written in the text loses its link, and the words stay."""
+        found = self._conn.execute("SELECT kind FROM links WHERE src = ? AND dst = ?", (src, dst)).fetchone() is not None
+        row = self._conn.execute("SELECT body FROM notes WHERE id = ?", (src,)).fetchone()
+        if row and row[0]:
+            plain = re.sub(r"\[((?:[^\[\]]|\[[^\]]*\])*)\]\(/notes\?note=" + re.escape(dst) + r"\)", r"\1", row[0])
+            if plain != row[0]:
+                self._conn.execute("UPDATE notes SET body = ?, updated_at = ?, local_edit = 1 WHERE id = ?", (plain, time.time(), src))
+                found = True
+        self._conn.execute("DELETE FROM links WHERE src = ? AND dst = ?", (src, dst))
+        self._conn.commit()
+        return found
 
     def attachments(self) -> List[Dict[str, Any]]:
         """Every picture and file the notes point to, with the notes that use it (for the Files, Images and Videos sets)."""

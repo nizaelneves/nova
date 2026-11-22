@@ -164,3 +164,28 @@ def drop_tag(name: str) -> None:
     for k, v in data.items():
         data[k] = [t for t in v if t.lower() != name.lower()]
     _save_tags(data)
+
+
+# -- the notes a file is connected to: only what the user connects, not what happens to be written in a text ----
+
+def _links_file() -> Path:
+    return folder() / ".links.json"
+
+
+def links_map() -> dict:
+    import json
+
+    try:
+        return {str(k): [str(i) for i in v] for k, v in json.loads(_links_file().read_text(encoding="utf-8")).items()}
+    except (OSError, ValueError):
+        return {}
+
+
+def set_links(name: str, note_ids: list) -> list:
+    import json
+
+    data = links_map()
+    data[name] = list(dict.fromkeys(i for i in note_ids if i))
+    _links_file().parent.mkdir(parents=True, exist_ok=True)
+    _links_file().write_text(json.dumps({k: v for k, v in data.items() if v}, ensure_ascii=False), encoding="utf-8")
+    return data[name]

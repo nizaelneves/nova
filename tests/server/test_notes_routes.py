@@ -108,14 +108,15 @@ def test_uploaded_files_are_listed_and_can_be_deleted(client) -> None:
 
 
 def test_file_backlinks_tags_and_tag_management(client) -> None:
-    """A file is linked to every note that mentions it (even with [brackets] in the label); tags can be put on files and managed."""
+    """A file's backlinks are the notes the user connected it to (not the notes that merely contain it); tags work on files too."""
     png = b"PNGDATA" + bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) + b".."
     up = client.post("/v1/notes/files", files={"file": ("a.png", png, "image/png")}).json()
     ref = f"![[ABORDAGEM]]({up['url']})"
     a = client.post("/v1/notes", json={"title": "One", "body": ref, "tags": ["Old"]}).json()["id"]
-    client.post("/v1/notes", json={"title": "Two", "body": f"see <img src='{up['url']}'>"})
     row = client.get("/v1/notes/attachments").json()[0]
-    assert sorted(n["title"] for n in row["notes"]) == ["One", "Two"] and row["label"] == "[ABORDAGEM]"
+    assert row["notes"] == [] and row["label"] == "[ABORDAGEM]"  # written inside a note, but not connected
+    assert client.put(f"/v1/notes/files/{up['name']}/notes", json={"notes": [a]}).json() == {"notes": [a]}
+    assert client.get("/v1/notes/attachments").json()[0]["notes"] == [{"id": a, "title": "One"}]
     assert client.put(f"/v1/notes/files/{up['name']}/tags", json={"tags": ["Old", "Ads"]}).json() == {"tags": ["Old", "Ads"]}
     assert client.patch("/v1/notes/tags", json={"name": "Old", "new_name": "New", "color": "#8fe3ff"}).json() == {"ok": True}
     tags = {t["name"]: t for t in client.get("/v1/notes/tags").json()}
@@ -124,3 +125,17 @@ def test_file_backlinks_tags_and_tag_management(client) -> None:
     assert client.delete("/v1/notes/tags", params={"name": "New"}).json() == {"ok": True}
     assert client.get(f"/v1/notes/{a}").json()["tags"] == []
     assert client.get("/v1/notes/attachments").json()[0]["tags"] == ["Ads"]
+
+
+def test_links_show_both_ways_and_can_be_removed(client) -> None:
+    """A bookmark lists the notes it is connected to; a written link is removed from the text, the words stay."""
+    page = client.post("/v1/notes", json={"title": "Page", "body": "x"}).json()["id"]
+    mark = client.post("/v1/notes", json={"title": "Mark", "kind": "bookmark", "body": "y"}).json()["id"]
+    client.patch(f"/v1/notes/{mark}", json={"body": f"see [the page](/notes?note={page})"})
+    rows = {r["id"]: r for r in client.get("/v1/notes").json()}
+    assert rows[mark]["linked_to"] == [{"id": page, "title": "Page"}] and rows[page]["linked_from"] == [{"id": mark, "title": "Mark"}]
+    assert client.delete("/v1/notes/links", params={"src": mark, "dst": page}).json() == {"ok": True}
+    assert client.get(f"/v1/notes/{mark}").json()["body"] == "see the page"
+    rows = {r["id"]: r for r in client.get("/v1/notes").json()}
+    assert rows[page]["linked_from"] == [] and rows[mark]["linked_to"] == []
+    assert client.delete("/v1/notes/links", params={"src": mark, "dst": page}).status_code == 404
