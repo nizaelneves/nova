@@ -71,10 +71,10 @@ def _connect_source(registry: object, source: str, path: str = "") -> None:
     auth_type = getattr(connector_cls, "auth_type", "")
 
     if auth_type == "filesystem":
-        # Filesystem connectors (e.g. Obsidian) need a path
+        # Filesystem connectors need a path
         if not path:
             console.print(
-                f"[red]{source} requires a --path argument (e.g. --path ~/vault).[/red]"
+                f"[red]{source} requires a --path argument (e.g. --path ~/folder).[/red]"
             )
             return
         try:
@@ -191,7 +191,7 @@ def _connect_source(registry: object, source: str, path: str = "") -> None:
 @click.option(
     "--path",
     default="",
-    help="Path for filesystem connectors (e.g., Obsidian vault).",
+    help="Path for filesystem connectors.",
 )
 @click.pass_context
 def connect(
@@ -202,7 +202,7 @@ def connect(
     disconnect_source: str,
     path: str,
 ) -> None:
-    """Manage data source connections (Gmail, Obsidian, etc.)."""
+    """Manage data source connections (Gmail, Slack, etc.)."""
     # Lazy imports to avoid top-level side effects
     import phibe.connectors  # noqa: F401 — registers all connectors
     from phibe.core.registry import ConnectorRegistry

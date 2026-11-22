@@ -1,5 +1,5 @@
 import { apiFetch } from '../api';
-import type { Account, BankCard, Category, Goal, Overview, PayMethod, Range, Recurring, Tx } from './model';
+import type { Account, BankCard, Category, Overview, PayMethod, Range, Recurring, Tx } from './model';
 
 /** An error from the finances API; `message` is the server's own explanation. */
 class FinanceApiError extends Error {}
@@ -28,7 +28,6 @@ interface FinanceState {
   accounts: Account[];
   cards: BankCard[];
   categories: Category[];
-  goals: Goal[];
   recurring: Recurring[];
 }
 
@@ -46,6 +45,10 @@ export function fetchTransactions({ range, kind, q }: TxQuery) {
   return call<{ transactions: Tx[] }>(`/transactions?${p}`).then((r) => r.transactions);
 }
 
+/** Recurring charges not recorded yet within a range (shown read-only). */
+export const fetchUpcoming = (r: Range) =>
+  call<{ transactions: Tx[] }>(`/upcoming?from=${r.from}&to=${r.to}`).then((x) => x.transactions);
+
 export const fetchCategoryTotals = (kind: Category['kind'], r: Range) =>
   call<{ totals: Record<string, number> }>(`/category-totals?kind=${kind}&from=${r.from}&to=${r.to}`).then((x) => x.totals);
 
@@ -54,11 +57,16 @@ type Draft<T> = Omit<T, 'id'> & { id?: string };
 const upsert = <T extends { id?: string }>(path: string, body: T) =>
   body.id ? call(`${path}/${body.id}`, send('PUT', body)) : call(`${path}`, send('POST', body));
 
-export const saveAccount = (a: Draft<Pick<Account, 'id' | 'name' | 'icon' | 'opening'>>) => upsert('/accounts', a);
+export const saveAccount = (a: Draft<Pick<Account, 'id' | 'name' | 'icon' | 'opening' | 'savings' | 'target' | 'color'>>) => upsert('/accounts', a);
 export const saveCard = (c: Draft<Omit<BankCard, 'used' | 'cycle'>>) => upsert('/cards', c);
 export const saveCategory = (c: Draft<Category>) => upsert('/categories', c);
-export const saveGoal = (g: Draft<Pick<Goal, 'id' | 'name' | 'target' | 'color'>>) => upsert('/goals', g);
-export const saveTransaction = (t: Draft<Tx>) => upsert('/transactions', t);
+export type EditScope = 'one' | 'following' | 'all'; // which charges of a recurring expense an edit reaches
+export const saveTransaction = (t: Draft<Tx>, scope: EditScope = 'one') =>
+  t.id ? call(`/transactions/${t.id}?scope=${scope}`, send('PUT', t)) : upsert('/transactions', t);
+
+/** Make an existing expense repeat monthly (installments: null) or for a number of installments. */
+export const repeatTransaction = (id: string, installments: number | null) =>
+  call(`/transactions/${id}/repeat`, send('POST', { installments }));
 
 export interface RecurringInput {
   date: string; description: string; categoryId: string; amount: number;
@@ -67,7 +75,10 @@ export interface RecurringInput {
 }
 export const saveRecurring = (r: RecurringInput) => call('/recurring', send('POST', r));
 
-export const remove = (kind: 'accounts' | 'cards' | 'categories' | 'goals' | 'transactions' | 'recurring', id: string) =>
+export const removeTransaction = (id: string, scope: EditScope) =>
+  call<void>(`/transactions/${id}?scope=${scope}`, { method: 'DELETE' });
+
+export const remove = (kind: 'accounts' | 'cards' | 'categories' | 'transactions' | 'recurring', id: string) =>
   call<void>(`/${kind}/${id}`, { method: 'DELETE' });
 
 export const importState = (data: Record<string, unknown>) => call<Record<string, number>>('/import', send('POST', data));

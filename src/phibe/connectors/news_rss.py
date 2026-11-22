@@ -249,7 +249,7 @@ def _fetch_feed_retrying(url: str, attempts: int = 3) -> str:
             time.sleep(attempt)
 
 
-def _parse_rss_items(xml_text: str, max_items: int = 5) -> List[Dict[str, str]]:
+def _parse_rss_items(xml_text: str, max_items: int = 10) -> List[Dict[str, str]]:
     """Parse RSS or Atom XML and return up to *max_items* entries."""
     root = ET.fromstring(xml_text)
     items: List[Dict[str, str]] = []

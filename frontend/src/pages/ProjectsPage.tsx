@@ -3,25 +3,15 @@ import { toast } from 'sonner';
 import { Icon, type IconName } from '../components/Icon';
 import { Popup } from '../components/Popup';
 import { ConfirmDelete, EditProject, Mark, ProjectMenu, type MenuItem } from '../components/projects/project-edit';
-import { Playbook } from '../components/projects/playbook';
-import { WorkspaceSidebar } from '../components/projects/sidebar';
-import { ProjectColorContext, TaskBoard, TaskForm, TaskListView, apiErrorMessage } from '../components/projects/tasks';
+import { BoardPanel } from '../components/projects/board';
+import { ProjectColorContext, TaskForm, apiErrorMessage } from '../components/projects/tasks';
 import { TerminalLine } from '../components/TerminalLine';
 import { fetchHomeSettings } from '../lib/api';
 import { forget, loadMeta, saveMeta, setLook, type Look, type MetaStore } from '../lib/projectMeta';
 import { type SortMode, PERSONAL_COLOR, colorOf, counters, firstName, sortAreas, summarize } from '../lib/projects';
-import { type Area, type Status, type Task, createArea, deleteArea, deleteTask, fetchAreas, fetchKanban, renameArea, setTaskStatus } from '../lib/tasks-api';
-import {
-  ABOUT_FIELDS, addWorkspace, loadWorkspaces, removeWorkspace, renameWorkspace, saveWorkspaces, setAbout,
-  type WorkspacesData,
-} from '../lib/workspaces';
+import { type Area, type Task, createArea, deleteArea, deleteTask, fetchAreas, fetchKanban, renameArea } from '../lib/tasks-api';
 
-const MIGRATED = 'phibe-projects-synced';
 const ME = 'me';
-// Alphabetical, always.
-const CLIENT_VIEWS = ['Kanban', 'Knowledge', 'List', 'Playbook'] as const;
-const PLAIN_VIEWS = ['Kanban', 'List'] as const;
-type View = (typeof CLIENT_VIEWS)[number];
 
 const SORT_KEY = 'phibe-projects-sort';
 const SORTS: { id: SortMode; label: string }[] = [
@@ -30,8 +20,6 @@ const SORTS: { id: SortMode; label: string }[] = [
   { id: 'a-z', label: 'A-Z' },
   { id: 'z-a', label: 'Z-A' },
 ];
-const HOME_TABS = [{ id: 'Workspaces', icon: 'buildings-2' }, { id: 'Tasks', icon: 'checklist-minimalistic' }] as const;
-type Home = (typeof HOME_TABS)[number]['id'];
 
 function loadSort(): SortMode {
   try {
@@ -95,30 +83,11 @@ function ProjectCard({ name, color, look, personal, tasks, menu, onOpen }: { nam
   );
 }
 
-function Knowledge({ data, id, onChange }: { data: WorkspacesData; id: string; onChange: (next: WorkspacesData) => void }) {
-  const about = data.workspaces.find((w) => w.id === id)?.about ?? {};
-  return (
-    <div className="pj-grid">
-      {ABOUT_FIELDS.map((field) => (
-        <label key={field} className="pj-note">
-          <h4>{field}</h4>
-          <textarea key={id + field} defaultValue={about[field] ?? ''} rows={4} placeholder="Write what the team should know." onBlur={(e) => onChange(setAbout(data, id, field, e.target.value))} />
-        </label>
-      ))}
-    </div>
-  );
-}
-
 export function ProjectsPage() {
   const [areas, setAreas] = useState<Area[]>([]);
   const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [data, setData] = useState<WorkspacesData>(loadWorkspaces);
   const [selected, setSelected] = useState<string | null>(null);
-  const [view, setView] = useState<View>('Kanban');
   const [creating, setCreating] = useState(false);
-  const [home, setHome] = useState<Home>('Workspaces');
-  const [filter, setFilter] = useState<string>('all');
-  const [tview, setTview] = useState<'Kanban' | 'List'>('List');
   const [meta, setMeta] = useState<MetaStore>(loadMeta);
   const [showArchived, setShowArchived] = useState(false);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -128,7 +97,6 @@ export function ProjectsPage() {
   const [editing, setEditing] = useState<Task | null | 'new'>(null);
   const [myName, setMyName] = useState('Personal');
   const [newName, setNewName] = useState('');
-  const synced = useRef(false);
 
   const load = useCallback(() => {
     fetchAreas().then(setAreas).catch(() => setAreas([]));
@@ -136,53 +104,19 @@ export function ProjectsPage() {
   }, []);
 
   useEffect(load, [load]);
-  useEffect(() => { saveWorkspaces(data); }, [data]);
   useEffect(() => { saveMeta(meta); }, [meta]);
   useEffect(() => { fetchHomeSettings().then((h) => setMyName(firstName(h.display_name))).catch(() => undefined); }, []);
 
-  // A project is a client (workspace) and a task area with the same name. The first time, create whichever side is
-  // missing (clients from the old Workspaces screen get an area). After that the areas are the truth: a client whose
-  // area is gone is dropped, so a deleted project never comes back.
-  useEffect(() => {
-    if (synced.current || tasks === null) return;
-    synced.current = true;
-    let migrated = false;
-    try { migrated = localStorage.getItem(MIGRATED) === '1'; } catch { /* storage blocked: treat as first run */ }
-    const names = new Set(areas.map((a) => a.name.toLowerCase()));
-    const known = new Set(data.workspaces.map((w) => w.name.toLowerCase()));
-    const missingAreas = data.workspaces.filter((w) => !names.has(w.name.toLowerCase()));
-    const missingClients = areas.filter((a) => !known.has(a.name.toLowerCase()));
-    setData((d) => {
-      const kept = migrated ? missingAreas.reduce((acc, w) => removeWorkspace(acc, w.id), d) : d;
-      return missingClients.reduce((acc, a) => addWorkspace(acc, a.name), kept);
-    });
-    if (!migrated) {
-      void Promise.all(missingAreas.map((w) => createArea(w.name).catch(() => undefined))).then(load);
-      try { localStorage.setItem(MIGRATED, '1'); } catch { /* retried next time */ }
-    }
-  }, [areas, tasks, data.workspaces, load]);
-
   const color = useMemo(() => colorOf(areas), [areas]);
   const area = areas.find((a) => a.id === selected) ?? null;
-  const workspace = area ? data.workspaces.find((w) => w.name.toLowerCase() === area.name.toLowerCase()) ?? null : null;
   const scope = (tasks ?? []).filter((t) => (selected === null ? true : selected === ME ? !t.area_id : t.area_id === selected));
-  const views: readonly View[] = area ? CLIENT_VIEWS : PLAIN_VIEWS;
-  const active = views.includes(view) ? view : views[0];
-  const tasksScope = (tasks ?? []).filter((t) => (filter === 'all' ? true : filter === ME ? !t.area_id : t.area_id === filter));
-  const filterOptions = [{ id: 'all', label: 'All Workspaces' }, { id: ME, label: myName }, ...sortAreas(areas, 'a-z').map((a) => ({ id: a.id, label: a.name }))];
   const tint = area ? color(area.id) : selected === ME ? PERSONAL_COLOR : '#e9ecf5';
-
-  const move = async (id: string, status: Status) => {
-    setTasks((prev) => prev?.map((t) => (t.id === id ? { ...t, status } : t)) ?? prev);
-    try { await setTaskStatus(id, status); } catch (err) { toast.error(apiErrorMessage(err)); } finally { load(); }
-  };
 
   const addClient = async () => {
     const name = newName.trim();
     if (!name) return;
     try {
       const created = await createArea(name);
-      setData((d) => addWorkspace(d, name));
       setSelected(created.id);
       setNewName('');
       setCreating(false);
@@ -190,43 +124,27 @@ export function ProjectsPage() {
     } catch (err) { toast.error(apiErrorMessage(err)); }
   };
 
-  const rename = (name: string) => {
-    if (!area || !workspace || !name.trim()) return;
-    renameArea(area.id, name.trim()).then(() => { setData((d) => renameWorkspace(d, workspace.id, name)); load(); }).catch((err) => toast.error(apiErrorMessage(err)));
-  };
-
   const restyle = (id: string, changes: Partial<Look>) => setMeta((m) => setLook(m, id, changes));
 
   const saveProject = (id: string, name: string, look: Pick<Look, 'icon' | 'image'>) => {
     restyle(id, look);
     const target = areas.find((a) => a.id === id);
-    const client = target && data.workspaces.find((w) => w.name.toLowerCase() === target.name.toLowerCase());
-    if (target && client && name && name !== target.name) {
-      renameArea(id, name).then(() => { setData((d) => renameWorkspace(d, client.id, name)); load(); }).catch((err) => toast.error(apiErrorMessage(err)));
+    if (target && name && name !== target.name) {
+      renameArea(id, name).then(load).catch((err) => toast.error(apiErrorMessage(err)));
     }
     setRenaming(null);
   };
 
   const deleteProject = async (id: string) => {
     const target = areas.find((a) => a.id === id);
-    const client = target && data.workspaces.find((w) => w.name.toLowerCase() === target.name.toLowerCase());
     if (!target) return;
     try {
       await Promise.all((tasks ?? []).filter((t) => t.area_id === id).map((t) => deleteTask(t.id)));
       await deleteArea(id);
-      if (client) setData((d) => removeWorkspace(d, client.id));
       setMeta((m) => forget(m, id));
       setDeleting(null);
       load();
     } catch (err) { toast.error(apiErrorMessage(err)); }
-  };
-
-  const remove = () => {
-    if (!area || !workspace) return;
-    if (scope.length) { toast.error('This project still has tasks. Move or delete them first.'); return; }
-    deleteArea(area.id)
-      .then(() => { setData((d) => removeWorkspace(d, workspace.id)); setSelected(null); load(); })
-      .catch((err) => toast.error(apiErrorMessage(err)));
   };
 
   return (
@@ -236,62 +154,24 @@ export function ProjectsPage() {
           {selected === null ? (
             <>
               <header className="fin-header pj-head">
-                {tasks !== null && home === 'Workspaces' && <TerminalLine text={summarize(scope, new Date())} />}
+                {tasks !== null && <TerminalLine text={summarize(scope, new Date())} />}
                 <div className="fin-controls">
                   <div className="fin-actions" role="tablist" aria-label="Projects sections">
-                    {HOME_TABS.map((t) => (
-                      <button key={t.id} type="button" role="tab" aria-selected={home === t.id} data-active={home === t.id} className="fin-act" aria-label={t.id} onClick={() => setHome(t.id)}>
-                        <Icon name={t.icon} size={16} />
-                        <span>{t.id}</span>
-                      </button>
-                    ))}
                     <button type="button" className="fin-btn fin-add" onClick={() => setCreating(true)}><Icon name="add-circle" size={16} /> New Workspace</button>
                     <button type="button" className="fin-btn fin-add" onClick={() => setEditing('new')}><Icon name="add-circle" size={16} /> New Task</button>
                   </div>
-                  {home === 'Workspaces' ? (
-                    <div className="flex gap-2">
-                      {(showArchived || areas.some((a) => meta[a.id]?.archived)) && (
-                        <button type="button" className="fin-range-btn" aria-pressed={showArchived} onClick={() => setShowArchived((v) => !v)}>
-                          <Icon name="inbox" size={16} />
-                          <span>{showArchived ? 'Back To Workspaces' : `Archived ${areas.filter((a) => meta[a.id]?.archived).length}`}</span>
-                        </button>
-                      )}
-                      <Picker icon="sort" label="Order the workspaces" options={SORTS} value={sort} onChange={chooseSort} />
-                    </div>
-                  ) : (
-                    <Picker icon="folder" label="Filter by workspace" options={filterOptions} value={filter} onChange={setFilter} />
-                  )}
+                  <div className="flex gap-2">
+                    {(showArchived || areas.some((a) => meta[a.id]?.archived)) && (
+                      <button type="button" className="fin-range-btn" aria-pressed={showArchived} onClick={() => setShowArchived((v) => !v)}>
+                        <Icon name="inbox" size={16} />
+                        <span>{showArchived ? 'Back To Workspaces' : `Archived ${areas.filter((a) => meta[a.id]?.archived).length}`}</span>
+                      </button>
+                    )}
+                    <Picker icon="sort" label="Order the workspaces" options={SORTS} value={sort} onChange={chooseSort} />
+                  </div>
                 </div>
               </header>
-              {home === 'Tasks' ? (
-                <>
-                  {tasks !== null && (() => {
-                    const c = counters(tasksScope, new Date());
-                    return (
-                      <div className="pj-counters">
-                        <div><b>{tasksScope.length}</b><small>Total</small><em style={{ ['--p' as string]: '#7dd3fc' }}>{filterOptions.find((o) => o.id === filter)?.label}</em></div>
-                        <div><b>{c.done}</b><small>Completed</small><em style={{ ['--p' as string]: '#20e7aa' }}>+{c.doneWeek} This Week</em></div>
-                        <div><b>{c.open}</b><small>Incomplete</small><em style={{ ['--p' as string]: '#ff9d4a' }}>{c.openToday} Today</em></div>
-                        <div><b>{c.overdue}</b><small>Overdue</small><em style={{ ['--p' as string]: '#ff6b6b' }}>{c.overdue ? 'Needs Attention' : 'All Clear'}</em></div>
-                      </div>
-                    );
-                  })()}
-                  {tasks === null ? (
-                    <div className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
-                  ) : (
-                    <>
-                      <div className="pj-tabs" role="tablist" style={{ ['--c' as string]: '#20e7aa' }}>
-                        {(['Kanban', 'List'] as const).map((v) => (
-                          <button key={v} type="button" role="tab" aria-selected={tview === v} data-on={tview === v} onClick={() => setTview(v)}>{v}</button>
-                        ))}
-                      </div>
-                      {tview === 'Kanban'
-                        ? <TaskBoard tasks={tasksScope} onOpen={setEditing} onMove={(id, st) => void move(id, st)} />
-                        : <TaskListView tasks={tasksScope} onOpen={setEditing} onToggleDone={(t) => void move(t.id, t.status === 'done' ? 'todo' : 'done')} />}
-                    </>
-                  )}
-                </>
-              ) : (<>
+              <>
               <div className="pj-pgrid">
                 {[{ id: ME, name: myName, c: PERSONAL_COLOR, personal: true, mine: (t: Task) => !t.area_id }, ...sortAreas(areas.filter((a) => !!meta[a.id]?.archived === showArchived), sort).map((a) => ({ id: a.id, name: a.name, c: color(a.id), personal: false, mine: (t: Task) => t.area_id === a.id }))]
                   .filter((p) => !(p.personal && showArchived))
@@ -314,7 +194,7 @@ export function ProjectsPage() {
                     />
                   ))}
               </div>
-              </>)}
+              </>
             </>
           ) : (
           <>
@@ -333,26 +213,12 @@ export function ProjectsPage() {
                 <button type="button" className="pj-add" onClick={() => setEditing('new')}><Icon name="add-circle" size={16} /> New Task</button>
               </header>
 
-              <div className="pj-tabs" style={{ ['--c' as string]: tint }} role="tablist">
-                {views.map((v) => (
-                  <button key={v} type="button" role="tab" aria-selected={active === v} data-on={active === v} onClick={() => setView(v)}>
-                    {v}
-                  </button>
-                ))}
-              </div>
-
               {tasks === null ? (
                 <div className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>Loading…</div>
               ) : (
-                <>
-                  {active === 'Kanban' && <TaskBoard tasks={scope} onOpen={setEditing} onMove={(id, st) => void move(id, st)} />}
-                  {active === 'Knowledge' && workspace && <Knowledge data={data} id={workspace.id} onChange={setData} />}
-                  {active === 'List' && <TaskListView tasks={scope} onOpen={setEditing} onToggleDone={(t) => void move(t.id, t.status === 'done' ? 'todo' : 'done')} />}
-                  {active === 'Playbook' && workspace && <Playbook data={data} workspace={workspace} onChange={setData} onRename={rename} onDelete={remove} />}
-                </>
+                <BoardPanel key={selected} workspaceId={selected} />
               )}
             </div>
-            <WorkspaceSidebar id={selected} tasks={scope} color={tint} />
           </div>
           </>
           )}

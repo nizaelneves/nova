@@ -233,7 +233,7 @@ def test_sync_multiple_connectors(
 
 def test_reset_checkpoint_clears_state(engine: SyncEngine) -> None:
     """A connector reconfigured to point at an entirely different data
-    source (e.g. a user swaps which Obsidian vault is connected) must not
+    source (e.g. a user swaps which notes folder is connected) must not
     resume from the old source's checkpoint. reset_checkpoint() clears the
     saved cursor/items_synced/last_sync for a connector_id so the next
     sync starts fresh."""

@@ -81,7 +81,6 @@ def test_detect_local_sources(tmp_path: Path) -> None:
     sources = detect_local_sources(
         notes_db_path=notes_db,
         imessage_db_path=imessage_db,
-        obsidian_vault_path=None,
     )
     ids = [s["connector_id"] for s in sources]
     assert "apple_notes" in ids
@@ -95,26 +94,8 @@ def test_detect_skips_missing_sources(tmp_path: Path) -> None:
     sources = detect_local_sources(
         notes_db_path=tmp_path / "nonexistent.sqlite",
         imessage_db_path=tmp_path / "nonexistent.db",
-        obsidian_vault_path=None,
     )
     assert len(sources) == 0
-
-
-def test_detect_includes_obsidian_when_vault_exists(tmp_path: Path) -> None:
-    """Auto-detection includes Obsidian when vault path exists."""
-    from phibe.cli.deep_research_setup_cmd import detect_local_sources
-
-    vault = tmp_path / "vault"
-    vault.mkdir()
-    (vault / "note.md").write_text("# Hello")
-
-    sources = detect_local_sources(
-        notes_db_path=tmp_path / "nonexistent.sqlite",
-        imessage_db_path=tmp_path / "nonexistent.db",
-        obsidian_vault_path=vault,
-    )
-    ids = [s["connector_id"] for s in sources]
-    assert "obsidian" in ids
 
 
 def test_ingest_sources(tmp_path: Path) -> None:
@@ -131,7 +112,6 @@ def test_ingest_sources(tmp_path: Path) -> None:
     sources = detect_local_sources(
         notes_db_path=notes_db,
         imessage_db_path=tmp_path / "nonexistent.db",
-        obsidian_vault_path=None,
     )
 
     db_path = tmp_path / "knowledge.db"
@@ -151,12 +131,12 @@ def test_detect_token_sources_finds_connected(tmp_path: Path) -> None:
     connectors_dir = tmp_path / "connectors"
     connectors_dir.mkdir()
     (connectors_dir / "slack.json").write_text('{"token": "xoxb-test"}')
-    (connectors_dir / "notion.json").write_text('{"token": "ntn_test"}')
+    (connectors_dir / "gmail_imap.json").write_text('{"token": "x"}')
 
     sources = detect_token_sources(connectors_dir=connectors_dir)
     ids = [s["connector_id"] for s in sources]
     assert "slack" in ids
-    assert "notion" in ids
+    assert "gmail_imap" in ids
 
 
 def test_detect_token_sources_skips_empty(tmp_path: Path) -> None:
@@ -166,7 +146,7 @@ def test_detect_token_sources_skips_empty(tmp_path: Path) -> None:
     connectors_dir = tmp_path / "connectors"
     connectors_dir.mkdir()
     (connectors_dir / "slack.json").write_text("{}")
-    (connectors_dir / "notion.json").write_text("invalid json")
+    (connectors_dir / "gmail_imap.json").write_text("invalid json")
 
     sources = detect_token_sources(connectors_dir=connectors_dir)
     assert len(sources) == 0

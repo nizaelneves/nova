@@ -22,6 +22,9 @@ from phibe.server.data_folder_router import create_data_folder_router
 from phibe.server.home_router import create_home_router
 from phibe.server.persona_files_router import create_persona_files_router
 from phibe.server.chat_sources_router import create_chat_sources_router
+from phibe.server.notes_routes import create_notes_router, get_shared_notes_store
+from phibe.server.swipe_routes import create_swipe_router
+from phibe.server.memory_provider_router import create_memory_provider_router
 from phibe.server.finances_routes import (
     create_finances_router,
     get_shared_finance_store,
@@ -31,6 +34,7 @@ from phibe.server.widgets_router import router as widgets_router
 from phibe.server.pings_router import create_pings_router, get_shared_ping_store
 from phibe.server.research_router import router as research_router
 from phibe.server.routes import router
+from phibe.server.boards_routes import create_boards_router, get_shared_board_store
 from phibe.server.tasks_routes import create_tasks_router, get_shared_store
 from phibe.server.voice_history import create_voice_router
 from phibe.server.upload_router import router as upload_router
@@ -373,7 +377,7 @@ def create_app(
     app.include_router(connectors_router)
     app.include_router(cli_router)
     app.include_router(widgets_router)
-    # Keep Anytype (and any other auto-synced source) up to date in the background.
+    # Keep every auto-synced source up to date in the background.
     from phibe.connectors.autosync import start_auto_sync, start_source_sync
 
     app.state.auto_sync_stop = None
@@ -392,15 +396,32 @@ def create_app(
             app.state.source_sync_stop.set()
 
     app.include_router(create_digest_router())
-    app.include_router(create_quick_digest_router(lambda: app.state.engine, lambda: app.state.model))
+    quick_digest_router = create_quick_digest_router(lambda: app.state.engine, lambda: app.state.model)
+    app.include_router(quick_digest_router)
+    app.state.digest_refresh_stop = None
+
+    @app.on_event("startup")
+    async def _start_digest_refresh() -> None:
+        from phibe.server.quick_digest_routes import start_digest_refresh
+
+        _, app.state.digest_refresh_stop = start_digest_refresh(quick_digest_router.refresh_source)
+
+    @app.on_event("shutdown")
+    async def _stop_digest_refresh() -> None:
+        if app.state.digest_refresh_stop is not None:
+            app.state.digest_refresh_stop.set()
     app.include_router(upload_router)
     app.include_router(research_router)
     app.include_router(create_home_router())
     app.include_router(create_data_folder_router())
     app.include_router(create_persona_files_router())
     app.include_router(create_chat_sources_router())
+    app.include_router(create_notes_router(lambda: get_shared_notes_store(app)))
+    app.include_router(create_swipe_router())
+    app.include_router(create_memory_provider_router())
     app.include_router(create_voice_router())
     app.include_router(create_tasks_router(lambda: get_shared_store(app)))
+    app.include_router(create_boards_router(lambda: get_shared_board_store(app), lambda: get_shared_store(app)))
     app.include_router(create_finances_router(lambda: get_shared_finance_store(app)))
     app.include_router(create_pings_router(lambda: get_shared_ping_store(app)))
     include_all_routes(app)

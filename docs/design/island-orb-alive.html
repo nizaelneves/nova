@@ -1,0 +1,104 @@
+<!doctype html>
+<meta charset="utf-8"><title>Phibe Island, Alive</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{overflow-x:hidden;background:radial-gradient(ellipse at 50% 0%,#0b3b33 0,#071017 45%,#04070c 100%);color:#e8f6f3;font:13px system-ui;min-height:100vh;padding:0 12px 24px}
+.top{position:relative;height:250px;overflow:visible}
+.scale{position:absolute;left:50%;top:0;transform:translateX(-50%) scale(var(--z,2));transform-origin:50% 0;transition:transform .3s}
+.island{position:relative;width:200px;height:68px;background:#05070d;border-radius:0 0 26px 26px;overflow:hidden;box-shadow:0 0 0 1px rgba(32,231,170,.12) inset;transition:width .35s cubic-bezier(.2,.9,.2,1)}
+.island[data-s='listening'],.island[data-s='thinking'],.island[data-s='speaking']{width:272px}
+.islandwrap{position:relative}
+.islandwrap::before,.islandwrap::after{content:'';position:absolute;top:0;width:22px;height:22px;background:#05070d}
+.islandwrap::before{left:-22px;-webkit-mask:radial-gradient(circle at 0 100%,transparent 21.5px,#000 22px);mask:radial-gradient(circle at 0 100%,transparent 21.5px,#000 22px)}
+.islandwrap::after{right:-22px;-webkit-mask:radial-gradient(circle at 100% 100%,transparent 21.5px,#000 22px);mask:radial-gradient(circle at 100% 100%,transparent 21.5px,#000 22px)}
+.orb{position:absolute;left:50%;top:34px;width:0;height:0;transition:left .35s cubic-bezier(.2,.9,.2,1)}
+.island[data-s='listening'] .orb,.island[data-s='thinking'] .orb,.island[data-s='speaking'] .orb{left:92px}
+.orb canvas,.orb svg{position:absolute;left:-180px;top:-140px;width:360px;height:280px;transform:scale(.36);transform-origin:180px 140px;overflow:visible}
+.label{position:absolute;left:152px;top:0;height:68px;display:flex;align-items:center;font:600 11px system-ui;letter-spacing:.14em;text-transform:uppercase;color:#7ff3cd;opacity:0;transition:opacity .3s}
+.island[data-s='listening'] .label,.island[data-s='thinking'] .label,.island[data-s='speaking'] .label{opacity:1}
+.bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:12px auto 0;max-width:640px}
+.bar button{padding:5px 13px;border-radius:999px;border:1px solid rgba(32,231,170,.3);background:rgba(32,231,170,.06);color:#c9f4ea;font:12px system-ui;cursor:pointer}
+.bar button[data-on='1']{background:linear-gradient(90deg,#20e7aa,#8ff4e6);color:#03150f;border-color:transparent}
+.note{max-width:620px;margin:18px auto 0;text-align:center;color:rgba(232,246,243,.6);line-height:1.55;font-size:12.5px}
+</style>
+<div class="top"><div class="scale" id="sc"><div class="islandwrap"><div class="island" id="isl" data-s="idle">
+  <div class="orb"><canvas id="cv"></canvas>
+    <svg viewBox="0 0 360 280" id="eyes"><defs>
+      <filter id="bl" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+      <radialGradient id="eg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#bff8f3"/><stop offset="1" stop-color="#20e7aa"/></radialGradient></defs>
+      <g class="face">
+        <g class="eL"><ellipse class="h" rx="11" ry="15" fill="#20e7aa" filter="url(#bl)"/><g class="open"><ellipse rx="6.8" ry="10" fill="url(#eg)"/><ellipse cx="-1.8" cy="-3.2" rx="2" ry="2.8" fill="#fff" opacity=".9"/></g><path class="arc" d="M-7 3 Q0 -6 7 3" fill="none" stroke="#bff8f3" stroke-width="3.6" stroke-linecap="round"/></g>
+        <g class="eR"><ellipse class="h" rx="11" ry="15" fill="#20e7aa" filter="url(#bl)"/><g class="open"><ellipse rx="6.8" ry="10" fill="url(#eg)"/><ellipse cx="-1.8" cy="-3.2" rx="2" ry="2.8" fill="#fff" opacity=".9"/></g><path class="arc" d="M-7 3 Q0 -6 7 3" fill="none" stroke="#bff8f3" stroke-width="3.6" stroke-linecap="round"/></g>
+      </g></svg></div>
+  <div class="label" id="lb"></div>
+</div></div></div></div>
+<div class="bar" id="bar"></div>
+<div class="bar" id="zoom"></div>
+<p class="note">Phibe's island with the Orb alive. The mint stays; the body becomes a nebula of dark matter that breathes, leans toward your cursor and takes the mood of what Phibe is doing. Move the mouse over the page, click the island for a burst, and try each state.</p>
+<script>
+const W=360,H=280,CX=W/2,CY=H/2;
+const S={
+  idle:    {sx:1,   sy:1,   glow:.55,arc:0, look:0,tilt:0, spd:1,  size:1,   bright:1},
+  curious: {sx:1.1, sy:1.3, glow:1,  arc:0, look:1,tilt:7, spd:1.5,size:.92, bright:1.35},
+  listening:{sx:1.15,sy:1.38,glow:1, arc:0, look:1,tilt:0, spd:1.3,size:.9,  bright:1.5},
+  thinking:{sx:.88, sy:1.1, glow:.75,arc:0, look:2,tilt:-8,spd:3.2,size:.96, bright:1.15},
+  speaking:{sx:1.05,sy:1.15,glow:.95,arc:0, look:1,tilt:0, spd:1.8,size:1,   bright:1.3},
+  done:    {sx:1,   sy:1,   glow:.9, arc:1, look:0,tilt:-3,spd:2.2,size:1.14,bright:1.6},
+  asleep:  {sx:1,   sy:1,   glow:.3, arc:-1,look:0,tilt:5, spd:.35,size:.84, bright:.55}};
+const COLS=['32,231,170','143,244,230','80,190,255'],HALO='32,231,170';
+const cv=document.getElementById('cv'),g=cv.getContext('2d'),dpr=Math.max(2,devicePixelRatio||1)*2;cv.width=W*dpr;cv.height=H*dpr;g.scale(dpr,dpr);
+const q=s=>document.querySelector(s),face=q('.face'),isl=document.getElementById('isl');
+let state='auto',mx=0,my=0,last=0,near=0,t=0,ph=0,vx=0,vy=0,px=CX,py=CY,bounce=0,blinkT=3,wT=0,wx=0,wy=0,ex=0,ey=0;
+const cur={sx:1,sy:1,glow:.55,arc:0,tilt:0,spd:1,size:1,bright:1},dust=[],ring=[];
+for(let i=0;i<90;i++)ring.push({a:Math.random()*6.28,r:30+Math.random()*70,s:(.15+Math.random()*.5)*(Math.random()<.5?1:-1),z:.7+Math.random()*1.5,c:COLS[i%3]});
+addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect(),k=b.width/W;mx=(e.clientX-b.left)/k-CX;my=(e.clientY-b.top)/k-CY;last=t;near=Math.hypot(mx,my)<1400?1:0});
+function burst(){bounce=1;for(let i=0;i<34;i++){const a=Math.random()*6.28,v=.8+Math.random()*2.6;dust.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,s:1+Math.random()*1.6})}}
+isl.addEventListener('pointerdown',burst);
+function glow(x,y,r,c,a){const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${c},${a})`);gr.addColorStop(1,`rgba(${c},0)`);g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+function frame(){
+  t+=.016;
+  let key=state; if(state==='auto'){const idle=t-last;key=(near&&idle<2.5)?'curious':(idle>25?'asleep':'idle')}
+  const P=S[key];
+  isl.dataset.s=['listening','thinking','speaking'].includes(key)?key:'idle';
+  document.getElementById('lb').textContent={listening:'Listening',thinking:'Thinking',speaking:'Speaking'}[key]||'';
+  for(const k in cur)cur[k]+=(P[k]-cur[k])*.07;
+  // while it speaks, its body follows a voice level
+  const lvl=key==='speaking'?(.5+.5*Math.sin(t*7.3)*Math.sin(t*2.1+1)):0;
+  ph+=.016*cur.spd*(1+lvl*.6);const T=ph;
+  let gx=0,gy=0;const watching=near&&t-last<2.5;
+  if(P.look===1){gx=mx;gy=my}else if(P.look===2){gx=-70;gy=-90}
+  else{wT-=.016;if(wT<0){wT=1.6+Math.random()*2.6;wx=(Math.random()-.5)*170;wy=(Math.random()-.5)*90}gx=watching?mx:wx;gy=watching?my:wy}
+  const gxn=Math.max(-1,Math.min(1,gx/90)),gyn=Math.max(-1,Math.min(1,gy/90));
+  ex+=(gxn*9-ex)*.22;ey+=(gyn*6.5-ey)*.22;
+  const cl=v=>Math.max(-300,Math.min(300,v)),lean=P.look===1?.05:.04;
+  const tx=CX+cl(gx)*lean+Math.sin(t*.7)*6,ty=CY+cl(gy)*lean*.8+Math.sin(t*1.3)*7-bounce*18;
+  vx+=(tx-px)*.028;vy+=(ty-py)*.028;vx*=.86;vy*=.86;px+=vx;py+=vy;bounce=Math.max(0,bounce-.02);
+  const sp=Math.hypot(vx,vy),sq=Math.min(.16,sp*.04),breath=(1+Math.sin(t*1.7)*.05+bounce*.1+lvl*.1)*cur.size,ang=Math.atan2(vy,vx),br=cur.bright*(1+lvl*.6);
+  g.clearRect(0,0,W,H);
+  const M=fn=>{g.save();g.translate(px,py);g.rotate(ang);g.scale((1+sq)*breath,(1-sq*.6)*breath);g.rotate(-ang);fn();g.restore()};
+  g.globalCompositeOperation='lighter';
+  M(()=>{glow(0,0,130,HALO,.30*br);for(let i=0;i<10;i++){const a=T*.35+i*.628,r=34+Math.sin(t*.7+i*1.7)*16;glow(Math.cos(a)*r*1.2,Math.sin(a*1.15)*r*.85,50+Math.sin(t+i)*8,COLS[i%3],.27*br)}});
+  g.globalCompositeOperation='source-over';
+  const lobes=[];
+  M(()=>{for(let i=0;i<9;i++){const a=T*(.2+i*.045)*(i%2?1:-1)+i*.7,r=i?26+Math.sin(t*.6+i*2.1)*14:0,rad=i?40+Math.sin(t*.9+i)*9:56;const x=Math.cos(a)*r*1.25,y=Math.sin(a*1.1)*r*.9;lobes.push([x,y,rad,a]);const d=g.createRadialGradient(x,y,2,x,y,rad);d.addColorStop(0,'rgba(2,8,8,.96)');d.addColorStop(.6,'rgba(3,12,12,.8)');d.addColorStop(1,'rgba(4,16,16,0)');g.fillStyle=d;g.beginPath();g.arc(x,y,rad,0,6.283);g.fill()}});
+  g.globalCompositeOperation='lighter';
+  M(()=>lobes.forEach(([x,y,rad,a],i)=>{if(!i)return;glow(x+Math.cos(a+1.2)*rad*.8,y+Math.sin(a+1.2)*rad*.7,26,COLS[i%3],(.3+Math.sin(t*1.4+i)*.09)*br);const n=lobes[(i%8)+1];glow((x+n[0])/2,(y+n[1])/2,18,COLS[(i+1)%3],.16*br)}));
+  for(const p of ring){
+    if(key==='listening'){p.r-=.5;if(p.r<18)p.r=100} // while it listens, matter is drawn in toward the eyes
+    p.a+=p.s*.008*cur.spd*(1+sp*.15);p.r+=Math.sin(t*.5+p.a*3)*.08;
+    const x=px+Math.cos(p.a)*p.r*1.25*cur.size,y=py+Math.sin(p.a)*p.r*.85*cur.size;glow(x,y,p.z*4,p.c,.42);g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.arc(x,y,p.z*.7,0,6.283);g.fill()}
+  if(Math.random()<.5){const a=Math.random()*6.28,rr=40+Math.random()*40;dust.push({x:px+Math.cos(a)*rr*1.1,y:py+Math.sin(a)*rr*.85,vx:Math.cos(a)*.3+vx*.2,vy:Math.sin(a)*.3-.15,l:1,s:.8+Math.random()*1.3})}
+  for(let i=dust.length-1;i>=0;i--){const d=dust[i];d.x+=d.vx;d.y+=d.vy;d.l-=.013;if(d.l<=0){dust.splice(i,1);continue}glow(d.x,d.y,d.s*4,COLS[i%3],d.l*.5);g.fillStyle=`rgba(255,255,255,${d.l})`;g.beginPath();g.arc(d.x,d.y,d.s*.7,0,6.283);g.fill()}
+  g.globalCompositeOperation='source-over';
+  face.setAttribute('transform',`translate(${(px+ex).toFixed(1)},${(py+ey-2).toFixed(1)}) rotate(${(cur.tilt*gxn*.9).toFixed(1)}) scale(${breath.toFixed(3)})`);
+  blinkT-=.016;if(blinkT<0)blinkT=2.4+Math.random()*3.2;const bl=blinkT<.13?.06:1,a=Math.abs(cur.arc),pulse=1+(P.look===2?Math.sin(t*5)*.18:0);
+  for(const [n,x] of [['.eL',-21],['.eR',21]]){const e=q(n);e.setAttribute('transform',`translate(${x},0) scale(${cur.sx.toFixed(3)},${(cur.sy*bl*(1+lvl*.12)).toFixed(3)})`);e.querySelector('.open').setAttribute('opacity',(1-a).toFixed(2));const arc=e.querySelector('.arc');arc.setAttribute('opacity',a.toFixed(2));arc.setAttribute('transform',`scale(1,${cur.arc>=0?1:-1}) translate(0,${cur.arc>=0?0:-1})`);e.querySelector('.h').setAttribute('opacity',Math.min(1,cur.glow*pulse).toFixed(2))}
+  requestAnimationFrame(frame);
+}
+frame();
+const bar=document.getElementById('bar');
+['auto','idle','listening','thinking','speaking','done','asleep'].forEach(k=>{const b=document.createElement('button');b.textContent=k[0].toUpperCase()+k.slice(1);b.dataset.on=k==='auto'?1:0;b.onclick=()=>{state=k;if(k==='done')burst();[...bar.children].forEach(c=>c.dataset.on=c===b?1:0)};bar.append(b)});
+const zb=document.getElementById('zoom');
+[['Actual Size',1],['2×',2],['3×',3]].forEach(([l,z])=>{const b=document.createElement('button');b.textContent=l;b.dataset.on=z===2?1:0;b.onclick=()=>{document.getElementById('sc').style.setProperty("--z",z);[...zb.children].forEach(c=>c.dataset.on=c===b?1:0)};zb.append(b)});
+</script>

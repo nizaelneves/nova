@@ -213,59 +213,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
     ],
   },
   {
-    connector_id: 'anytype',
-    display_name: 'Anytype',
-    auth_type: 'token',
-    category: 'documents',
-    icon: 'FileText',
-    color: 'text-cyan-300',
-    description: 'Your Anytype notes (read-only)',
-    unitLabel: 'notes',
-    steps: [
-      {
-        label: 'Keep the Anytype app open on this computer while Phibe syncs',
-      },
-      {
-        label: 'In Anytype, open Settings, find "API Keys" and create a new key named "Phibe". If you can limit the key, give it read access only',
-      },
-      {
-        label: 'Copy the key and paste it below. Phibe only reads your notes: it never creates, edits or deletes anything in Anytype',
-      },
-    ],
-    inputFields: [
-      { name: 'token', placeholder: 'Anytype API key', type: 'password' },
-    ],
-  },
-  {
-    connector_id: 'notion',
-    display_name: 'Notion',
-    auth_type: 'oauth',
-    category: 'documents',
-    icon: 'FileText',
-    color: 'text-gray-300',
-    description: 'Pages and databases',
-    unitLabel: 'pages',
-    steps: [
-      {
-        label: 'Go to notion.so/profile/integrations → click "+ New integration". Name it "Phibe", select your workspace, and click Submit',
-        url: 'https://www.notion.so/profile/integrations',
-        urlLabel: 'Open Notion Integrations',
-      },
-      {
-        label: 'Copy the "Internal Integration Secret" (starts with ntn_) and paste it below',
-      },
-      {
-        label: 'To share ALL your pages at once: open any top-level page → click "..." (top right) → "Connections" → "Add connections" → search "Phibe" → click it. This shares the page and all its sub-pages. Repeat for each top-level page, or share your entire workspace by doing this on every root page',
-      },
-      {
-        label: 'Tip: if you have a single top-level page that contains everything, sharing just that one page will share all nested sub-pages automatically',
-      },
-    ],
-    inputFields: [
-      { name: 'token', placeholder: 'ntn_...', type: 'password' },
-    ],
-  },
-  {
     connector_id: 'imessage',
     display_name: 'iMessage',
     auth_type: 'local',
@@ -287,30 +234,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
     ],
   },
   // ── Documents ──────────────────────────────────────────────────────
-  {
-    connector_id: 'obsidian',
-    display_name: 'Obsidian',
-    auth_type: 'filesystem',
-    category: 'documents',
-    icon: 'FolderOpen',
-    color: 'text-purple-300',
-    description: 'Markdown vault',
-    unitLabel: 'notes',
-    steps: [
-      {
-        label: 'Find your vault path: open Obsidian → click the vault name in the bottom-left corner → "Manage Vaults" → look at the path shown under your vault name. On macOS this is usually ~/Documents/MyVault or ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/MyVault',
-      },
-      {
-        label: 'Alternatively, open Finder → navigate to your vault folder (it contains a hidden .obsidian directory). Right-click the folder → "Copy as Pathname" to get the full path',
-      },
-      {
-        label: 'Paste the full path below. Phibe will index all .md files in the vault',
-      },
-    ],
-    inputFields: [
-      { name: 'path', placeholder: '/Users/you/Documents/MyVault', type: 'text' },
-    ],
-  },
   {
     connector_id: 'gdrive',
     display_name: 'Google Drive',
@@ -399,62 +322,6 @@ export const SOURCE_CATALOG: ConnectorMeta[] = [
       {
         label: 'Toggle the switch ON next to each app you added. Close and reopen your terminal (or restart Phibe). Apple Notes will be detected automatically — no credentials needed',
       },
-    ],
-  },
-  {
-    connector_id: 'outlook',
-    display_name: 'Outlook',
-    auth_type: 'oauth',
-    category: 'communication',
-    icon: 'Mail',
-    color: 'text-blue-400',
-    description: 'Microsoft email and calendar',
-    unitLabel: 'emails',
-    steps: [
-      {
-        label: 'Go to the Azure Portal → App Registrations → click "+ New registration". Name it "Phibe", select "Accounts in this organizational directory only", and click Register',
-        url: 'https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade',
-        urlLabel: 'Open Azure App Registrations',
-      },
-      {
-        label: 'In the left sidebar, click "API Permissions" → "Add a permission" → "Microsoft Graph" → "Delegated permissions" → search and check "Mail.Read" → click "Add permissions"',
-      },
-      {
-        label: 'In the left sidebar, click "Certificates & secrets" → "New client secret" → set a description and expiry → click "Add" → immediately copy the "Value" (you won\'t see it again)',
-      },
-      {
-        label: 'Go to "Overview" in the left sidebar and copy the "Application (client) ID". Paste both the Client ID and the Client Secret below',
-      },
-    ],
-    inputFields: [
-      { name: 'email', placeholder: 'Application (client) ID', type: 'text' },
-      { name: 'password', placeholder: 'Client Secret Value', type: 'password' },
-    ],
-  },
-  {
-    connector_id: 'dropbox',
-    display_name: 'Dropbox',
-    auth_type: 'oauth',
-    category: 'documents',
-    icon: 'FolderOpen',
-    color: 'text-blue-300',
-    description: 'Cloud file storage',
-    unitLabel: 'files',
-    steps: [
-      {
-        label: 'Go to the Dropbox App Console and click "Create app". Choose "Scoped access" → "Full Dropbox" → give it a name (e.g. "Phibe") → click "Create app"',
-        url: 'https://www.dropbox.com/developers/apps/create',
-        urlLabel: 'Open Dropbox App Console',
-      },
-      {
-        label: 'Click the "Permissions" tab at the top. Check "files.metadata.read" and "files.content.read" → click "Submit" at the bottom to save',
-      },
-      {
-        label: 'Go back to the "Settings" tab. Under "OAuth 2", find "Generated access token" and click "Generate". Copy the token and paste it below',
-      },
-    ],
-    inputFields: [
-      { name: 'token', placeholder: 'Access token (sl.u...)', type: 'password' },
     ],
   },
   {

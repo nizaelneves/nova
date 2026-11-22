@@ -27,7 +27,7 @@ async function fetchDigest(): Promise<Load> {
  * The quick digest: an agent of Phibe reads your news, newsletters and the latest items of your sources and keeps them
  * as small blocks that slide by on their own. A button opens all of them in a large window to read quickly.
  */
-export function DigestPanel({ open }: { open: boolean }) {
+export function DigestPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [filter, setFilter] = useState<BlockKind | 'all'>('all');
   const [reader, setReader] = useState<{ start: string | null } | null>(null);
@@ -38,7 +38,13 @@ export function DigestPanel({ open }: { open: boolean }) {
     if (!open) return;
     setNow(new Date());
     void fetchDigest().then(setLoad);
+    // Each source is read again on its own rhythm by the server; show what it kept while the widget is open.
+    const every = window.setInterval(() => { setNow(new Date()); void fetchDigest().then((next) => setLoad((cur) => (next.kind === 'ready' || cur.kind !== 'ready' ? next : cur))); }, 60_000);
+    return () => window.clearInterval(every);
   }, [open]);
+
+  /** The reader replaces the widget: the widget folds away and the large window opens. */
+  const openReader = (start: string | null) => { setReader({ start }); onClose(); };
 
   const write = useCallback(async () => {
     setWriting(true);
@@ -62,7 +68,7 @@ export function DigestPanel({ open }: { open: boolean }) {
   const blocks = digest ? digest.blocks.filter((b) => filter === 'all' || b.kind === filter) : [];
   return (
     <>
-      <SidePanel open={open} label="Quick Digest">
+      <SidePanel open={open} label="Pulse">
         {writing && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Writing Your Digest…</div>}
         {!writing && load.kind === 'loading' && <div className="dg-state"><i className="dl-spin" aria-hidden="true" />Loading…</div>}
 
@@ -96,7 +102,7 @@ export function DigestPanel({ open }: { open: boolean }) {
                     </button>
                   ))}
                 </div>
-                <DigestFeed blocks={blocks} now={now} onOpen={(b) => setReader({ start: b.id })} />
+                <DigestFeed blocks={blocks} now={now} onOpen={(b) => openReader(b.id)} />
               </>
             ) : digest.items.length ? (
               <ol className="dg-list">
@@ -115,7 +121,7 @@ export function DigestPanel({ open }: { open: boolean }) {
             <footer className="dg-foot">
               <span>{digest.model || 'Phibe'} · {timeLabel(digest.generatedAt, now)}</span>
               <span className="dg-acts">
-                {digest.blocks.length > 0 && <button type="button" onClick={() => setReader({ start: null })}><Icon name="widget-2" size={14} /> Open</button>}
+                {digest.blocks.length > 0 && <button type="button" onClick={() => openReader(null)}><Icon name="widget-2" size={14} /> Open</button>}
                 <button type="button" onClick={() => void write()}><Icon name="refresh" size={14} /> Refresh</button>
               </span>
             </footer>

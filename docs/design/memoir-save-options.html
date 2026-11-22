@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Save Button Options 2</title>
+<style>
+:root{color-scheme:dark;--a:#8fe3ff;--v:#a78bfa;--m:#e879f9}
+body{margin:0;padding:28px;background:#04030d;color:#eef0ff;font:14px 'Segoe UI',system-ui,sans-serif}
+h1{font-weight:400;letter-spacing:.06em;margin:0 0 4px} p.lead{color:rgba(238,240,255,.5);margin:0 0 26px}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.opt{width:250px;padding:14px;border-radius:16px;border:1px solid rgba(160,175,255,.16);background:rgba(143,227,255,.04)}
+.opt h4{margin:0 0 2px;font-weight:600} .opt small{display:block;color:rgba(238,240,255,.5);margin-bottom:12px;line-height:1.4;min-height:34px}
+.stage{display:flex;gap:12px;align-items:center;justify-content:center;height:92px;border-radius:12px;background:rgba(0,0,0,.28)}
+.btn,.cancel{display:inline-flex;align-items:center;justify-content:center;min-width:96px;padding:11px 22px;border-radius:999px;font:600 14px 'Segoe UI',sans-serif;cursor:pointer;user-select:none;position:relative;overflow:hidden}
+.cancel{border:1px solid rgba(160,175,255,.22);color:rgba(238,240,255,.65);font-weight:500;transition:.25s;background:none}
+.cancel:hover{color:#ff8aa0;border-color:rgba(255,138,160,.6);background:rgba(255,90,120,.1)}
+.save{border:0;color:#04101c;background:linear-gradient(90deg,var(--a),var(--v) 60%,var(--m))}
+/* I · Neon Outline pulse */
+.i{background:transparent;color:var(--a);border:1.5px solid var(--a);box-shadow:0 0 12px rgba(143,227,255,.35),inset 0 0 12px rgba(143,227,255,.12);animation:neon 2s ease-in-out infinite;transition:.25s}
+.i:hover{background:var(--a);color:#04101c}
+@keyframes neon{50%{box-shadow:0 0 24px rgba(143,227,255,.7),inset 0 0 16px rgba(143,227,255,.25)}}
+/* J · Glass */
+.j{background:rgba(143,227,255,.12);color:#eaffff;border:1px solid rgba(143,227,255,.4);backdrop-filter:blur(8px);transition:.3s}
+.j::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.j:hover::before{transform:translateX(120%)} .j:hover{background:rgba(143,227,255,.22);box-shadow:0 0 24px rgba(143,227,255,.3)}
+/* K · Liquid Blob (gradient blobs move inside) */
+.k{background:#0d0b2b;color:#fff;border:0;z-index:0}
+.k::before,.k::after{content:'';position:absolute;width:70px;height:70px;border-radius:50%;filter:blur(18px);z-index:-1;animation:blob 4s ease-in-out infinite alternate}
+.k::before{background:var(--a);left:-14px;top:-30px}.k::after{background:var(--m);right:-14px;bottom:-30px;animation-delay:-2s}
+@keyframes blob{to{transform:translate(40px,22px) scale(1.2)}}
+/* L · Underline Draw */
+.l{background:none;color:var(--a);border:0;border-radius:6px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:13px}
+.l::after{content:'';position:absolute;left:18px;right:18px;bottom:6px;height:2px;background:linear-gradient(90deg,var(--a),var(--m));transform:scaleX(.25);transform-origin:left;transition:transform .35s}
+.l:hover::after{transform:scaleX(1)}
+/* M · Split Slide (two colours slide) */
+.m{color:#fff;background:linear-gradient(90deg,var(--v) 50%,var(--m) 50%);background-size:200% 100%;background-position:0 0;border:0;transition:background-position .5s}
+.m:hover{background-position:-100% 0}
+/* N · Pill To Circle Loader (click) */
+.n{transition:min-width .35s,padding .35s;color:#04101c;background:linear-gradient(90deg,var(--a),var(--m));border:0}
+.n.go{min-width:44px;width:44px;height:44px;padding:0;color:transparent}.n.go::after{content:'';position:absolute;inset:9px;border-radius:50%;border:2.5px solid rgba(4,16,28,.25);border-top-color:#04101c;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+/* O · Gradient Border + Fill */
+.o{background:linear-gradient(#08071d,#08071d) padding-box,linear-gradient(90deg,var(--a),var(--m)) border-box;border:1.5px solid transparent;color:#fff;transition:.3s}
+.o:hover{background:linear-gradient(90deg,var(--a),var(--m)) border-box;color:#04101c}
+/* P · Bounce Dot (a dot bounces in on hover) */
+.p{color:#04101c;background:linear-gradient(90deg,var(--a),var(--v));border:0;gap:0;transition:gap .3s}
+.p::before{content:'';width:0;height:8px;border-radius:50%;background:#04101c;transition:width .3s}
+.p:hover{gap:8px}.p:hover::before{width:8px;animation:bounce .6s ease infinite alternate}
+@keyframes bounce{to{transform:translateY(-4px)}}
+</style></head><body>
+<h1>Save Button Options 2</h1>
+<p class="lead">Cancel is now the ghost that turns red on hover (C). Pick a letter for Save. Hover over them and click N.</p>
+<div class="row">
+ <div class="opt"><h4>I · Neon Outline</h4><small>A glowing outline that pulses, and fills solid on hover.</small><div class="stage"><div class="btn i">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>J · Glass</h4><small>Frosted and calm, a light streak sweeps over it on hover.</small><div class="stage"><div class="btn j">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>K · Liquid Blobs</h4><small>Two soft colour blobs float inside a dark button, like liquid.</small><div class="stage"><div class="btn k">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>L · Underline Draw</h4><small>Minimal text button; a gradient line draws under the word on hover.</small><div class="stage"><div class="btn l">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>M · Split Slide</h4><small>Two colours sit side by side and slide over each other on hover.</small><div class="stage"><div class="btn m">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>N · Loader Circle</h4><small>On click the pill shrinks to a small circle with a spinner while saving.</small><div class="stage"><div class="btn n" onclick="this.classList.add('go');setTimeout(()=>this.classList.remove('go'),1800)">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>O · Gradient Border</h4><small>Dark with a colour edge, flooding with colour on hover.</small><div class="stage"><div class="btn o">Save</div><div class="cancel">Cancel</div></div></div>
+ <div class="opt"><h4>P · Bounce Dot</h4><small>A small dot pops in beside the word and bounces on hover.</small><div class="stage"><div class="btn p">Save</div><div class="cancel">Cancel</div></div></div>
+</div></body></html>

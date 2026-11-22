@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8"><title>Memoir Orbs 3</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 120%,#1a0f4d,#04030d 60%);color:#eef0ff;font:13px system-ui;padding:8px;display:grid;place-items:center}
+.row{display:grid;grid-template-columns:repeat(2,230px);gap:0 16px}
+.cell{display:grid;justify-items:center;gap:6px;padding-bottom:6px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.6);line-height:1.4;max-width:220px;font-size:12px}
+.cell b{display:block;color:#fff;font-size:13px;margin-bottom:2px}
+.stage{position:relative;width:200px;height:150px;display:grid;place-items:center}
+.o{position:relative}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinr{to{transform:rotate(-360deg)}}
+@keyframes pulse{50%{opacity:.5;transform:scale(1.08)}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@keyframes sway{50%{transform:translateX(5px) scaleX(.92)}}
+.eyes{position:absolute;left:0;right:0;display:flex;justify-content:center;gap:12px}
+.eyes i{width:8px;height:11px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff,0 0 20px #8fe3ff;animation:blink 5s infinite}
+
+/* 17 Lantern */
+.b17 .o{width:60px;height:86px;border-radius:30px 30px 14px 14px;border:2px solid rgba(190,205,255,.8);background:radial-gradient(circle at 50% 55%,rgba(255,243,200,.9),rgba(143,227,255,.35) 45%,rgba(124,92,255,.15));box-shadow:0 0 36px rgba(143,227,255,.55);animation:bob 5s ease-in-out infinite}
+.b17 .o::before{content:'';position:absolute;left:50%;top:-18px;width:26px;height:18px;margin-left:-13px;border:2px solid rgba(190,205,255,.8);border-bottom:0;border-radius:14px 14px 0 0}
+.b17 .o::after{content:'';position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;background:#fff;box-shadow:0 0 18px 8px rgba(255,243,200,.9);animation:pulse 2s infinite}
+.b17 .bars{position:absolute;inset:0;border-radius:inherit;background:repeating-linear-gradient(90deg,transparent 0 13px,rgba(190,205,255,.5) 13px 14px)}
+
+/* 18 Hourglass of stars */
+.b18 .o{width:60px;height:92px;animation:bob 6s ease-in-out infinite}
+.b18 .g{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,56% 50%,100% 100%,0 100%,44% 50%);background:linear-gradient(180deg,rgba(143,227,255,.25),rgba(124,92,255,.35));border:0;filter:drop-shadow(0 0 14px rgba(143,227,255,.7))}
+.b18 .top{position:absolute;left:8px;right:8px;top:8px;height:26px;clip-path:polygon(0 0,100% 0,60% 100%,40% 100%);background:radial-gradient(circle at 50% 80%,#fff,#8fe3ff 40%,#7c5cff)}
+.b18 .bot{position:absolute;left:8px;right:8px;bottom:6px;height:30px;clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:radial-gradient(circle at 50% 20%,#fff,#e879f9 45%,#7c5cff)}
+.b18 .st i{position:absolute;left:50%;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;animation:fall 1.8s linear infinite}
+@keyframes fall{from{top:42%;opacity:1}to{top:76%;opacity:0}}
+.b18 .cap{position:absolute;left:-4px;right:-4px;height:6px;border-radius:3px;background:#bfc8ff}
+
+/* 19 Armillary */
+.b19 .o{width:100px;height:100px}
+.b19 .r{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(143,227,255,.8);box-shadow:0 0 10px rgba(143,227,255,.4)}
+.b19 .r1{transform:rotateX(70deg);animation:spin 12s linear infinite}
+.b19 .r2{transform:rotateY(70deg) rotate(30deg);border-color:rgba(232,121,249,.8);animation:spinr 16s linear infinite}
+.b19 .r3{inset:-12px;border-style:dashed;border-color:rgba(160,175,255,.5);animation:spin 30s linear infinite}
+.b19 .c{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border-radius:50%;background:radial-gradient(circle,#fff,#8fe3ff 40%,#7c5cff);box-shadow:0 0 26px 6px rgba(143,227,255,.7);animation:pulse 3s infinite}
+.b19 .stage{perspective:400px}
+
+/* 20 Spirit: a tall flame with a face */
+.b20 .o{width:66px;height:100px;border-radius:50% 50% 46% 46%/62% 62% 38% 38%;background:radial-gradient(circle at 40% 30%,#fff,#bfefff 30%,#5b3fd6 75%,#2a0f5e);box-shadow:0 0 34px rgba(143,227,255,.6);animation:bob 4s ease-in-out infinite}
+.b20 .tail{position:absolute;left:50%;top:78%;width:40px;height:56px;margin-left:-20px;background:linear-gradient(180deg,rgba(124,92,255,.7),transparent);clip-path:polygon(0 0,100% 0,70% 55%,50% 100%,30% 55%);filter:blur(2px);animation:sway 3s ease-in-out infinite}
+.b20 .eyes{top:30px}.b20 .eyes i{background:#10083a;box-shadow:none}
+
+/* 21 Open book of light */
+.b21 .o{width:104px;height:64px}
+.b21 .p{position:absolute;top:0;width:50px;height:62px;background:linear-gradient(180deg,rgba(143,227,255,.9),rgba(124,92,255,.85));border:1px solid #fff;box-shadow:0 0 22px rgba(143,227,255,.5)}
+.b21 .p.l{left:0;border-radius:8px 0 0 14px;transform:perspective(200px) rotateY(18deg);transform-origin:100% 50%}
+.b21 .p.r{right:0;border-radius:0 8px 14px 0;transform:perspective(200px) rotateY(-18deg);transform-origin:0 50%}
+.b21 .beam{position:absolute;left:50%;bottom:34px;width:70px;height:90px;margin-left:-35px;background:linear-gradient(0deg,rgba(255,255,255,.75),transparent);clip-path:polygon(40% 100%,60% 100%,100% 0,0 0);filter:blur(3px);animation:pulse 3s infinite}
+.b21 .s i{position:absolute;width:4px;height:4px;background:#fff;border-radius:50%;box-shadow:0 0 8px #fff;animation:rise 3s linear infinite}
+@keyframes rise{from{transform:translateY(20px);opacity:0}30%{opacity:1}to{transform:translateY(-70px);opacity:0}}
+
+/* 22 Seed: an egg of light about to open */
+.b22 .o{width:76px;height:96px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:radial-gradient(circle at 35% 28%,#f4f0ff,#a78bfa 45%,#2a0f5e);box-shadow:0 0 36px rgba(167,139,250,.65);animation:bob 5s ease-in-out infinite}
+.b22 .crack{position:absolute;left:50%;top:26px;width:5px;height:50px;margin-left:-2px;background:#fff;clip-path:polygon(50% 0,100% 22%,40% 40%,100% 62%,30% 100%,0 70%,60% 50%,0 28%);filter:drop-shadow(0 0 8px #8fe3ff) drop-shadow(0 0 16px #fff);animation:pulse 2.2s infinite}
+.b22 .ring{position:absolute;inset:-14px -10px;border-radius:50%;border:1px solid rgba(167,139,250,.4);animation:pulse 3s infinite}
+
+/* 23 Compass of stars */
+.b23 .o{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,#0b0830 55%,#1a1458);border:2px solid rgba(190,205,255,.8);box-shadow:0 0 30px rgba(124,92,255,.55)}
+.b23 .tk{position:absolute;inset:6px;border-radius:50%;background:repeating-conic-gradient(rgba(143,227,255,.7) 0 1deg,transparent 1deg 15deg);-webkit-mask:radial-gradient(circle,transparent 80%,#000 82%);mask:radial-gradient(circle,transparent 80%,#000 82%)}
+.b23 .nd{position:absolute;left:50%;top:50%;width:10px;height:70px;margin:-35px -5px;animation:swing 6s ease-in-out infinite}
+@keyframes swing{0%,100%{transform:rotate(-40deg)}50%{transform:rotate(60deg)}}
+.b23 .nd::before{content:'';position:absolute;left:0;top:0;width:10px;height:35px;clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(#fff,#8fe3ff);filter:drop-shadow(0 0 6px #8fe3ff)}
+.b23 .nd::after{content:'';position:absolute;left:0;bottom:0;width:10px;height:35px;clip-path:polygon(0 0,100% 0,50% 100%);background:#e879f9;opacity:.8}
+.b23 .pin{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff;z-index:2}
+
+/* 24 Jellyfish of space */
+.b24 .o{width:84px;height:62px;border-radius:50% 50% 30% 30%/80% 80% 20% 20%;background:radial-gradient(circle at 40% 30%,rgba(255,255,255,.9),rgba(143,227,255,.55) 40%,rgba(124,92,255,.45) 80%);box-shadow:0 0 32px rgba(143,227,255,.6),inset 0 0 16px rgba(255,255,255,.4);animation:bob 4s ease-in-out infinite}
+.b24 .t{position:absolute;top:56px;width:3px;height:48px;border-radius:3px;background:linear-gradient(rgba(143,227,255,.85),transparent);animation:sway 3s ease-in-out infinite}
+.b24 .eyes{top:24px}.b24 .eyes i{background:#10083a;box-shadow:none}
+</style>
+<div class="row">
+ <div class="cell b17"><div class="stage"><div class="o"><div class="bars"></div></div></div><p><b>17 · Lantern</b>A celestial lantern with a star as its flame. A guide that lights the way.</p></div>
+ <div class="cell b18"><div class="stage"><div class="o"><div class="g"></div><div class="top"></div><div class="bot"></div><div class="cap" style="top:-4px"></div><div class="cap" style="bottom:-4px"></div><div class="st"><i></i><i style="animation-delay:.6s"></i><i style="animation-delay:1.2s"></i></div></div></div><p><b>18 · Star Hourglass</b>Stars fall like sand. Memory and time, which is what Memoir keeps.</p></div>
+ <div class="cell b19"><div class="stage"><div class="o"><div class="r r3"></div><div class="r r1"></div><div class="r r2"></div><div class="c"></div></div></div><p><b>19 · Armillary</b>An ancient sky instrument, rings turning around a bright core.</p></div>
+ <div class="cell b20"><div class="stage"><div class="o"><div class="eyes"><i></i><i></i></div></div><div class="tail"></div></div><p><b>20 · Spirit</b>A tall, soft flame of light with a face and a tail that sways.</p></div>
+ <div class="cell b21"><div class="stage"><div class="beam"></div><div class="o"><i class="p l"></i><i class="p r"></i></div><div class="s"><i style="left:80px;bottom:46px"></i><i style="left:100px;bottom:46px;animation-delay:1s"></i><i style="left:118px;bottom:46px;animation-delay:2s"></i></div></div><p><b>21 · Book Of Light</b>An open book with light and stars rising from the pages.</p></div>
+ <div class="cell b22"><div class="stage"><div class="ring"></div><div class="o"><div class="crack"></div></div></div><p><b>22 · Seed</b>A cosmic seed with a crack of light. Evolution about to begin.</p></div>
+ <div class="cell b23"><div class="stage"><div class="o"><div class="tk"></div><div class="nd"></div><div class="pin"></div></div></div><p><b>23 · Compass</b>A compass whose needle is a star, always searching for direction.</p></div>
+ <div class="cell b24"><div class="stage"><div class="o"><div class="eyes"><i></i><i></i></div></div><i class="t" style="left:78px"></i><i class="t" style="left:92px;animation-delay:.5s"></i><i class="t" style="left:106px;animation-delay:1s"></i><i class="t" style="left:120px;animation-delay:1.5s"></i></div><p><b>24 · Space Jellyfish</b>A translucent bell with glowing tendrils, drifting through the dark.</p></div>
+</div>

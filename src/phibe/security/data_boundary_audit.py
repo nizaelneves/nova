@@ -140,15 +140,11 @@ _CONFIG_STORE_PATHS: tuple[tuple[str, str, str, Status], ...] = (
 )
 
 PERSONAL_DIGEST_SOURCES = {
-    "dropbox",
     "gcalendar",
     "gdrive",
     "github",
     "gmail",
     "imessage",
-    "notion",
-    "obsidian",
-    "outlook",
     "slack",
     "whatsapp",
 }

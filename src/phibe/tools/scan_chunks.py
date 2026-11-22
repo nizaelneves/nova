@@ -56,7 +56,7 @@ class ScanChunksTool(BaseTool):
                     },
                     "source": {
                         "type": "string",
-                        "description": "Filter by source (e.g. 'notion', 'gmail').",
+                        "description": "Filter by source (e.g. 'gcalendar', 'gmail').",
                     },
                     "doc_type": {
                         "type": "string",

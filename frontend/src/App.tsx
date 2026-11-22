@@ -6,6 +6,8 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AgentsPage } from './pages/AgentsPage';
 import { PingsPage } from './pages/PingsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { MemoirPage } from './pages/MemoirPage';
+import './memoir.css';
 import { FinancesPage } from './pages/FinancesPage';
 import { DataSourcesPage } from './pages/DataSourcesPage';
 import { startComputerFeed } from './horizon/lib/computerFeed';
@@ -75,6 +77,8 @@ export default function App() {
   return (
     <>
       <Routes>
+        {/* Memoir is a space of its own: no sidebar and no island around it. */}
+        <Route path="notes" element={<MemoirPage />} />
         <Route element={<Layout />}>
           <Route index element={<HorizonPage />} />
           <Route path="settings" element={<SettingsPage />} />

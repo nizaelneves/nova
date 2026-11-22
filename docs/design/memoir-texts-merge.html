@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Copies + E-mails In One Screen</title>
+<style>
+:root{color-scheme:dark;--a:#8fe3ff;--v:#a78bfa;--m:#e879f9}
+html,body{overflow:auto}
+body{margin:0;padding:28px;background:#04030d;color:#eef0ff;font:14px 'Segoe UI',system-ui,sans-serif}
+h1{font-weight:400;letter-spacing:.06em;margin:0 0 4px}.lead{color:rgba(238,240,255,.5);margin:0 0 24px}
+h2{font-weight:600;margin:30px 0 4px}.d{color:rgba(238,240,255,.55);margin:0 0 12px;max-width:760px;line-height:1.5}
+.win{max-width:900px;padding:18px;border-radius:18px;border:1px solid rgba(160,175,255,.16);background:#0a0a1f}
+.menu{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:999px;border:1px solid rgba(160,175,255,.18);color:rgba(238,240,255,.65);font-size:12.5px}
+.chip.on{background:linear-gradient(90deg,#8fe3ff,#a78bfa);color:#04101c;font-weight:600;border:0}
+.chip.sq{border-radius:8px}
+.head{display:flex;align-items:center;gap:12px;margin:6px 0 14px}.head h3{margin:0;font-weight:500;font-size:20px}.head small{color:rgba(238,240,255,.4);font:12px ui-monospace,Consolas,monospace}
+.head .b{margin-left:auto;padding:6px 14px;border-radius:999px;border:1px solid rgba(160,175,255,.2);font-size:13px;color:rgba(238,240,255,.7)}
+.head .b.go{background:linear-gradient(90deg,#8fe3ff,#a78bfa);color:#04101c;border:0;font-weight:600;margin-left:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{padding:14px;border-radius:14px;border:1px solid rgba(160,175,255,.14);background:rgba(143,227,255,.045);display:grid;gap:6px}
+.card b{font-weight:500;font-size:14px}.card p{margin:0;color:rgba(238,240,255,.6);font-size:12px;line-height:1.5}.card small{color:rgba(238,240,255,.4);font:11px ui-monospace,Consolas,monospace}
+.badge{justify-self:start;display:inline-flex;gap:5px;align-items:center;padding:2px 9px;border-radius:999px;font:600 10.5px ui-monospace,Consolas,monospace;letter-spacing:.05em}
+.badge.e{background:rgba(143,227,255,.14);color:#bfeaff}.badge.c{background:rgba(232,121,249,.16);color:#f3b9fb}
+.band{margin:18px 0 8px;font:500 10px ui-monospace,Consolas,monospace;letter-spacing:.2em;color:rgba(238,240,255,.4)}
+.pro{margin-top:10px;color:rgba(238,240,255,.55);font-size:12.5px;line-height:1.6}.pro b{color:#bfeaff;font-weight:600}
+</style></head><body>
+<h1>Copies + E-mails · One Screen</h1>
+<p class="lead">Three ways to show them together (all with the real kind of content: e-mails are PDFs, copies are written text). Tell me the number you prefer, or what to change.</p>
+
+<h2>1 · One list with a type filter</h2>
+<p class="d">The menu has a single entry, <b>Texts</b>. Two rows of filters on top: the type (All, E-mails, Copies) and, under it, the folders. Every card has a small badge with its type.</p>
+<div class="win">
+ <div class="menu"><span class="chip on">All</span><span class="chip">E-mails</span><span class="chip">Copies</span></div>
+ <div class="menu"><span class="chip sq on">All Folders</span><span class="chip sq">Acqua Park References</span><span class="chip sq">Black Friday</span><span class="chip sq">Unsorted</span></div>
+ <div class="head"><h3>All Texts</h3><small>14 Texts</small><span class="b">Write Copy</span><span class="b go">Upload</span></div>
+ <div class="grid">
+  <div class="card"><span class="badge e">E-MAIL</span><b>Porque Não Perder a Black Friday 2026</b><p>PDF · 2 MB</p><small>Amarante · Acqua Park References</small></div>
+  <div class="card"><span class="badge c">COPY</span><b>Headline Oferta Verão</b><p>Aproveite o verão com a gente: ingressos com 30% de desconto até domingo…</p><small>Black Friday</small></div>
+  <div class="card"><span class="badge c">COPY</span><b>Abertura de Carrossel</b><p>Você sabia que 80% dos clientes decidem nos primeiros 3 segundos?</p><small>Unsorted</small></div>
+ </div>
+ <div class="pro"><b>Good:</b> simplest; one place to look, filter when you need to. <b>Trade-off:</b> two filter rows can feel heavy.</div>
+</div>
+
+<h2>2 · Two bands on the same screen</h2>
+<p class="d">One entry, <b>Texts</b>, with two sections stacked: first E-mails, then Copies. Each band has its own count and shows only its latest items, with a "See All" link. Folders are chips shared by both.</p>
+<div class="win">
+ <div class="menu"><span class="chip sq on">All Folders</span><span class="chip sq">Acqua Park References</span><span class="chip sq">Black Friday</span></div>
+ <div class="head"><h3>Texts</h3><small>14 Texts</small><span class="b">Write Copy</span><span class="b go">Upload</span></div>
+ <div class="band">E-MAILS · 6 &nbsp; <span style="color:#8fe3ff;letter-spacing:0">See All →</span></div>
+ <div class="grid"><div class="card"><span class="badge e">E-MAIL</span><b>Porque Não Perder a Black Friday 2026</b><small>Amarante · Acqua Park References</small></div><div class="card"><span class="badge e">E-MAIL</span><b>Últimas Horas de Oferta</b><small>Hotel Urbano · Black Friday</small></div></div>
+ <div class="band">COPIES · 8 &nbsp; <span style="color:#8fe3ff;letter-spacing:0">See All →</span></div>
+ <div class="grid"><div class="card"><span class="badge c">COPY</span><b>Headline Oferta Verão</b><p>Aproveite o verão com a gente…</p></div><div class="card"><span class="badge c">COPY</span><b>Abertura de Carrossel</b><p>Você sabia que 80% dos clientes…</p></div></div>
+ <div class="pro"><b>Good:</b> you see both kinds at once, with their different looks. <b>Trade-off:</b> longer screen; filtering by folder mixes both bands.</div>
+</div>
+
+<h2>3 · Source first</h2>
+<p class="d">One entry, <b>Texts</b>. The main filter is the <b>Source</b> (Amarante, Hotel Urbano, Mine…), because that is how you remember a piece. The type is just a badge, and a small switch narrows to E-mails or Copies. Copies get a Source too (where the idea came from).</p>
+<div class="win">
+ <div class="menu"><span class="chip on">All Sources</span><span class="chip">Amarante</span><span class="chip">Hotel Urbano</span><span class="chip">My Own</span></div>
+ <div class="head"><h3>Amarante</h3><small>5 Texts</small><span class="b">E-mails · Copies ▾</span><span class="b go">Upload</span></div>
+ <div class="grid">
+  <div class="card"><span class="badge e">E-MAIL</span><b>Porque Não Perder a Black Friday 2026</b><p>PDF · 2 MB</p><small>Acqua Park References</small></div>
+  <div class="card"><span class="badge c">COPY</span><b>Assunto Que Abre Mais</b><p>Subject lines that worked in the March campaign…</p><small>Subject Lines</small></div>
+ </div>
+ <div class="pro"><b>Good:</b> matches how you actually look for swipe material (by who wrote it). <b>Trade-off:</b> needs a Source on every copy, and folders stay as a second level.</div>
+</div>
+</body></html>

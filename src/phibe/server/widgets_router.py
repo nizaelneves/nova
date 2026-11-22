@@ -18,6 +18,8 @@ import httpx
 import psutil
 from fastapi import APIRouter
 
+from phibe.server.model_capabilities import is_embed_only_model
+
 router = APIRouter(prefix="/v1/widgets", tags=["widgets"])
 
 OLLAMA = "http://127.0.0.1:11434"
@@ -122,6 +124,17 @@ def _ollama() -> Dict[str, Any]:
         return {"running": True, "version": version, "installed": installed}
     except (httpx.HTTPError, ValueError, KeyError):
         return {"running": False}
+
+
+@router.get("/embedding-models")
+def embedding_models() -> List[Dict[str, Any]]:
+    """The Ollama models kept only for meaning search (they never appear as chat models)."""
+    try:
+        with httpx.Client(timeout=1.5) as client:
+            models = client.get(f"{OLLAMA}/api/tags").json().get("models", [])
+    except (httpx.HTTPError, ValueError):
+        return []
+    return [{"name": m["name"], "size": m.get("size", 0)} for m in models if is_embed_only_model(m["name"])]
 
 
 @router.get("/computer")

@@ -56,7 +56,7 @@ export const EFFORT_LABELS: Record<EffortLevel, string> = {
   max: 'Max',
 };
 
-// ── How well a model can "Think" (reason step by step) ──────────────────
+// ── How well a model can "Muse" (reason step by step) ──────────────────
 
 type ThinkLevel = 'strong' | 'good' | 'basic' | 'none' | 'unknown';
 
@@ -78,11 +78,11 @@ export function thinkSupport(modelId: string): ThinkSupport {
   const name = (modelId || '').trim().toLowerCase();
   if (isClaudeCliModel(name) || name.startsWith('claude-')) {
     if (name.includes('haiku')) {
-      return { level: 'basic', label: 'Think: basic', hint: 'Fast Claude model, light reasoning.' };
+      return { level: 'basic', label: 'Muse: basic', hint: 'Fast Claude model, light reasoning.' };
     }
     return {
       level: 'strong',
-      label: 'Think: best',
+      label: 'Muse: best',
       hint: name.includes('opus')
         ? 'Strongest reasoning. Uses the most of your Claude plan.'
         : 'Strong reasoning. Raise the effort for harder problems.',
@@ -91,19 +91,19 @@ export function thinkSupport(modelId: string): ThinkSupport {
   if (LOCAL_REASONING_FAMILIES.some((family) => name.includes(family))) {
     const size = localSizeB(name);
     if (size !== null && size >= 27) {
-      return { level: 'strong', label: 'Think: best', hint: 'Large local reasoning model.' };
+      return { level: 'strong', label: 'Muse: best', hint: 'Large local reasoning model.' };
     }
     if (size !== null && size >= 7) {
-      return { level: 'good', label: 'Think: good', hint: 'Local reasoning model.' };
+      return { level: 'good', label: 'Muse: good', hint: 'Local reasoning model.' };
     }
     return {
       level: 'basic',
-      label: 'Think: basic',
+      label: 'Muse: basic',
       hint: 'Small local model: it reasons, but makes mistakes in maths and logic. Prefer Sonnet or Opus for important work.',
     };
   }
   if (/^(llama|mistral|gemma|phibe)/.test(name.slice(name.lastIndexOf('/') + 1))) {
-    return { level: 'none', label: 'No reasoning', hint: 'This model has no reasoning mode. Think will not work well here.' };
+    return { level: 'none', label: 'No reasoning', hint: 'This model has no reasoning mode. Muse will not work well here.' };
   }
   return { level: 'unknown', label: '', hint: '' };
 }

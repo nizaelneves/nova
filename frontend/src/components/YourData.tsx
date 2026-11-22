@@ -186,7 +186,7 @@ export function YourData() {
           {entries === null ? (
             <SeedsLoader />
           ) : entries.length === 0 ? (
-            <div className="text-sm py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here yet.</div>
+            <div className="text-sm py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing Here Yet</div>
           ) : (
             <ul className="flex flex-col mt-3">
               {entries.map((e) => (

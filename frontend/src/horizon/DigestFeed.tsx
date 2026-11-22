@@ -52,7 +52,7 @@ export function DigestFeed({ blocks, now, onOpen, visible = 4, every = 6000 }: {
     return () => clearTimeout(t);
   }, [i, n, slide]);
 
-  if (!n) return <p className="dg-none">Nothing here yet.</p>;
+  if (!n) return <p className="dg-none">Nothing Here Yet</p>;
   const rows = slide ? [...blocks, ...blocks.slice(0, visible)] : blocks;
   return (
     <div className="dg-feed" data-slide={slide || undefined} style={{ height: Math.min(n, visible) * ROW }}

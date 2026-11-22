@@ -107,10 +107,10 @@ SEARCH_TOOL_SPEC: Dict[str, Any] = {
                     "description": (
                         "Restrict the search to one or more connectors. Use this "
                         'whenever the user names a data source (e.g. "in my '
-                        'Notion pages" → [\'notion\']; "check Slack and Gmail" '
+                        'Apple Notes" → [\'apple_notes\']; "check Slack and Gmail" '
                         "→ ['slack', 'gmail']). Valid IDs include: gmail, slack, "
-                        "notion, obsidian, gcalendar, gdrive, gmail_imap, "
-                        "outlook, imessage, whatsapp, apple_notes, "
+                        "gcalendar, gdrive, gmail_imap, "
+                        "imessage, whatsapp, apple_notes, "
                         "github_notifications."
                     ),
                     "items": {"type": "string"},
@@ -141,8 +141,8 @@ Strategy:
   1. If the user names a person, ALWAYS pass `person=` rather than relying on lexical match. Hybrid search will fuzzy-match name or address fragments.
   2. When the user mentions ANY time window — "this past week", "recently", "last month", "past few days", "yesterday" — you MUST translate it to a `time_range` parameter. Today is {today}.
   3. The `time_range` argument is a JSON object: `{{"start": "<ISO 8601>", "end": "<ISO 8601>"}}`. Either bound may be omitted, but pass at least one whenever the user gave you a temporal cue.
-  4. When the user names a specific data source — "my Notion pages", "in Slack", "from my email" — you MUST pass `sources=[...]` with the matching connector ID. Only use IDs that appear in the connected-sources list above; do NOT invent or assume sources that are not connected. Common synonyms: "meeting notes"/"meetings"/"transcripts" → notion; "email"/"inbox" → gmail; "DMs"/"channels" → slack. Without this filter the search returns mail/messages ABOUT a tool instead of records FROM that tool.
-  4a. Never apologize about sources that aren't in the connected-sources list — if the user asks about "Notion" but Notion isn't connected, just say "Notion isn't connected, but here's what I found in {available_sources}" and answer from what is available.
+  4. When the user names a specific data source — "my Apple Notes", "in Slack", "from my email" — you MUST pass `sources=[...]` with the matching connector ID. Only use IDs that appear in the connected-sources list above; do NOT invent or assume sources that are not connected. Common synonyms: "meeting notes"/"meetings"/"transcripts" → apple_notes; "email"/"inbox" → gmail; "DMs"/"channels" → slack. Without this filter the search returns mail/messages ABOUT a tool instead of records FROM that tool.
+  4a. Never apologize about sources that aren't in the connected-sources list — if the user asks about "Apple Notes" but Apple Notes isn't connected, just say "Apple Notes isn't connected, but here's what I found in {available_sources}" and answer from what is available.
   5. When the user asks for "next", "upcoming", "future", or "soon" calendar events/meetings/appointments, use `sources=["gcalendar"]` if gcalendar is connected, set `time_range={{"start": "{today}"}}`, and use `query=""` unless the user gave a specific topic such as "dentist" or "music lesson". This returns the nearest upcoming calendar items across calendars instead of keyword-matching only birthdays or event titles.
   6. If the first structured search returns nothing useful, broaden with a semantic query and drop filters one at a time.
   7. You have a clarify tool. Only use it AFTER at least one search attempt. Use it when: you found multiple ambiguous matches (e.g. 3 different people named John), search returned zero results and the query might need reframing, or the scope is too broad to synthesize meaningfully. Never use clarify before searching — always try first.
@@ -254,7 +254,7 @@ def _hit_url(source: str, document_id: str) -> str:
     chunk (``SearchHit.url`` is empty). Reconstruction only works for
     sources whose doc_id encodes everything the permalink needs — Gmail
     and Slack today. Sources whose doc_id is just an opaque ID (e.g.
-    Notion, whose page URL has to be stored at ingest time)
+    a source whose page URL has to be stored at ingest time)
     must populate ``Document.url`` at ingest time; we can't make a working
     link from the doc_id alone.
 
@@ -386,7 +386,7 @@ def build_sources_for_client(
     out: List[Dict[str, Any]] = []
     for i, h in enumerate(hits[:total_cap]):
         sender = h.participants[0] if h.participants else ""
-        # Prefer the URL the connector stored at ingest time (Notion's
+        # Prefer the URL the connector stored at ingest time (a source's
         # page URL, etc.) — it's the only reliable
         # link for sources whose web URL doesn't derive from the doc_id.
         # Fall back to the doc_id-based reconstruction for sources where

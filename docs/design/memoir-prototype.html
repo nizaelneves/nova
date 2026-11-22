@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memoir Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07070f;--card:rgba(255,255,255,.035);--line:rgba(255,255,255,.09);--text:#e9ecf5;--dim:rgba(233,236,245,.58);--mute:rgba(233,236,245,.34);--mint:#20e7aa;
+  --m-bg:#04030d;--m-card:rgba(143,227,255,.045);--m-line:rgba(160,175,255,.14);--m-text:#eef0ff;--m-dim:rgba(238,240,255,.62);--m-mute:rgba(238,240,255,.36);--m-acc:#8fe3ff;--m-acc2:#c084fc;--m-violet:#818cf8;
+  --ease:cubic-bezier(.65,0,.25,1);--out:cubic-bezier(.16,1,.3,1);
+  --disp:'Unbounded','Segoe UI',sans-serif;--ui:'Space Grotesk','Segoe UI',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,Consolas,monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#000;color:var(--text);font:14px/1.5 system-ui,Segoe UI,sans-serif}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ================= THE PHIBE SHELL (what exists today) ================= */
+#app{position:fixed;inset:0;background:var(--bg);display:grid;grid-template-columns:64px 1fr;
+  background-image:radial-gradient(circle at 12% 18%,rgba(32,231,170,.07),transparent 38%),radial-gradient(circle at 88% 8%,rgba(167,139,250,.08),transparent 36%)}
+#rail{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 0;border-right:1px solid var(--line)}
+.rbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--mute);transition:.2s}
+.rbtn:hover{background:var(--card);color:var(--text)}
+.rbtn.me{color:var(--m-acc)}
+.rbtn.me:hover{background:rgba(143,227,255,.1)}
+.rbtn.me svg{filter:drop-shadow(0 0 6px rgba(143,227,255,.6))}
+.rbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+#home{display:flex;flex-direction:column;align-items:center;padding-top:14px}
+#island{display:flex;align-items:center;gap:10px;padding:8px 18px 8px 10px;border-radius:999px;background:#000;border:1px solid var(--line)}
+.orb{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9ffbe0,var(--mint) 45%,#0a6a55);box-shadow:0 0 18px rgba(32,231,170,.45)}
+#island small{color:var(--dim)}
+#hero{margin:auto;text-align:center;color:var(--mute)}
+#hero h2{margin:0 0 6px;color:var(--text);font-weight:600;font-size:26px}
+#note{position:fixed;left:84px;bottom:18px;color:var(--mute);font-size:12px}
+
+/* ================= TRANSITION LAYERS ================= */
+#iris{position:fixed;inset:0;z-index:20;background:radial-gradient(circle at 50% 50%,#150b45 0%,var(--m-bg) 65%);clip-path:circle(0 at 50% 50%);pointer-events:none}
+#stars{position:fixed;inset:0;z-index:21;pointer-events:none;opacity:0}
+#flash{position:fixed;inset:0;z-index:24;background:radial-gradient(circle,#f6fcff 0,#8fe3ff 30%,#7c5cff 75%,#e879f9 100%);opacity:0;pointer-events:none}
+#hud{position:fixed;left:50%;bottom:54px;transform:translateX(-50%);z-index:23;display:flex;align-items:center;gap:16px;font:500 11px var(--mono);letter-spacing:.34em;color:var(--m-acc);opacity:0;pointer-events:none;text-shadow:0 0 12px rgba(143,227,255,.7)}
+#hud b{font-weight:500;min-width:7ch;text-align:right;color:#fff}
+#hud .gauge{width:170px;height:2px;background:rgba(143,227,255,.2);position:relative}
+#hud .gauge u{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#8fe3ff,#e879f9);box-shadow:0 0 10px #8fe3ff}
+#title{position:fixed;inset:0;z-index:25;display:grid;place-items:center;pointer-events:none;opacity:0;font-family:var(--ui)}
+#title .in{text-align:center}
+.mark{position:relative;width:128px;height:128px;margin:0 auto 22px;display:grid;place-items:center}
+.mark svg{width:56px;height:56px;fill:none;stroke:var(--m-acc);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 16px rgba(143,227,255,.8)) drop-shadow(0 0 40px rgba(124,92,255,.7))}
+.mark i{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(143,227,255,.25)}
+.mark .o1{border-top-color:#8fe3ff;animation:spin 9s linear infinite}
+.mark .o2{inset:16px;border-color:rgba(232,121,249,.25);border-bottom-color:#e879f9;animation:spin 6s linear infinite reverse}
+.mark .o3{inset:-18px;border:1px dashed rgba(160,175,255,.25);animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#word{margin:0 0 12px;font:300 46px var(--disp);letter-spacing:.26em;padding-left:.26em;color:var(--m-text);text-shadow:0 0 30px rgba(124,92,255,.8),0 0 80px rgba(143,227,255,.25)}
+#word .ch{display:inline-block;opacity:0}
+.tagrow{display:flex;align-items:center;justify-content:center;gap:18px}
+.tagrow .bar{width:96px;height:1px;transform:scaleX(0)}
+.tagrow .l{background:linear-gradient(90deg,transparent,#8fe3ff);transform-origin:right}
+.tagrow .r{background:linear-gradient(270deg,transparent,#8fe3ff);transform-origin:left}
+#tag{margin:0;font:400 12px var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--m-dim);min-height:1.5em;white-space:nowrap}
+#tag.typing:after{content:'▍';margin-left:2px;color:var(--m-acc);animation:blink .7s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ================= MEMOIR (the isolated space) ================= */
+#memoir{position:fixed;inset:0;z-index:22;background:var(--m-bg);color:var(--m-text);font-family:var(--ui);visibility:hidden;display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;overflow:hidden}
+.neb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;opacity:.55}
+.n1{width:620px;height:620px;right:-120px;top:-200px;background:radial-gradient(circle,rgba(124,92,255,.55),transparent 68%);animation:drift1 38s ease-in-out infinite alternate}
+.n2{width:560px;height:560px;left:-120px;bottom:-200px;background:radial-gradient(circle,rgba(232,121,249,.38),transparent 68%);animation:drift2 46s ease-in-out infinite alternate}
+.n3{width:520px;height:420px;left:38%;top:30%;background:radial-gradient(circle,rgba(40,120,255,.22),transparent 68%);animation:drift3 54s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(-160px,120px) scale(1.15)}}
+@keyframes drift2{to{transform:translate(180px,-100px) scale(1.2)}}
+@keyframes drift3{to{transform:translate(-120px,-80px) scale(.85)}}
+#bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#memoir > header,#memoir > aside,#memoir > section{position:relative;z-index:1}
+#memoir .rise{opacity:0;transform:translateY(14px)}
+#mtop{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid var(--m-line);backdrop-filter:blur(8px);background:rgba(4,3,13,.35)}
+#mtop .brand{display:flex;align-items:center;gap:12px;font:400 13px var(--disp);letter-spacing:.3em;color:var(--m-text)}
+#mtop .brand svg{width:22px;height:22px;fill:none;stroke:var(--m-acc);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;animation:breathe 3.6s ease-in-out infinite}
+@keyframes breathe{50%{filter:drop-shadow(0 0 8px #8fe3ff) drop-shadow(0 0 18px #7c5cff);transform:scale(1.12)}}
+#mtop .sp{flex:1}
+.mbtn{padding:6px 14px;border-radius:999px;border:1px solid var(--m-line);color:var(--m-dim);font-size:13px;transition:.25s}
+.mbtn:hover{color:var(--m-text);background:var(--m-card);border-color:rgba(143,227,255,.35);box-shadow:0 0 18px rgba(143,227,255,.12)}
+.search{display:flex;align-items:center;gap:8px;width:300px;padding:6px 14px;border-radius:999px;border:1px solid var(--m-line);background:var(--m-card);color:var(--m-mute);font-size:13px;transition:.3s}
+.search:hover{border-color:rgba(143,227,255,.35);width:340px}
+.up{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:999px;background:linear-gradient(90deg,#8fe3ff,#a78bfa 60%,#e879f9);background-size:200% 100%;color:#04101c;font-weight:600;font-size:13px;transition:.4s;position:relative;overflow:hidden}
+.up:hover{background-position:100% 0;box-shadow:0 0 24px rgba(143,227,255,.35)}
+.up svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#side{padding:18px 14px;border-right:1px solid var(--m-line);overflow:auto;background:rgba(4,3,13,.3);backdrop-filter:blur(6px)}
+#side h6{margin:18px 10px 6px;font:500 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--m-mute)}
+#side h6:first-child{margin-top:0}
+.sec,.fold{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:10px;color:var(--m-dim);text-align:left;transition:.25s;position:relative}
+.sec:hover,.fold:hover{background:var(--m-card);color:var(--m-text);transform:translateX(3px)}
+.sec.on,.fold.on{background:linear-gradient(90deg,rgba(143,227,255,.12),transparent);color:var(--m-acc)}
+.sec.on:before,.fold.on:before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;border-radius:2px;background:linear-gradient(#8fe3ff,#e879f9);box-shadow:0 0 10px #8fe3ff;animation:bar .4s var(--out)}
+@keyframes bar{from{transform:scaleY(0)}}
+.sec svg,.fold svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.fold em{margin-left:auto;font:400 11px var(--mono);font-style:normal;color:var(--m-mute)}
+.path{margin:16px 10px 0;padding:10px 12px;border-radius:10px;border:1px dashed var(--m-line);color:var(--m-mute);font-size:11.5px;line-height:1.5}
+.path code{color:var(--m-dim);font-family:var(--mono);font-size:11px;word-break:break-all}
+#main{overflow:auto;padding:22px 28px 90px;position:relative}
+.swap{animation:swap .6s var(--out)}
+@keyframes swap{from{opacity:0;transform:translateX(26px);filter:blur(8px)}}
+.chips{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:999px;border:1px solid var(--m-line);color:var(--m-dim);font-size:13px;transition:.25s}
+.chip:hover{border-color:rgba(143,227,255,.4);color:var(--m-text)}
+.chip.on{background:linear-gradient(90deg,#8fe3ff,#a78bfa);color:#04101c;border-color:transparent;font-weight:600;box-shadow:0 0 20px rgba(143,227,255,.25)}
+.head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.head h2{margin:0;font:400 20px var(--disp);letter-spacing:.04em}
+.head span{color:var(--m-mute);font:400 12px var(--mono)}
+.head .up{margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:24px 18px;perspective:900px}
+@keyframes cardin{from{opacity:0;transform:translateY(26px) scale(.94);filter:blur(8px)}}
+.vid,.doc{animation:cardin .7s var(--out) both;animation-delay:calc(var(--i,0) * 55ms)}
+.vid{text-align:left;display:block}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--m-line);transition:transform .25s,border-color .25s,box-shadow .25s;transform:rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg));transform-style:preserve-3d}
+.vid:hover .thumb{border-color:rgba(143,227,255,.5);box-shadow:0 16px 40px rgba(0,0,0,.5),0 0 30px rgba(124,92,255,.25)}
+.thumb:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55))}
+.thumb:before{content:'';position:absolute;top:0;bottom:0;width:60%;left:-80%;z-index:2;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);pointer-events:none}
+.vid:hover .thumb:before{animation:shine .9s ease}
+@keyframes shine{to{left:130%}}
+.dur{position:absolute;right:8px;bottom:8px;z-index:1;padding:1px 7px;border-radius:6px;background:rgba(0,0,0,.7);font:400 11px var(--mono)}
+.play{position:absolute;inset:0;display:grid;place-items:center;z-index:1;opacity:0;transition:.25s}
+.vid:hover .play{opacity:1}
+.play i{width:46px;height:46px;border-radius:50%;background:rgba(143,227,255,.92);display:grid;place-items:center;transform:scale(.7);transition:.3s var(--out);box-shadow:0 0 30px rgba(143,227,255,.6)}
+.vid:hover .play i{transform:scale(1)}
+.play i:after{content:'';border-left:14px solid #04101c;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
+.vid b{display:block;margin-top:10px;font-weight:500;font-size:14px;line-height:1.35}
+.vid small{color:var(--m-mute);font-size:12px}
+.tag{display:inline-block;margin-left:6px;padding:0 8px;border-radius:6px;border:1px solid var(--m-line);color:var(--m-dim);font:400 11px var(--mono)}
+.prog{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,#8fe3ff,#e879f9,#8fe3ff);background-size:200% 100%;animation:flow 2.4s linear infinite;z-index:1;box-shadow:0 0 8px #8fe3ff}
+@keyframes flow{to{background-position:-200% 0}}
+#watch{display:none;grid-template-columns:1fr 330px;gap:24px}
+.scr{position:relative}
+.amb{position:absolute;inset:-6% -4%;border-radius:30px;filter:blur(46px);opacity:.55;animation:amb 5s ease-in-out infinite alternate}
+@keyframes amb{to{opacity:.85;transform:scale(1.04)}}
+#screen{aspect-ratio:16/9;border-radius:16px;position:relative;overflow:hidden;border:1px solid var(--m-line);z-index:1}
+#screen.open{animation:screenin .9s var(--out)}
+@keyframes screenin{from{opacity:0;transform:scale(.9);filter:blur(10px)}}
+#screen:after{content:'';position:absolute;left:0;right:0;height:2px;top:-4px;background:linear-gradient(90deg,transparent,#8fe3ff,transparent);box-shadow:0 0 20px #8fe3ff;opacity:0}
+#screen.open:after{animation:scan 1.3s .2s ease-in-out}
+@keyframes scan{0%{top:-4px;opacity:1}100%{top:100%;opacity:0}}
+.ctrl{position:absolute;left:0;right:0;bottom:0;padding:14px 18px;background:linear-gradient(transparent,rgba(0,0,0,.7));display:flex;align-items:center;gap:14px;font:400 12px var(--mono)}
+.bar{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.25);position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:34%;background:linear-gradient(90deg,#8fe3ff,#e879f9);border-radius:4px;box-shadow:0 0 10px #8fe3ff}
+#watch h3{margin:18px 0 4px;font:400 18px var(--disp);letter-spacing:.02em}
+.notes{margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--m-line);background:var(--m-card);color:var(--m-dim)}
+.notes h5{margin:0 0 6px;font:500 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--m-mute)}
+.next h5{margin:0 0 10px;font:500 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--m-mute)}
+.nx{display:grid;grid-template-columns:128px 1fr;gap:10px;margin-bottom:12px;text-align:left;width:100%;animation:cardin .6s var(--out) both;animation-delay:calc(var(--i,0) * 70ms)}
+.nx .thumb{border-radius:9px}
+.nx b{font-size:13px;font-weight:500;line-height:1.3}
+.nx small{display:block;color:var(--m-mute);font-size:11.5px}
+.doc{padding:16px;border-radius:14px;border:1px solid var(--m-line);background:var(--m-card);text-align:left;transition:.3s;min-height:150px;position:relative;overflow:hidden}
+.doc:hover{transform:translateY(-4px);border-color:rgba(143,227,255,.45);box-shadow:0 0 30px rgba(124,92,255,.2)}
+.doc .ln{height:7px;border-radius:4px;background:linear-gradient(90deg,rgba(143,227,255,.12),rgba(232,121,249,.12),rgba(143,227,255,.12));background-size:200% 100%;animation:flow 3s linear infinite;margin:7px 0}
+.doc b{display:block;font-weight:500;margin-bottom:6px}
+.doc small{color:var(--m-mute)}
+#drop{position:absolute;inset:10px;border-radius:20px;border:2px dashed var(--m-acc);background:rgba(4,3,13,.88);display:none;place-items:center;font:400 16px var(--disp);color:var(--m-acc);z-index:5;animation:pulseb 1.6s ease-in-out infinite}
+@keyframes pulseb{50%{box-shadow:inset 0 0 60px rgba(143,227,255,.18)}}
+#upm{position:fixed;inset:0;z-index:50;background:rgba(2,1,10,.7);backdrop-filter:blur(6px);display:none;place-items:center;font-family:var(--ui)}
+#upm.open{display:grid}
+#upm .box{width:520px;max-width:92vw;padding:22px;border-radius:20px;background:#0a0a1f;border:1px solid var(--m-line);color:var(--m-text);animation:pop .4s var(--out);box-shadow:0 0 80px rgba(124,92,255,.25)}
+#upm h3{margin:0 0 14px;font:400 16px var(--disp)}
+.zone{display:grid;place-items:center;gap:4px;padding:26px;border-radius:14px;border:1.5px dashed var(--m-line);color:var(--m-dim);text-align:center;cursor:pointer;transition:.3s;animation:pulseb 3s ease-in-out infinite}
+.zone:hover{border-color:var(--m-acc);color:var(--m-acc)}
+.zone small{color:var(--m-mute)}
+.sel{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--m-dim);font-size:13px}
+.sel select{flex:1;padding:7px 12px;border-radius:10px;background:var(--m-card);border:1px solid var(--m-line);color:var(--m-text);font:inherit}
+.fl{display:grid;gap:8px;max-height:170px;overflow:auto;margin-bottom:14px}
+.fi{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;color:var(--m-dim)}
+.fi .pb{grid-column:1/3;height:4px;border-radius:4px;background:var(--m-line);overflow:hidden}
+.fi .pb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8fe3ff,#e879f9,#8fe3ff);background-size:200% 100%;animation:flow 1.2s linear infinite;transition:width .2s}
+.act{display:flex;justify-content:flex-end;gap:10px}
+/* floating mentor */
+#fab{position:fixed;right:26px;bottom:24px;z-index:40;display:none;align-items:center;gap:10px;padding:8px 18px 8px 8px;border-radius:999px;background:#0a0a1f;border:1px solid var(--m-line);box-shadow:0 10px 34px rgba(0,0,0,.55),0 0 30px rgba(124,92,255,.18);color:var(--m-text);transition:border-color .25s;font-family:var(--ui);animation:float 5s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-6px)}}
+#fab:hover{border-color:rgba(143,227,255,.5)}
+#fab .orb{width:34px;height:34px;position:relative;background:radial-gradient(circle at 35% 30%,#d6f6ff,#8fe3ff 40%,#5b3fd6);box-shadow:0 0 22px rgba(143,227,255,.6)}
+#fab .orb:after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px dashed rgba(143,227,255,.5);animation:spin 8s linear infinite}
+#fab span{font-size:13px}
+#fab small{display:block;color:var(--m-mute);font-size:11px;line-height:1.1}
+#mentor{position:fixed;right:26px;bottom:84px;z-index:41;width:380px;height:470px;border-radius:20px;background:#0a0a1f;border:1px solid var(--m-line);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 60px rgba(124,92,255,.2);display:none;flex-direction:column;overflow:hidden;color:var(--m-text);transform-origin:100% 100%;font-family:var(--ui)}
+#mentor.open{display:flex;animation:pop .45s var(--out)}
+@keyframes pop{from{opacity:0;transform:scale(.9) translateY(14px);filter:blur(6px)}}
+#mentor header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--m-line)}
+#mentor header b{font:400 13px var(--disp)}
+#mentor header small{color:var(--m-mute);display:block;font-size:11.5px;line-height:1.2}
+#mentor header .orb{width:30px;height:30px;background:radial-gradient(circle at 35% 30%,#d6f6ff,#8fe3ff 40%,#5b3fd6);box-shadow:0 0 18px rgba(143,227,255,.5)}
+.modes{display:flex;gap:6px;padding:10px 14px 0}
+.modes button{padding:3px 11px;border-radius:999px;border:1px solid var(--m-line);color:var(--m-dim);font-size:12px;transition:.25s}
+.modes button.on{background:rgba(143,227,255,.12);color:var(--m-acc);border-color:rgba(143,227,255,.35)}
+.msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:13px}
+.msg{max-width:88%;padding:9px 12px;border-radius:14px;color:var(--m-dim);background:var(--m-card);border:1px solid var(--m-line);opacity:0}
+#mentor.open .msg{animation:msgin .6s var(--out) forwards;animation-delay:calc(.35s + var(--k,0) * .55s)}
+@keyframes msgin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.msg.me{align-self:flex-end;background:rgba(143,227,255,.1);color:var(--m-text)}
+.msg.dots{display:flex;gap:5px;padding:12px 14px}
+.msg.dots i{width:6px;height:6px;border-radius:50%;background:var(--m-acc);animation:dot 1.1s ease-in-out infinite}
+.msg.dots i:nth-child(2){animation-delay:.15s}.msg.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{50%{transform:translateY(-5px);opacity:.4}}
+.ref{margin-top:7px;display:flex;gap:8px;align-items:center;padding:6px;border-radius:9px;border:1px solid var(--m-line);color:var(--m-mute);font-size:11.5px}
+.ref .thumb{width:62px;aspect-ratio:16/9;border-radius:6px;flex:none}
+.ask{display:flex;gap:8px;padding:12px;border-top:1px solid var(--m-line)}
+.ask div{flex:1;padding:8px 14px;border-radius:999px;border:1px solid var(--m-line);color:var(--m-mute);font-size:13px}
+.legend{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:60;display:flex;gap:8px;padding:5px;border-radius:999px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);font-family:system-ui}
+.legend button{padding:4px 12px;border-radius:999px;font-size:12px;color:rgba(255,255,255,.75)}
+.legend button:hover{background:rgba(255,255,255,.12)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="legend">
+  <button id="replay">▶ Replay Entry</button>
+  <button id="slow">Slow Motion (x2.5)</button>
+  <button id="exitbtn">Exit Memoir</button>
+</div>
+
+<!-- 1) Phibe today -->
+<div id="app">
+  <nav id="rail">
+    <button class="rbtn" title="Horizon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg></button>
+    <button class="rbtn" title="Projects"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 10h16"/></svg></button>
+    <button class="rbtn" title="Pings"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15zM10 21h4"/></svg></button>
+    <button class="rbtn me" id="brain" title="Memoir">
+      <svg viewBox="0 0 24 24"><path d="M9 4.5a3 3 0 00-3 3 3 3 0 00-2 2.8 3 3 0 001.2 2.4A3 3 0 006 16.5a3 3 0 003 3 2.5 2.5 0 003-2V6.5a2 2 0 00-3-2zM15 4.5a3 3 0 013 3 3 3 0 012 2.8 3 3 0 01-1.2 2.4A3 3 0 0118 16.5a3 3 0 01-3 3 2.5 2.5 0 01-3-2"/></svg>
+    </button>
+    <button class="rbtn" title="Finances"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+    <button class="rbtn" title="Agents"><svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" rx="4"/><path d="M12 4v4M9 13h.01M15 13h.01"/></svg></button>
+  </nav>
+  <main id="home">
+    <div id="island"><span class="orb"></span><span>Phibe</span><small>Listening</small></div>
+    <div id="hero"><h2>Good Evening</h2><p>Phibe lives in the island here. Click the brain to enter Memoir.</p></div>
+  </main>
+</div>
+<div id="note">Prototype · the left bar is a stand-in for the real sidebar</div>
+
+<!-- 2) Transition layers -->
+<div id="iris"></div>
+<canvas id="stars"></canvas>
+<div id="hud"><span>Elevation</span><b id="alt">00000</b><span>KM</span><i class="gauge"><u id="gauge"></u></i></div>
+<div id="flash"></div>
+<div id="title"><div class="in">
+  <div class="mark"><i class="o3"></i><i class="o1"></i><i class="o2"></i>
+    <svg viewBox="0 0 24 24"><path id="draw" pathLength="1" d="M9 4.5a3 3 0 00-3 3 3 3 0 00-2 2.8 3 3 0 001.2 2.4A3 3 0 006 16.5a3 3 0 003 3 2.5 2.5 0 003-2V6.5a2 2 0 00-3-2zM15 4.5a3 3 0 013 3 3 3 0 012 2.8 3 3 0 01-1.2 2.4A3 3 0 0118 16.5a3 3 0 01-3 3 2.5 2.5 0 01-3-2" style="stroke-dasharray:1;stroke-dashoffset:1"/></svg></div>
+  <h1 id="word">MEMOIR</h1>
+  <div class="tagrow"><i class="bar l"></i><p id="tag"></p><i class="bar r"></i></div>
+</div></div>
+
+<!-- 3) Memoir space -->
+<div id="memoir">
+  <div class="neb n1"></div><div class="neb n2"></div><div class="neb n3"></div>
+  <canvas id="bg"></canvas>
+  <header id="mtop" class="rise">
+    <div class="brand"><svg viewBox="0 0 24 24"><path d="M9 4.5a3 3 0 00-3 3 3 3 0 00-2 2.8 3 3 0 001.2 2.4A3 3 0 006 16.5a3 3 0 003 3 2.5 2.5 0 003-2V6.5a2 2 0 00-3-2zM15 4.5a3 3 0 013 3 3 3 0 012 2.8 3 3 0 01-1.2 2.4A3 3 0 0118 16.5a3 3 0 01-3 3 2.5 2.5 0 01-3-2"/></svg>MEMOIR</div>
+    <div class="sp"></div>
+    <button class="up" id="up1"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Upload</button>
+    <div class="search">⌕ Search Notes, Videos, Copy…</div>
+    <button class="mbtn" id="exit2">← Back To Phibe</button>
+  </header>
+
+  <aside id="side" class="rise">
+    <h6>Library</h6>
+    <button class="sec" data-sec="notes"><svg viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/><path d="M14 4v5h5"/></svg>Notes</button>
+    <h6>Swipe File</h6>
+    <button class="sec on" data-sec="videos"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M10.5 9.5l4 2.5-4 2.5z"/></svg>Videos</button>
+    <button class="sec" data-sec="pages"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16"/></svg>Landing Pages</button>
+    <button class="sec" data-sec="copy"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 11h14M5 16h9"/></svg>Copy</button>
+    <button class="sec" data-sec="email"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M4 8l8 6 8-6"/></svg>Emails</button>
+    <h6>Video Folders</h6>
+    <div id="folders"></div>
+    <div class="path">Folders are read straight from<br><code>~/.phibe/swipe-file/videos/</code><br>Drop a video in a folder and it shows up here.</div>
+  </aside>
+
+  <section id="main" class="rise">
+    <div id="drop">Drop Videos To Add Them To This Folder</div>
+    <div id="library">
+      <div class="chips" id="chips"></div>
+      <div class="head"><h2 id="h2">All Videos</h2><span id="count"></span><button class="up" id="up2"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Upload Videos</button></div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div id="watch">
+      <div>
+        <button class="mbtn" id="back" style="margin-bottom:14px">← Library</button>
+        <div class="scr"><div class="amb" id="amb"></div>
+          <div id="screen"><div class="ctrl"><span>▶</span><span>3:12</span><div class="bar"><i></i></div><span>9:20</span><span>⛶</span></div></div></div>
+        <h3 id="wt">—</h3><small id="wm" style="color:var(--m-mute)"></small>
+        <div class="notes"><h5>My Notes On This Video</h5>Hook lands in the first 3 seconds, social proof at 0:40, offer stack at 2:10. Reuse the pattern interrupt for the Meta test.</div>
+      </div>
+      <div class="next"><h5>More In This Folder</h5><div id="nx"></div></div>
+    </div>
+  </section>
+</div>
+
+<div id="upm"><div class="box">
+  <h3>Upload To Swipe File</h3>
+  <label class="zone" id="zone"><span>Drag videos here or click to choose</span><small>MP4, MOV, WEBM · saved inside the folder you pick</small><input id="file" type="file" accept="video/*" multiple hidden></label>
+  <div class="sel"><span>Folder</span><select id="dest"></select></div>
+  <div class="fl" id="fl"></div>
+  <div class="act"><button class="mbtn" id="upc">Cancel</button><button class="up" id="upgo">Upload</button></div>
+</div></div>
+
+<!-- 4) Mentor: lives in the floating button, never in the island -->
+<button id="fab"><span class="orb"></span><span>Mentor<small>Study · Brainstorm · Work</small></span></button>
+<div id="mentor">
+  <header><span class="orb"></span><div><b>Phibe · Mentor</b><small>Knows your notes and swipe file</small></div></header>
+  <div class="modes"><button class="on">Study</button><button>Brainstorm</button><button>Work</button></div>
+  <div class="msgs">
+    <div class="msg me" style="--k:0">Why does the "Cold Plunge" ad hold attention until the end?</div>
+    <div class="msg" style="--k:1">It opens with a pattern interrupt (0:00–0:03), then promises a result before explaining how. Three moves worth borrowing for your next test:
+      <div class="ref"><div class="thumb" style="background:linear-gradient(135deg,#0b1f5c,#8fe3ff)"></div>Cold Plunge — 0:00 to 0:40</div></div>
+    <div class="msg me" style="--k:2">Give me 3 hooks in that style for the gym offer.</div>
+    <div class="msg dots" style="--k:3"><i></i><i></i><i></i></div>
+  </div>
+  <div class="ask"><div>Ask your mentor…</div></div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const app = $('#app'), iris = $('#iris'), title = $('#title'), memoir = $('#memoir'),
+  stars = $('#stars'), fab = $('#fab'), island = $('#island'), flash = $('#flash'), hud = $('#hud');
+let speed = 1, busy = false, inside = false;
+const ease = 'cubic-bezier(.65,0,.25,1)', out = 'cubic-bezier(.16,1,.3,1)';
+
+/* ---------- demo data ---------- */
+const GRAD = ['#0b1f5c,#8fe3ff','#2a0f5e,#e879f9','#14124a,#7c5cff','#04203a,#22d3ee','#3b0f5c,#818cf8','#0a1a4a,#c084fc','#1c0b4d,#38bdf8','#2b1060,#f0abfc'];
+const FOLDERS = { 'Ads · Meta': 6, 'VSLs': 4, 'UGC': 7, 'Competitors': 5, 'Hooks': 9 };
+const TITLES = ['Cold Plunge — Full Ad','Gym Offer VSL Breakdown','UGC Testimonial #14','Competitor Launch Teaser','10 Hooks That Stopped The Scroll','Before / After Format','Founder Story Ad','Retargeting Sequence','Unboxing With Voiceover'];
+let videos = [];
+Object.entries(FOLDERS).forEach(([f, n], fi) => { for (let i = 0; i < n; i++) videos.push({ f, t: TITLES[(fi * 3 + i) % TITLES.length], g: GRAD[(fi + i) % GRAD.length], d: `${1 + (i * 3 + fi) % 9}:${String((i * 17 + fi * 9) % 60).padStart(2, '0')}`, w: (i * 23 + fi * 11) % 100 }); });
+let folder = 'All';
+const lib = $('#library');
+const swap = () => { lib.classList.remove('swap'); void lib.offsetWidth; lib.classList.add('swap'); };
+const replayCards = () => document.querySelectorAll('.vid,.doc').forEach((el) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; });
+
+const thumb = (v) => `<div class="thumb" style="background:linear-gradient(135deg,${v.g})"><div class="play"><i></i></div><span class="dur">${v.d}</span>${v.w > 15 && v.w < 90 ? `<i class="prog" style="width:${v.w}%"></i>` : ''}</div>`;
+function render() {
+  const list = folder === 'All' ? videos : videos.filter((v) => v.f === folder);
+  $('#h2').textContent = folder === 'All' ? 'All Videos' : folder;
+  $('#count').textContent = `${list.length} Videos`;
+  $('#grid').innerHTML = list.map((v, n) => `<button class="vid" style="--i:${n}" data-i="${videos.indexOf(v)}">${thumb(v)}<b>${v.t}</b><small>${v.f}<span class="tag">${v.d}</span></small></button>`).join('');
+  $('#chips').innerHTML = ['All', ...Object.keys(FOLDERS)].map((f) => `<button class="chip ${f === folder ? 'on' : ''}" data-f="${f}">${f}</button>`).join('');
+  $('#folders').innerHTML = ['All', ...Object.keys(FOLDERS)].map((f) => `<button class="fold ${f === folder ? 'on' : ''}" data-f="${f}"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>${f}<em>${f === 'All' ? videos.length : FOLDERS[f]}</em></button>`).join('');
+}
+function watch(i) {
+  const v = videos[i], sc = $('#screen');
+  lib.style.display = 'none'; $('#watch').style.display = 'grid';
+  sc.style.background = `linear-gradient(135deg,${v.g})`; $('#amb').style.background = `linear-gradient(135deg,${v.g})`;
+  sc.classList.remove('open'); void sc.offsetWidth; sc.classList.add('open');
+  $('#wt').textContent = v.t; $('#wm').textContent = `${v.f} · ${v.d} · saved Oct 29`;
+  $('#nx').innerHTML = videos.filter((x) => x.f === v.f && x !== v).slice(0, 5).map((x, n) => `<button class="nx" style="--i:${n}" data-i="${videos.indexOf(x)}">${thumb(x)}<div><b>${x.t}</b><small>${x.f}</small></div></button>`).join('');
+}
+function library() { $('#watch').style.display = 'none'; lib.style.display = 'block'; swap(); }
+document.addEventListener('click', (e) => {
+  const f = e.target.closest('[data-f]'); if (f) { folder = f.dataset.f; document.querySelectorAll('.sec').forEach((x) => x.classList.toggle('on', x.dataset.sec === 'videos')); $('#chips').style.display = ''; library(); render(); }
+  const v = e.target.closest('[data-i]'); if (v) watch(+v.dataset.i);
+  const s = e.target.closest('.sec');
+  if (s) {
+    document.querySelectorAll('.sec').forEach((x) => x.classList.toggle('on', x === s)); library();
+    const k = s.dataset.sec;
+    if (k === 'videos') { render(); $('#chips').style.display = ''; return; }
+    $('#chips').style.display = 'none';
+    $('#h2').textContent = s.textContent.trim(); $('#count').textContent = '12 Saved';
+    $('#grid').innerHTML = Array.from({ length: 8 }, (_, i) => `<button class="doc" style="--i:${i}"><b>${k === 'pages' ? 'Landing Page #' + (i + 1) : k === 'copy' ? 'Headline Swipe #' + (i + 1) : k === 'email' ? 'Email Sequence #' + (i + 1) : 'Note #' + (i + 1)}</b><small>Saved Oct ${10 + i}</small><div class="ln"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:55%"></div></button>`).join('');
+  }
+});
+$('#back').onclick = library;
+// cards tilt toward the pointer
+$('#grid').addEventListener('pointermove', (e) => { const t = e.target.closest('.thumb'); if (!t) return; const r = t.getBoundingClientRect(); t.style.setProperty('--rx', (((e.clientX - r.left) / r.width - .5) * 10).toFixed(1) + 'deg'); t.style.setProperty('--ry', ((.5 - (e.clientY - r.top) / r.height) * 8).toFixed(1) + 'deg'); });
+$('#grid').addEventListener('pointerout', (e) => { const t = e.target.closest('.thumb'); if (t) { t.style.setProperty('--rx', '0deg'); t.style.setProperty('--ry', '0deg'); } });
+render();
+
+fab.onclick = () => $('#mentor').classList.toggle('open');
+
+/* ---------- the entry: a jump through space ---------- */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms * speed));
+const N = 560, STAR = Array.from({ length: N }, (_, i) => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random(), c: i % 5 === 0 ? '#c4b5fd' : i % 4 === 0 ? '#f0abfc' : i % 3 === 0 ? '#8fe3ff' : '#ffffff' }));
+const RINGS = Array.from({ length: 12 }, (_, i) => ({ z: i / 12 }));
+let alt = 0;
+/** Flies through the stars. v(t) is the speed from 0 (drifting) to 1 (hyperspace) at time t (0..1). */
+function fly(ms, v, hudOn) {
+  return new Promise((done) => {
+    const c = stars, g = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+    const cx = innerWidth / 2, cy = innerHeight / 2, F = Math.min(innerWidth, innerHeight) * .9, t0 = performance.now(), total = ms * speed;
+    let last = t0; c.style.opacity = 1;
+    (function frame(now) {
+      const t = Math.min(1, (now - t0) / total), sp = v(t), dt = Math.min(50, now - last) / 16.7; last = now;
+      g.clearRect(0, 0, c.width, c.height);
+      c.style.transform = sp > .7 ? `translate(${(Math.random() - .5) * sp * 5}px,${(Math.random() - .5) * sp * 5}px)` : '';
+      // tunnel rings: thin light hoops rushing toward you
+      if (sp > .2) for (const r of RINGS) {
+        r.z -= (0.004 + sp * 0.03) * dt; if (r.z <= .04) r.z = 1;
+        g.globalAlpha = (1 - r.z) * .35 * Math.min(1, sp * 1.4); g.strokeStyle = r.z > .5 ? '#7c5cff' : '#8fe3ff'; g.lineWidth = 1 + (1 - r.z) * 2;
+        g.beginPath(); g.arc(cx, cy, F * .16 / r.z, 0, 7); g.stroke();
+      }
+      for (const s of STAR) {
+        const z0 = s.z, step = (0.002 + sp * 0.07) * dt; s.z -= step;
+        if (s.z <= 0.02) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+        const p0x = cx + s.x / z0 * F * .5, p0y = cy + s.y / z0 * F * .5, p1x = cx + s.x / s.z * F * .5, p1y = cy + s.y / s.z * F * .5;
+        const ax = sp > .05 ? p0x : p1x, ay = sp > .05 ? p0y : p1y, al = Math.min(1, (1 - s.z) * 1.4), lw = 0.6 + (1 - s.z) * (1.2 + sp * 1.6);
+        if (sp > .55) { // chromatic split at full speed
+          g.globalAlpha = al * .5; g.lineWidth = lw; g.strokeStyle = '#ff4fd8'; g.beginPath(); g.moveTo(ax - 2.5, ay); g.lineTo(p1x - 2.5, p1y + .01); g.stroke();
+          g.strokeStyle = '#22d3ee'; g.beginPath(); g.moveTo(ax + 2.5, ay); g.lineTo(p1x + 2.5, p1y + .01); g.stroke();
+        }
+        g.globalAlpha = al; g.strokeStyle = s.c; g.lineWidth = lw; g.beginPath(); g.moveTo(ax, ay); g.lineTo(p1x + .01, p1y); g.stroke();
+      }
+      if (hudOn) { alt += (sp * sp * 260 + 1) * dt; $('#alt').textContent = String(Math.floor(alt)).padStart(5, '0'); $('#gauge').style.width = (sp * 100) + '%'; }
+      if (t < 1) requestAnimationFrame(frame); else { c.style.transform = ''; done(); }
+    })(t0);
+  });
+}
+const ramp = (t) => t * t * (3 - 2 * t);
+const WORD = 'MEMOIR', LINE = 'Beyond What You Know';
+$('#word').innerHTML = [...WORD].map((ch) => `<span class="ch">${ch}</span>`).join('');
+
+async function revealTitle() {
+  const D = (n) => n * speed, chs = [...document.querySelectorAll('#word .ch')], tag = $('#tag');
+  tag.textContent = ''; $('#draw').style.strokeDashoffset = 1;
+  title.animate([{ opacity: 0 }, { opacity: 1 }], { duration: D(500), fill: 'forwards' });
+  // the brain draws itself, line by line
+  $('#draw').animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: D(2200), easing: 'ease-in-out', fill: 'forwards' });
+  document.querySelectorAll('.mark i').forEach((el, i) => el.animate([{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1)' }], { duration: D(1400), delay: D(i * 250), easing: out, fill: 'backwards' }));
+  // the letters condense out of the light, one by one
+  chs.forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(26px) scale(1.6)', filter: 'blur(18px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: D(1300), delay: D(500 + i * 210), easing: out, fill: 'forwards' }));
+  document.querySelectorAll('.tagrow .bar').forEach((el) => el.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: D(1400), delay: D(1900), easing: out, fill: 'forwards' }));
+  await sleep(2100); tag.classList.add('typing');
+  for (const ch of LINE) { tag.textContent += ch; await sleep(62); }
+  await sleep(500); tag.classList.remove('typing');
+}
+async function enter() {
+  if (busy || inside) return; busy = true; alt = 0;
+  const D = (n) => n * speed;
+  // 1. the app drifts away into the dark; the elevation readout wakes up
+  island.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.4) translateY(-20px)', opacity: 0 }], { duration: D(800), easing: ease, fill: 'forwards' });
+  app.animate([{ transform: 'scale(1)', filter: 'blur(0)', opacity: 1 }, { transform: 'scale(.76)', filter: 'blur(12px)', opacity: 0 }], { duration: D(2200), easing: ease, fill: 'forwards' });
+  hud.animate([{ opacity: 0 }, { opacity: 1 }], { duration: D(900), delay: D(500), fill: 'forwards' });
+  // 2. the jump: stars wake up, stretch into streaks, tunnel rings rush past, the picture splits into colour
+  const flight = fly(5200, (t) => t < .6 ? ramp(t / .6) : 1, true);
+  await sleep(4500);
+  // 3. at full speed the screen whites out; behind it the new space is already in place
+  flash.animate([{ opacity: 0 }, { opacity: 1 }], { duration: D(520), easing: 'ease-in', fill: 'forwards' });
+  hud.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(500), fill: 'forwards' });
+  await sleep(500);
+  iris.animate([{ clipPath: 'circle(150% at 50% 50%)' }, { clipPath: 'circle(150% at 50% 50%)' }], { duration: 1, fill: 'forwards' });
+  flash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(1500), easing: 'ease-out', fill: 'forwards' });
+  const shown = revealTitle(); // 4. the name takes shape while the stars slow to a drift
+  await flight;
+  const drift = fly(7800, (t) => 1 - ramp(Math.min(1, t * 1.4)) * .97, false);
+  await shown; await sleep(2600);
+  title.animate([{ opacity: 1, transform: 'scale(1)', filter: 'blur(0)' }, { opacity: 0, transform: 'scale(1.08)', filter: 'blur(10px)' }], { duration: D(1500), easing: 'ease', fill: 'forwards' });
+  await sleep(900);
+  // 5. the space assembles around you
+  memoir.style.visibility = 'visible'; fab.style.display = 'flex'; startBg(); replayCards();
+  memoir.querySelectorAll('.rise').forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateY(16px)', filter: 'blur(6px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: D(900), delay: D(i * 220), easing: out, fill: 'forwards' }));
+  fab.animate([{ opacity: 0, transform: 'translateY(24px) scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: D(800), delay: D(800), easing: out, fill: 'backwards' });
+  await drift; stars.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(600), fill: 'forwards' });
+  await sleep(800); inside = true; busy = false;
+}
+async function leave() {
+  if (busy || !inside) return; busy = true; $('#mentor').classList.remove('open'); $('#upm').classList.remove('open');
+  const D = (n) => n * speed;
+  memoir.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(800), easing: ease, fill: 'forwards' });
+  fab.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D(400), fill: 'forwards' });
+  stars.getAnimations().forEach((a) => a.cancel());
+  const back = fly(2800, (t) => t < .5 ? ramp(t / .5) : 1 - ramp((t - .5) / .5), false);
+  await sleep(1400);
+  flash.animate([{ opacity: 0 }, { opacity: .9 }, { opacity: 0 }], { duration: D(1100), easing: 'ease', fill: 'forwards' });
+  app.getAnimations().forEach((a) => a.cancel()); island.getAnimations().forEach((a) => a.cancel());
+  app.animate([{ transform: 'scale(1.15)', filter: 'blur(10px)', opacity: 0 }, { transform: 'scale(1)', filter: 'blur(0)', opacity: 1 }], { duration: D(1300), easing: ease, fill: 'forwards' });
+  island.animate([{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'scale(1)' }], { duration: D(800), delay: D(450), easing: ease, fill: 'forwards' });
+  await back; await sleep(200); stopBg();
+  [iris, title, memoir, fab, flash, hud].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+  memoir.style.visibility = 'hidden'; fab.style.display = 'none'; stars.style.opacity = 0; stars.getAnimations().forEach((a) => a.cancel());
+  memoir.querySelectorAll('.rise').forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+  inside = false; busy = false;
+}
+$('#brain').onclick = enter; $('#exit2').onclick = leave; $('#exitbtn').onclick = leave;
+$('#replay').onclick = async () => { if (inside) await leave(); await sleep(150); enter(); };
+$('#slow').onclick = (e) => { speed = speed === 1 ? 2.5 : 1; e.target.textContent = speed === 1 ? 'Slow Motion (x2.5)' : 'Normal Speed'; };
+
+/* ---------- inside Memoir: a living sky behind everything ---------- */
+let bgOn = false, bgStars = [], shoot = null, nextShoot = 0;
+function startBg() {
+  if (bgOn) return; bgOn = true;
+  const c = $('#bg'), g = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  bgStars = Array.from({ length: 150 }, () => ({ x: Math.random() * c.width, y: Math.random() * c.height, d: Math.random(), p: Math.random() * 7 }));
+  nextShoot = performance.now() + 3000;
+  (function loop(now) {
+    if (!bgOn) return;
+    g.clearRect(0, 0, c.width, c.height);
+    for (const s of bgStars) { // three depths drifting at different speeds, each twinkling on its own
+      s.x -= .06 + s.d * .22; s.y += .02 + s.d * .06; if (s.x < 0) s.x = c.width; if (s.y > c.height) s.y = 0;
+      g.globalAlpha = (.25 + s.d * .55) * (.6 + .4 * Math.sin(now / 700 + s.p)); g.fillStyle = s.d > .8 ? '#8fe3ff' : s.d > .6 ? '#f0abfc' : '#fff';
+      g.beginPath(); g.arc(s.x, s.y, .4 + s.d * 1.2, 0, 7); g.fill();
+    }
+    if (!shoot && now > nextShoot) shoot = { x: Math.random() * c.width * .8 + c.width * .2, y: Math.random() * c.height * .4, l: 0 };
+    if (shoot) { // a shooting star now and then
+      shoot.l += 14; const x = shoot.x - shoot.l * 1.4, y = shoot.y + shoot.l * .7, gr = g.createLinearGradient(x, y, x + 140, y - 70);
+      gr.addColorStop(0, 'rgba(143,227,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,.9)'); g.globalAlpha = 1; g.strokeStyle = gr; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + 140, y - 70); g.stroke();
+      if (shoot.l > 120) { shoot = null; nextShoot = now + 5000 + Math.random() * 6000; }
+    }
+    requestAnimationFrame(loop);
+  })(performance.now());
+}
+function stopBg() { bgOn = false; }
+
+/* ---------- uploading videos into the swipe file ---------- */
+const upm = $('#upm'); let picked = [];
+function openUpload(files) {
+  picked = [...(files || [])].map((f) => ({ name: f.name, size: f.size }));
+  $('#dest').innerHTML = [...Object.keys(FOLDERS), '+ New Folder…'].map((f) => `<option ${f === folder ? 'selected' : ''}>${f}</option>`).join('');
+  drawList(); upm.classList.add('open');
+}
+function drawList() { $('#fl').innerHTML = picked.map((f, i) => `<div class="fi"><span>${f.name}</span><span>${(f.size / 1048576).toFixed(1)} MB</span><div class="pb"><i id="pb${i}"></i></div></div>`).join(''); }
+$('#up1').onclick = $('#up2').onclick = () => openUpload();
+$('#upc').onclick = () => upm.classList.remove('open');
+$('#file').onchange = (e) => { picked = [...e.target.files].map((f) => ({ name: f.name, size: f.size })); drawList(); };
+$('#upgo').onclick = async () => {
+  if (!picked.length) { picked = [{ name: 'new-ad-reference.mp4', size: 48e6 }, { name: 'hook-test.mov', size: 22e6 }]; drawList(); }
+  const dest = $('#dest').value.startsWith('+') ? 'New Folder' : $('#dest').value;
+  for (let i = 0; i < picked.length; i++) { for (let p = 0; p <= 100; p += 8) { $('#pb' + i).style.width = p + '%'; await new Promise((r) => setTimeout(r, 40)); } }
+  picked.forEach((f, i) => { FOLDERS[dest] = (FOLDERS[dest] || 0) + 1; videos.unshift({ f: dest, t: f.name.replace(/\.[^.]+$/, ''), g: GRAD[i % GRAD.length], d: '0:' + String(30 + i * 7), w: 0 }); });
+  upm.classList.remove('open'); folder = dest; library(); render();
+};
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach((ev) => $('#main').addEventListener(ev, (e) => { e.preventDefault(); drop.style.display = 'grid'; }));
+$('#main').addEventListener('dragleave', (e) => { if (e.target === drop) drop.style.display = 'none'; });
+$('#main').addEventListener('drop', (e) => { e.preventDefault(); drop.style.display = 'none'; openUpload(e.dataTransfer.files); });
+</script>
+</body>
+</html>

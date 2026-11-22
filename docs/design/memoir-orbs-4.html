@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8"><title>Memoir Orbs 4</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at 50% 120%,#1a0f4d,#04030d 60%);color:#eef0ff;font:13px system-ui;padding:8px;display:grid;place-items:start center;min-height:100vh}
+.row{display:grid;grid-template-columns:repeat(2,230px);gap:0 16px}
+.cell{display:grid;justify-items:center;gap:4px;padding-bottom:4px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.6);line-height:1.35;max-width:220px;font-size:12px}
+.cell b{display:block;color:#fff;font-size:13px}
+.stage{position:relative;width:200px;height:130px;display:grid;place-items:center}
+.o{position:relative}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinr{to{transform:rotate(-360deg)}}
+@keyframes pulse{50%{opacity:.55;transform:scale(1.08)}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+.eyes{position:absolute;left:0;right:0;display:flex;justify-content:center;gap:12px}
+.eyes i{width:8px;height:11px;border-radius:50%;background:#10083a;animation:blink 5s infinite}
+
+/* 25 Liquid chrome */
+.c25 .o{width:88px;height:88px;border-radius:46% 54% 50% 50%/52% 46% 54% 48%;background:conic-gradient(from 200deg,#05040f,#8fe3ff,#fff,#7c5cff,#e879f9,#05040f);box-shadow:0 0 34px rgba(124,92,255,.6),inset 0 0 22px rgba(255,255,255,.4);animation:morph 6s ease-in-out infinite}
+@keyframes morph{50%{border-radius:56% 44% 42% 58%/46% 56% 44% 54%;transform:rotate(12deg) scale(1.04)}}
+.c25 .o::after{content:'';position:absolute;left:16%;top:12%;width:34%;height:22%;border-radius:50%;background:rgba(255,255,255,.7);filter:blur(3px);transform:rotate(-30deg)}
+/* 26 Snow globe */
+.c26 .o{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 50% 60%,#2a1a7a,#05040f 75%);border:2px solid rgba(190,205,255,.7);box-shadow:0 0 32px rgba(124,92,255,.55),inset 0 0 18px rgba(143,227,255,.3);overflow:hidden}
+.c26 .g{position:absolute;inset:-10px;background:conic-gradient(from 0deg,transparent,rgba(143,227,255,.7) 10%,transparent 24%,rgba(232,121,249,.7) 55%,transparent 72%);-webkit-mask:radial-gradient(circle,transparent 8%,#000 40%,transparent 70%);mask:radial-gradient(circle,transparent 8%,#000 40%,transparent 70%);animation:spin 10s linear infinite}
+.c26 .base{position:absolute;left:50%;bottom:-8px;width:52px;height:12px;margin-left:-26px;border-radius:6px;background:linear-gradient(#bfc8ff,#4a4f94)}
+.c26 .o::after{content:'';position:absolute;left:14%;top:8%;width:30%;height:18%;border-radius:50%;background:rgba(255,255,255,.55);filter:blur(2px);transform:rotate(-30deg)}
+/* 27 Star character */
+.c27 .o{width:100px;height:100px;background:radial-gradient(circle at 40% 30%,#fff7d6,#8fe3ff 45%,#7c5cff);clip-path:polygon(50% 2%,62% 34%,97% 38%,70% 60%,80% 95%,50% 76%,20% 95%,30% 60%,3% 38%,38% 34%);filter:drop-shadow(0 0 14px rgba(143,227,255,.8));animation:bob 4s ease-in-out infinite}
+.c27 .eyes{top:42px}
+.c27 .mouth{position:absolute;left:50%;top:60px;width:12px;height:6px;margin-left:-6px;border-radius:0 0 12px 12px;background:#10083a}
+.c27 .halo{position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.4),transparent 65%);animation:pulse 3s infinite}
+/* 28 Nebula cloud character */
+.c28 .o{width:110px;height:76px}
+.c28 .o i.c{position:absolute;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f0d9ff,#c084fc 50%,#5b3fd6);filter:blur(1px);box-shadow:0 0 20px rgba(232,121,249,.5);animation:bob 5s ease-in-out infinite}
+.c28 .eyes{top:30px}
+.c28 .sp i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;animation:pulse 2s infinite}
+/* 29 Three bodies */
+.c29 .o{width:104px;height:104px}
+.c29 .p{position:absolute;left:50%;top:50%;width:0;height:0;animation:spin 6s linear infinite}
+.c29 .p i{position:absolute;border-radius:50%;box-shadow:0 0 16px currentColor}
+.c29 .p1{animation-duration:5s}.c29 .p1 i{left:44px;top:-9px;width:18px;height:18px;background:#8fe3ff;color:#8fe3ff}
+.c29 .p2{animation-duration:7s;animation-direction:reverse}.c29 .p2 i{left:-52px;top:-6px;width:12px;height:12px;background:#e879f9;color:#e879f9}
+.c29 .p3{animation-duration:9s}.c29 .p3 i{left:-4px;top:-50px;width:9px;height:9px;background:#fff;color:#fff}
+.c29 .c{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px;border-radius:50%;background:radial-gradient(circle,#fff,#7c5cff);box-shadow:0 0 24px rgba(124,92,255,.9);animation:pulse 3s infinite}
+/* 30 Portal ring */
+.c30 .o{width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,#05040f 0 48%,transparent 49%),conic-gradient(from 0deg,#fff,#8fe3ff,#7c5cff,#e879f9,#fff);box-shadow:0 0 30px 4px rgba(143,227,255,.5),0 0 70px 16px rgba(124,92,255,.35);animation:spin 8s linear infinite}
+.c30 .in{position:absolute;inset:14px;border-radius:50%;overflow:hidden;background:radial-gradient(1.5px 1.5px at 30% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 40%,#fff,transparent),radial-gradient(1px 1px at 50% 75%,#fff,transparent),radial-gradient(circle,#150b45,#05040f)}
+.c30 .eyes{top:36px}.c30 .eyes i{background:#8fe3ff;box-shadow:0 0 10px #8fe3ff}
+/* 31 Asteroid with crystals */
+.c31 .o{width:92px;height:84px;border-radius:44% 56% 52% 48%/54% 46% 58% 42%;background:radial-gradient(circle at 35% 30%,#6c6fa8,#2b2d5c 60%,#14153a);box-shadow:0 0 26px rgba(124,92,255,.5);animation:bob 5s ease-in-out infinite}
+.c31 .cr{position:absolute;width:12px;height:32px;clip-path:polygon(50% 0,100% 100%,0 100%);background:linear-gradient(#fff,#8fe3ff 50%,#7c5cff);filter:drop-shadow(0 0 8px #8fe3ff)}
+.c31 .eyes{top:36px}.c31 .eyes i{background:#8fe3ff;box-shadow:0 0 10px #8fe3ff}
+/* 32 Wireframe mind */
+.c32 .o{width:92px;height:92px;transform-style:preserve-3d;animation:rot3 14s linear infinite}
+@keyframes rot3{to{transform:rotateY(360deg) rotateX(360deg)}}
+.c32 .f{position:absolute;inset:0;border:1.5px solid rgba(143,227,255,.85);border-radius:50%;box-shadow:0 0 10px rgba(143,227,255,.4)}
+.c32 .f2{transform:rotateY(60deg);border-color:rgba(232,121,249,.8)}.c32 .f3{transform:rotateY(120deg);border-color:rgba(160,175,255,.8)}
+.c32 .f4{transform:rotateX(90deg);border-color:rgba(255,255,255,.7)}
+.c32 .c{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px;border-radius:50%;background:radial-gradient(circle,#fff,#8fe3ff 50%,#7c5cff);box-shadow:0 0 24px 6px rgba(143,227,255,.8);animation:pulse 2.6s infinite}
+.c32 .stage{perspective:500px}
+</style>
+<div class="row">
+ <div class="cell c25"><div class="stage"><div class="o"></div></div><p><b>25 · Liquid Chrome</b>A drop of living metal that reflects a galaxy and slowly changes shape.</p></div>
+ <div class="cell c26"><div class="stage"><div class="o"><div class="g"></div><div class="base"></div></div></div><p><b>26 · Snow Globe</b>A glass globe with a small spinning galaxy inside.</p></div>
+ <div class="cell c27"><div class="stage"><div class="halo"></div><div class="o"><div class="eyes"><i></i><i></i></div><div class="mouth"></div></div></div><p><b>27 · Star Friend</b>A rounded star with a face. The warmest and most character-like.</p></div>
+ <div class="cell c28"><div class="stage"><div class="o"><i class="c" style="left:4px;top:18px;width:52px;height:52px"></i><i class="c" style="left:28px;top:0;width:60px;height:60px;animation-delay:.4s"></i><i class="c" style="left:54px;top:16px;width:54px;height:54px;animation-delay:.8s"></i><div class="eyes"><i></i><i></i></div><div class="sp"><i style="left:6px;top:6px"></i><i style="left:100px;top:2px;animation-delay:.7s"></i></div></div></div><p><b>28 · Nebula Cloud</b>A soft cloud of cosmic dust with eyes. Closest to the current Phibe mist.</p></div>
+ <div class="cell c29"><div class="stage"><div class="o"><div class="p p1"><i></i></div><div class="p p2"><i></i></div><div class="p p3"><i></i></div><div class="c"></div></div></div><p><b>29 · Three Bodies</b>Three lights circling a core, each on its own rhythm.</p></div>
+ <div class="cell c30"><div class="stage"><div class="o"></div><div class="in" style="position:absolute;width:72px;height:72px;inset:auto;border-radius:50%;overflow:hidden;background:radial-gradient(1.5px 1.5px at 30% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 40%,#fff,transparent),radial-gradient(1px 1px at 50% 75%,#fff,transparent),radial-gradient(circle,#150b45,#05040f)"><div class="eyes" style="top:28px"><i style="background:#8fe3ff;box-shadow:0 0 10px #8fe3ff"></i><i style="background:#8fe3ff;box-shadow:0 0 10px #8fe3ff"></i></div></div></div><p><b>30 · Portal Ring</b>A glowing ring like a gate to space, with the eyes watching from inside.</p></div>
+ <div class="cell c31"><div class="stage"><div class="o"><i class="cr" style="left:14px;top:-18px;transform:rotate(-20deg)"></i><i class="cr" style="right:12px;top:-12px;height:26px;transform:rotate(18deg)"></i><i class="cr" style="left:40px;bottom:-14px;height:22px;transform:rotate(180deg)"></i><div class="eyes"><i></i><i></i></div></div></div><p><b>31 · Crystal Asteroid</b>A rock with glowing crystals growing out of it. Raw, solid, ancient.</p></div>
+ <div class="cell c32"><div class="stage"><div class="o"><i class="f f1"></i><i class="f f2"></i><i class="f f3"></i><i class="f f4"></i><div class="c"></div></div></div><p><b>32 · Wireframe Mind</b>Rings of light turning in 3D around a core. Pure, abstract.</p></div>
+</div>

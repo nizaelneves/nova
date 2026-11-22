@@ -41,21 +41,3 @@ export function setLook(store: MetaStore, id: string, changes: Partial<Look>): M
 }
 
 export const forget = (store: MetaStore, id: string): MetaStore => setLook(store, id, { icon: undefined, image: undefined, archived: false });
-
-/** Shrinks a picked image to a small square (centre crop) so it fits in storage. */
-export function squareImage(file: File, size = 128): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const side = Math.min(img.width, img.height);
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = size;
-      canvas.getContext('2d')?.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file is not an image.')); };
-    img.src = url;
-  });
-}

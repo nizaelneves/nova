@@ -20,7 +20,7 @@ function renderStatus(sync: SyncStatus, disabled = false): string {
       chunks={0}
       sync={sync}
       unitLabel="items"
-      connectorId="obsidian"
+      connectorId="slack"
       disabled={disabled}
       onSyncTriggered={vi.fn()}
     />,

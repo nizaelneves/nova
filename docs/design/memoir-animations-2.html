@@ -1,0 +1,80 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Memoir Animation Options 2</title>
+<style>
+:root{color-scheme:dark;--a:#8fe3ff;--v:#a78bfa;--m:#e879f9}
+body{margin:0;padding:28px;background:#04030d;color:#eef0ff;font:14px 'Segoe UI',system-ui,sans-serif}
+h1{font-weight:400;letter-spacing:.06em;margin:0 0 4px} p.lead{color:rgba(238,240,255,.5);margin:0 0 26px}
+h2{font-weight:500;margin:30px 0 12px} .row{display:flex;flex-wrap:wrap;gap:14px}
+.opt{width:230px;padding:14px;border-radius:16px;border:1px solid rgba(160,175,255,.16);background:rgba(143,227,255,.04)}
+.opt h4{margin:0 0 2px;font-weight:600} .opt small{display:block;color:rgba(238,240,255,.5);margin-bottom:10px;line-height:1.4;min-height:34px}
+.stage{height:190px;display:grid;place-items:center;position:relative;border-radius:12px;background:rgba(0,0,0,.25);overflow:hidden}
+.mic{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--v) 60%,var(--m));display:grid;place-items:center;position:relative;color:#04101c;font-size:22px}
+canvas{display:block}
+/* L1 rings */
+.rings i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--v);animation:ring 2.4s ease-out infinite}
+.rings i:nth-child(2){animation-delay:.8s}.rings i:nth-child(3){animation-delay:1.6s}
+@keyframes ring{0%{transform:scale(1);opacity:.8;border-color:var(--a)}100%{transform:scale(2.6);opacity:0;border-color:var(--m)}}
+/* L2 bars */
+.bars{display:flex;align-items:center;gap:3px;height:70px}
+.bars b{width:4px;border-radius:3px;background:linear-gradient(var(--a),var(--m));animation:bar 1s ease-in-out infinite}
+@keyframes bar{0%,100%{height:8px}50%{height:var(--h)}}
+/* L3 orbit dots */
+.orb{position:relative;width:120px;height:120px}
+.orb i{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:var(--a);box-shadow:0 0 10px var(--a);transform:rotate(calc(var(--n)*30deg)) translateY(-52px);animation:dot 1.6s ease-in-out infinite;animation-delay:calc(var(--n)*-.133s)}
+@keyframes dot{0%,100%{transform:rotate(calc(var(--n)*30deg)) translateY(-52px) scale(.4);opacity:.3}50%{transform:rotate(calc(var(--n)*30deg)) translateY(-52px) scale(1.5);opacity:1;background:var(--m)}}
+/* T1 comet + skeleton */
+.comet{position:absolute;inset:-8px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 40%,rgba(167,139,250,.7) 85%,#fff);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.skel{display:grid;gap:7px;width:150px;margin-top:20px}
+.skel b{height:7px;border-radius:4px;background:linear-gradient(90deg,rgba(143,227,255,.12) 30%,rgba(232,121,249,.5) 50%,rgba(143,227,255,.12) 70%) 0 0/300% 100%;animation:sh 1.6s linear infinite}
+.skel b:nth-child(2){width:80%;animation-delay:.2s}.skel b:nth-child(3){width:55%;animation-delay:.4s}
+@keyframes sh{to{background-position:-300% 0}}
+/* T2 bars to line */
+.melt{display:flex;align-items:center;gap:4px;height:60px}
+.melt b{width:5px;border-radius:3px;background:var(--a);animation:melt 2.4s ease-in-out infinite;animation-delay:calc(var(--n)*.08s)}
+@keyframes melt{0%{height:40px;opacity:1}45%{height:5px;opacity:.9;background:var(--v)}70%{height:5px;width:12px;background:var(--m)}100%{height:40px;opacity:1}}
+/* T3 prism */
+.prism{width:84px;height:84px;position:relative;animation:spin 5s linear infinite}
+.prism i{position:absolute;inset:0;border:2px solid var(--a);border-radius:22%;transform:rotate(calc(var(--n)*30deg));opacity:.7}
+.prism i:nth-child(2){border-color:var(--v)}.prism i:nth-child(3){border-color:var(--m)}
+.t{margin-top:12px;font:11px ui-monospace,Consolas,monospace;color:rgba(238,240,255,.55);letter-spacing:.08em}
+
+.glow{position:absolute;inset:-26px;border-radius:50%;background:conic-gradient(from 0deg,var(--a),var(--v),var(--m),var(--a));filter:blur(18px);opacity:.7;animation:spin 5s linear infinite,breathe 2.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.18);opacity:.95}}
+.type{font:12px ui-monospace,Consolas,monospace;color:#bfeaff;line-height:1.7;width:160px}
+.type span{display:block;overflow:hidden;white-space:nowrap;width:0;border-right:2px solid var(--m);animation:typing 3.6s steps(22) infinite}
+.type span:nth-child(2){animation-delay:.9s}.type span:nth-child(3){animation-delay:1.8s}
+@keyframes typing{0%{width:0}40%,85%{width:100%;border-color:transparent}100%{width:0}}
+.scan{position:relative;width:170px;height:70px}
+.scan::after{content:'';position:absolute;top:-6px;bottom:-6px;width:3px;background:linear-gradient(var(--a),var(--m));box-shadow:0 0 14px var(--m);animation:sweep 2.2s ease-in-out infinite alternate}
+@keyframes sweep{from{left:0}to{left:100%}}
+.words{position:relative;width:130px;height:130px;animation:spin 9s linear infinite}
+.words b{position:absolute;left:50%;top:50%;font:11px ui-monospace,Consolas,monospace;color:#bfeaff;transform:rotate(calc(var(--n)*60deg)) translateY(-54px);transform-origin:0 0;white-space:nowrap}
+.core{position:absolute;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--a),var(--m));animation:breathe 1.6s ease-in-out infinite}
+</style></head><body>
+<h1>Animation Options 2</h1>
+<p class="lead">More ideas for Listening and Transcribing. Tell me the numbers you like (for example L5, T6).</p>
+<h2>Listening</h2><div class="row">
+ <div class="opt"><h4>L4 · Aurora Halo</h4><small>A soft rainbow glow turns and breathes behind the button.</small><div class="stage"><div class="mic"><span class="glow"></span><span style="position:relative">●</span></div></div></div>
+ <div class="opt"><h4>L5 · Sound Ring</h4><small>Short bars stand around the button and jump with the voice.</small><div class="stage"><canvas id="l5" width="210" height="190"></canvas></div></div>
+ <div class="opt"><h4>L6 · Dot Ripple</h4><small>A grid of dots swells outward from the middle, like a pebble in water.</small><div class="stage"><canvas id="l6" width="210" height="190"></canvas></div></div>
+ <div class="opt"><h4>L7 · Flowing Ribbons</h4><small>Three soft sound waves glide across, taller when louder.</small><div class="stage"><canvas id="l7" width="210" height="190"></canvas></div></div>
+</div>
+<h2>Transcribing</h2><div class="row">
+ <div class="opt"><h4>T4 · Typewriter</h4><small>Ghost lines of text are typed one after another with a blinking bar.</small><div class="stage"><div class="type"><span>▒▒▒▒ ▒▒▒ ▒▒▒▒▒▒ ▒▒</span><span>▒▒ ▒▒▒▒▒ ▒▒▒ ▒▒▒▒</span><span>▒▒▒▒▒ ▒▒ ▒▒▒▒</span></div></div></div>
+ <div class="opt"><h4>T5 · Scanner</h4><small>A light beam sweeps the sound wave and leaves dots behind, like reading it.</small><div class="stage"><div class="scan"><canvas id="t5" width="170" height="70"></canvas></div></div></div>
+ <div class="opt"><h4>T6 · Sound Into Words</h4><small>Particles flow from a wave on the left into lines of text on the right.</small><div class="stage"><canvas id="t6" width="210" height="190"></canvas></div></div>
+ <div class="opt"><h4>T7 · Word Ring</h4><small>Words circle a pulsing core: hearing, writing, checking.</small><div class="stage"><div style="position:relative;display:grid;place-items:center"><div class="words"><b style="--n:0">hear</b><b style="--n:1">write</b><b style="--n:2">check</b><b style="--n:3">listen</b><b style="--n:4">type</b><b style="--n:5">read</b></div><div class="core"></div></div></div></div>
+</div>
+<script>
+const R=(a,b)=>a+Math.random()*(b-a);
+function loop(id,fn){const c=document.getElementById(id),g=c.getContext('2d'),W=c.width,H=c.height;let t=0,l=performance.now();(function f(n){const dt=Math.min(.05,(n-l)/1000);l=n;t+=dt;g.clearRect(0,0,W,H);fn(g,t,W,H);requestAnimationFrame(f)})(l)}
+loop('l5',(g,t)=>{const N=40;g.save();g.translate(105,95);for(let i=0;i<N;i++){const a=i/N*6.283,h=6+Math.abs(Math.sin(t*3+i*.9)*Math.cos(t*1.3+i*.4))*24;g.save();g.rotate(a);g.fillStyle=`hsl(${190+i*4.5},85%,72%)`;g.fillRect(-1.5,-48-h,3,h);g.restore()}g.restore();
+ const gr=g.createLinearGradient(75,65,135,125);gr.addColorStop(0,'#8fe3ff');gr.addColorStop(1,'#e879f9');g.fillStyle=gr;g.beginPath();g.arc(105,95,32,0,7);g.fill()});
+loop('l6',(g,t)=>{for(let x=0;x<13;x++)for(let y=0;y<11;y++){const dx=x-6,dy=y-5,d=Math.hypot(dx,dy),k=Math.max(0,Math.sin(d*.9-t*4)),r=1+k*3.2;g.fillStyle=`hsla(${190+d*14},85%,${60+k*20}%,${.25+k*.75})`;g.beginPath();g.arc(15+x*15,20+y*15,r,0,7);g.fill()}});
+loop('l7',(g,t)=>{const amp=.55+Math.sin(t*1.4)*.45;[['143,227,255',0],['167,139,250',1.7],['232,121,249',3.4]].forEach(([c,o],j)=>{g.strokeStyle=`rgba(${c},.85)`;g.lineWidth=2.2;g.beginPath();for(let x=0;x<=210;x+=3){const e=Math.sin(x/210*3.14),y=95+Math.sin(x*.045+t*(2+j*.6)+o)*30*amp*e;x?g.lineTo(x,y):g.moveTo(x,y)}g.stroke()})});
+loop('t5',(g,t,W,H)=>{const p=((t%2.2)/2.2);const k=p<.5?p*2:2-p*2;for(let i=0;i<34;i++){const x=i*5+3,h=6+Math.abs(Math.sin(i*.8+t))*26,seen=x/W<k;g.fillStyle=seen?'rgba(232,121,249,.9)':'rgba(143,227,255,.7)';if(seen){g.beginPath();g.arc(x,H/2,2.2,0,7);g.fill()}else g.fillRect(x-1.5,H/2-h/2,3,h)}});
+const parts=Array.from({length:60},()=>({p:Math.random(),s:R(.25,.5),y:R(-20,20),r:R(.8,2)}));
+loop('t6',(g,t)=>{for(let i=0;i<8;i++){const h=8+Math.abs(Math.sin(t*3+i))*26;g.fillStyle='rgba(143,227,255,.8)';g.fillRect(20+i*5,95-h/2,3,h)}
+ [0,1,2,3].forEach(i=>{g.fillStyle='rgba(232,121,249,.65)';g.fillRect(130,70+i*14,(i==3?30:56),4)});
+ parts.forEach(q=>{q.p=(q.p+q.s*.016)%1;const x=64+q.p*64,y=95+q.y*(1-q.p)+((Math.floor(q.y*3)%4)-1.5)*14*q.p;g.fillStyle=`hsla(${190+q.p*120},85%,72%,${Math.sin(q.p*3.14)})`;g.beginPath();g.arc(x,y,q.r,0,7);g.fill()})});
+</script></body></html>

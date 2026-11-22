@@ -148,16 +148,29 @@ def _iso(ts: Optional[datetime | str]) -> Optional[str]:
     return str(ts)
 
 
+# Words that say nothing about a topic. ORed into the query they make long documents win on every question.
+_STOPWORDS = frozenset(
+    "a an and are as at be but by can do does for from how i in is it me my of on or so that the this to was we "
+    "what when where which who why will with you your "
+    "a as ao aos com como da das de do dos e em essa esse esta este eu foi há isso já mais mas na nas não nem no "
+    "nos nós o os ou para pela pelo por qual quando que se sem ser seu sua são só também te tem um uma umas uns "
+    "você vocês".split()
+)
+
+
 def _quote_fts(query: str) -> str:
     """Make a plain user query safe for FTS5 MATCH.
 
     FTS5 treats characters like ``-``, ``:``, ``"`` as operators; the simplest
     way to avoid syntax errors on arbitrary user input is to quote each
-    whitespace-delimited token and OR them together.
+    whitespace-delimited token and OR them together. Stopwords are left out
+    (unless nothing else is left), so the match is about what the question names.
     """
     tokens = [t for t in query.split() if t]
     if not tokens:
         return ""
+    meaningful = [t for t in tokens if t.strip("?!.,;:()\"'").lower() not in _STOPWORDS]
+    tokens = meaningful or tokens
     return " OR ".join(f'"{t.replace(chr(34), "")}"' for t in tokens)
 
 
@@ -306,6 +319,7 @@ class HybridSearch:
         store: KnowledgeStore,
         embedder: Optional[OllamaEmbedder] = None,
         *,
+        embedders: Optional[Dict[str, Any]] = None,
         bm25_weight: float = 0.5,
         vector_weight: float = 0.5,
         rrf_k: int = 60,
@@ -314,6 +328,12 @@ class HybridSearch:
     ) -> None:
         self._store = store
         self._embedder = embedder
+        # One embedder per ``embedding_model_version``: vectors from different models (and sizes) live in
+        # the same store, and each chunk is compared with a query embedded by the model that made it.
+        self._embedders: Dict[str, Any] = dict(embedders or {})
+        version = getattr(embedder, "model_version", None)
+        if embedder is not None and version:
+            self._embedders.setdefault(version, embedder)
         self._bm25_weight = float(bm25_weight)
         self._vector_weight = float(vector_weight)
         self._rrf_k = int(rrf_k)
@@ -407,51 +427,54 @@ class HybridSearch:
         self, query: str, filter_sql: str, filter_params: List[Any]
     ) -> List[Tuple[str, float]]:
         """Return ``[(chunk_id, cosine_score), ...]`` from a brute-force scan."""
-        if self._embedder is None:
+        if self._embedder is None and not self._embedders:
             return []
         import numpy as np
 
-        q_blob = self._embedder.embed(query)
-        q_vec = decode_embedding(q_blob)
-        if q_vec is None or q_vec.size == 0:
-            return []
-        q_norm = float(np.linalg.norm(q_vec))
-        if q_norm == 0.0:
-            return []
-        q_unit = q_vec / q_norm
-
-        sql = f"""
-            SELECT id, embedding
+        rows = self._store._conn.execute(
+            f"""
+            SELECT id, embedding, embedding_model_version
             FROM knowledge_chunks
             WHERE embedding IS NOT NULL AND {filter_sql}
-        """
-        rows = self._store._conn.execute(sql, filter_params).fetchall()
+            """,
+            filter_params,
+        ).fetchall()
         if not rows:
             return []
 
-        ids: List[str] = []
-        vecs: List[np.ndarray] = []
+        groups: Dict[str, List[Any]] = {}
         for row in rows:
-            vec = decode_embedding(row["embedding"])
-            if vec is None or vec.size != q_unit.size:
-                continue
-            ids.append(row["id"])
-            vecs.append(vec)
-        if not ids:
-            return []
+            groups.setdefault(row["embedding_model_version"] or "", []).append(row)
 
-        mat = np.vstack(vecs).astype(np.float32, copy=False)
-        norms = np.linalg.norm(mat, axis=1)
-        norms[norms == 0.0] = 1.0
-        mat = mat / norms[:, None]
-        scores = mat @ q_unit
-        # Top-recall_k
-        if len(scores) > self._recall_k:
-            top_idx = np.argpartition(-scores, self._recall_k)[: self._recall_k]
-            top_idx = top_idx[np.argsort(-scores[top_idx])]
-        else:
-            top_idx = np.argsort(-scores)
-        return [(ids[int(i)], float(scores[int(i)])) for i in top_idx]
+        scored: List[Tuple[str, float]] = []
+        for version, group in groups.items():
+            embedder = self._embedders.get(version) or self._embedder
+            if embedder is None:
+                continue
+            q_vec = decode_embedding(embedder.embed(query))
+            if q_vec is None or q_vec.size == 0:
+                continue
+            q_norm = float(np.linalg.norm(q_vec))
+            if q_norm == 0.0:
+                continue
+            q_unit = q_vec / q_norm
+            ids: List[str] = []
+            vecs: List[np.ndarray] = []
+            for row in group:
+                vec = decode_embedding(row["embedding"])
+                if vec is None or vec.size != q_unit.size:
+                    continue
+                ids.append(row["id"])
+                vecs.append(vec)
+            if not ids:
+                continue
+            mat = np.vstack(vecs).astype(np.float32, copy=False)
+            norms = np.linalg.norm(mat, axis=1)
+            norms[norms == 0.0] = 1.0
+            scores = (mat / norms[:, None]) @ q_unit
+            scored.extend((ids[i], float(scores[i])) for i in range(len(ids)))
+        scored.sort(key=lambda r: -r[1])
+        return scored[: self._recall_k]
 
     # ------------------------------------------------------------------
     # Fusion

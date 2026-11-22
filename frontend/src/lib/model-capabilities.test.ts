@@ -25,7 +25,7 @@ describe('isEmbedOnlyModel', () => {
   });
 });
 
-describe('Claude CLI models and Think support', () => {
+describe('Claude CLI models and Muse support', () => {
   it('recognises the CLI models', () => {
     expect(['sonnet', 'opus', 'haiku'].every(isCliModel)).toBe(true);
     expect(isCliModel('claude-sonnet-5')).toBe(false); // the paid API, not the CLI
@@ -41,7 +41,7 @@ describe('Claude CLI models and Think support', () => {
     expect(isCodexCliModel('codex/gpt-4o')).toBe(false); // the API path of the cloud engine
   });
 
-  it('rates Sonnet and Opus as the best for Think, Haiku as basic', () => {
+  it('rates Sonnet and Opus as the best for Muse, Haiku as basic', () => {
     expect(thinkSupport('opus').level).toBe('strong');
     expect(thinkSupport('sonnet').level).toBe('strong');
     expect(thinkSupport('haiku').level).toBe('basic');

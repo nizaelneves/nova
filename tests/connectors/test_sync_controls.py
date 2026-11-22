@@ -35,7 +35,7 @@ def test_defaults_sync_everything_every_15_minutes_and_at_start(home) -> None:
 
 
 def test_settings_survive_a_restart(home) -> None:
-    save_sync_settings(SyncSettings(False, 60, False, ["gmail", "anytype"]))
+    save_sync_settings(SyncSettings(False, 60, False, ["gmail", "slack"]))
 
     loaded = load_sync_settings()
 
@@ -44,7 +44,7 @@ def test_settings_survive_a_restart(home) -> None:
         60,
         False,
     )
-    assert loaded.disabled_connectors == ["anytype", "gmail"]
+    assert loaded.disabled_connectors == ["gmail", "slack"]
     assert not list(home.glob("*.tmp"))
 
 
@@ -75,7 +75,7 @@ def test_a_field_from_an_older_version_is_dropped_not_treated_as_corrupt(home) -
         {"interval_minutes": 1.5},
         {"interval_minutes": True},
         {"auto_enabled": "yes"},
-        {"disabled_connectors": "anytype"},
+        {"disabled_connectors": "slack"},
         {"colour": "red"},
         {"daily_time": "25:00"},
         {"daily_time": "3:00"},
@@ -188,7 +188,7 @@ def test_a_failing_run_does_not_stop_the_loop() -> None:
     def flaky() -> None:
         calls.append(1)
         if len(calls) == 1:
-            raise RuntimeError("Anytype is closed")
+            raise RuntimeError("Slack is closed")
         done.set()
 
     thread, stop = start_auto_sync(
@@ -225,8 +225,8 @@ def test_the_real_app_starts_and_stops_the_loop(home) -> None:
 class FakeSource:
     """A connected connector that indexes one note when synced."""
 
-    indexed_sources = ("obsidian",)
-    connector_id = "obsidian"
+    indexed_sources = ("whatsapp",)
+    connector_id = "whatsapp"
     display_name = "Fake source"
     auth_type = "filesystem"
     replaces_existing = False
@@ -251,8 +251,8 @@ class FakeSource:
 
         self.synced.set()
         yield Document(
-            doc_id="obsidian:one",
-            source="obsidian",
+            doc_id="whatsapp:one",
+            source="whatsapp",
             doc_type="note",
             title="One",
             content="a note about weekly reviews",
@@ -273,15 +273,15 @@ def api(home, monkeypatch):
     app.include_router(router)
     # Only the fake source takes part, so no real service is ever contacted.
     monkeypatch.setattr(
-        ConnectorRegistry, "keys", classmethod(lambda cls: ["obsidian"])
+        ConnectorRegistry, "keys", classmethod(lambda cls: ["whatsapp"])
     )
     monkeypatch.setattr(
-        ConnectorRegistry, "contains", classmethod(lambda cls, key: key == "obsidian")
+        ConnectorRegistry, "contains", classmethod(lambda cls, key: key == "whatsapp")
     )
     source = FakeSource()
-    connectors_router._instances["obsidian"] = source
+    connectors_router._instances["whatsapp"] = source
     yield TestClient(app), router, source
-    connectors_router._instances.pop("obsidian", None)
+    connectors_router._instances.pop("whatsapp", None)
 
 
 def _wait_until_idle(client) -> dict:
@@ -332,10 +332,10 @@ def test_sync_all_starts_every_connected_source(api) -> None:
 
     result = client.post("/v1/connectors/sync-all").json()
 
-    assert result == {"started": ["obsidian"], "already_syncing": [], "failed": {}}
+    assert result == {"started": ["whatsapp"], "already_syncing": [], "failed": {}}
     assert source.synced.wait(timeout=5)
     status = _wait_until_idle(client)
-    assert [c["connector_id"] for c in status["connectors"]] == ["obsidian"]
+    assert [c["connector_id"] for c in status["connectors"]] == ["whatsapp"]
     assert status["connectors"][0]["display_name"] == "Fake source"
     assert status["connectors"][0]["state"] in ("idle", "complete"), status[
         "connectors"
@@ -356,7 +356,7 @@ def test_sources_that_are_not_connected_are_left_alone(api) -> None:
 def test_the_status_says_which_sources_sync_automatically(api) -> None:
     client, _, _ = api
     client.put(
-        "/v1/connectors/sync-settings", json={"disabled_connectors": ["obsidian"]}
+        "/v1/connectors/sync-settings", json={"disabled_connectors": ["whatsapp"]}
     )
 
     row = client.get("/v1/connectors/sync-status").json()["connectors"][0]
@@ -367,7 +367,7 @@ def test_the_status_says_which_sources_sync_automatically(api) -> None:
 def test_automatic_sync_skips_sources_switched_off(api) -> None:
     client, router, source = api
     client.put(
-        "/v1/connectors/sync-settings", json={"disabled_connectors": ["obsidian"]}
+        "/v1/connectors/sync-settings", json={"disabled_connectors": ["whatsapp"]}
     )
 
     router.run_auto_sync()
@@ -486,10 +486,10 @@ def test_only_on_start_does_not_repeat_just_from_toggling_the_switch(loop) -> No
 
 
 def test_a_source_can_have_its_own_interval_and_a_bad_one_is_refused(home) -> None:
-    ok = validate({"intervals": {"gmail": 60, "anytype": 1440}})
-    assert ok.intervals == {"anytype": 1440, "gmail": 60}
+    ok = validate({"intervals": {"gmail": 60, "slack": 1440}})
+    assert ok.intervals == {"gmail": 60, "slack": 1440}
     save_sync_settings(ok)
-    assert load_sync_settings().intervals == {"anytype": 1440, "gmail": 60}
+    assert load_sync_settings().intervals == {"gmail": 60, "slack": 1440}
     for bad in ({"gmail": -1}, {"gmail": 1441}, {"gmail": True}, {"gmail": "60"}, ["gmail"]):
         with pytest.raises(SyncSettingsError):
             validate({"intervals": bad})

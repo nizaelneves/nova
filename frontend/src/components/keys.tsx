@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  apiFetch,
   getCloudKeyStatus,
   saveCloudKey,
   fetchToolCredentialStatus,
@@ -27,6 +28,25 @@ export function OllamaModelList() {
       {models.map(m => (
         <span key={m.name} className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px]"
           style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text)' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }} />
+          {m.name} ({(m.size / 1e9).toFixed(1)} GB)
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The models Ollama holds only for meaning search (the second brain), which never show up as chat models. */
+export function EmbeddingModelList() {
+  const [models, setModels] = useState<Array<{ name: string; size: number }>>([]);
+  useEffect(() => {
+    apiFetch('/v1/widgets/embedding-models').then((r) => (r.ok ? r.json() : [])).then(setModels).catch(() => setModels([]));
+  }, []);
+  if (models.length === 0) return <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>No embedding models</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {models.map((m) => (
+        <span key={m.name} className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px]" style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text)' }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-success)', display: 'inline-block' }} />
           {m.name} ({(m.size / 1e9).toFixed(1)} GB)
         </span>
@@ -122,8 +142,8 @@ export function ApiKeyInput({
         value={value}
         onChange={e => setValue(e.target.value)}
         onBlur={() => { if (value.trim()) void save(value); }}
-        placeholder={hasKey ? (desktopKeyStorage ? 'Saved in secure storage' : 'Saved by local server') : placeholder}
-        disabled={!canManage}
+        placeholder={hasKey ? (desktopKeyStorage ? 'Saved in secure storage' : '•••••••••••••••') : placeholder}
+        disabled={!canManage || hasKey} // locked once saved; Remove unlocks it
         className="w-48 px-2 py-1 rounded text-xs"
         style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }} />
       {hasKey && (
@@ -135,7 +155,8 @@ export function ApiKeyInput({
           Remove
         </button>
       )}
-      {saved && <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Saved</span>}
+      {hasKey && <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: 'var(--color-success)' }}>● Key Saved</span>}
+      {saved && !hasKey && <span className="text-[10px]" style={{ color: 'var(--color-success)' }}>Removed</span>}
       {error && <span className="text-[10px]" style={{ color: 'var(--color-error)' }}>{error}</span>}
     </div>
   );

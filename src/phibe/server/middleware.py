@@ -39,7 +39,9 @@ def create_security_middleware() -> Any:
 
             response = await call_next(request)
             response.headers["X-Content-Type-Options"] = "nosniff"
-            response.headers["X-Frame-Options"] = "DENY"
+            # Memoir shows saved e-mails (PDF) in a frame on its own page.
+            same = request.url.path.startswith("/v1/swipe/")
+            response.headers["X-Frame-Options"] = "SAMEORIGIN" if same else "DENY"
             response.headers["X-XSS-Protection"] = "1; mode=block"
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains"

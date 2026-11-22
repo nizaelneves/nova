@@ -36,7 +36,6 @@ TOOL_CREDENTIALS: dict[str, list[str]] = {
     "web_search": ["TAVILY_API_KEY", "YOUDOTCOM_API_KEY"],
     "get_weather": ["OPENWEATHERMAP_API_KEY"],
     "elevenlabs": ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"],
-    "anytype": ["ANYTYPE_API_KEY", "ANYTYPE_URL", "ANYTYPE_API_VERSION"],
     "image_generate": ["OPENAI_API_KEY"],
     "telegram": ["TELEGRAM_BOT_TOKEN"],
     "whatsapp": ["WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
@@ -48,6 +47,7 @@ TOOL_CREDENTIALS: dict[str, list[str]] = {
     "gemini": ["GEMINI_API_KEY"],
     "openrouter": ["OPENROUTER_API_KEY"],
     "jev": ["TYPESAFE_API_KEY"],
+    "mem0": ["MEM0_API_KEY"],
 }
 
 

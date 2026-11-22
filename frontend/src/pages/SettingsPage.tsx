@@ -17,6 +17,7 @@ import {
 } from '../lib/api';
 import { toast } from 'sonner';
 import { Icon, type IconName } from '../components/Icon';
+import { entryAnimation, setEntryAnimation } from '../lib/memoirTransition';
 
 /** Effects (background stars, the face animation) — picked here, applied on Save. */
 function AppearanceSection({
@@ -31,6 +32,7 @@ function AppearanceSection({
   const [draft, setDraft] = useState(settings.effects);
   useEffect(() => setDraft(settings.effects), [settings.effects]);
   const dirty = draft !== settings.effects;
+  const [memoirFx, setMemoirFx] = useState(entryAnimation);
 
   return (
     <Section title="Appearance">
@@ -68,6 +70,9 @@ function AppearanceSection({
       <SettingRow label="Show Phibe On Screen">
         <Switch on={settings.floatingPhibe} label="Show Phibe On Screen"
           onClick={() => { updateSettings({ floatingPhibe: !settings.floatingPhibe }); onSaved(); }} />
+      </SettingRow>
+      <SettingRow label="Memoir Entry Animation">
+        <Switch on={memoirFx} label="Memoir Entry Animation" onClick={() => { setEntryAnimation(!memoirFx); setMemoirFx(!memoirFx); onSaved(); }} />
       </SettingRow>
     </Section>
   );
@@ -230,12 +235,12 @@ function VoiceShortcutRows({ onSaved }: { onSaved: () => void }) {
           )}
         </div>
       </SettingRow>
-      <SettingRow label="Silence Before Countdown">
+      <SettingRow label="Silence Countdown">
         <select value={data.silence_secs} onChange={(e) => void save({ ...data, silence_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
           {[3, 5, 7, 10, 15, 20].map((s) => <option key={s} value={s}>{s} seconds</option>)}
         </select>
       </SettingRow>
-      <SettingRow label="Countdown">
+      <SettingRow label="Stop Countdown">
         <select value={data.countdown_secs} onChange={(e) => void save({ ...data, countdown_secs: Number(e.target.value) })} className="text-sm px-3 py-1.5 rounded-lg outline-none cursor-pointer" style={FIELD_STYLE}>
           {[3, 5, 8, 10].map((s) => <option key={s} value={s}>{s} seconds</option>)}
         </select>

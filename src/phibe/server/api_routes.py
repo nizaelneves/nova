@@ -880,6 +880,48 @@ async def speech_model_status(request: Request):
     return model_store.status(_voice_model_size(request))
 
 
+@speech_router.get("/models")
+async def speech_models_list(request: Request):
+    """Every voice model size with whether it is on this computer (for the picker in Memoir's Settings)."""
+    from phibe.speech import model_store
+
+    chosen = _voice_model_size(request)
+    return [{**model_store.status(m), "current": m == chosen} for m in model_store.SIZE_MB]
+
+
+class SpeechModelChoice(BaseModel):
+    model: str
+
+
+@speech_router.put("/model")
+async def speech_model_set(request: Request, body: SpeechModelChoice):
+    """Picks the voice model used to transcribe. It is remembered in the config; nothing is downloaded here."""
+    import os
+    from pathlib import Path
+
+    import tomlkit
+
+    from phibe.core.config import DEFAULT_CONFIG_DIR
+    from phibe.speech import model_store
+
+    if body.model not in model_store.SIZE_MB:
+        raise HTTPException(status_code=422, detail=f"Pick one of: {', '.join(model_store.SIZE_MB)}")
+    backend = getattr(request.app.state, "speech_backend", None)
+    if backend is None or not hasattr(backend, "_model_size"):
+        raise HTTPException(status_code=501, detail="This voice engine has no model to pick")
+    backend._model_size = body.model
+    if hasattr(backend, "reload"):
+        backend.reload()
+    path = Path(os.environ.get("PHIBE_CONFIG", DEFAULT_CONFIG_DIR / "config.toml"))
+    doc = tomlkit.parse(path.read_text(encoding="utf-8")) if path.exists() else tomlkit.document()
+    if "speech" not in doc:
+        doc.add("speech", tomlkit.table())
+    doc["speech"]["model"] = body.model
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(tomlkit.dumps(doc), encoding="utf-8")
+    return model_store.status(body.model)
+
+
 @speech_router.post("/model/download")
 async def speech_model_download(request: Request):
     """Starts downloading the voice model (about 486 MB for ``small``); nothing downloads on its own."""

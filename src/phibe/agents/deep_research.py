@@ -80,7 +80,7 @@ calendar events by participant name, summarize key topics, decisions, and action
 **Task / follow-up finder** — "any tasks I forgot?", "what action items \
 am I behind on?". Scan meeting notes and emails for action items, \
 to-dos, deadlines, commitments. Use scan_chunks with question like \
-"extract action items, to-dos, and commitments" filtered to notion \
+"extract action items, to-dos, and commitments" filtered to apple_notes \
 and gmail sources.
 
 **Contact analysis** — "who do I talk to most?", "who haven't I \

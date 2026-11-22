@@ -36,13 +36,16 @@ def test_delta_pct() -> None:
     assert calc.delta_pct(0, 0) == 0
 
 
-def test_totals_ignore_transfers_and_keep_savings_apart() -> None:
+def test_totals_ignore_transfers_except_into_a_savings_account() -> None:
     txs = [
         tx("2026-10-02", "income", 5000), tx("2026-10-03", "expense", 1200),
-        tx("2026-10-04", "savings", 700), tx("2026-10-05", "transfer", 900, toAccountId="b"),
+        tx("2026-10-04", "transfer", 700, toAccountId="pot"),  # into savings: counts as saved
+        tx("2026-10-05", "transfer", 900, toAccountId="b"),  # between ordinary accounts: never counts
+        tx("2026-10-06", "transfer", 300, accountId="pot", toAccountId="pot2"),  # between savings accounts: not new saving
         tx("2026-09-30", "income", 999),
     ]
-    assert calc.totals(txs, "2026-10-01", "2026-10-31") == {"income": 5000, "expenses": 1200, "savings": 700}
+    assert calc.totals(txs, "2026-10-01", "2026-10-31", ["pot", "pot2"]) == {"income": 5000, "expenses": 1200, "savings": 700}
+    assert calc.totals(txs, "2026-10-01", "2026-10-31")["savings"] == 0  # no savings accounts known
 
 
 def test_balance_moves_with_transfers_and_skips_credit() -> None:
@@ -51,11 +54,11 @@ def test_balance_moves_with_transfers_and_skips_credit() -> None:
         tx("2026-10-02", "income", 5000),
         tx("2026-10-03", "expense", 1000, method="credit", cardId="c"),
         tx("2026-10-04", "transfer", 2000, toAccountId="b"),
-        tx("2026-10-05", "savings", 500),
+        tx("2026-10-05", "transfer", 500, toAccountId="b"),
     ]
     assert calc.account_balance(a, txs, "2026-10-31") == 10_000 + 5000 - 2000 - 500
-    assert calc.account_balance(b, txs, "2026-10-31") == 2000
-    assert calc.total_balance([a, b], txs, "2026-10-31") == 14_500
+    assert calc.account_balance(b, txs, "2026-10-31") == 2500
+    assert calc.total_balance([a, b], txs, "2026-10-31") == 14_500 + 500
     assert calc.account_balance(a, txs, "2026-10-01") == 10_000  # nothing yet
 
 
@@ -98,9 +101,11 @@ def test_card_used_counts_credit_inside_the_cycle_only() -> None:
     assert calc.card_used(CARD, txs, "2026-10-11") == 4000
 
 
-def test_goal_pace() -> None:
-    goal = {"id": "g", "target": 10_000}
-    txs = [tx("2026-09-20", "savings", 3000, goalId="g"), tx("2026-05-01", "savings", 1000, goalId="g")]
-    assert calc.goal_saved(txs, "g") == 4000
-    assert calc.months_left(goal, txs, "2026-10-11") == 6  # 6000 left at 1000 a month
-    assert calc.months_left(goal, [], "2026-10-11") is None
+def test_savings_pace() -> None:
+    pot = {"id": "pot", "target": 10_000, "balance": 4000}
+    txs = [tx("2026-09-20", "transfer", 3000, toAccountId="pot"), tx("2026-05-01", "transfer", 1000, toAccountId="pot")]
+    assert calc.months_left(pot, txs, "2026-10-11") == 6  # 6000 left at 1000 a month (the May one is too old)
+    assert calc.months_left(pot, [], "2026-10-11") is None  # no pace
+    assert calc.months_left({**pot, "target": None}, txs, "2026-10-11") is None  # no target
+    out = [*txs, tx("2026-10-01", "transfer", 3000, accountId="pot", toAccountId="b")]
+    assert calc.months_left(pot, out, "2026-10-11") is None  # what went out cancels what came in

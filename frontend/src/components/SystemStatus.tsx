@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch, checkHealth, fetchSpeechHealth } from '../lib/api';
-import { CloudProviderStatus, OllamaModelList } from './keys';
+import { CloudProviderStatus, EmbeddingModelList, OllamaModelList } from './keys';
 
 /** A green dot when something works, a red one when it does not, grey while it is being checked. */
 function Dot({ on }: { on: boolean | null }) {
@@ -50,6 +50,10 @@ export function SystemStatus() {
       <div className="hz-stat">
         <span>Local models</span>
         <OllamaModelList />
+      </div>
+      <div className="hz-stat">
+        <span>Embedding models</span>
+        <EmbeddingModelList />
       </div>
       <div className="hz-stat">
         <span>Cloud models</span>

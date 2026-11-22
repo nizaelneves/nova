@@ -41,12 +41,12 @@ def test_connect_list_with_connector(tmp_path: object) -> None:
 
     with mock.patch(
         "phibe.core.registry.ConnectorRegistry.items",
-        return_value=(("obsidian", mock_cls),),
+        return_value=(("whatsapp", mock_cls),),
     ):
         result = runner.invoke(cli, ["connect", "--list"])
 
     assert result.exit_code == 0
-    assert "obsidian" in result.output
+    assert "whatsapp" in result.output
 
 
 def test_connect_help() -> None:
@@ -58,7 +58,7 @@ def test_connect_help() -> None:
 
 
 def test_connect_specific_source(tmp_path: object) -> None:
-    """connect --path /nonexistent obsidian shows an error gracefully."""
+    """connect --path /nonexistent whatsapp shows an error gracefully."""
     runner = CliRunner()
 
     mock_cls = mock.MagicMock()
@@ -79,11 +79,11 @@ def test_connect_specific_source(tmp_path: object) -> None:
         ),
     ):
         # --path before the positional source arg (standard Click group behaviour)
-        result = runner.invoke(cli, ["connect", "--path", "/nonexistent", "obsidian"])
+        result = runner.invoke(cli, ["connect", "--path", "/nonexistent", "whatsapp"])
 
     assert result.exit_code == 0
     # Should mention the source and give an indication something went wrong
-    assert "obsidian" in result.output or "nonexistent" in result.output
+    assert "whatsapp" in result.output or "nonexistent" in result.output
 
 
 def test_connect_disconnect() -> None:

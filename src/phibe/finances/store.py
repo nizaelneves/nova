@@ -2,11 +2,12 @@
 
 Rows are served as plain dicts with camelCase keys (the shape the app uses),
 and amounts are integer cents. The store checks every rule that touches money:
-which methods need a card, what a transfer is, what a goal deposit is.
+which methods need a card, what a transfer is.
 """
 
 from __future__ import annotations
 
+import re
 import sqlite3
 import threading
 import uuid
@@ -16,9 +17,11 @@ from typing import Any, Dict, List, Optional
 
 from phibe.finances import calc
 
-KINDS = ("income", "expense", "savings", "transfer", "payment")  # payment = paying a credit card bill
+_INSTALLMENT = re.compile(r" \(\d+/\d+\)$")  # the "(3/12)" a charge of an installment plan carries
+KINDS = ("income", "expense", "transfer", "payment")  # payment = paying a credit card bill
 METHODS = ("cash", "pix", "debit", "credit")
 CARD_MODES = ("credit", "debit", "both")
+CARD_BRANDS = ("visa", "mastercard", "elo", "amex", "hipercard")
 
 _SCHEMA = """\
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -125,11 +128,44 @@ class FinanceStore:
             # Databases made before recurring expenses have no such column yet.
             if "recurring_id" not in {r[1] for r in self._db.execute("PRAGMA table_info(transactions)")}:
                 self._db.execute("ALTER TABLE transactions ADD COLUMN recurring_id TEXT")
+            have = {r[1] for r in self._db.execute("PRAGMA table_info(accounts)")}
+            for column, ddl in (("goal_id", "TEXT"), ("savings", "INTEGER NOT NULL DEFAULT 0"), ("target", "INTEGER"), ("color", "TEXT")):
+                if column not in have:
+                    self._db.execute(f"ALTER TABLE accounts ADD COLUMN {column} {ddl}")
+            if "brand" not in {r[1] for r in self._db.execute("PRAGMA table_info(cards)")}:
+                self._db.execute("ALTER TABLE cards ADD COLUMN brand TEXT")
+            self._goals_become_savings_accounts()
             # Seed once: a user who deletes every category must not get them back.
             if not self._db.execute("SELECT 1 FROM meta WHERE key='seeded'").fetchone():
                 self._insert_categories(default_categories())
                 self._db.execute("INSERT INTO meta VALUES ('seeded', '1')")
             self._db.commit()
+
+    def _goals_become_savings_accounts(self) -> None:
+        """One-off: every goal becomes (or marks) a savings account carrying its target and colour,
+        and every deposit to a goal becomes a plain transfer into that account. Balances do not change.
+        The goals table itself is left alone."""
+        db = self._db
+        if db.execute("SELECT 1 FROM meta WHERE key='goals_migrated'").fetchone():
+            return  # done once; a savings account the user deletes later must not come back
+        db.execute("INSERT INTO meta VALUES ('goals_migrated', '1')")
+        for g in db.execute("SELECT * FROM goals ORDER BY position").fetchall():
+            acct = db.execute("SELECT * FROM accounts WHERE goal_id=? ORDER BY position LIMIT 1", (g["id"],)).fetchone()
+            if acct is None:
+                pos = db.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM accounts").fetchone()[0]
+                db.execute(
+                    "INSERT INTO accounts (id, name, icon, logo_key, opening, position, goal_id, savings, target, color) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (uuid.uuid4().hex, g["name"], "safe-square", match_logo_key(g["name"]), 0, pos, g["id"], 1, g["target"], g["color"]),
+                )
+            elif not acct["savings"]:
+                db.execute("UPDATE accounts SET savings=1, target=?, color=? WHERE id=?", (g["target"], g["color"], acct["id"]))
+        for t in db.execute("SELECT id, goal_id, account_id FROM transactions WHERE kind='savings'").fetchall():
+            dest = db.execute("SELECT id FROM accounts WHERE goal_id=? ORDER BY position LIMIT 1", (t["goal_id"],)).fetchone()
+            if dest is not None and dest["id"] != t["account_id"]:  # a deposit that came from its own account has no source to move from
+                db.execute(
+                    "UPDATE transactions SET kind='transfer', to_account_id=?, goal_id=NULL, method='pix', category_id='' WHERE id=?",
+                    (dest["id"], t["id"]),
+                )
 
     def close(self) -> None:
         with self._lock:
@@ -141,7 +177,10 @@ class FinanceStore:
         with self._lock:
             rows = self._db.execute("SELECT * FROM accounts ORDER BY position").fetchall()
         return [
-            {"id": r["id"], "name": r["name"], "icon": r["icon"], "logoKey": r["logo_key"], "opening": r["opening"]}
+            {
+                "id": r["id"], "name": r["name"], "icon": r["icon"], "logoKey": r["logo_key"], "opening": r["opening"],
+                "savings": bool(r["savings"]), "target": r["target"], "color": r["color"],
+            }
             for r in rows
         ]
 
@@ -152,6 +191,7 @@ class FinanceStore:
             {
                 "id": r["id"], "accountId": r["account_id"], "name": r["name"], "mode": r["mode"],
                 "limit": r["credit_limit"], "dueDay": r["due_day"], "closeDaysBefore": r["close_days_before"],
+                "brand": r["brand"],
             }
             for r in rows
         ]
@@ -164,11 +204,6 @@ class FinanceStore:
             for r in rows
         ]
 
-    def goals(self) -> List[Dict[str, Any]]:
-        with self._lock:
-            rows = self._db.execute("SELECT * FROM goals ORDER BY position").fetchall()
-        return [{"id": r["id"], "name": r["name"], "target": r["target"], "color": r["color"]} for r in rows]
-
     def recurring(self) -> List[Dict[str, Any]]:
         with self._lock:
             rows = self._db.execute("SELECT * FROM recurring ORDER BY rowid").fetchall()
@@ -179,6 +214,29 @@ class FinanceStore:
             }
             for r in rows
         ]
+
+    def upcoming(self, start: str, end: str) -> List[Dict[str, Any]]:
+        """Charges of recurring expenses that fall in [start, end] but are not recorded yet (only one is
+        recorded ahead), so a future month can still be shown. Never stored."""
+        out: List[Dict[str, Any]] = []
+        with self._lock:
+            rules = self._db.execute("SELECT * FROM recurring").fetchall()
+        for r in rules:
+            first, n = date.fromisoformat(r["start_date"]), r["made"]
+            while r["total"] is None or n < r["total"]:
+                when = calc.nth_month(first, n).isoformat()
+                if when > end:
+                    break
+                if when >= start:
+                    label = f"{r['description']} ({n + 1}/{r['total']})" if r["total"] else r["description"]
+                    out.append({
+                        "id": f"upcoming:{r['id']}:{n}", "date": when, "description": label, "categoryId": r["category_id"],
+                        "kind": "expense", "amount": r["amount"], "accountId": r["account_id"], "toAccountId": None,
+                        "method": r["method"], "cardId": r["card_id"], "goalId": None, "recurringId": r["id"],
+                        "upcoming": True,
+                    })
+                n += 1
+        return sorted(out, key=lambda t: t["date"], reverse=True)
 
     @staticmethod
     def _tx(r: sqlite3.Row) -> Dict[str, Any]:
@@ -214,7 +272,7 @@ class FinanceStore:
         with self._lock:
             return not any(
                 self._db.execute(f"SELECT 1 FROM {t} LIMIT 1").fetchone()
-                for t in ("accounts", "cards", "goals", "transactions")
+                for t in ("accounts", "cards", "transactions")
             )
 
     # -- accounts ----------------------------------------------------------------
@@ -225,19 +283,25 @@ class FinanceStore:
         if isinstance(opening, bool) or not isinstance(opening, int):
             raise FinanceError("Opening balance must be a whole number of cents")
         icon = data.get("icon") or None
+        savings = bool(data.get("savings"))
+        target = data.get("target") if savings else None
+        if target is not None:
+            if isinstance(target, bool) or not isinstance(target, int) or target <= 0:
+                raise FinanceError("The target must be a whole number of cents above zero")
+        color = (data.get("color") or None) if savings else None
         with self._lock:
             account_id = data.get("id")
             if account_id and self._exists("accounts", account_id):
                 self._db.execute(
-                    "UPDATE accounts SET name=?, icon=?, logo_key=?, opening=? WHERE id=?",
-                    (name, icon, match_logo_key(name), opening, account_id),
+                    "UPDATE accounts SET name=?, icon=?, logo_key=?, opening=?, savings=?, target=?, color=? WHERE id=?",
+                    (name, icon, match_logo_key(name), opening, int(savings), target, color, account_id),
                 )
             else:
                 account_id = account_id or uuid.uuid4().hex
                 pos = self._db.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM accounts").fetchone()[0]
                 self._db.execute(
-                    "INSERT INTO accounts VALUES (?,?,?,?,?,?)",
-                    (account_id, name, icon, match_logo_key(name), opening, pos),
+                    "INSERT INTO accounts (id, name, icon, logo_key, opening, position, savings, target, color) VALUES (?,?,?,?,?,?,?,?,?)",
+                    (account_id, name, icon, match_logo_key(name), opening, pos, int(savings), target, color),
                 )
             self._db.commit()
         return next(a for a in self.accounts() if a["id"] == account_id)
@@ -273,19 +337,22 @@ class FinanceStore:
         before = _int(data.get("closeDaysBefore", 0), "Closing offset")
         if due > 31 or before > 28:
             raise FinanceError("Due day is 1 to 31 and the closing offset 0 to 28 days")
+        brand = data.get("brand") or None
+        if brand is not None and brand not in CARD_BRANDS:
+            raise FinanceError("Unknown card brand")
         with self._lock:
             self._require("accounts", data.get("accountId"), "Account")
             card_id = data.get("id")
-            row = (name, data["accountId"], mode, limit if credit else 0, due, before)
+            row = (name, data["accountId"], mode, limit if credit else 0, due, before, brand)
             if card_id and self._exists("cards", card_id):
                 self._db.execute(
-                    "UPDATE cards SET name=?, account_id=?, mode=?, credit_limit=?, due_day=?, close_days_before=? WHERE id=?",
+                    "UPDATE cards SET name=?, account_id=?, mode=?, credit_limit=?, due_day=?, close_days_before=?, brand=? WHERE id=?",
                     row + (card_id,),
                 )
             else:
                 card_id = card_id or uuid.uuid4().hex
                 self._db.execute(
-                    "INSERT INTO cards (name, account_id, mode, credit_limit, due_day, close_days_before, id) VALUES (?,?,?,?,?,?,?)",
+                    "INSERT INTO cards (name, account_id, mode, credit_limit, due_day, close_days_before, brand, id) VALUES (?,?,?,?,?,?,?,?)",
                     row + (card_id,),
                 )
             self._db.commit()
@@ -351,31 +418,6 @@ class FinanceStore:
                 self._db.execute("DELETE FROM categories WHERE id=?", (gone,))
             self._db.commit()
 
-    # -- goals --------------------------------------------------------------------------
-
-    def save_goal(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        name = _need(data.get("name"), "Goal name")
-        target = _int(data.get("target"), "Target", 1)
-        color = _need(data.get("color"), "Color")
-        with self._lock:
-            goal_id = data.get("id")
-            if goal_id and self._exists("goals", goal_id):
-                self._db.execute("UPDATE goals SET name=?, target=?, color=? WHERE id=?", (name, target, color, goal_id))
-            else:
-                goal_id = goal_id or uuid.uuid4().hex
-                pos = self._db.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM goals").fetchone()[0]
-                self._db.execute("INSERT INTO goals VALUES (?,?,?,?,?)", (goal_id, name, target, color, pos))
-            self._db.commit()
-        return next(g for g in self.goals() if g["id"] == goal_id)
-
-    def delete_goal(self, goal_id: str) -> None:
-        """Also deletes the goal's deposits, so that money goes back to the accounts."""
-        with self._lock:
-            self._require("goals", goal_id, "Goal")
-            self._db.execute("DELETE FROM transactions WHERE goal_id=?", (goal_id,))
-            self._db.execute("DELETE FROM goals WHERE id=?", (goal_id,))
-            self._db.commit()
-
     # -- transactions ---------------------------------------------------------------------
 
     def _checked(self, data: Dict[str, Any]) -> tuple:
@@ -393,7 +435,7 @@ class FinanceStore:
             raise FinanceError("Unknown payment method")
         description = str(data.get("description") or "").strip()
         account_id = data.get("accountId")
-        to_account = card_id = goal_id = None
+        to_account = card_id = None
         category_id = ""
 
         if kind == "transfer":
@@ -403,11 +445,6 @@ class FinanceStore:
             if account_id == to_account:
                 raise FinanceError("A transfer needs two different accounts")
             method, description = "pix", description or "Transfer"
-        elif kind == "savings":
-            goal_id = data.get("goalId")
-            self._require("goals", goal_id, "Goal")
-            self._require("accounts", account_id, "Account")
-            description = description or "Savings deposit"
         elif kind == "payment":
             card = self._db.execute("SELECT * FROM cards WHERE id=?", (data.get("cardId"),)).fetchone()
             if card is None or card["mode"] == "debit":
@@ -416,7 +453,7 @@ class FinanceStore:
             self._require("accounts", account_id, "Paying account")
             if amount > self._owed(card, when.isoformat(), data.get("id")):
                 raise FinanceError("That is more than this card owes in the current cycle")
-            method, description = "pix", description or f"{card['name']} payment"
+            method, description = "pix", description or f"{card['name']} Payment"
         else:
             description = _need(description, "Description")
             category_id = data.get("categoryId") or ""
@@ -439,7 +476,7 @@ class FinanceStore:
                 account_id = card["account_id"]  # debit spends from the card's account
             else:
                 self._require("accounts", account_id, "Account")
-        return (when.isoformat(), description, category_id, kind, amount, account_id, to_account, method, card_id, goal_id)
+        return (when.isoformat(), description, category_id, kind, amount, account_id, to_account, method, card_id, None)
 
     def _owed(self, card: sqlite3.Row, on: str, ignore_id: Optional[str]) -> int:
         """Credit used in the card's cycle that contains *on*, not counting one transaction."""
@@ -447,7 +484,12 @@ class FinanceStore:
         shape = {"id": card["id"], "dueDay": card["due_day"], "closeDaysBefore": card["close_days_before"]}
         return calc.card_used(shape, [self._tx(r) for r in rows], on)
 
-    def save_transaction(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def save_transaction(self, data: Dict[str, Any], scope: str = "one") -> Dict[str, Any]:
+        """*scope* matters for a charge made by a recurring expense: "one" changes only it, "following" this
+        one and the later ones (and the rule, so future charges match), "all" every one (and the rule).
+        Dates are never spread to the other charges: each keeps its own day."""
+        if scope not in ("one", "following", "all"):
+            raise FinanceError("Unknown edit scope")
         with self._lock:
             values = self._checked(data)
             tx_id = data.get("id")
@@ -457,6 +499,7 @@ class FinanceStore:
                     "to_account_id=?, method=?, card_id=?, goal_id=? WHERE id=?",
                     values + (tx_id,),
                 )
+                self._spread(tx_id, values, scope)
             else:
                 tx_id = tx_id or uuid.uuid4().hex
                 self._db.execute(
@@ -467,21 +510,52 @@ class FinanceStore:
             self._db.commit()
             return self._tx(self._db.execute("SELECT * FROM transactions WHERE id=?", (tx_id,)).fetchone())
 
-    def delete_transaction(self, tx_id: str) -> None:
+    def _spread(self, tx_id: str, values: tuple, scope: str) -> None:
+        """Copy an edited recurring charge's fields to the other charges of its rule, and to the rule."""
+        row = self._db.execute("SELECT recurring_id, date FROM transactions WHERE id=?", (tx_id,)).fetchone()
+        rule_id = row["recurring_id"]
+        if scope == "one" or not rule_id or values[3] != "expense" or not self._exists("recurring", rule_id):
+            return
+        _, description, category_id, _, amount, account_id, _, method, card_id, _ = values
+        base = _INSTALLMENT.sub("", description)
+        sql = "SELECT id, description FROM transactions WHERE recurring_id=? AND id!=?"
+        args: tuple = (rule_id, tx_id)
+        if scope == "following":
+            sql, args = sql + " AND date>?", args + (row["date"],)
+        for other in self._db.execute(sql, args).fetchall():
+            tail = _INSTALLMENT.search(other["description"])
+            self._db.execute(
+                "UPDATE transactions SET description=?, category_id=?, amount=?, account_id=?, method=?, card_id=? WHERE id=?",
+                (base + (tail.group(0) if tail else ""), category_id, amount, account_id, method, card_id, other["id"]),
+            )
+        self._db.execute(
+            "UPDATE recurring SET description=?, category_id=?, amount=?, account_id=?, method=?, card_id=? WHERE id=?",
+            (base, category_id, amount, account_id, method, card_id, rule_id),
+        )
+
+    def delete_transaction(self, tx_id: str, scope: str = "one") -> None:
+        """*scope* as in :meth:`save_transaction`; "following" and "all" also end the recurring expense."""
+        if scope not in ("one", "following", "all"):
+            raise FinanceError("Unknown delete scope")
         with self._lock:
             self._require("transactions", tx_id, "Transaction")
-            self._db.execute("DELETE FROM transactions WHERE id=?", (tx_id,))
+            row = self._db.execute("SELECT recurring_id, date FROM transactions WHERE id=?", (tx_id,)).fetchone()
+            rule_id = row["recurring_id"]
+            if scope == "one" or not rule_id:
+                self._db.execute("DELETE FROM transactions WHERE id=?", (tx_id,))
+            else:
+                sql, args = "DELETE FROM transactions WHERE recurring_id=?", (rule_id,)
+                if scope == "following":
+                    sql, args = sql + " AND date>=?", args + (row["date"],)
+                self._db.execute(sql, args)
+                self._db.execute("DELETE FROM recurring WHERE id=?", (rule_id,))
             self._db.commit()
 
     # -- recurring expenses -------------------------------------------------------------------
 
     def save_recurring(self, data: Dict[str, Any], today: str) -> Dict[str, Any]:
         """A monthly expense on the same day as its first date; with *installments* it ends after that many."""
-        installments = data.get("installments")
-        if installments is not None:
-            installments = _int(installments, "Installments", 2)
-            if installments > 120:
-                raise FinanceError("Installments go up to 120")
+        installments = self._installments(data.get("installments"))
         with self._lock:
             when, description, category_id, _, amount, account_id, _, method, card_id, _ = self._checked(
                 {**data, "kind": "expense", "id": None}
@@ -491,6 +565,40 @@ class FinanceStore:
                 "INSERT INTO recurring (id, description, category_id, amount, account_id, method, card_id, start_date, total) "
                 "VALUES (?,?,?,?,?,?,?,?,?)",
                 (rule_id, description, category_id, amount, account_id, method, card_id, when, installments),
+            )
+            self._db.commit()
+            self.generate_due(today)
+        return next(r for r in self.recurring() if r["id"] == rule_id)
+
+    @staticmethod
+    def _installments(value: Any) -> Optional[int]:
+        if value is None:
+            return None
+        value = _int(value, "Installments", 2)
+        if value > 120:
+            raise FinanceError("Installments go up to 120")
+        return value
+
+    def repeat_transaction(self, tx_id: str, installments: Optional[int], today: str) -> Dict[str, Any]:
+        """Turn a one-off expense into the first charge of a new monthly rule (or installment plan)."""
+        total = self._installments(installments)
+        with self._lock:
+            self._require("transactions", tx_id, "Transaction")
+            tx = self._db.execute("SELECT * FROM transactions WHERE id=?", (tx_id,)).fetchone()
+            if tx["kind"] != "expense":
+                raise FinanceError("Only expenses can repeat")
+            if tx["recurring_id"] and self._exists("recurring", tx["recurring_id"]):
+                raise FinanceError("This expense already repeats")
+            base = _INSTALLMENT.sub("", tx["description"])
+            rule_id = uuid.uuid4().hex
+            self._db.execute(
+                "INSERT INTO recurring (id, description, category_id, amount, account_id, method, card_id, start_date, total, made) "
+                "VALUES (?,?,?,?,?,?,?,?,?,1)",
+                (rule_id, base, tx["category_id"], tx["amount"], tx["account_id"], tx["method"], tx["card_id"], tx["date"], total),
+            )
+            self._db.execute(
+                "UPDATE transactions SET recurring_id=?, description=? WHERE id=?",
+                (rule_id, f"{base} (1/{total})" if total else base, tx_id),
             )
             self._db.commit()
             self.generate_due(today)
@@ -535,7 +643,7 @@ class FinanceStore:
     def import_state(self, data: Dict[str, Any]) -> Dict[str, int]:
         """Load data saved in the browser before the server kept finances.
 
-        Only allowed while the store holds no accounts, cards, goals or transactions.
+        Only allowed while the store holds no accounts, cards or transactions.
         Categories replace the defaults when the import brings its own.
         """
         if not self.is_empty():
@@ -546,8 +654,8 @@ class FinanceStore:
                 self._insert_categories(data["categories"])
             for a in data.get("accounts", []):
                 self.save_account(a)
-            for g in data.get("goals", []):
-                self.save_goal(g)
+            for g in data.get("goals", []):  # a goal from the browser becomes a savings account with that target
+                self.save_account({"name": g.get("name"), "savings": True, "target": g.get("target") or None, "color": g.get("color")})
             for c in data.get("cards", []):
                 self.save_card(c)
             for t in data.get("transactions", []):

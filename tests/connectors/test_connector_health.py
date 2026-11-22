@@ -16,12 +16,9 @@ _LOCAL_CONNECTORS = [
 
 _TOKEN_CONNECTORS = [
     ("gmail_imap", "phibe.connectors.gmail_imap", "GmailIMAPConnector"),
-    ("outlook", "phibe.connectors.outlook", "OutlookConnector"),
     ("slack", "phibe.connectors.slack_connector", "SlackConnector"),
-    ("notion", "phibe.connectors.notion", "NotionConnector"),
     ("gdrive", "phibe.connectors.gdrive", "GDriveConnector"),
     ("gcalendar", "phibe.connectors.gcalendar", "GCalendarConnector"),
-    ("dropbox", "phibe.connectors.dropbox", "DropboxConnector"),
 ]
 
 _ALL_CONNECTORS = _LOCAL_CONNECTORS + _TOKEN_CONNECTORS

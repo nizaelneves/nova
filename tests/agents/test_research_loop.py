@@ -376,7 +376,7 @@ def test_tool_schema_sources_lists_known_connectors() -> None:
     """
     sources_prop = SEARCH_TOOL_SPEC["function"]["parameters"]["properties"]["sources"]
     desc = sources_prop["description"]
-    for connector_id in ("notion", "slack", "gmail", "notion"):
+    for connector_id in ("apple_notes", "slack", "gmail"):
         assert connector_id in desc
 
 
@@ -389,7 +389,7 @@ def test_system_prompt_mandates_sources_extraction() -> None:
     """
     assert "sources=" in SYSTEM_PROMPT
     # Synonym mapping for the most-common alias.
-    assert "notion" in SYSTEM_PROMPT.lower()
+    assert "apple_notes" in SYSTEM_PROMPT.lower()
     assert "meeting notes" in SYSTEM_PROMPT.lower()
     # The dynamic placeholder is what's interpolated per-run.
     assert "{available_sources}" in SYSTEM_PROMPT
@@ -422,19 +422,18 @@ def test_available_sources_override_appears_in_prompt(
         stub_search,
         model="mock",
         max_iterations=1,
-        available_sources=["gmail", "slack", "notion"],
+        available_sources=["gmail", "slack", "gcalendar"],
     )
     agent.run("hi")
     sys_content = engine.calls[0]["messages"][0].content
     # The connected-sources blurb is interpolated verbatim.
-    assert "gmail, slack, notion" in sys_content
+    assert "gmail, slack, gcalendar" in sys_content
     # And the prompt no longer hard-codes a static "Valid IDs include..."
     # enumeration of unconnected sources — those that aren't in the
     # available_sources list shouldn't appear in any *listing*. (Rule 4a
     # still uses Notion as a *narrative example* of how to handle an
     # unconnected source, which is intentional.)
-    assert "obsidian" not in sys_content.lower()
-    assert "apple_notes" not in sys_content.lower()
+    assert "github_notifications" not in sys_content.lower()
     assert "gdrive" not in sys_content.lower()
 
 

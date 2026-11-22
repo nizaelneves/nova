@@ -11,7 +11,7 @@ function newest(overview: SyncOverview | null): string | null {
 }
 
 /**
- * One click syncs every connected source (Anytype and the others).
+ * One click syncs every connected source (Gmail, Drive and the others).
  * Shows the time of the last sync and reports what happened when it ends.
  */
 export function SyncButton() {
@@ -95,7 +95,7 @@ export function SyncButton() {
       </button>
       <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
         {overview && overview.connectors.length === 0
-          ? 'No sources connected'
+          ? 'No Sources Connected'
           : `Last sync: ${timeAgo(last)}`}
       </span>
     </div>

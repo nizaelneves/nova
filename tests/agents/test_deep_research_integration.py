@@ -211,7 +211,7 @@ def test_search_finds_cross_platform_data(tmp_path):
     content = tool_result.content
     sources_found = {
         label
-        for label in ("slack", "gmail", "gdrive", "notion", "gcalendar")
+        for label in ("slack", "gmail", "gdrive", "gcalendar")
         if f"[{label}]" in content
     }
 

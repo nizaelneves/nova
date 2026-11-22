@@ -68,7 +68,7 @@ export function DigestReader({ digest, now, start, onClose }: { digest: Digest; 
           </nav>
 
           <div className="dr-grid" ref={grid}>
-            {shown.length === 0 && <p className="dg-none">Nothing here yet.</p>}
+            {shown.length === 0 && <p className="dg-none">Nothing Here Yet</p>}
             {shown.map((b) => (
               <button key={b.id} type="button" className="dr-card" data-kind={b.kind} data-current={b.id === current?.id} onClick={() => setSelected(b.id)} onDoubleClick={() => b.url && window.open(b.url, '_blank', 'noopener,noreferrer')}>
                 <span className="dg-blk-meta"><i /><span className="dg-blk-from" title={fromLabel(b)}>{fromLabel(b)}</span>{b.time && <time>{timeLabel(b.time, now)}</time>}</span>

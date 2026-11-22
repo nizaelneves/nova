@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8"><title>Stardust, With Personality</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at 50% 130%,#1a0f4d,#04030d 62%);color:#eef0ff;font:13px system-ui;min-height:100vh;display:grid;place-items:center;padding:12px}
+.row{display:grid;grid-template-columns:repeat(2,300px);gap:10px}
+.cell{display:grid;justify-items:center;gap:6px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.62);line-height:1.4;max-width:280px;font-size:12px}
+.cell b{display:block;color:#fff;font-size:14px;margin-bottom:2px}
+.box{position:relative;width:300px;height:230px;cursor:pointer}
+canvas,svg{position:absolute;inset:0;width:300px;height:230px}
+svg{pointer-events:none}
+.bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.bar button{padding:4px 11px;border-radius:999px;border:1px solid rgba(160,175,255,.3);background:rgba(143,227,255,.06);color:#cfd6ff;font:12px system-ui;cursor:pointer}
+.bar button[data-on='1']{background:linear-gradient(90deg,#8fe3ff,#a78bfa);color:#04101c;border-color:transparent}
+</style>
+<div class="row">
+ <div class="cell" id="a"></div>
+ <div class="cell" id="b"></div>
+</div>
+<script>
+const W=300,H=230,CX=W/2,CY=H/2;
+const STATES={
+  auto:null,
+  idle:{eye:1,brow:0,browY:0,curve:4,open:0,w:8,look:0,tilt:0,blush:.35,lid:0},
+  curious:{eye:1.25,brow:-9,browY:-4,curve:-1,open:5,w:5,look:1,tilt:9,blush:.2,lid:0},
+  happy:{eye:.8,brow:7,browY:-2,curve:9,open:7,w:11,look:0,tilt:-4,blush:.9,lid:.45},
+  thinking:{eye:1,brow:-6,browY:-2,curve:0,open:0,w:5,look:2,tilt:-8,blush:.25,lid:0},
+  sleepy:{eye:.9,brow:6,browY:2,curve:2,open:0,w:6,look:0,tilt:5,blush:.4,lid:.78}
+};
+function make(id,o){
+  const host=document.getElementById(id);
+  host.innerHTML=`<div class="box"><canvas></canvas><svg viewBox="0 0 ${W} ${H}"><g class="face">
+   <ellipse class="bl" cx="-30" cy="14" rx="9" ry="5" fill="#e879f9"/><ellipse class="br" cx="30" cy="14" rx="9" ry="5" fill="#e879f9"/>
+   <g class="eL"><ellipse rx="10" ry="14" fill="#fff"/><circle class="pL" r="5.5" fill="#10083a"/><circle class="gL" r="2" fill="#fff"/><circle cx="3" cy="-6" r="1.8" fill="#8fe3ff"/><rect class="lidL" x="-12" y="-16" width="24" height="0" fill="#2a1a7a"/></g>
+   <g class="eR"><ellipse rx="10" ry="14" fill="#fff"/><circle class="pR" r="5.5" fill="#10083a"/><circle class="gR" r="2" fill="#fff"/><circle cx="3" cy="-6" r="1.8" fill="#8fe3ff"/><rect class="lidR" x="-12" y="-16" width="24" height="0" fill="#2a1a7a"/></g>
+   <path class="brL" fill="none" stroke="#dfe6ff" stroke-width="2.4" stroke-linecap="round"/><path class="brR" fill="none" stroke="#dfe6ff" stroke-width="2.4" stroke-linecap="round"/>
+   <path class="mo" fill="#10083a" stroke="#10083a" stroke-width="2" stroke-linejoin="round"/>
+  </g></svg></div><div class="bar"></div><p><b>${o.name}</b>${o.text}</p>`;
+  const cv=host.querySelector('canvas'),g=cv.getContext('2d'),dpr=devicePixelRatio||1;cv.width=W*dpr;cv.height=H*dpr;g.scale(dpr,dpr);
+  const q=s=>host.querySelector(s),face=q('.face');
+  const bar=host.querySelector('.bar');let mode='auto';
+  Object.keys(STATES).forEach(k=>{const b=document.createElement('button');b.textContent=k[0].toUpperCase()+k.slice(1);b.dataset.on=k==='auto'?1:0;b.onclick=()=>{mode=k;[...bar.children].forEach(c=>c.dataset.on=c===b?1:0)};bar.append(b)});
+  let mx=0,my=0,last=0,near=0,t=0,vx=0,vy=0,px=CX,py=CY,bounce=0,blinkT=3,wander=0,wx=0,wy=0,wT=0;
+  const cur={...STATES.idle},hist=[];const dust=[];
+  addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect();mx=e.clientX-b.left-CX;my=e.clientY-b.top-CY;last=t;near=Math.hypot(mx,my)<190?1:0});
+  host.addEventListener('pointerdown',()=>{bounce=1;mode='happy';[...bar.children].forEach(c=>c.dataset.on=c.textContent==='Happy'?1:0);setTimeout(()=>{if(mode==='happy'){mode='auto';[...bar.children].forEach(c=>c.dataset.on=c.textContent==='Auto'?1:0)}},1800);for(let i=0;i<30;i++){const a=Math.random()*6.28,v=.8+Math.random()*2.4;dust.push({x:px,y:py-10,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,l:1,s:1+Math.random()*1.6})}});
+  const cols=['143,227,255','167,139,250','232,121,249','255,255,255'];
+  function glow(x,y,r,c,a){const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${c},${a})`);gr.addColorStop(1,`rgba(${c},0)`);g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+  function frame(){
+    t+=.016;
+    // what she feels
+    let S=STATES[mode];
+    if(!S){const idleFor=t-last;S=(near&&idleFor<2.5)?STATES.curious:(idleFor>9?STATES.sleepy:STATES.idle)}
+    for(const k in cur)cur[k]+=(S[k]-cur[k])*.08;
+    // where she looks
+    let gx=0,gy=0;
+    if(S.look===1){gx=mx;gy=my}
+    else if(S.look===2){gx=-60;gy=-90}
+    else{wT-=.016;if(wT<0){wT=1.5+Math.random()*2.5;wx=(Math.random()-.5)*160;wy=(Math.random()-.5)*80}gx=(t-last<2.5&&near)?mx:wx;gy=(t-last<2.5&&near)?my:wy}
+    // body follows with a spring, leaning toward what she is looking at
+    const lean=S.look===1?.16:.05,tx=CX+gx*lean+Math.sin(t*.7)*6,ty=CY+gy*lean*.8+Math.sin(t*1.3)*7-bounce*18;
+    vx+=(tx-px)*.03;vy+=(ty-py)*.03;vx*=.86;vy*=.86;px+=vx;py+=vy;
+    bounce=Math.max(0,bounce-.02);
+    hist.unshift({x:px,y:py});if(hist.length>40)hist.pop();
+    const sq=Math.min(.18,Math.hypot(vx,vy)*.04),breath=1+Math.sin(t*1.8)*.05+bounce*.12;
+    g.clearRect(0,0,W,H);g.globalCompositeOperation='lighter';
+    // body: soft puffs that drift around the centre; the whole mass stretches with her speed
+    const ang=Math.atan2(vy,vx),stretch=1+sq,squash=1-sq*.6;
+    g.save();g.translate(px,py);g.rotate(ang);g.scale(stretch*breath,squash*breath);g.rotate(-ang);
+    glow(0,0,92,'124,92,255',.30);
+    for(let i=0;i<6;i++){const a=t*.4+i*1.047,r=22+Math.sin(t*.9+i)*7;glow(Math.cos(a)*r,Math.sin(a*1.2)*r*.7,42,cols[i%3],.20)}
+    glow(0,-4,46,'255,255,255',.16);
+    g.restore();
+    if(o.tail){for(let i=6;i<hist.length;i+=5){const h=hist[i],f=1-i/hist.length;glow(h.x+Math.sin(t*2+i)*4,h.y+i*.5,30*f+8,i%10?'143,227,255':'232,121,249',.18*f)}}
+    // dust shed from the edge of the body
+    if(Math.random()<.55){const a=Math.random()*6.28,r=36+Math.random()*22;dust.push({x:px+Math.cos(a)*r*1.2,y:py+Math.sin(a)*r*.8,vx:Math.cos(a)*.25+vx*.2,vy:Math.sin(a)*.25-.2,l:1,s:.8+Math.random()*1.4})}
+    for(let i=dust.length-1;i>=0;i--){const d=dust[i];d.x+=d.vx;d.y+=d.vy;d.l-=.012;if(d.l<=0){dust.splice(i,1);continue}const c=cols[i%4];glow(d.x,d.y,d.s*4,c,d.l*.5);g.fillStyle=`rgba(255,255,255,${d.l})`;g.beginPath();g.arc(d.x,d.y,d.s*.7,0,6.283);g.fill()}
+    g.globalCompositeOperation='source-over';
+    // face
+    const tilt=cur.tilt*(S.look===1?Math.max(-1,Math.min(1,gx/90)):1);
+    face.setAttribute('transform',`translate(${px.toFixed(1)},${(py+4).toFixed(1)}) rotate(${(tilt*.8).toFixed(1)}) scale(${breath.toFixed(3)})`);
+    blinkT-=.016;if(blinkT<0)blinkT=2.5+Math.random()*3;const bl=blinkT<.12?.08:1;
+    const es=cur.eye;
+    const gxn=Math.max(-1,Math.min(1,gx/90)),gyn=Math.max(-1,Math.min(1,gy/90));
+    const eye=(sel,cx,pl,gl,lid)=>{q(sel).setAttribute('transform',`translate(${cx},-6) scale(${es},${(es*bl).toFixed(3)})`);
+      const pxp=(gxn*4.5).toFixed(2),pyp=(gyn*6).toFixed(2);q(pl).setAttribute('transform',`translate(${pxp},${pyp})`);q(gl).setAttribute('transform',`translate(${(gxn*4.5-2).toFixed(2)},${(gyn*6-2.5).toFixed(2)})`);
+      q(lid).setAttribute('height',(cur.lid*30).toFixed(1));q(lid).setAttribute('y',-16)};
+    eye('.eL',-20,'.pL','.gL','.lidL');eye('.eR',20,'.pR','.gR','.lidR');
+    const br=(sel,x,s)=>q(sel).setAttribute('d',`M${x-9},${-27+cur.browY} Q${x},${-31+cur.browY-Math.abs(cur.brow)*.1} ${x+9},${-27+cur.browY+(cur.brow*.35)*s}`);
+    br('.brL',-20,1);br('.brR',20,-1);
+    // brows tilt: raised when curious (negative = up), worried when thinking
+    const w=cur.w,c=cur.curve,op=cur.open;
+    q('.mo').setAttribute('d',`M${-w},16 Q0,${16+c} ${w},16 Q0,${16+c+op} ${-w},16Z`);
+    q('.bl').setAttribute('opacity',cur.blush);q('.br').setAttribute('opacity',cur.blush);
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+make('a',{name:'A · Curious Cloud',text:'A soft cloud of stardust that floats, stretches and leans toward you, watches your cursor and reacts. Use the buttons to see each mood.'});
+make('b',{name:'B · Comet Wisp',text:'The same personality with a body that trails behind it like a comet, so every move leaves a glowing tail.',tail:1});
+</script>

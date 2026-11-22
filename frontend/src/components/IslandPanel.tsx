@@ -14,21 +14,20 @@ import type { ConversationFile } from '../types';
 import { disintegrate } from '../lib/disintegrate';
 import { CLI_ENGINES_ENABLED } from '../lib/features';
 import { useAppStore } from '../lib/store';
-import { nextPhrase, PHRASES } from '../lib/phrases';
 import { timeAgo } from '../lib/time';
 import { useChat } from '../lib/useChat';
 import { dismissPhibeEventsOfKind } from '../lib/phibePresence';
 import { stopSpeaking } from '../lib/voiceReply';
 
 export type IslandLevel = 'pill' | 'card' | 'panel';
-export type IslandSection = 'overview' | 'chats' | 'approvals' | 'pings';
+export type IslandSection = 'approvals' | 'chats' | 'pings';
 
-const SECTIONS: { id: IslandSection; label: string; icon: IconName }[] = [
-  { id: 'overview', label: 'Overview', icon: 'eye' },
+/** Always in alphabetical order, whatever gets added later. */
+const SECTIONS: { id: IslandSection; label: string; icon: IconName }[] = ([
   { id: 'chats', label: 'Chats', icon: 'chat-round-dots' },
   { id: 'approvals', label: 'Approvals', icon: 'shield-check' },
   { id: 'pings', label: 'Pings', icon: 'bell' },
-];
+] as { id: IslandSection; label: string; icon: IconName }[]).sort((a, b) => a.label.localeCompare(b.label));
 
 /** The suggestion in the empty message box; Tab accepts it. */
 const SUGGESTION = 'How can I assist you today?';
@@ -44,7 +43,7 @@ const TIER: Record<PendingApproval['tier'], { label: string; color: string }> = 
 
 /**
  * What the island shows when it grows. The card answers an approval on the spot; the panel has
- * four sections (overview, chats, approvals, pings) and, fixed under Phibe's face, the Think,
+ * three sections (approvals, chats, pings, in alphabetical order) and, fixed under Phibe's face, the Muse,
  * Voice and Microphone buttons. The chat is the real one: it sends, streams, uses tools and
  * speaks like the chat screen does.
  */
@@ -181,7 +180,6 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
         </div>
 
         <div className="isl-sec" key={section}>
-          {section === 'overview' && <Overview pending={pending} />}
           {section === 'chats' && <Chats draft={draft} setDraft={setDraft} send={send} stop={chat.stop} onExtra={onExtra} pending={pending} decide={decide} />}
           {section === 'approvals' && <Approvals pending={pending} decide={decide} />}
           {section === 'pings' && <Pings />}
@@ -194,50 +192,12 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
         <button type="button" className="composer-icon" data-on={speech.state === 'recording'} aria-label="Voice Mode" title="Voice Mode" onClick={() => void onVoice()}>
           <Icon name="soundwave" size={18} />
         </button>
-        <button type="button" className="composer-icon" data-on={think} aria-pressed={think} aria-label="Think"
-          title={think ? 'Think: ON' : 'Think: OFF'} onClick={() => setThink(!think)}>
+        <button type="button" className="composer-icon" data-on={think} aria-pressed={think} aria-label="Muse"
+          title={think ? 'Muse: ON' : 'Muse: OFF'} onClick={() => setThink(!think)}>
           <Icon name="lightbulb-bolt" size={18} />
         </button>
       </div>
     </>
-  );
-}
-
-/** One of Phibe's lines, typed out fast like a terminal; a new one every few seconds. */
-function TypedPhrase() {
-  const [index, setIndex] = useState(() => nextPhrase());
-  const [shown, setShown] = useState(0);
-  const text = PHRASES[index];
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(text.length); return; }
-    if (shown < text.length) {
-      const t = window.setTimeout(() => setShown((n) => n + 1), 18);
-      return () => window.clearTimeout(t);
-    }
-    const t = window.setTimeout(() => { setIndex((i) => nextPhrase(i)); setShown(0); }, 8000);
-    return () => window.clearTimeout(t);
-  }, [shown, text]);
-
-  return (
-    <p className="isl-quote" aria-label={text}>
-      <span aria-hidden="true">❯</span>
-      <span aria-hidden="true">{text.slice(0, shown)}<i className="tm-cursor" /></span>
-    </p>
-  );
-}
-
-function Overview({ pending }: { pending: PendingApproval[] }) {
-  const chats = useAppStore((s) => s.conversations.length);
-
-  return (
-    <div className="isl-over">
-      <div className="isl-tiles">
-        <div><b>{chats}</b><span>Chats</span></div>
-        <div><b>{pending.length}</b><span>To Approve</span></div>
-      </div>
-      <TypedPhrase />
-    </div>
   );
 }
 
@@ -276,6 +236,17 @@ function Approvals({ pending, decide }: {
   );
 }
 
+/** "Today", "Tomorrow", otherwise the weekday and the day ("Fri, Nov 14"). */
+function dayLabel(iso: string): string {
+  const day = new Date(`${iso}T00:00`);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  return day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 function Pings() {
   const [pings, setPings] = useState<Ping[] | null>(null);
   const load = () => fetchPings()
@@ -289,7 +260,14 @@ function Pings() {
     <div className="isl-list">
       {pings.map((p) => (
         <div key={p.id} className="isl-row" data-late={new Date(`${p.date}T${p.time}`) < new Date()}>
-          <span>{p.text}<em>{p.date.slice(5)} · {p.time}{p.repeat_type !== 'none' ? ' · repeats' : ''}</em></span>
+          <div className="isl-ping">
+            <b>{p.text}</b>
+            <div className="isl-when">
+              <i data-k="date"><Icon name="calendar" size={12} />{dayLabel(p.date)}</i>
+              <i data-k="time"><Icon name="clock-circle" size={12} />{p.time}</i>
+              {p.repeat_type !== 'none' && <i data-k="repeat" title="Repeats"><Icon name="repeat" size={12} /></i>}
+            </div>
+          </div>
           <button type="button" className="isl-ok" onClick={() => void completePing(p.id).then(load)}>Done</button>
         </div>
       ))}

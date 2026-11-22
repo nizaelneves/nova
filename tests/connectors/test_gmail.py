@@ -271,7 +271,7 @@ def test_registry() -> None:
     from phibe.connectors.gmail import GmailConnector  # noqa: PLC0415
 
     # The registry is cleared before each test by the autouse conftest fixture,
-    # so we imperatively re-register here (same pattern as test_obsidian.py).
+    # so we imperatively re-register here (same pattern as the other connector tests).
     ConnectorRegistry.register_value("gmail", GmailConnector)
     assert ConnectorRegistry.contains("gmail")
     cls = ConnectorRegistry.get("gmail")

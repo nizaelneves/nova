@@ -16,6 +16,9 @@ class AccountBody(BaseModel):
     name: str = ""
     icon: Optional[str] = None
     opening: int = 0
+    savings: bool = False  # a savings account: money is moved into it, and it may have a target
+    target: Optional[int] = None  # cents; only for a savings account
+    color: Optional[str] = None
 
 
 class CardBody(BaseModel):
@@ -25,6 +28,7 @@ class CardBody(BaseModel):
     limit: int = 0
     dueDay: int = 1
     closeDaysBefore: int = 0
+    brand: Optional[str] = None  # visa, mastercard, elo, amex or hipercard
 
 
 class CategoryBody(BaseModel):
@@ -33,12 +37,6 @@ class CategoryBody(BaseModel):
     color: str = ""
     icon: str = ""
     parentId: Optional[str] = None
-
-
-class GoalBody(BaseModel):
-    name: str = ""
-    target: int = 0
-    color: str = ""
 
 
 class TransactionBody(BaseModel):
@@ -51,7 +49,6 @@ class TransactionBody(BaseModel):
     toAccountId: Optional[str] = None
     method: str = "pix"
     cardId: Optional[str] = None
-    goalId: Optional[str] = None
 
 
 class RecurringBody(BaseModel):
@@ -62,6 +59,10 @@ class RecurringBody(BaseModel):
     accountId: Optional[str] = None
     method: str = "pix"
     cardId: Optional[str] = None
+    installments: Optional[int] = None  # None = every month until stopped
+
+
+class RepeatBody(BaseModel):
     installments: Optional[int] = None  # None = every month until stopped
 
 
@@ -106,14 +107,10 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
             {**c, "used": calc.card_used(c, txs, now), "cycle": calc.card_cycle(c, now)}
             for c in store.cards()
         ]
-        goals = [
-            {**g, "saved": calc.goal_saved(txs, g["id"]), "monthsLeft": calc.months_left(g, txs, now)}
-            for g in store.goals()
-        ]
-        return {
-            "accounts": accounts, "cards": cards, "categories": store.categories(), "goals": goals,
-            "recurring": store.recurring(),
-        }
+        for a in accounts:
+            if a["savings"]:
+                a["monthsLeft"] = calc.months_left(a, txs, now)
+        return {"accounts": accounts, "cards": cards, "categories": store.categories(), "recurring": store.recurring()}
 
     @router.get("/overview")
     def overview(
@@ -124,7 +121,8 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
         store = fresh()
         txs, accounts = store.transactions(), store.accounts()
         prev_start, prev_end = calc.previous_range(preset, start, end)
-        now, before = calc.totals(txs, start, end), calc.totals(txs, prev_start, prev_end)
+        pots = [a["id"] for a in accounts if a["savings"]]
+        now, before = calc.totals(txs, start, end, pots), calc.totals(txs, prev_start, prev_end, pots)
         balance = calc.total_balance(accounts, txs, end)
         balance_before = calc.total_balance(accounts, txs, prev_end)
         return {
@@ -149,6 +147,10 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
         q: Optional[str] = None,
     ) -> Dict[str, Any]:
         return {"transactions": fresh().transactions(start, end, kind, q)}
+
+    @router.get("/upcoming")
+    def upcoming(start: str = Query(alias="from"), end: str = Query(alias="to")) -> Dict[str, Any]:
+        return {"transactions": fresh().upcoming(start, end)}
 
     @router.get("/category-totals")
     def category_totals(kind: str, start: str = Query(alias="from"), end: str = Query(alias="to")) -> Dict[str, Any]:
@@ -193,29 +195,21 @@ def create_finances_router(get_store: Callable[[], FinanceStore]) -> APIRouter:
     def remove_category(item_id: str) -> None:
         guarded(lambda: get_store().delete_category(item_id))
 
-    @router.post("/goals", status_code=201)
-    def add_goal(body: GoalBody) -> Dict[str, Any]:
-        return guarded(lambda: get_store().save_goal(body.model_dump()))
-
-    @router.put("/goals/{item_id}")
-    def edit_goal(item_id: str, body: GoalBody) -> Dict[str, Any]:
-        return guarded(lambda: get_store().save_goal({**body.model_dump(), "id": item_id}))
-
-    @router.delete("/goals/{item_id}", status_code=204)
-    def remove_goal(item_id: str) -> None:
-        guarded(lambda: get_store().delete_goal(item_id))
-
     @router.post("/transactions", status_code=201)
     def add_transaction(body: TransactionBody) -> Dict[str, Any]:
         return guarded(lambda: get_store().save_transaction(body.model_dump()))
 
     @router.put("/transactions/{item_id}")
-    def edit_transaction(item_id: str, body: TransactionBody) -> Dict[str, Any]:
-        return guarded(lambda: get_store().save_transaction({**body.model_dump(), "id": item_id}))
+    def edit_transaction(item_id: str, body: TransactionBody, scope: str = "one") -> Dict[str, Any]:
+        return guarded(lambda: get_store().save_transaction({**body.model_dump(), "id": item_id}, scope))
+
+    @router.post("/transactions/{item_id}/repeat", status_code=201)
+    def repeat_transaction(item_id: str, body: RepeatBody) -> Dict[str, Any]:
+        return guarded(lambda: get_store().repeat_transaction(item_id, body.installments, today_or(None)))
 
     @router.delete("/transactions/{item_id}", status_code=204)
-    def remove_transaction(item_id: str) -> None:
-        guarded(lambda: get_store().delete_transaction(item_id))
+    def remove_transaction(item_id: str, scope: str = "one") -> None:
+        guarded(lambda: get_store().delete_transaction(item_id, scope))
 
     @router.post("/recurring", status_code=201)
     def add_recurring(body: RecurringBody) -> Dict[str, Any]:

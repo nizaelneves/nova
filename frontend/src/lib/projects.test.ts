@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PERSONAL_COLOR, PROJECT_COLORS, colorOf, firstName, summarize } from './projects';
 import { type Area, type Task } from './tasks-api';
-import { EMPTY_WORKSPACES, addWorkspace, parseWorkspaces, setAbout } from './workspaces';
 
 const area = (id: string) => ({ id, name: id, position: 0, task_count: 0 }) as unknown as Area;
 
@@ -17,17 +16,6 @@ describe('project colours and names', () => {
   it('uses the first name for the personal bubble', () => {
     expect(firstName('Nizael Neves')).toBe('Nizael');
     expect(firstName('  ')).toBe('Personal');
-  });
-});
-
-describe('client knowledge notes', () => {
-  it('keeps notes per client and drops anything that is not text when loading', () => {
-    const d = addWorkspace(structuredClone(EMPTY_WORKSPACES), 'Aurora');
-    const id = d.workspaces[0].id;
-    const noted = setAbout(d, id, 'Mission', 'Good coffee');
-    expect(noted.workspaces[0].about).toEqual({ Mission: 'Good coffee' });
-    const reloaded = parseWorkspaces(JSON.stringify({ ...noted, workspaces: [{ ...noted.workspaces[0], about: { Mission: 'ok', Bad: 3 } }] }));
-    expect(reloaded.workspaces[0].about).toEqual({ Mission: 'ok' });
   });
 });
 

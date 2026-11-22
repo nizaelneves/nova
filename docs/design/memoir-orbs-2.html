@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8"><title>Memoir Orbs 2</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 120%,#1a0f4d,#04030d 60%);color:#eef0ff;font:13px system-ui;padding:10px;display:grid;place-items:center;min-height:100vh}
+.row{display:grid;grid-template-columns:repeat(2,230px);gap:0 20px}
+.cell{display:grid;justify-items:center;gap:22px;padding-bottom:8px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.6);line-height:1.5;max-width:220px}
+.cell b{display:block;color:#fff;font-size:14px;margin-bottom:4px}
+.stage{position:relative;width:200px;height:190px;display:grid;place-items:center}
+.o{position:relative;width:96px;height:96px;border-radius:50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinr{to{transform:rotate(-360deg)}}
+@keyframes pulse{50%{opacity:.5;transform:scale(1.08)}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+
+/* 9 Astronaut: a visor with the cosmos in it */
+.a9 .o{border-radius:46% 46% 42% 42%;background:linear-gradient(160deg,#dfe6ff,#8e9bd6 60%,#4a4f94);box-shadow:0 0 30px rgba(124,92,255,.5);animation:bob 5s ease-in-out infinite}
+.a9 .v{position:absolute;left:11px;right:11px;top:17px;bottom:13px;border-radius:44%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.55),transparent 22%),radial-gradient(circle at 60% 70%,#e879f9 0,transparent 40%),radial-gradient(circle at 35% 55%,#4b3fd0,#05040f 70%);box-shadow:inset 0 0 12px #000,0 0 0 2px #1b1f4a;overflow:hidden}
+.a9 .v::before{content:'';position:absolute;inset:0;background:radial-gradient(1.5px 1.5px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 25%,#fff,transparent),radial-gradient(1px 1px at 50% 75%,#fff,transparent),radial-gradient(1px 1px at 80% 60%,#fff,transparent)}
+.a9 .e{position:absolute;top:36px;left:0;right:0;display:flex;justify-content:center;gap:13px}
+.a9 .e i{width:8px;height:11px;border-radius:50%;background:#8fe3ff;box-shadow:0 0 10px #8fe3ff;animation:blink 5s infinite}
+.a9 .ant{position:absolute;left:50%;top:-14px;width:2px;height:16px;background:#8e9bd6}
+.a9 .ant::after{content:'';position:absolute;left:-3px;top:-5px;width:8px;height:8px;border-radius:50%;background:#8fe3ff;box-shadow:0 0 12px #8fe3ff;animation:pulse 1.6s infinite}
+
+/* 10 Cosmic eye: one iris, one pupil, beyond the mind */
+.a10 .o{width:112px;height:76px;border-radius:50%/50%;background:radial-gradient(ellipse,#05040f 0 28%,transparent 29%),conic-gradient(from 0deg,#8fe3ff,#7c5cff,#e879f9,#8fe3ff);box-shadow:0 0 36px rgba(124,92,255,.7);-webkit-mask:radial-gradient(ellipse 50% 50% at 50% 50%,#000 98%,transparent);animation:pulse 5s ease-in-out infinite}
+.a10 .lid{position:absolute;inset:-22px -26px;border-radius:50%;border:1px solid rgba(143,227,255,.45);border-left-color:transparent;border-right-color:transparent;transform:scaleY(.62)}
+.a10 .ir{position:absolute;width:112px;height:76px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.35) 0 1deg,transparent 1deg 9deg);-webkit-mask:radial-gradient(ellipse,transparent 30%,#000 32%,#000 70%,transparent 74%);animation:spin 40s linear infinite}
+.a10 .pu{position:absolute;width:12px;height:44px;border-radius:50%;background:#000;box-shadow:0 0 0 2px rgba(255,255,255,.5),0 0 16px #fff}
+.a10 .sp{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff;transform:translate(-6px,-10px)}
+
+/* 11 Prism: a floating crystal that bends light */
+.a11 .o{width:80px;height:104px;border-radius:0;clip-path:polygon(50% 0,100% 34%,82% 100%,18% 100%,0 34%);background:linear-gradient(135deg,#bfefff,#7c5cff 45%,#e879f9 70%,#2a0f5e);animation:bob 5s ease-in-out infinite}
+.a11 .o::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.7) 45%,transparent 60%);animation:sheen 3.5s linear infinite}
+@keyframes sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.a11 .o::after{content:'';position:absolute;left:50%;top:44%;width:10px;height:10px;margin:-5px;border-radius:50%;background:#fff;box-shadow:0 0 18px 6px rgba(255,255,255,.9)}
+.a11 .glow{position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.5),transparent 65%);animation:pulse 4s infinite}
+.a11 .beam{position:absolute;left:50%;top:50%;height:2px;width:90px;transform-origin:0 50%;background:linear-gradient(90deg,#fff,transparent);opacity:.7}
+
+/* 12 Moon: a crescent that carries a star */
+.a12 .o{background:radial-gradient(circle at 70% 40%,transparent 0 46%,#dfe6ff 47%);-webkit-mask:radial-gradient(circle at 66% 38%,transparent 0 44px,#000 45px);mask:radial-gradient(circle at 66% 38%,transparent 0 44px,#000 45px);filter:drop-shadow(0 0 14px rgba(143,227,255,.8));transform:rotate(-22deg);animation:bob 6s ease-in-out infinite}
+.a12 .st{position:absolute;left:112px;top:56px;width:12px;height:12px;background:#fff;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);filter:drop-shadow(0 0 8px #8fe3ff);animation:pulse 2.4s infinite}
+.a12 .halo{position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.35),transparent 65%)}
+.a12 .d i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 5px #fff}
+
+/* 13 Neural mind: a sphere of firing thoughts */
+.a13 .o{background:radial-gradient(circle,rgba(143,227,255,.12),rgba(10,6,32,.85) 70%);border:1px solid rgba(143,227,255,.4);box-shadow:0 0 36px rgba(124,92,255,.55),inset 0 0 22px rgba(143,227,255,.2)}
+.a13 svg{position:absolute;inset:0;width:100%;height:100%}
+.a13 .f{animation:fire 2.6s infinite}
+.a13 .f:nth-of-type(2n){animation-delay:.7s}.a13 .f:nth-of-type(3n){animation-delay:1.4s}
+@keyframes fire{0%,100%{opacity:.25}20%{opacity:1}}
+
+/* 14 Wisp: a shooting star with a face */
+.a14 .o{width:62px;height:62px;margin-left:44px;background:radial-gradient(circle at 35% 30%,#fff,#bfefff 30%,#5b3fd6 75%);box-shadow:0 0 30px rgba(143,227,255,.7);animation:bob 4s ease-in-out infinite}
+.a14 .tail{position:absolute;right:50%;top:50%;margin-right:-12px;width:110px;height:50px;transform:translateY(-50%);background:linear-gradient(270deg,rgba(143,227,255,.65),rgba(124,92,255,.35) 50%,transparent);clip-path:polygon(100% 0,0 50%,100% 100%);filter:blur(2px);animation:pulse 2.5s infinite}
+.a14 .e{position:absolute;top:24px;left:0;right:0;display:flex;justify-content:center;gap:11px}
+.a14 .e i{width:7px;height:10px;border-radius:50%;background:#10083a;animation:blink 5s infinite}
+.a14 .sp i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;animation:pulse 1.8s infinite}
+
+/* 15 Probe: a small explorer with one lens */
+.a15 .o{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#e8ecff,#8e9bd6 45%,#2d2f6b);box-shadow:0 0 28px rgba(124,92,255,.5);animation:bob 5s ease-in-out infinite}
+.a15 .l{position:absolute;left:50%;top:50%;width:42px;height:42px;margin:-21px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff 0 8%,#8fe3ff 14%,#3b2fb8 55%,#05040f);box-shadow:0 0 0 4px #1b1f4a,0 0 22px #8fe3ff;animation:pulse 3s infinite}
+.a15 .b{position:absolute;left:-26px;right:-26px;top:50%;height:6px;margin-top:-3px;border-radius:6px;background:linear-gradient(90deg,#4a4f94,#bfc8ff,#4a4f94)}
+.a15 .p{position:absolute;top:-16px;width:2px;height:16px;background:#8e9bd6}
+.a15 .p::after{content:'';position:absolute;left:-3px;top:-4px;width:8px;height:8px;border-radius:50%;background:#e879f9;box-shadow:0 0 10px #e879f9}
+
+/* 16 Starforge: a living star with flares */
+.a16 .o{background:radial-gradient(circle,#fff 0,#fff3c8 18%,#8fe3ff 40%,#7c5cff 70%,#2a0f5e);box-shadow:0 0 40px 6px rgba(143,227,255,.6),0 0 90px 20px rgba(124,92,255,.35);animation:pulse 3.4s ease-in-out infinite}
+.a16 .fl{position:absolute;left:50%;top:50%;width:150px;height:4px;margin:-2px -75px;background:linear-gradient(90deg,transparent,#fff 50%,transparent);filter:blur(1px);border-radius:4px}
+.a16 .fl.b{transform:rotate(90deg)}
+.a16 .fl.c{width:110px;margin:-2px -55px;transform:rotate(45deg);opacity:.6}
+.a16 .fl.d{width:110px;margin:-2px -55px;transform:rotate(-45deg);opacity:.6}
+.a16 .rot{position:absolute;inset:-20px;animation:spin 30s linear infinite}
+</style>
+<div class="row">
+ <div class="cell a9"><div class="stage"><div class="o"><i class="ant"></i><div class="v"></div><div class="e"><i></i><i></i></div></div></div><p><b>9 · Astronaut</b>A helmet with the cosmos inside the visor. The eyes glow behind the glass.</p></div>
+ <div class="cell a10"><div class="stage"><div class="o"></div><div class="ir"></div><div class="lid"></div><div class="pu"></div><div class="sp"></div></div><p><b>10 · Cosmic Eye</b>One iris made of galaxy light with a slit pupil. A mind that sees beyond.</p></div>
+ <div class="cell a11"><div class="stage"><div class="glow"></div><div class="o"></div></div><p><b>11 · Prism</b>A floating crystal that bends light, with a star inside. No face.</p></div>
+ <div class="cell a12"><div class="stage"><div class="halo"></div><div class="o"></div><div class="st"></div><div class="d"><i style="left:46px;top:40px"></i><i style="left:150px;top:30px"></i><i style="left:140px;top:140px"></i><i style="left:40px;top:120px"></i></div></div><p><b>12 · Moon And Star</b>A crescent carrying a bright star. Quiet, like a night sky.</p></div>
+ <div class="cell a13"><div class="stage"><div class="o"><svg viewBox="0 0 96 96"><g stroke="rgba(143,227,255,.5)" stroke-width=".8" fill="none"><path d="M18 48L38 26L62 30L80 50L60 72L34 70Z"/><path d="M38 26L48 48L80 50M18 48L48 48L60 72M34 70L48 48L62 30"/></g><g fill="#fff"><circle class="f" cx="18" cy="48" r="2.6"/><circle class="f" cx="38" cy="26" r="2.6"/><circle class="f" cx="62" cy="30" r="2.6"/><circle class="f" cx="80" cy="50" r="2.6"/><circle class="f" cx="60" cy="72" r="2.6"/><circle class="f" cx="34" cy="70" r="2.6"/><circle class="f" cx="48" cy="48" r="4"/></g></svg></div></div><p><b>13 · Neural Mind</b>A sphere of thoughts firing one after another. Fits the Memoir brain.</p></div>
+ <div class="cell a14"><div class="stage"><div class="tail"></div><div class="o"><div class="e"><i></i><i></i></div></div><div class="sp"><i style="left:30px;top:60px"></i><i style="left:50px;top:120px;animation-delay:.5s"></i><i style="left:80px;top:150px;animation-delay:1s"></i></div></div><p><b>14 · Wisp</b>A shooting star with a small face, leaving a trail of light.</p></div>
+ <div class="cell a15"><div class="stage"><div class="o"><div class="b"></div><div class="p"></div><div class="l"></div></div></div><p><b>15 · Probe</b>A small explorer with a single glowing lens and a signal light.</p></div>
+ <div class="cell a16"><div class="stage"><div class="rot"><div class="o" style="position:absolute;inset:36px;width:auto;height:auto;opacity:0"></div></div><div class="o"></div><div class="fl"></div><div class="fl b"></div><div class="fl c"></div><div class="fl d"></div></div><p><b>16 · Starforge</b>A living star with four flares of light. The most luminous of all.</p></div>
+</div>

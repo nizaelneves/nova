@@ -1,11 +1,11 @@
 /** Finance data lives on the server. This store keeps the lists the screens need
- *  (accounts, cards, categories, goals) and a `version` that goes up after every
+ *  (accounts, cards, categories) and a `version` that goes up after every
  *  change, so anything showing totals or transactions knows to ask again. */
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 import * as api from './api';
-import type { Account, BankCard, Category, Goal, Overview, Range, Recurring, Tx } from './model';
+import type { Account, BankCard, Category, Overview, Range, Recurring, Tx } from './model';
 import { EMPTY_OVERVIEW } from './model';
 
 const LEGACY_KEY = 'phibe-finance'; // where finances were kept before the server held them
@@ -21,7 +21,7 @@ export function legacyPayload(raw: string | null): Record<string, unknown> | nul
     return {
       accounts: s.accounts,
       cards: s.cards ?? [],
-      goals: s.goals ?? [],
+      goals: s.goals ?? [], // an old browser goal becomes a savings account on the server
       categories: (s.categories ?? []).filter((c: Category) => !dropped.has(c.id)),
       transactions: (s.txs ?? []).map((t: Tx) => (dropped.has(t.categoryId) ? { ...t, categoryId: '' } : t)),
     };
@@ -34,23 +34,21 @@ interface FinanceState {
   accounts: Account[];
   cards: BankCard[];
   categories: Category[];
-  goals: Goal[];
   recurring: Recurring[];
   loaded: boolean;
   version: number;
   load: () => Promise<void>;
-  saveTx: (t: Parameters<typeof api.saveTransaction>[0]) => Promise<boolean>;
-  deleteTx: (id: string) => Promise<boolean>;
+  saveTx: (t: Parameters<typeof api.saveTransaction>[0], scope?: api.EditScope) => Promise<boolean>;
+  deleteTx: (id: string, scope?: api.EditScope) => Promise<boolean>;
   saveAccount: (a: Parameters<typeof api.saveAccount>[0]) => Promise<boolean>;
   deleteAccount: (id: string) => Promise<boolean>;
   saveCard: (c: Parameters<typeof api.saveCard>[0]) => Promise<boolean>;
   deleteCard: (id: string) => Promise<boolean>;
   saveCategory: (c: Parameters<typeof api.saveCategory>[0]) => Promise<boolean>;
   deleteCategory: (id: string) => Promise<boolean>;
-  saveGoal: (g: Parameters<typeof api.saveGoal>[0]) => Promise<boolean>;
-  deleteGoal: (id: string) => Promise<boolean>;
   saveRecurring: (r: Parameters<typeof api.saveRecurring>[0]) => Promise<boolean>;
   stopRecurring: (id: string) => Promise<boolean>;
+  repeatTx: (id: string, installments: number | null) => Promise<boolean>;
 }
 
 export const useFinance = create<FinanceState>()((set, get) => {
@@ -70,12 +68,12 @@ export const useFinance = create<FinanceState>()((set, get) => {
     }
   };
   return {
-    accounts: [], cards: [], categories: [], goals: [], recurring: [], loaded: false, version: 0,
+    accounts: [], cards: [], categories: [], recurring: [], loaded: false, version: 0,
     load: async () => {
       try {
         await refresh();
-        const { accounts, cards, goals } = get();
-        const payload = accounts.length || cards.length || goals.length ? null : legacyPayload(localStorage.getItem(LEGACY_KEY));
+        const { accounts, cards } = get();
+        const payload = accounts.length || cards.length ? null : legacyPayload(localStorage.getItem(LEGACY_KEY));
         if (payload) {
           await api.importState(payload);
           localStorage.removeItem(LEGACY_KEY);
@@ -87,18 +85,17 @@ export const useFinance = create<FinanceState>()((set, get) => {
         set({ loaded: true });
       }
     },
-    saveTx: (t) => act(() => api.saveTransaction(t)),
-    deleteTx: (id) => act(() => api.remove('transactions', id)),
+    saveTx: (t, scope) => act(() => api.saveTransaction(t, scope)),
+    deleteTx: (id, scope = 'one') => act(() => api.removeTransaction(id, scope)),
     saveAccount: (a) => act(() => api.saveAccount(a)),
     deleteAccount: (id) => act(() => api.remove('accounts', id)),
     saveCard: (c) => act(() => api.saveCard(c)),
     deleteCard: (id) => act(() => api.remove('cards', id)),
     saveCategory: (c) => act(() => api.saveCategory(c)),
     deleteCategory: (id) => act(() => api.remove('categories', id)),
-    saveGoal: (g) => act(() => api.saveGoal(g)),
-    deleteGoal: (id) => act(() => api.remove('goals', id)),
     saveRecurring: (r) => act(() => api.saveRecurring(r)),
     stopRecurring: (id) => act(() => api.remove('recurring', id)),
+    repeatTx: (id, installments) => act(() => api.repeatTransaction(id, installments)),
   };
 });
 

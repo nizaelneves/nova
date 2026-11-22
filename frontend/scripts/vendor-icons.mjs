@@ -27,12 +27,12 @@ const ICONS = [
   'arrow-down', 'card', 'wallet-money', 'buildings-2',
   // finance categories
   'cart-large-2', 'bag-smile', 'home-2', 'heart-pulse', 'bus', 'car',
-  'gamepad-minimalistic', 'tv', 'plain-2', 'book-2', 'gift', 'cup-hot', 'shop-2',
+  'gamepad-minimalistic', 'tv', 'plain-2', 'book-2', 'brain', 'gift', 'cup-hot', 'shop-2',
   'bill-list', 'safe-square', 'pills', 'dumbbell-large-minimalistic', 'paw', 'tag',
   'banknote-2', 'bolt', 'phone-calling', 'fuel', 't-shirt',
   'monitor-smartphone', 'hand-money', 'case-minimalistic', 'star-shine',
   'magnifer', 'card-2', 'hand-heart',
-  'music-note-2', 'clapperboard-play', 
+  'music-note-2', 'clapperboard-play', 'music-notes', 'atom', 'play-stream', 'library', 'trash-bin-2', 'notes-minimalistic',
 ].map((name) => `${name}-linear`);
 
 // Asked in batches: one long URL gets cut off by the API.

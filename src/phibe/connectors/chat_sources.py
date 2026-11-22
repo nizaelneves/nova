@@ -31,7 +31,7 @@ _SOURCES: Dict[str, Tuple[str, ...]] = {
     "gmail": ("gmail", "email", "emails", "e-mail", "e-mails", "caixa de entrada", "inbox"),
     "gcalendar": ("agenda", "calendario", "reuniao", "reunioes", "evento", "eventos", "compromisso", "compromissos"),
     "gdrive": ("drive", "documento", "documentos", "planilha", "planilhas", "arquivo", "arquivos"),
-    "anytype": ("anytype", "nota", "notas", "anotei", "anotacao", "anotacoes"),
+    "notes": ("nota", "notas", "anotei", "anotacao", "anotacoes", "caderno", "note", "notes"),
     "hackernews": ("hackernews", "hacker news"),
 }
 # Words that point at when. Value: days back (None = "from now on" for the calendar).
@@ -155,9 +155,20 @@ def _searcher():
         from phibe.connectors.embeddings import OptionalOllamaEmbedder
         from phibe.connectors.hybrid_search import HybridSearch
         from phibe.connectors.store import KnowledgeStore
+        from phibe.notes import settings as notes_settings
 
-        _search = HybridSearch(KnowledgeStore(), OptionalOllamaEmbedder())
+        # The notes index may use another embedding model than the connectors (``embedding_model_version``).
+        notes_embedder = OptionalOllamaEmbedder(model=notes_settings.get()["embedding_model"])
+        _search = HybridSearch(
+            KnowledgeStore(), OptionalOllamaEmbedder(), embedders={notes_embedder.model_version: notes_embedder}
+        )
     return _search
+
+
+def reset_searcher() -> None:
+    """Forget the cached searcher, so the next question picks up a changed embedding model."""
+    global _search
+    _search = None
 
 
 def sources_block(question: str, search=None) -> str:

@@ -38,7 +38,7 @@ export function ConversationList({ searchQuery }: Props) {
   if (filtered.length === 0) {
     return (
       <div className="px-3 py-8 text-center text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
-        {searchQuery ? 'No matching chats' : 'No conversations yet'}
+        {searchQuery ? 'No matching chats' : 'No Conversations Yet'}
       </div>
     );
   }
@@ -97,7 +97,7 @@ export function ConversationList({ searchQuery }: Props) {
               title={
                 isStreaming
                   ? 'Stop generating before deleting this conversation'
-                  : 'Delete conversation'
+                  : 'Delete Conversation'
               }
             >
               <Trash2 size={14} />

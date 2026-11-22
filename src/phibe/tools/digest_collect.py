@@ -26,8 +26,6 @@ _SECTION_ORDER: List[tuple] = [
             "slack",
             "imessage",
             "whatsapp",
-            "outlook",
-            "notion",
             "github_notifications",
         },
     ),
@@ -133,21 +131,6 @@ def _format_whatsapp(doc: Document) -> str:
     return f"[whatsapp] {sender}: {content_preview}"
 
 
-def _format_outlook(doc: Document) -> str:
-    """Format an Outlook email document."""
-    sender = doc.author or "Unknown"
-    subject = doc.title or "(no subject)"
-    ago = _time_ago(doc.timestamp)
-    return f'[outlook] From: {sender} — "{subject}" ({ago})'
-
-
-def _format_notion(doc: Document) -> str:
-    """Format a Notion page document."""
-    title = doc.title or "Untitled"
-    ago = _time_ago(doc.timestamp)
-    return f"[notion] {title} (updated {ago})"
-
-
 def _format_gcalendar(doc: Document) -> str:
     """Format a Google Calendar event document."""
     title = doc.title or "(No title)"
@@ -223,8 +206,6 @@ _FORMATTERS: Dict[str, Any] = {
     "slack": _format_slack,
     "imessage": _format_imessage,
     "whatsapp": _format_whatsapp,
-    "outlook": _format_outlook,
-    "notion": _format_notion,
     "gcalendar": _format_gcalendar,
     "weather": _format_weather,
     "github_notifications": _format_github_notifications,

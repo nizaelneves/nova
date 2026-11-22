@@ -789,7 +789,7 @@ def create_connectors_router():
                     else:
                         instance.handle_callback(req.token)
 
-            elif connector_id in {"github_notifications", "anytype"}:
+            elif connector_id in {"github_notifications"}:
                 if not req.token:
                     raise HTTPException(status_code=400, detail="A token is required")
                 # These token connectors persist their credentials themselves;

@@ -2026,10 +2026,10 @@ function ChannelsTab({ agentId }: { agentId: string }) {
 
   const iconMap: Record<string, string> = {
     gmail: '\u2709\uFE0F', gmail_imap: '\u2709\uFE0F', slack: '#',
-    imessage: '\uD83D\uDCAC', gdrive: '\uD83D\uDCC1', notion: '\uD83D\uDCC4',
-    obsidian: '\uD83D\uDCC1', gcalendar: '\uD83D\uDCC5',
-    outlook: '\u2709\uFE0F', apple_notes: '\uD83C\uDF4E',
-    dropbox: '\uD83D\uDCE6', whatsapp: '\uD83D\uDCF1',
+    imessage: '\uD83D\uDCAC', gdrive: '\uD83D\uDCC1',
+    gcalendar: '\uD83D\uDCC5',
+    apple_notes: '\uD83C\uDF4E',
+    whatsapp: '\uD83D\uDCF1',
   };
 
   return (

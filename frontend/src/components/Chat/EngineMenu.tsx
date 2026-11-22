@@ -11,13 +11,13 @@ import { Icon } from '../Icon';
 import { PickerModal, PickerRow } from '../PickerModal';
 import { EffortSlider } from './EffortPicker';
 
-const CLAUDE_MODELS = [
+export const CLAUDE_MODELS = [
   { id: 'sonnet', label: 'Sonnet', note: 'Balanced' },
   { id: 'opus', label: 'Opus', note: 'Most Capable' },
   { id: 'haiku', label: 'Haiku', note: 'Fastest' },
 ];
 
-const CODEX_MODELS = [
+export const CODEX_MODELS = [
   { id: 'codex:default', label: 'Default', note: "Your Codex's Own Default Model" },
   { id: 'codex:gpt-6-astra', label: 'Astra', note: 'Most Capable' },
   { id: 'codex:gpt-6.1-sol', label: 'Sol', note: 'Near-Astra, Lower Cost' },

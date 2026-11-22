@@ -8,10 +8,8 @@
 import { writeFileSync } from 'node:fs';
 
 const BRANDS = {
-  anytype: 'simple-icons:anytype',
   apple_calendar: 'simple-icons:apple',
   apple_notes: 'simple-icons:apple',
-  dropbox: 'logos:dropbox',
   gcalendar: 'logos:google-calendar',
   gdrive: 'logos:google-drive',
   github_notifications: 'simple-icons:github',
@@ -19,9 +17,6 @@ const BRANDS = {
   gmail_imap: 'logos:google-gmail',
   imessage: 'simple-icons:imessage',
   news_rss: 'simple-icons:rss',
-  notion: 'simple-icons:notion',
-  obsidian: 'logos:obsidian-icon',
-  outlook: 'simple-icons:microsoftoutlook',
   slack: 'logos:slack-icon',
   whatsapp: 'logos:whatsapp-icon',
 };

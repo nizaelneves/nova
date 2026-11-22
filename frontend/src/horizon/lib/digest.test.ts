@@ -6,7 +6,7 @@ describe('digest', () => {
     const d = parseDigest({
       text: '# Good morning\nThree things matter today.\n\nMore below.',
       sections: { news_rss: 'A new database launched.', empty: '  ', notes: '## Notes\nYou wrote 4 notes.' },
-      sources_used: ['RSS', 'Anytype'],
+      sources_used: ['RSS', 'Slack'],
       generated_at: '2026-10-18T09:30:00',
       model_used: 'qwen3.5:4b',
     });
@@ -63,11 +63,11 @@ describe('digest', () => {
       items: [
         { source: 'news_rss', source_name: 'RSS', kind: 'rss', title: 'A new database', summary: 'Launched today.', text: 'Launched today. It is fast.', url: 'https://x.dev', time: '2026-10-20T09:00:00', origin: 'Sandeco' },
         { source: 'gmail', kind: 'mail', title: 'Weekly', summary: 's', text: 't' },
-        { source: 'anytype', kind: 'whatever', title: 'N', summary: '', text: '', time: 'not a date' },
+        { source: 'slack', kind: 'whatever', title: 'N', summary: '', text: '', time: 'not a date' },
       ],
     };
     const d = parseDigest(raw);
-    expect(d.blocks.map((b) => [b.sourceName, b.kind])).toEqual([['RSS', 'rss'], ['Gmail', 'mail'], ['Anytype', 'other']]);
+    expect(d.blocks.map((b) => [b.sourceName, b.kind])).toEqual([['RSS', 'rss'], ['Gmail', 'mail'], ['Slack', 'other']]);
     expect(d.blocks[0].time?.getHours()).toBe(9);
     expect(d.blocks[2].time).toBeNull();
     expect(d.count).toBe(3);

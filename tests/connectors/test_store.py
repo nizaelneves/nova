@@ -70,7 +70,7 @@ def test_retrieve_filter_by_source(ks: KnowledgeStore) -> None:
     _store(
         ks,
         content="Note about project alpha progress",
-        source="obsidian",
+        source="apple_notes",
         doc_type="note",
     )
 
@@ -78,12 +78,12 @@ def test_retrieve_filter_by_source(ks: KnowledgeStore) -> None:
     for r in gmail_results:
         assert r.metadata.get("source") == "gmail"
 
-    obsidian_results = ks.retrieve("project alpha", top_k=10, source="obsidian")
-    for r in obsidian_results:
-        assert r.metadata.get("source") == "obsidian"
+    apple_notes_results = ks.retrieve("project alpha", top_k=10, source="apple_notes")
+    for r in apple_notes_results:
+        assert r.metadata.get("source") == "apple_notes"
 
     assert len(gmail_results) >= 1
-    assert len(obsidian_results) >= 1
+    assert len(apple_notes_results) >= 1
 
 
 def test_retrieve_filter_by_doc_type(ks: KnowledgeStore) -> None:
@@ -205,7 +205,7 @@ def test_delete_by_doc_id(ks: KnowledgeStore) -> None:
 def test_delete_by_source(ks: KnowledgeStore) -> None:
     """delete_by_source() removes only chunks from the given source.
 
-    Regression: reconnecting a filesystem connector (e.g. Obsidian) to a
+    Regression: reconnecting a filesystem connector (e.g. Apple Notes) to a
     different underlying vault left the OLD vault's chunks in the store
     forever. If the new vault happened to contain a file at the same
     relative path (e.g. both vaults have a "Welcome.md"), the resulting
@@ -218,8 +218,8 @@ def test_delete_by_source(ks: KnowledgeStore) -> None:
     _store(
         ks,
         content="Old vault welcome note content",
-        source="obsidian",
-        doc_id="obsidian:Welcome.md",
+        source="apple_notes",
+        doc_id="apple_notes:Welcome.md",
     )
     _store(
         ks,
@@ -228,12 +228,12 @@ def test_delete_by_source(ks: KnowledgeStore) -> None:
         doc_id="notion:Some Page",
     )
 
-    deleted = ks.delete_by_source("obsidian")
+    deleted = ks.delete_by_source("apple_notes")
     assert deleted == 1
 
     after = ks.retrieve("welcome", top_k=10)
     for r in after:
-        assert r.metadata.get("source") != "obsidian"
+        assert r.metadata.get("source") != "apple_notes"
 
     # The other source's content must be untouched.
     remaining = ks.retrieve("unrelated note connector", top_k=10)

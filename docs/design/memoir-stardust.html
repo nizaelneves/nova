@@ -1,0 +1,70 @@
+<!doctype html>
+<meta charset="utf-8"><title>Stardust, Alive</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at 50% 130%,#1a0f4d,#04030d 62%);color:#eef0ff;font:13px system-ui;min-height:100vh;display:grid;place-items:center;padding:12px}
+.row{display:grid;grid-template-columns:repeat(3,250px);gap:6px}
+.cell{display:grid;justify-items:center;gap:6px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.62);line-height:1.4;max-width:230px;font-size:12px}
+.cell b{display:block;color:#fff;font-size:14px;margin-bottom:2px}
+.box{position:relative;width:220px;height:170px;cursor:pointer}
+canvas{position:absolute;inset:0;width:220px;height:170px}
+.eyes{position:absolute;left:0;right:0;top:66px;display:flex;justify-content:center;gap:16px;pointer-events:none}
+.eye{position:relative;width:15px;height:21px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff,0 0 24px #8fe3ff,0 0 44px rgba(124,92,255,.9);animation:blink 5.5s infinite;transition:width .25s,height .25s}
+.eye.w{width:18px;height:25px}
+.eye i{position:absolute;left:30%;top:22%;width:5px;height:5px;border-radius:50%;background:#10083a;transition:transform .12s}
+.eye::after{content:'';position:absolute;left:58%;top:14%;width:4px;height:4px;border-radius:50%;background:#8fe3ff;opacity:.9}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.hint{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:rgba(238,240,255,.45);font-size:12px}
+</style>
+<div class="row">
+ <div class="cell" id="a"><div class="box"><canvas></canvas><div class="eyes"><div class="eye"><i></i></div><div class="eye"><i></i></div></div></div><p><b>A · Alive</b>The dust breathes and drifts in a slow swirl. The eyes follow your cursor.</p></div>
+ <div class="cell" id="b"><div class="box"><canvas></canvas><div class="eyes"><div class="eye"><i></i></div><div class="eye"><i></i></div></div></div><p><b>B · Eager</b>Leans toward you, eyes widen, dust rushes your way. Click for a burst of stars.</p></div>
+ <div class="cell" id="c"><div class="box"><canvas></canvas><div class="eyes"><div class="eye"><i></i></div><div class="eye"><i></i></div></div></div><p><b>C · Cosmic Flow</b>A stream of coloured dust spirals in and is born again from the core.</p></div>
+</div>
+<div class="hint">Move the mouse near each one. Click to make it burst.</div>
+<script>
+const W=220,H=170,CX=W/2,CY=H/2+4;
+function make(id,o){
+  const el=document.getElementById(id),cv=el.querySelector('canvas'),g=cv.getContext('2d'),dpr=devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;g.scale(dpr,dpr);
+  const eyes=[...el.querySelectorAll('.eye')],pup=eyes.map(e=>e.firstElementChild);
+  let mx=0,my=0,hov=0,tgt=0,lx=0,ly=0,t=0;const burst=[];
+  const spawn=(init)=>({a:Math.random()*6.283,r:init?Math.random()*o.R:o.R*(.15+Math.random()*.25),s:.3+Math.random()*.9,l:init?Math.random():0,c:o.cols[Math.random()*o.cols.length|0],z:.6+Math.random()*1.6});
+  const P=Array.from({length:o.n},()=>spawn(true));
+  addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect();mx=e.clientX-b.left-CX;my=e.clientY-b.top-CY;tgt=Math.hypot(mx,my)<o.reach?1:0});
+  el.addEventListener('pointerdown',()=>{for(let i=0;i<46;i++){const a=Math.random()*6.283,v=1+Math.random()*3.2;burst.push({x:CX,y:CY,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,c:o.cols[i%o.cols.length]})}});
+  function glow(x,y,r,c,a){const q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,c.replace('A',a));q.addColorStop(1,c.replace('A',0));g.fillStyle=q;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+  function frame(){
+    t+=.016;hov+=(tgt-hov)*.07;lx+=((mx/10)*o.lean*hov-lx)*.1;ly+=((my/12)*o.lean*hov-ly)*.1;
+    g.clearRect(0,0,W,H);g.globalCompositeOperation='lighter';
+    const br=1+Math.sin(t*1.6)*.06+hov*.1,ox=lx*2,oy=ly*2;
+    glow(CX+ox,CY+oy,74*br,'rgba(124,92,255,A)',.30+hov*.12);
+    for(let i=0;i<4;i++){const a=t*.5+i*1.57;glow(CX+ox+Math.cos(a)*22,CY+oy+Math.sin(a*1.3)*12,36*br,i%2?'rgba(143,227,255,A)':'rgba(232,121,249,A)',.20)}
+    glow(CX+ox,CY+oy,40*br,'rgba(255,255,255,A)',.12+hov*.1);
+    for(const p of P){
+      p.l+=.004*p.s*(1+hov*o.rush);
+      if(o.flow){p.r=o.R*(1-p.l)+6;p.a+=.012*(1+o.R/(p.r+10))*(1+hov)}
+      else{p.r+=.16*p.s*(1+hov*o.rush);p.a+=.003*o.swirl/(1+p.r*.02)}
+      if(p.l>=1||p.r>o.R){Object.assign(p,spawn(false));p.l=0}
+      let x=CX+ox+Math.cos(p.a)*p.r*1.3,y=CY+oy+Math.sin(p.a)*p.r*.86;
+      if(hov>.02){const pull=hov*o.pull*Math.max(0,1-p.r/o.R);x+=mx*pull*.12;y+=my*pull*.12}
+      const al=Math.sin(Math.min(1,p.l)*Math.PI)*(.55+hov*.4);
+      g.fillStyle=p.c.replace('A',al);g.beginPath();g.arc(x,y,p.z*(1+hov*.3),0,6.283);g.fill();
+      if(p.z>1.9){glow(x,y,7,p.c,al*.5)}
+    }
+    for(let i=burst.length-1;i>=0;i--){const b=burst[i];b.x+=b.vx;b.y+=b.vy;b.vx*=.96;b.vy*=.96;b.l-=.018;if(b.l<=0){burst.splice(i,1);continue}
+      glow(b.x,b.y,6,b.c,b.l);g.fillStyle='rgba(255,255,255,'+b.l+')';g.beginPath();g.arc(b.x,b.y,1.4,0,6.283);g.fill()}
+    g.globalCompositeOperation='source-over';
+    const ex=el.querySelector('.eyes');ex.style.transform=`translate(${(ox).toFixed(1)}px,${(oy+Math.sin(t*1.6)*1.5).toFixed(1)}px)`;
+    pup.forEach(p=>p.style.transform=`translate(${Math.max(-3,Math.min(3,mx/22))}px,${Math.max(-3,Math.min(3,my/26))}px)`);
+    eyes.forEach(e=>e.classList.toggle('w',hov>.5&&o.wide));
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+make('a',{n:70,R:92,cols:['rgba(143,227,255,A)','rgba(255,255,255,A)','rgba(167,139,250,A)'],swirl:2.2,rush:.6,pull:.5,lean:.4,reach:110,wide:false});
+make('b',{n:96,R:96,cols:['rgba(143,227,255,A)','rgba(255,255,255,A)','rgba(232,121,249,A)','rgba(255,233,168,A)'],swirl:3,rush:2.2,pull:1.6,lean:1,reach:150,wide:true});
+make('c',{n:110,R:100,flow:true,cols:['rgba(143,227,255,A)','rgba(232,121,249,A)','rgba(255,233,168,A)','rgba(167,139,250,A)','rgba(255,255,255,A)'],swirl:0,rush:1.2,pull:.6,lean:.5,reach:120,wide:true});
+</script>

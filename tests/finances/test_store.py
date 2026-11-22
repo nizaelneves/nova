@@ -25,8 +25,8 @@ def setup(store):
     b = store.save_account({"name": "Cash", "icon": "wallet"})
     card = store.save_card({"accountId": a["id"], "name": "Carbon", "mode": "both", "limit": 500_000, "dueDay": 15, "closeDaysBefore": 7})
     debit = store.save_card({"accountId": b["id"], "name": "Debit only", "mode": "debit"})
-    goal = store.save_goal({"name": "Trip", "target": 100_000, "color": "#fff"})
-    return a, b, card, debit, goal
+    pot = store.save_account({"name": "Trip", "savings": True, "target": 100_000, "color": "#fff"})
+    return a, b, card, debit, pot
 
 
 def test_new_users_get_default_categories_once(tmp_path) -> None:
@@ -75,16 +75,25 @@ def test_debit_and_credit_need_a_matching_card_and_use_its_account(setup, store)
         store.save_transaction(_tx(kind="income", method="credit", cardId=card["id"], categoryId="salary"))
 
 
-def test_transfer_and_savings_rules(setup, store) -> None:
-    a, b, _, _, goal = setup
+def test_transfer_rules_and_saving_into_a_savings_account(setup, store) -> None:
+    a, b, _, _, pot = setup
     with pytest.raises(FinanceError, match="two different"):
         store.save_transaction({"date": "2026-10-05", "kind": "transfer", "amount": 5, "accountId": a["id"], "toAccountId": a["id"]})
     t = store.save_transaction({"date": "2026-10-05", "kind": "transfer", "amount": 5, "accountId": a["id"], "toAccountId": b["id"]})
     assert t["description"] == "Transfer" and t["categoryId"] == ""
-    s = store.save_transaction({"date": "2026-10-05", "kind": "savings", "amount": 7, "accountId": a["id"], "goalId": goal["id"]})
-    assert s["goalId"] == goal["id"]
-    with pytest.raises(NotFound):
-        store.save_transaction({"date": "2026-10-05", "kind": "savings", "amount": 7, "accountId": a["id"], "goalId": "nope"})
+    with pytest.raises(FinanceError, match="two different"):  # saving from the savings account into itself is refused
+        store.save_transaction({"date": "2026-10-05", "kind": "transfer", "amount": 7, "accountId": pot["id"], "toAccountId": pot["id"]})
+    with pytest.raises(FinanceError, match="Unknown transaction kind"):
+        store.save_transaction({"date": "2026-10-05", "kind": "savings", "amount": 7, "accountId": a["id"]})
+
+
+def test_a_savings_account_keeps_its_target_and_colour_only_while_it_is_one(store) -> None:
+    pot = store.save_account({"name": "Trip", "savings": True, "target": 5000, "color": "#20e7aa"})
+    assert (pot["savings"], pot["target"], pot["color"]) == (True, 5000, "#20e7aa")
+    plain = store.save_account({"id": pot["id"], "name": "Trip", "savings": False, "target": 5000, "color": "#20e7aa"})
+    assert (plain["savings"], plain["target"], plain["color"]) == (False, None, None)
+    with pytest.raises(FinanceError, match="target"):
+        store.save_account({"name": "Bad", "savings": True, "target": 0})
 
 
 def test_input_is_validated(setup, store) -> None:
@@ -136,13 +145,6 @@ def test_subcategory_rules(store) -> None:
         store.save_category({"name": "Odd", "kind": "income", "color": "#fff", "icon": "tag", "parentId": "food"})
 
 
-def test_deleting_a_goal_removes_its_deposits(setup, store) -> None:
-    a, _, _, _, goal = setup
-    store.save_transaction({"date": "2026-10-05", "kind": "savings", "amount": 7, "accountId": a["id"], "goalId": goal["id"]})
-    store.delete_goal(goal["id"])
-    assert store.transactions() == []
-
-
 def test_import_only_into_an_empty_store(store) -> None:
     data = {
         "accounts": [{"id": "x", "name": "Bank", "opening": 100}],
@@ -151,6 +153,7 @@ def test_import_only_into_an_empty_store(store) -> None:
     }
     assert store.import_state(data) == {"accounts": 1, "cards": 0, "categories": 0, "goals": 1, "transactions": 1}
     assert store.transactions()[0]["id"] == "t"
+    assert [(a["name"], a["savings"], a["target"]) for a in store.accounts()] == [("Bank", False, None), ("Trip", True, 100)]  # a goal became a savings account
     with pytest.raises(FinanceError, match="already hold"):
         store.import_state(data)
 
@@ -178,6 +181,69 @@ def test_installments_are_recorded_as_each_one_comes_due(store, setup) -> None:
     store.generate_due("2027-06-01")
     assert len(store.transactions()) == 4  # the last installment was the fourth
     assert store.recurring()[0]["active"] is False
+
+
+def test_upcoming_shows_future_charges_without_recording_them(store, setup) -> None:
+    a, *_ = setup
+    store.save_recurring(_rule(a, date="2026-10-01", description="Gym"), today="2026-10-05")  # Oct + Nov recorded
+    got = store.upcoming("2027-01-01", "2027-02-28")
+    assert [(t["date"], t["description"]) for t in got] == [("2027-02-01", "Gym"), ("2027-01-01", "Gym")]
+    assert len(store.transactions()) == 2  # nothing was stored
+    store.save_recurring(_rule(a, date="2026-10-01", installments=3), today="2026-10-05")
+    assert [t["date"] for t in store.upcoming("2026-12-01", "2027-03-01") if "(" in t["description"]] == ["2026-12-01"]
+
+
+def test_an_existing_expense_can_start_repeating(store, setup) -> None:
+    a, *_ = setup
+    tx = store.save_transaction({"date": "2026-10-01", "kind": "expense", "amount": 5_000, "description": "Gym",
+                                 "categoryId": "bills", "accountId": a["id"], "method": "pix"})
+    rule = store.repeat_transaction(tx["id"], 3, "2026-10-05")
+    got = sorted(store.transactions(), key=lambda t: t["date"])
+    assert [(t["date"], t["description"], t["recurringId"]) for t in got] == [
+        ("2026-10-01", "Gym (1/3)", rule["id"]), ("2026-11-01", "Gym (2/3)", rule["id"])]
+    with pytest.raises(FinanceError):
+        store.repeat_transaction(tx["id"], None, "2026-10-05")  # already repeats
+    store.stop_recurring(rule["id"])
+    assert store.repeat_transaction(tx["id"], None, "2026-10-05")["total"] is None  # stopped ones can start again
+
+
+def test_deleting_a_recurring_charge_can_reach_one_following_or_all(store, setup) -> None:
+    a, *_ = setup
+    store.save_recurring(_rule(a, installments=6), today="2026-12-05")  # five charges recorded
+    first, second, third, *_ = sorted(store.transactions(), key=lambda t: t["date"])
+    store.delete_transaction(second["id"], "one")
+    assert len(store.transactions()) == 4 and store.recurring()[0]["made"] == 5  # not regenerated
+    store.delete_transaction(third["id"], "following")
+    assert [t["id"] for t in store.transactions()] == [first["id"]] and store.recurring() == []
+    rule = store.save_recurring(_rule(a), today="2026-12-05")
+    store.delete_transaction(next(t for t in store.transactions() if t["recurringId"] == rule["id"])["id"], "all")
+    assert [t["id"] for t in store.transactions()] == [first["id"]] and store.recurring() == []
+
+
+def _edit(store, tx, scope, **over):
+    return store.save_transaction({**tx, "amount": 9_900, **over}, scope)
+
+
+def test_editing_a_recurring_charge_can_reach_one_following_or_all(store, setup) -> None:
+    a, *_ = setup
+    store.save_recurring(_rule(a, installments=4), today="2026-12-05")  # Aug..Dec recorded: 4 charges
+    by_date = lambda: sorted(store.transactions(), key=lambda t: t["date"])  # noqa: E731
+    first, second, third, fourth = by_date()
+
+    _edit(store, second, "one")
+    assert [t["amount"] for t in by_date()] == [25_000, 9_900, 25_000, 25_000]
+
+    _edit(store, third, "following", description="Renamed (3/4)")
+    got = by_date()
+    assert [t["amount"] for t in got] == [25_000, 9_900, 9_900, 9_900]
+    assert [t["description"] for t in got][2:] == ["Renamed (3/4)", "Renamed (4/4)"]  # each keeps its own count
+    assert store.recurring()[0]["amount"] == 9_900 and store.recurring()[0]["description"] == "Renamed"
+
+    _edit(store, first, "all", amount=1_000)
+    assert {t["amount"] for t in store.transactions()} == {1_000}
+    assert store.recurring()[0]["amount"] == 1_000
+    with pytest.raises(FinanceError):
+        _edit(store, first, "nope")
 
 
 def test_a_recurring_expense_without_an_end_keeps_going_until_stopped(store, setup) -> None:
@@ -263,3 +329,46 @@ def test_the_card_filter_lists_debit_and_credit_through_a_card(store, setup) -> 
     store.save_transaction(_tx(description="Debit", method="debit", cardId=card["id"]))
     store.save_transaction(_tx(description="Credit", method="credit", cardId=card["id"]))
     assert sorted(t["description"] for t in store.transactions(kind="card")) == ["Credit", "Debit"]
+
+
+def test_goals_of_an_older_database_become_savings_accounts_once(tmp_path) -> None:
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    s = FinanceStore(path)
+    a = s.save_account({"name": "Santander", "opening": 50_000})
+    pot = s.save_account({"name": "Emergency Fund"})
+    s.close()
+    raw = sqlite3.connect(path)  # what an older version left: a goal, an account linked to it, and deposits to it
+    raw.execute("INSERT INTO goals VALUES ('g1', 'Emergency Fund', 90000, '#20e7aa', 0)")
+    raw.execute("INSERT INTO goals VALUES ('g2', 'Holiday', 20000, '#ffb199', 1)")
+    raw.execute("UPDATE accounts SET goal_id='g1' WHERE id=?", (pot["id"],))
+    for tid, acct in (("d1", a["id"]), ("d2", pot["id"])):  # d2 came from the savings account itself: no source to move from
+        raw.execute(
+            "INSERT INTO transactions (id, date, description, category_id, kind, amount, account_id, method, goal_id) "
+            "VALUES (?, '2026-10-30', 'Deposit', '', 'savings', 10000, ?, 'pix', 'g1')", (tid, acct))
+    raw.execute("DELETE FROM meta WHERE key='goals_migrated'")
+    raw.commit()
+    raw.close()
+
+    s = FinanceStore(path)
+    by = {x["name"]: x for x in s.accounts()}
+    assert (by["Emergency Fund"]["savings"], by["Emergency Fund"]["target"], by["Emergency Fund"]["color"]) == (True, 90000, "#20e7aa")
+    assert (by["Holiday"]["savings"], by["Holiday"]["target"], by["Holiday"]["opening"]) == (True, 20000, 0)  # a goal with no account got one
+    moved = {t["id"]: t for t in s.transactions()}
+    assert (moved["d1"]["kind"], moved["d1"]["toAccountId"]) == ("transfer", pot["id"])
+    assert moved["d2"]["kind"] == "savings"  # left alone, nothing is lost
+    s.delete_account(by["Holiday"]["id"])
+    s.close()
+    assert "Holiday" not in {x["name"] for x in FinanceStore(path).accounts()}  # an account deleted later does not come back
+
+
+def test_a_card_has_an_optional_known_brand(store, setup) -> None:
+    a, *_ = setup
+    base = {"accountId": a["id"], "name": "Gold", "mode": "both", "limit": 10_000, "dueDay": 10, "closeDaysBefore": 7}
+    assert store.save_card(base)["brand"] is None
+    card = store.save_card({**base, "brand": "mastercard"})
+    assert card["brand"] == "mastercard"
+    assert store.save_card({**base, "id": card["id"], "brand": ""})["brand"] is None
+    with pytest.raises(FinanceError, match="brand"):
+        store.save_card({**base, "brand": "diners-ish"})

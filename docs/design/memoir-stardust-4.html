@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8"><title>Phibe, Nebula</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at 50% 130%,#1a0f4d,#04030d 62%);color:#eef0ff;font:13px system-ui;min-height:100vh;display:grid;place-items:center;padding:12px}
+.row{display:grid;grid-template-columns:repeat(2,300px);gap:10px}
+.cell{display:grid;justify-items:center;gap:6px}
+.cell p{margin:0;text-align:center;color:rgba(238,240,255,.62);line-height:1.4;max-width:280px;font-size:12px}
+.cell b{display:block;color:#fff;font-size:14px;margin-bottom:2px}
+.box{position:relative;width:300px;height:230px;cursor:pointer}
+canvas,svg{position:absolute;inset:0;width:300px;height:230px}
+svg{pointer-events:none;overflow:visible}
+.bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.bar button{padding:4px 11px;border-radius:999px;border:1px solid rgba(160,175,255,.3);background:rgba(143,227,255,.06);color:#cfd6ff;font:12px system-ui;cursor:pointer}
+.bar button[data-on='1']{background:linear-gradient(90deg,#8fe3ff,#a78bfa);color:#04101c;border-color:transparent}
+</style>
+<div class="row"><div class="cell" id="a"></div><div class="cell" id="b"></div></div>
+<script>
+const W=300,H=230,CX=W/2,CY=H/2;
+// Phibe's eyes: no brows, no mouth. A tall glowing oval, white at the heart, and a halo. Mood lives in shape, size and light.
+const STATES={auto:null,
+  idle:{sx:1,sy:1,glow:.55,arc:0,look:0,tilt:0},
+  curious:{sx:1.1,sy:1.32,glow:1,arc:0,look:1,tilt:7},
+  happy:{sx:1,sy:1,glow:.9,arc:1,look:0,tilt:-3},
+  thinking:{sx:.88,sy:1.1,glow:.75,arc:0,look:2,tilt:-8},
+  sleepy:{sx:1,sy:1,glow:.3,arc:-1,look:0,tilt:5}};
+function make(id,o){
+  const host=document.getElementById(id);
+  const eye=(n)=>`<g class="${n}"><ellipse class="h" rx="14" ry="19" fill="${o.c2}" filter="url(#bl${id})"/>
+    <g class="open"><ellipse rx="8.6" ry="12.6" fill="url(#eg${id})"/><ellipse cx="-2.2" cy="-4" rx="2.4" ry="3.5" fill="#fff" opacity=".9"/></g>
+    <path class="arc" d="M-9 4 Q0 -8 9 4" fill="none" stroke="${o.tone}" stroke-width="4.4" stroke-linecap="round"/></g>`;
+  host.innerHTML=`<div class="box"><canvas></canvas><svg viewBox="0 0 ${W} ${H}"><defs>
+   <filter id="bl${id}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5"/></filter>
+   <radialGradient id="eg${id}" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="${o.tone}"/><stop offset="1" stop-color="${o.c2}"/></radialGradient></defs>
+   <g class="face">${eye('eL')}${eye('eR')}</g></svg></div><div class="bar"></div><p><b>${o.name}</b>${o.text}</p>`;
+  const cv=host.querySelector('canvas'),g=cv.getContext('2d'),dpr=devicePixelRatio||1;cv.width=W*dpr;cv.height=H*dpr;g.scale(dpr,dpr);
+  const q=s=>host.querySelector(s),face=q('.face'),bar=q('.bar');let mode='auto';
+  Object.keys(STATES).forEach(k=>{const b=document.createElement('button');b.textContent=k[0].toUpperCase()+k.slice(1);b.dataset.on=k==='auto'?1:0;b.onclick=()=>{mode=k;[...bar.children].forEach(c=>c.dataset.on=c===b?1:0)};bar.append(b)});
+  let mx=0,my=0,last=0,near=0,t=0,vx=0,vy=0,px=CX,py=CY,bounce=0,blinkT=3,wT=0,wx=0,wy=0,ex=0,ey=0;
+  const cur={sx:1,sy:1,glow:.55,arc:0,tilt:0},dust=[],ring=[];
+  addEventListener('pointermove',e=>{const b=cv.getBoundingClientRect();mx=e.clientX-b.left-CX;my=e.clientY-b.top-CY;last=t;near=Math.hypot(mx,my)<190?1:0});
+  host.addEventListener('pointerdown',()=>{bounce=1;mode='happy';[...bar.children].forEach(c=>c.dataset.on=c.textContent==='Happy'?1:0);setTimeout(()=>{if(mode==='happy'){mode='auto';[...bar.children].forEach(c=>c.dataset.on=c.textContent==='Auto'?1:0)}},1800);for(let i=0;i<34;i++){const a=Math.random()*6.28,v=.8+Math.random()*2.6;dust.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,s:1+Math.random()*1.6})}});
+  for(let i=0;i<70;i++)ring.push({a:Math.random()*6.28,r:30+Math.random()*66,s:(.15+Math.random()*.5)*(Math.random()<.5?1:-1),z:.7+Math.random()*1.5,c:o.cols[i%o.cols.length]});
+  function glow(x,y,r,c,a){const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${c},${a})`);gr.addColorStop(1,`rgba(${c},0)`);g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.283);g.fill()}
+  function frame(){
+    t+=.016;
+    let S=STATES[mode];
+    if(!S){const idle=t-last;S=(near&&idle<2.5)?STATES.curious:(idle>9?STATES.sleepy:STATES.idle)}
+    for(const k in cur)cur[k]+=(S[k]-cur[k])*.09;
+    let gx=0,gy=0;const watching=near&&t-last<2.5;
+    if(S.look===1){gx=mx;gy=my}else if(S.look===2){gx=-70;gy=-90}
+    else{wT-=.016;if(wT<0){wT=1.6+Math.random()*2.6;wx=(Math.random()-.5)*170;wy=(Math.random()-.5)*90}gx=watching?mx:wx;gy=watching?my:wy}
+    // the eyes go first and fast, the body follows later and slower, like turning to look
+    const gxn=Math.max(-1,Math.min(1,gx/90)),gyn=Math.max(-1,Math.min(1,gy/90));
+    ex+=(gxn*11-ex)*.22;ey+=(gyn*8-ey)*.22;
+    const lean=S.look===1?.16:.05,tx=CX+gx*lean+Math.sin(t*.7)*6,ty=CY+gy*lean*.8+Math.sin(t*1.3)*7-bounce*18;
+    vx+=(tx-px)*.028;vy+=(ty-py)*.028;vx*=.86;vy*=.86;px+=vx;py+=vy;bounce=Math.max(0,bounce-.02);
+    const sp=Math.hypot(vx,vy),sq=Math.min(.16,sp*.04),breath=1+Math.sin(t*1.7)*.045+bounce*.1,ang=Math.atan2(vy,vx);
+    g.clearRect(0,0,W,H);
+    // 1) the energy that surrounds her: no outline, just light that has no fixed shape
+    g.globalCompositeOperation='lighter';
+    const M=(fn)=>{g.save();g.translate(px,py);g.rotate(ang);g.scale((1+sq)*breath,(1-sq*.6)*breath);g.rotate(-ang);fn();g.restore()};
+    M(()=>{
+      glow(0,0,118,o.halo,.26);
+      for(let i=0;i<8;i++){const a=t*.35+i*.785,r=36+Math.sin(t*.7+i*1.7)*16;glow(Math.cos(a)*r*1.2,Math.sin(a*1.15)*r*.85,44+Math.sin(t+i)*8,o.cols[i%o.cols.length],.22)}
+    });
+    // 2) the dark matter: lobes that drift and merge, never the same shape twice
+    g.globalCompositeOperation='source-over';
+    const lobes=[];
+    M(()=>{
+      for(let i=0;i<6;i++){
+        const a=t*(.22+i*.05)*(i%2?1:-1)+i*1.05,r=i?22+Math.sin(t*.6+i*2.1)*14:0,rad=i?34+Math.sin(t*.9+i)*8:46;
+        const x=Math.cos(a)*r*1.25,y=Math.sin(a*1.1)*r*.9;lobes.push([x,y,rad,a]);
+        const d=g.createRadialGradient(x,y,2,x,y,rad);d.addColorStop(0,'rgba(2,1,10,.9)');d.addColorStop(.55,'rgba(4,2,16,.7)');d.addColorStop(1,'rgba(6,3,22,0)');
+        g.fillStyle=d;g.beginPath();g.arc(x,y,rad,0,6.283);g.fill();
+      }
+    });
+    // 3) light caught on the edges of the dark lobes, in the colours of the energy
+    g.globalCompositeOperation='lighter';
+    M(()=>{lobes.forEach(([x,y,rad,a],i)=>{if(!i)return;const dx=Math.cos(a+1.2),dy=Math.sin(a+1.2);glow(x+dx*rad*.8,y+dy*rad*.7,22,o.cols[i%o.cols.length],.26+Math.sin(t*1.4+i)*.08)})});
+    for(const p of ring){p.a+=p.s*.008*(1+sp*.15);p.r+=Math.sin(t*.5+p.a*3)*.08;const x=px+Math.cos(p.a)*p.r*1.25,y=py+Math.sin(p.a)*p.r*.85;glow(x,y,p.z*4,p.c,.42);g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.arc(x,y,p.z*.7,0,6.283);g.fill()}
+    if(o.tail){for(let i=1;i<14;i++){const f=1-i/14;glow(px-vx*i*3,py-vy*i*3+i*1.5,26*f+6,o.cols[i%o.cols.length],.14*f)}}
+    // dust that escapes the body
+    if(Math.random()<.5){const a=Math.random()*6.28;dust.push({x:px+Math.cos(a)*(40+Math.random()*34)*1.1,y:py+Math.sin(a)*(40+Math.random()*34)*.85,vx:Math.cos(a)*.3+vx*.2,vy:Math.sin(a)*.3-.15,l:1,s:.8+Math.random()*1.3})}
+    for(let i=dust.length-1;i>=0;i--){const d=dust[i];d.x+=d.vx;d.y+=d.vy;d.l-=.013;if(d.l<=0){dust.splice(i,1);continue}glow(d.x,d.y,d.s*4,o.cols[i%o.cols.length],d.l*.5);g.fillStyle=`rgba(255,255,255,${d.l})`;g.beginPath();g.arc(d.x,d.y,d.s*.7,0,6.283);g.fill()}
+    g.globalCompositeOperation='source-over';
+    // 4) the eyes
+    face.setAttribute('transform',`translate(${(px+ex).toFixed(1)},${(py+ey-2).toFixed(1)}) rotate(${(cur.tilt*gxn*.9).toFixed(1)}) scale(${breath.toFixed(3)})`);
+    blinkT-=.016;if(blinkT<0)blinkT=2.4+Math.random()*3.2;const bl=blinkT<.13?.06:1;
+    const pulse=1+(S.look===2?Math.sin(t*5)*.18:0);
+    for(const [n,x] of [['.eL',-24],['.eR',24]]){
+      const e=q(n),a=Math.abs(cur.arc);
+      e.setAttribute('transform',`translate(${x},0) scale(${(cur.sx).toFixed(3)},${(cur.sy*bl).toFixed(3)})`);
+      e.querySelector('.open').setAttribute('opacity',(1-a).toFixed(2));
+      const arc=e.querySelector('.arc');arc.setAttribute('opacity',a.toFixed(2));arc.setAttribute('transform',`scale(1,${cur.arc>=0?1:-1}) translate(0,${cur.arc>=0?0:-1})`);
+      e.querySelector('.h').setAttribute('opacity',Math.min(1,cur.glow*pulse+(S.look===1?.05:0)).toFixed(2));
+    }
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+make('a',{name:'A · Nebula Of Dark Matter',text:'No outline and no fixed shape: dark matter that drifts and merges, lit at its edges by cosmic energy. Phibe’s glowing eyes sit inside it.',
+  c2:'#7c5cff',tone:'#d9f6ff',halo:'124,92,255',cols:['143,227,255','167,139,250','232,121,249'],rim:['rgba(143,227,255,.9)','rgba(124,92,255,.9)','rgba(232,121,249,.9)','rgba(143,227,255,.9)']});
+make('b',{name:'B · Phibe Green Nebula',text:'The same formless nebula with Phibe’s original mint eyes and energy, and a trail that follows her moves.',tail:1,
+  c2:'#20e7aa',tone:'#bff8f3',halo:'32,231,170',cols:['32,231,170','143,227,255','167,139,250'],rim:['rgba(32,231,170,.9)','rgba(143,227,255,.9)','rgba(124,92,255,.9)','rgba(32,231,170,.9)']});
+</script>

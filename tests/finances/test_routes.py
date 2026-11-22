@@ -45,16 +45,17 @@ def test_overview_works_out_totals_deltas_and_the_breakdown(client) -> None:
     assert len(r["series"]) == 6
 
 
-def test_state_carries_balances_card_cycles_and_goal_progress(client) -> None:
+def test_state_carries_balances_card_cycles_and_savings_progress(client) -> None:
     acc = _post(client, "accounts", {"name": "Cash", "opening": 5000})
     card = _post(client, "cards", {"accountId": acc["id"], "name": "Visa", "mode": "credit", "limit": 100_000, "dueDay": 15, "closeDaysBefore": 7})
-    goal = _post(client, "goals", {"name": "Trip", "target": 10_000, "color": "#fff"})
+    pot = _post(client, "accounts", {"name": "Trip", "savings": True, "target": 10_000, "color": "#fff"})
     _post(client, "transactions", {"date": "2026-10-10", "kind": "expense", "amount": 2500, "description": "Shoes", "categoryId": "shopping", "method": "credit", "cardId": card["id"]})
-    _post(client, "transactions", {"date": "2026-10-10", "kind": "savings", "amount": 1000, "accountId": acc["id"], "goalId": goal["id"]})
+    _post(client, "transactions", {"date": "2026-10-10", "kind": "transfer", "amount": 1000, "accountId": acc["id"], "toAccountId": pot["id"]})
     s = client.get("/api/finances/state", params={"today": "2026-10-11"}).json()
-    assert s["accounts"][0]["balance"] == 4000  # credit did not touch it, the deposit did
+    assert s["accounts"][0]["balance"] == 4000  # credit did not touch it, the move to savings did
     assert s["cards"][0]["used"] == 2500 and s["cards"][0]["cycle"]["close"] == "2026-11-08"
-    assert s["goals"][0]["saved"] == 1000 and s["goals"][0]["monthsLeft"] == 27
+    assert s["accounts"][1]["balance"] == 1000 and s["accounts"][1]["monthsLeft"] == 27 and "monthsLeft" not in s["accounts"][0]
+    assert "goals" not in s
     assert any(c["id"] == "food" for c in s["categories"])
 
 
@@ -92,3 +93,34 @@ def test_recurring_expense_over_http(client) -> None:
     assert client.delete(f"/api/finances/recurring/{rule['id']}").status_code == 204
     assert client.delete(f"/api/finances/recurring/{rule['id']}").status_code == 404
     assert client.post("/api/finances/recurring", json={**body, "installments": 1}).status_code == 422
+
+
+def test_saving_money_is_a_transfer_into_a_savings_account(client) -> None:
+    wallet = _post(client, "accounts", {"name": "Wallet", "opening": 50_000})
+    pot = _post(client, "accounts", {"name": "Savings", "opening": 30_000, "savings": True, "target": 100_000, "color": "#20e7aa"})
+    assert (pot["savings"], pot["target"]) == (True, 100_000)
+    _post(client, "transactions", {"date": "2026-01-05", "kind": "transfer", "amount": 10_000, "accountId": wallet["id"], "toAccountId": pot["id"], "description": "Savings Deposit"})
+    state = client.get("/api/finances/state", params={"today": "2026-01-31"}).json()
+    balance = {a["name"]: a["balance"] for a in state["accounts"]}
+    assert balance == {"Wallet": 40_000, "Savings": 40_000}  # the money left Wallet and entered Savings
+    r = client.get("/api/finances/overview", params={"from": "2026-01-01", "to": "2026-01-31", "preset": "month"}).json()
+    assert r["totals"]["savings"] == 10_000  # what was saved in the month
+    bad = client.post("/api/finances/transactions", json={"date": "2026-01-06", "kind": "transfer", "amount": 5, "accountId": pot["id"], "toAccountId": pot["id"]})
+    assert bad.status_code == 422  # from the account into itself
+    assert client.post("/api/finances/accounts", json={"name": "Bad", "savings": True, "target": -5}).status_code == 422
+
+
+def test_deleting_one_recurring_charge_leaves_the_rest_over_http(client) -> None:
+    acc = _post(client, "accounts", {"name": "C6 Bank", "opening": 100_000})
+    body = {"date": "2026-08-31", "description": "Plan", "categoryId": "bills", "amount": 1_000,
+            "method": "pix", "accountId": acc["id"], "installments": 6}
+    rule = _post(client, "recurring", body)
+    listing = lambda: client.get("/api/finances/transactions", params={"from": "2026-01-01", "to": "2027-12-31"}).json()["transactions"]  # noqa: E731
+    before = sorted(listing(), key=lambda t: t["date"])
+    assert len(before) >= 3
+    for victim in (before[1], before[-1], before[0]):  # a middle one, the last one ahead, the first
+        assert client.delete(f"/api/finances/transactions/{victim['id']}").status_code == 204  # no scope given
+        left = {t["id"] for t in listing()}
+        assert victim["id"] not in left
+    assert len(listing()) == len(before) - 3 or len(listing()) >= len(before) - 3
+    assert [r["id"] for r in client.get("/api/finances/state").json()["recurring"]] == [rule["id"]]  # the rule is still there

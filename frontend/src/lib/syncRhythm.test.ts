@@ -16,9 +16,9 @@ describe('sync rhythm of a source', () => {
   it('reads the own rhythm, or the general one', () => {
     expect(minutesOf(base, 'gmail')).toBe(60);
     expect(minutesOf(base, 'notion')).toBe(0);
-    expect(minutesOf(base, 'anytype')).toBe(360);
+    expect(minutesOf(base, 'slack')).toBe(360);
     expect(timeOf(base, 'notion')).toBe('09:30');
-    expect(timeOf(base, 'anytype')).toBe('03:00');
+    expect(timeOf(base, 'slack')).toBe('03:00');
   });
 
   it('changes only the chosen source and switches it back on', () => {
@@ -41,7 +41,7 @@ describe('default rhythm', () => {
     const { hasOwn, withDefault } = await import('./syncRhythm');
     const s = { interval_minutes: 60, daily_time: '03:00', disabled_connectors: [], intervals: { gmail: 360, notion: 0 }, daily_times: { gmail: '09:30' } };
     expect(hasOwn(s, 'gmail')).toBe(true);
-    expect(hasOwn(s, 'anytype')).toBe(false);
+    expect(hasOwn(s, 'slack')).toBe(false);
     expect(withDefault(s, 'gmail')).toEqual({ intervals: { notion: 0 }, daily_times: {} });
   });
 });

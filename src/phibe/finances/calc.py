@@ -9,7 +9,7 @@ from __future__ import annotations
 import calendar
 import math
 from datetime import date, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Iterable
 
 Tx = Dict[str, Any]
 
@@ -66,13 +66,19 @@ def delta_pct(now: int, before: int) -> Optional[float]:
 # -- Totals and balances ------------------------------------------------------------
 
 
-def totals(txs: List[Tx], start: str, end: str) -> Dict[str, int]:
-    """Income, expenses and savings in a period; transfers never count."""
+def totals(txs: List[Tx], start: str, end: str, savings_ids: Iterable[str] = ()) -> Dict[str, int]:
+    """Income, expenses and savings in a period. Savings is what was moved into a savings account from another
+    kind of account; other transfers never count."""
+    into = set(savings_ids)
     out = {"income": 0, "expenses": 0, "savings": 0}
-    key = {"income": "income", "expense": "expenses", "savings": "savings"}
+    key = {"income": "income", "expense": "expenses"}
     for t in txs:
-        if start <= t["date"] <= end and t["kind"] in key:
+        if not start <= t["date"] <= end:
+            continue
+        if t["kind"] in key:
             out[key[t["kind"]]] += t["amount"]
+        elif t["kind"] == "transfer" and t["toAccountId"] in into and t["accountId"] not in into:
+            out["savings"] += t["amount"]
     return out
 
 
@@ -170,23 +176,25 @@ def monthly_series(txs: List[Tx], end: str, months: int = 6) -> List[Dict[str, A
     return rows
 
 
-# -- Goals and cards ---------------------------------------------------------------------
+# -- Savings and cards -------------------------------------------------------------------
 
 
-def goal_saved(txs: List[Tx], goal_id: str) -> int:
-    return sum(t["amount"] for t in txs if t["kind"] == "savings" and t["goalId"] == goal_id)
-
-
-def months_left(goal: Dict[str, Any], txs: List[Tx], today: str) -> Optional[int]:
-    """Months to reach the target at the pace of the last 90 days, or ``None``."""
+def months_left(account: Dict[str, Any], txs: List[Tx], today: str) -> Optional[int]:
+    """Months until a savings account reaches its target, at the pace of the last 90 days
+    (what moved in minus what moved out), or ``None``."""
+    if not account.get("target"):
+        return None
     since = _add_days(today, -90)
-    recent = sum(
-        t["amount"]
-        for t in txs
-        if t["goalId"] == goal["id"] and t["kind"] == "savings" and t["date"] > since
-    )
-    left = goal["target"] - goal_saved(txs, goal["id"])
-    return math.ceil(left / (recent / 3)) if recent > 0 and left > 0 else None
+    pace = 0
+    for t in txs:
+        if t["kind"] != "transfer" or not since < t["date"] <= today:
+            continue
+        if t["toAccountId"] == account["id"]:
+            pace += t["amount"]
+        if t["accountId"] == account["id"]:
+            pace -= t["amount"]
+    left = account["target"] - account["balance"]
+    return math.ceil(left / (pace / 3)) if pace > 0 and left > 0 else None
 
 
 def card_cycle(card: Dict[str, Any], today: str) -> Dict[str, str]:

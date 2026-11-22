@@ -164,7 +164,7 @@ describe('connectors-api sends the Bearer auth header', () => {
       const { startServerOAuth } = await freshConnectorsApi();
 
       let resolved = false;
-      const flow = startServerOAuth('dropbox').then(() => {
+      const flow = startServerOAuth('gdrive').then(() => {
         resolved = true;
       });
       await vi.advanceTimersByTimeAsync(2000);

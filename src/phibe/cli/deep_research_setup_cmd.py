@@ -1,7 +1,7 @@
 """``phibe deep-research-setup`` — auto-detect local sources, ingest, and chat.
 
-Walks the user through connecting local data sources (Apple Notes, iMessage,
-Obsidian), ingesting them into a shared KnowledgeStore, and launching an
+Walks the user through connecting local data sources (Apple Notes and
+iMessage), ingesting them into a shared KnowledgeStore, and launching an
 interactive Deep Research chat session with Qwen3.5 via Ollama.
 """
 
@@ -46,7 +46,6 @@ def detect_local_sources(
     *,
     notes_db_path: Optional[Path] = None,
     imessage_db_path: Optional[Path] = None,
-    obsidian_vault_path: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     """Return a list of available local sources with their config.
 
@@ -75,14 +74,6 @@ def detect_local_sources(
             }
         )
 
-    if obsidian_vault_path and obsidian_vault_path.is_dir():
-        sources.append(
-            {
-                "connector_id": "obsidian",
-                "display_name": "Obsidian / Markdown",
-                "config": {"vault_path": str(obsidian_vault_path)},
-            }
-        )
 
     return sources
 
@@ -99,22 +90,10 @@ _TOKEN_SOURCES = [
         "prompt_label": "email:app_password",
     },
     {
-        "connector_id": "outlook",
-        "display_name": "Outlook / Microsoft 365",
-        "creds_file": "outlook.json",
-        "prompt_label": "email:app_password",
-    },
-    {
         "connector_id": "slack",
         "display_name": "Slack",
         "creds_file": "slack.json",
         "prompt_label": "Bot token (xoxb-...)",
-    },
-    {
-        "connector_id": "notion",
-        "display_name": "Notion",
-        "creds_file": "notion.json",
-        "prompt_label": "Integration token (ntn_...)",
     },
 ]
 
@@ -209,26 +188,14 @@ def _instantiate_connector(connector_id: str, config: Dict[str, Any]) -> Any:
         from phibe.connectors.imessage import IMessageConnector
 
         return IMessageConnector(db_path=config.get("db_path", ""))
-    elif connector_id == "obsidian":
-        from phibe.connectors.obsidian import ObsidianConnector
-
-        return ObsidianConnector(vault_path=config.get("vault_path", ""))
     elif connector_id == "gmail_imap":
         from phibe.connectors.gmail_imap import GmailIMAPConnector
 
         return GmailIMAPConnector()
-    elif connector_id == "outlook":
-        from phibe.connectors.outlook import OutlookConnector
-
-        return OutlookConnector()
     elif connector_id == "slack":
         from phibe.connectors.slack_connector import SlackConnector
 
         return SlackConnector()
-    elif connector_id == "notion":
-        from phibe.connectors.notion import NotionConnector
-
-        return NotionConnector()
     else:
         msg = f"Unknown connector: {connector_id}"
         raise ValueError(msg)
@@ -359,21 +326,14 @@ def _launch_chat(store: KnowledgeStore, console: Console) -> None:
 
 
 @click.command("deep-research-setup")
-@click.option(
-    "--obsidian-vault",
-    type=click.Path(exists=True, file_okay=False),
-    default=None,
-    help="Path to an Obsidian vault directory.",
-)
 @click.option("--skip-chat", is_flag=True, help="Ingest only, don't launch chat.")
-def deep_research_setup(obsidian_vault: Optional[str], skip_chat: bool) -> None:
+def deep_research_setup(skip_chat: bool) -> None:
     """Auto-detect local data sources, ingest, and launch Deep Research chat."""
     console = Console()
     console.print("\n[bold]Deep Research Setup[/bold]\n")
 
     # 1. Detect local sources
-    vault_path = Path(obsidian_vault) if obsidian_vault else None
-    local_sources = detect_local_sources(obsidian_vault_path=vault_path)
+    local_sources = detect_local_sources()
 
     # 2. Detect already-connected token sources
     token_sources = detect_token_sources()

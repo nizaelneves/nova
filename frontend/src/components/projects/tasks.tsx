@@ -17,8 +17,6 @@ import {
 } from '../../lib/tasks-api';
 import { PERSONAL_COLOR } from '../../lib/projects';
 import { StrikeText } from '../StrikeText';
-import { TaskCheck } from '../TaskCheck';
-import { LIST_BUCKET_LABEL, LIST_BUCKET_ORDER, taskListBucket } from '../../lib/tasks';
 
 const COLUMNS: { status: Status; label: string }[] = [
   { status: 'todo', label: 'Coming Next' },
@@ -51,55 +49,6 @@ function formatTimeShort(d: Date): string {
 }
 
 // ---------------------------------------------------------------------------
-// Shared bits: priority CSS var + the meta-chip row reused by every view
-// ---------------------------------------------------------------------------
-
-/** Sets the `--task-priority-color` custom property a card/row reads for its
- * left accent bar; falls back to a neutral border when no priority is set. */
-function priorityStyle(task: Task): React.CSSProperties {
-  return { ['--task-priority-color' as string]: task.priority ? PRIORITY_COLOR[task.priority] : 'var(--color-border)' };
-}
-
-/** The due-date, recurrence, area and priority chips shown on both the
- * Kanban card and the List row — factored out once so the two views never
- * drift apart in how they render the same `Task`. */
-function TaskMetaChips({ task }: { task: Task }) {
-  const color = useContext(ProjectColorContext)(task.area_id);
-  return (
-    <>
-      {task.priority && (
-        <span className="task-chip" style={{ color: PRIORITY_COLOR[task.priority] }}>
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: PRIORITY_COLOR[task.priority],
-              display: 'inline-block',
-              flexShrink: 0,
-            }}
-          />
-          {task.priority[0].toUpperCase() + task.priority.slice(1)}
-        </span>
-      )}
-      <span className="task-chip">
-        <Icon name="calendar" size={11} />
-        {formatDue(task)}
-      </span>
-      {task.recurrence && (
-        <span className="task-chip" title="Repeats">
-          <Icon name="repeat" size={11} />
-        </span>
-      )}
-      <span className="task-chip">
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-        {task.area || 'Personal'}
-      </span>
-    </>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Task card (Kanban)
 // ---------------------------------------------------------------------------
 
@@ -129,91 +78,6 @@ function TaskCard({
         )}
       </div>
     </button>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Task list row (List view)
-// ---------------------------------------------------------------------------
-
-function TaskListRow({
-  task,
-  onOpen,
-  onToggleDone,
-}: {
-  task: Task;
-  onOpen: () => void;
-  onToggleDone: () => void;
-}) {
-  const done = task.status === 'done';
-  return (
-    <div className="task-list-row" data-done={done} style={priorityStyle(task)} onClick={onOpen} role="button" tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}>
-      <TaskCheck done={done} label={done ? 'Mark not done' : 'Mark done'} onClick={onToggleDone} />
-      <span className="task-list-title flex-1 text-sm truncate" style={{ color: 'var(--color-text)' }}>
-        <StrikeText done={done}>{task.title}</StrikeText>
-      </span>
-      <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-        <TaskMetaChips task={task} />
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// List view
-// ---------------------------------------------------------------------------
-
-export function TaskListView({
-  tasks,
-  onOpen,
-  onToggleDone,
-}: {
-  tasks: Task[];
-  onOpen: (task: Task) => void;
-  onToggleDone: (task: Task) => void;
-}) {
-  const now = new Date();
-  const todayStr = todayLocal();
-  const [openBuckets, setOpenBuckets] = useState<Record<string, boolean>>({});
-
-  const groups = useMemo(() => {
-    const buckets = new Map<string, Task[]>();
-    for (const t of tasks) {
-      const key = taskListBucket(t, now, todayStr);
-      const list = buckets.get(key) ?? [];
-      list.push(t);
-      buckets.set(key, list);
-    }
-    for (const list of buckets.values()) {
-      list.sort((a, b) => a.due.localeCompare(b.due));
-    }
-    return LIST_BUCKET_ORDER.filter((b) => buckets.has(b)).map((b) => [b, buckets.get(b)!] as const);
-  }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (tasks.length === 0) {
-    return <div className="text-xs px-1 py-6 text-center" style={{ color: 'var(--color-text-tertiary)' }}>Nothing here.</div>;
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {groups.map(([bucket, items]) => (
-        <div key={bucket} className="flex flex-col gap-1.5">
-          <button type="button" className="tl-head" data-b={bucket} aria-expanded={!!openBuckets[bucket]} onClick={() => setOpenBuckets((o) => ({ ...o, [bucket]: !o[bucket] }))}>
-            <Icon name="alt-arrow-down" size={16} className="tl-chev" />
-            <b>{LIST_BUCKET_LABEL[bucket]}</b>
-            <span>{items.length}</span>
-          </button>
-          {openBuckets[bucket] && (
-            <div className="flex flex-col gap-1.5">
-              {items.map((t) => (
-                <TaskListRow key={t.id} task={t} onOpen={() => onOpen(t)} onToggleDone={() => onToggleDone(t)} />
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
   );
 }
 

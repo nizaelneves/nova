@@ -8,6 +8,7 @@ import { generateId, useAppStore } from './store';
 import { serializeToolCallArguments } from './tool-call';
 import { speakReply, stopSpeaking } from './voiceReply';
 import { fileContext } from './docContext';
+import { mentorPrompt } from './mentor';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -69,13 +70,15 @@ export function useChat() {
 
     // Build API messages before adding assistant placeholder
     const currentMessages = useAppStore.getState().messages;
-    const apiMessages = currentMessages.map((m) => ({
+    const apiMessages: { role: string; content: string }[] = currentMessages.map((m) => ({
       role: m.role,
       content: m.content,
     }));
     // The files of this conversation go to the model with this message only, not into the saved chat.
     const attached = fileContext(useAppStore.getState().conversations.find((c) => c.id === convId)?.files, content);
     if (attached && apiMessages.length > 0) apiMessages[apiMessages.length - 1].content += attached;
+    const mentoring = mentorPrompt(); // only while Memoir is open: the model answers as a mentor
+    if (mentoring) apiMessages.unshift({ role: 'system', content: mentoring });
 
     const assistantMsg: ChatMessage = {
       id: generateId(),

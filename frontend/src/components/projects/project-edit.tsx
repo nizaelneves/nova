@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon } from '../Icon';
 import { Popup } from '../Popup';
-import { type Look, PROJECT_ICONS, squareImage } from '../../lib/projectMeta';
+import { type Look, PROJECT_ICONS } from '../../lib/projectMeta';
 
 /** The round mark of a project: its photo, its icon, or the initials. */
 export function Mark({ name, look, color, personal }: { name: string; look?: Look; color: string; personal?: boolean }) {
@@ -43,6 +43,74 @@ export function ProjectMenu({ name, items }: { name: string; items: MenuItem[] }
 
 const ghost = { color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' };
 
+const BOX = 240; // preview size in px
+const OUT = 256; // saved image size in px
+
+const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error('That file is not an image.'));
+  img.src = src;
+});
+
+/** Drag to move and slide to zoom; the round window is what gets saved. */
+function Cropper({ img, onApply, onCancel }: { img: HTMLImageElement; onApply: (png: string) => void; onCancel: () => void }) {
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState({ x: img.width / 2, y: img.height / 2 });
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  const scale = (BOX / Math.min(img.width, img.height)) * zoom;
+  // Keep the window inside the picture.
+  const clamp = (c: { x: number; y: number }) => {
+    const half = BOX / 2 / scale;
+    // Zoomed out past the picture's size, it just stays centred.
+    const fit = (v: number, size: number) => (half * 2 >= size ? size / 2 : Math.min(Math.max(v, half), size - half));
+    return { x: fit(c.x, img.width), y: fit(c.y, img.height) };
+  };
+  // Draw the picture so its point (c.x, c.y) sits in the middle of a square of `side` px.
+  const paint = (ctx: CanvasRenderingContext2D, side: number) => {
+    const k = (scale * side) / BOX;
+    ctx.clearRect(0, 0, side, side);
+    ctx.drawImage(img, side / 2 - c.x * k, side / 2 - c.y * k, img.width * k, img.height * k);
+  };
+  const c = clamp(center);
+
+  useEffect(() => {
+    const ctx = canvas.current?.getContext('2d');
+    if (!ctx) return;
+    paint(ctx, BOX);
+  });
+
+  const apply = () => {
+    const out = document.createElement('canvas');
+    out.width = out.height = OUT;
+    const ctx = out.getContext('2d');
+    if (ctx) paint(ctx, OUT);
+    onApply(out.toDataURL('image/png'));
+  };
+
+  return (
+    <div className="pj-crop">
+      <div className="pj-crop-box" style={{ width: BOX, height: BOX }}>
+        <canvas ref={canvas} width={BOX} height={BOX} aria-label="Crop area"
+          onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY }; e.currentTarget.setPointerCapture(e.pointerId); }}
+          onPointerMove={(e) => { if (!drag.current) return; const dx = e.clientX - drag.current.x; const dy = e.clientY - drag.current.y; drag.current = { x: e.clientX, y: e.clientY }; setCenter(clamp({ x: c.x - dx / scale, y: c.y - dy / scale })); }}
+          onPointerUp={() => { drag.current = null; }} />
+        <span className="pj-crop-ring" aria-hidden="true" />
+      </div>
+      <label className="pj-crop-zoom">Zoom
+        <button type="button" className="pj-zoom-btn" aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.25, z / 1.25))}>−</button>
+        <input type="range" min={0} max={1} step={0.001} value={Math.log(zoom / 0.25) / Math.log(40)} aria-label="Zoom" onChange={(e) => setZoom(0.25 * 40 ** Number(e.target.value))} />
+        <button type="button" className="pj-zoom-btn" aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(10, z * 1.25))}>+</button>
+      </label>
+      <div className="flex gap-2">
+        <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={onCancel}>Cancel</button>
+        <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer font-semibold" style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)' }} onClick={apply}>Apply</button>
+      </div>
+    </div>
+  );
+}
+
 /** Change a project's name and its photo or icon. The personal card keeps the name from your profile. */
 export function EditProject({ name, look, color, personal, onSave, onClose }: {
   name: string;
@@ -55,11 +123,17 @@ export function EditProject({ name, look, color, personal, onSave, onClose }: {
   const [title, setTitle] = useState(name);
   const [icon, setIcon] = useState(look?.icon);
   const [image, setImage] = useState(look?.image);
+  const [cropping, setCropping] = useState<HTMLImageElement | null>(null);
   const file = useRef<HTMLInputElement>(null);
 
-  const pick = async (f: File | undefined) => {
+  const open = async (src: string) => {
+    try { setCropping(await loadImage(src)); } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not read that image.'); }
+  };
+  const pick = (f: File | undefined) => {
     if (!f) return;
-    try { setImage(await squareImage(f)); } catch (err) { toast.error(err instanceof Error ? err.message : 'Could not read that image.'); }
+    const reader = new FileReader();
+    reader.onload = () => void open(String(reader.result));
+    reader.readAsDataURL(f);
   };
 
   return (
@@ -73,26 +147,32 @@ export function EditProject({ name, look, color, personal, onSave, onClose }: {
         </div>
         {personal && <small style={{ color: 'var(--color-text-tertiary)' }}>The name comes from your profile.</small>}
 
-        <div>
-          <small style={{ color: 'var(--color-text-tertiary)' }}>Photo or Icon</small>
-          <div className="pj-icons">
-            <button type="button" data-on={!icon && !image} aria-label="Initials" onClick={() => { setIcon(undefined); setImage(undefined); }}>Aa</button>
-            {PROJECT_ICONS.map((n) => (
-              <button key={n} type="button" data-on={icon === n && !image} aria-label={n} onClick={() => { setIcon(n); setImage(undefined); }}><Icon name={n} size={18} /></button>
-            ))}
+        {cropping
+          ? <Cropper img={cropping} onCancel={() => setCropping(null)} onApply={(png) => { setImage(png); setIcon(undefined); setCropping(null); }} />
+          : (
+            <div className="pj-icons">
+              <button type="button" data-on={!!image} aria-label={image ? 'Change or crop image' : 'Upload image'} title="Upload image" onClick={() => (image ? void open(image) : file.current?.click())}>
+                {image ? <img src={image} alt="" /> : <Icon name="upload-minimalistic" size={18} />}
+              </button>
+              <button type="button" data-on={!icon && !image} aria-label="Initials" onClick={() => { setIcon(undefined); setImage(undefined); }}>Aa</button>
+              {PROJECT_ICONS.map((n) => (
+                <button key={n} type="button" data-on={icon === n && !image} aria-label={n} onClick={() => { setIcon(n); setImage(undefined); }}><Icon name={n} size={18} /></button>
+              ))}
+            </div>
+          )}
+        {image && !cropping && (
+          <div className="flex gap-2">
+            <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={() => file.current?.click()}>Replace image</button>
+            <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={() => void open(image)}>Edit crop</button>
           </div>
-          <div className="flex gap-2 mt-3">
-            <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={() => file.current?.click()}>Upload Photo</button>
-            {image && <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={() => setImage(undefined)}>Remove Photo</button>}
-            <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
-          </div>
-        </div>
+        )}
+        <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }} />
 
         <div className="flex justify-end gap-2">
           <button type="button" className="text-sm px-3 py-1.5 rounded-lg cursor-pointer" style={ghost} onClick={onClose}>Cancel</button>
           <button type="button" disabled={!title.trim()} className="text-sm px-3 py-1.5 rounded-lg cursor-pointer font-semibold"
             style={{ background: 'var(--color-accent)', color: 'var(--color-on-accent)', opacity: title.trim() ? 1 : 0.5 }}
-            onClick={() => onSave(title.trim(), { icon, image })}>Save</button>
+            onClick={() => onSave(title.trim(), image ? { icon: undefined, image } : { icon, image: undefined })}>Save</button>
         </div>
       </div>
     </Popup>

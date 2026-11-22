@@ -13,7 +13,11 @@ export function AvatarMini({ size = 56, asleep = false, still = false }: { size?
     const loop = () => {
       timer = window.setTimeout(() => {
         setBlink(true);
-        window.setTimeout(() => setBlink(false), 130);
+        window.setTimeout(() => setBlink(false), 120);
+        if (Math.random() < 0.22) { // sometimes two in a row
+          window.setTimeout(() => setBlink(true), 240);
+          window.setTimeout(() => setBlink(false), 360);
+        }
         loop();
       }, 2500 + Math.random() * 3000);
     };

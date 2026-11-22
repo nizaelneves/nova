@@ -5,6 +5,7 @@ import { Icon, type IconName } from '../components/Icon';
 import { TerminalLine } from '../components/TerminalLine';
 import { summarizeSources } from '../lib/sourcesSummary';
 import { ToolCards } from '../components/ToolCards';
+import { ChatSources } from '../components/ChatSources';
 import { CLOUD_KEY_STATUS_CHANGED } from '../components/keys';
 import { fetchAvailableTools, type ToolInfo } from '../lib/api';
 import { SyncBar, useSyncSettings } from '../components/SyncBar';
@@ -17,6 +18,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { SOURCE_CATALOG } from '../types/connectors';
 import { ConnectorLogo } from '../components/ConnectorLogo';
+import { Popup } from '../components/Popup';
 import type { ConnectRequest, ConnectorMeta, SyncStatus, OAuthSetupInfo } from '../types/connectors';
 import { listConnectors, connectSource, disconnectSourceUntilComplete, getConnector, getSyncStatus, triggerSync, startServerOAuth, getPermissions, setPermission, type Level, type Permission } from '../lib/connectors-api';
 import { toast } from 'sonner';
@@ -500,14 +502,10 @@ const iconMap: Record<string, LucideIcon> = {
   gmail: Mail,
   gmail_imap: Mail,
   gmail_api: Mail,
-  outlook: Mail,
   slack: Hash,
   imessage: MessageCircle,
   whatsapp: PhoneCall,
   gdrive: FolderOpen,
-  dropbox: Package,
-  notion: BookText,
-  obsidian: FileText,
   apple_notes: StickyNote,
   gcalendar: CalendarDays,
   upload: Upload,
@@ -738,7 +736,7 @@ export function SyncStatusDisplay({
           </span>
         </div>
         <div style={{ fontSize: 10.5, color: 'var(--color-text-tertiary)' }}>
-          Think available now · results improve as more {unitLabel} are indexed
+          Muse available now · results improve as more {unitLabel} are indexed
         </div>
       </div>
     );
@@ -1271,7 +1269,10 @@ function DataSourcesSection() {
     <div className="fin-root h-full overflow-y-auto">
       <div className="fin-wrap">
       {header}
-      {syncBar}
+      <div className="ds-pair">
+        {syncBar}
+        <ChatSources />
+      </div>
       <h3 className="ds-sec">Sources</h3>
       <div className="ds-grid">
         {cards.map((c) => {
@@ -1288,7 +1289,6 @@ function DataSourcesSection() {
               className="ds-card"
               data-on={on || undefined}
               data-error={(on && !!sync?.error) || undefined}
-              style={{ gridColumn: isExpanded ? '1 / -1' : undefined }}
             >
               <div className="ds-top">
                 <ConnectorLogo id={c.connector_id} size={44} />
@@ -1351,7 +1351,6 @@ function DataSourcesSection() {
                   </div>
                 </div>
               )}
-              {!on && isExpanded && <div className="ds-panel">{renderPanel(c)}</div>}
             </div>
           );
         })}
@@ -1362,6 +1361,15 @@ function DataSourcesSection() {
           <ToolCards tools={shownTools} />
         </>
       )}
+      {expandedId && (() => {
+        const c = cards.find((x) => x.connector_id === expandedId);
+        if (!c || c.connected) return null;
+        return (
+          <Popup title={`Connect ${metaFor(c.connector_id)?.display_name ?? c.display_name}`} onClose={() => setExpandedId(null)} wide>
+            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>{renderPanel(c)}</div>
+          </Popup>
+        );
+      })()}
       {settingsFor && (() => {
         const c = cards.find((x) => x.connector_id === settingsFor);
         if (!c) return null;

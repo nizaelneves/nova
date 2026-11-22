@@ -33,6 +33,15 @@ from phibe.server.models import (
 router = APIRouter()
 
 
+def _safe(fn, *args) -> str:
+    """Run a memory call; a failure (no network, bad key) must never break the chat."""
+    try:
+        return fn(*args) or ""
+    except Exception:
+        logging.getLogger("phibe.server").debug("memory call failed", exc_info=True)
+        return ""
+
+
 def _to_messages(chat_messages) -> list[Message]:
     """Convert Pydantic ChatMessage objects to core Message objects."""
     messages = []
@@ -291,6 +300,23 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
                 "Complexity analysis failed",
                 exc_info=True,
             )
+
+    # Memory (Mem0 mode): keep what the user just said, and add what is remembered for this question, on this turn only.
+    if query_text_for_complexity:
+        from phibe.connectors.memory_provider import TIMEOUT_S, is_active, provider
+
+        if is_active():
+            memory = provider()
+            asyncio.create_task(asyncio.to_thread(_safe, memory.remember, query_text_for_complexity))
+            try:
+                recalled = await asyncio.wait_for(asyncio.to_thread(_safe, memory.recall, query_text_for_complexity), TIMEOUT_S)
+            except asyncio.TimeoutError:
+                recalled = ""
+            if recalled:
+                for m in reversed(request_body.messages):
+                    if m.role == "user" and m.content:
+                        m.content = f"{m.content}\n\n{recalled}"
+                        break
 
     # Sources (RSS, mail, calendar...) found for this question, on this turn only.
     if query_text_for_complexity:

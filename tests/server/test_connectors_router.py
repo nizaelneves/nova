@@ -33,21 +33,21 @@ def app():
 
 
 def test_list_connectors(app):
-    """GET /v1/connectors returns a list that includes the obsidian connector."""
+    """GET /v1/connectors returns a list that includes the whatsapp connector."""
     resp = app.get("/v1/connectors")
     assert resp.status_code == 200
     data = resp.json()
     assert "connectors" in data
     ids = [c["connector_id"] for c in data["connectors"]]
-    assert "obsidian" in ids
+    assert "whatsapp" in ids
 
 
 def test_connector_detail(app):
-    """GET /v1/connectors/obsidian returns the expected fields."""
-    resp = app.get("/v1/connectors/obsidian")
+    """GET /v1/connectors/whatsapp returns the expected fields."""
+    resp = app.get("/v1/connectors/whatsapp")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["connector_id"] == "obsidian"
+    assert data["connector_id"] == "whatsapp"
     assert "display_name" in data
     assert "auth_type" in data
     assert "connected" in data
@@ -60,32 +60,28 @@ def test_connector_not_found(app):
     assert resp.status_code == 404
 
 
-def test_connect_obsidian(app, tmp_path):
-    """POST /v1/connectors/obsidian/connect with a valid path marks it connected."""
-    # Create a minimal vault directory so is_connected() returns True.
-    vault = tmp_path / "vault"
-    vault.mkdir()
-
-    resp = app.post("/v1/connectors/obsidian/connect", json={"path": str(vault)})
+def test_connect_without_credentials_stays_disconnected(app):
+    """POST /v1/connectors/whatsapp/connect with no export folder leaves it disconnected."""
+    resp = app.post("/v1/connectors/whatsapp/connect", json={})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["connector_id"] == "obsidian"
-    assert data["connected"] is True
+    assert data["connector_id"] == "whatsapp"
+    assert data["connected"] is False
 
 
 def test_disconnect(app):
-    """POST /v1/connectors/obsidian/disconnect returns 200 with connected=False."""
-    resp = app.post("/v1/connectors/obsidian/disconnect")
+    """POST /v1/connectors/whatsapp/disconnect returns 200 with connected=False."""
+    resp = app.post("/v1/connectors/whatsapp/disconnect")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["connector_id"] == "obsidian"
+    assert data["connector_id"] == "whatsapp"
     assert data["connected"] is False
 
 
 def test_disconnect_clears_stale_sync_checkpoint(app) -> None:
     """Disconnecting a connector must reset its sync checkpoint.
 
-    Regression: a user disconnects Obsidian from one vault and reconnects
+    Regression: a user disconnects WhatsApp from one vault and reconnects
     it to a different vault. Before this fix, the SyncEngine checkpoint
     (items_synced, cursor, last_sync) was keyed only by connector_id and
     survived disconnect, so the next sync resumed from the OLD vault's
@@ -99,22 +95,22 @@ def test_disconnect_clears_stale_sync_checkpoint(app) -> None:
 
     with KnowledgeStore() as store:
         with SyncEngine(pipeline=IngestionPipeline(store=store)) as engine:
-            engine._save_checkpoint("obsidian", 9, cursor="stale-cursor")
-            assert engine.get_checkpoint("obsidian") is not None
+            engine._save_checkpoint("whatsapp", 9, cursor="stale-cursor")
+            assert engine.get_checkpoint("whatsapp") is not None
 
-    resp = app.post("/v1/connectors/obsidian/disconnect")
+    resp = app.post("/v1/connectors/whatsapp/disconnect")
     assert resp.status_code == 200
 
     # A fresh SyncEngine (same default state DB) must see no checkpoint.
     with KnowledgeStore() as store:
         with SyncEngine(pipeline=IngestionPipeline(store=store)) as fresh_engine:
-            assert fresh_engine.get_checkpoint("obsidian") is None
+            assert fresh_engine.get_checkpoint("whatsapp") is None
 
 
 def test_disconnect_purges_previously_ingested_content(app) -> None:
     """Disconnecting a connector must purge its previously-ingested chunks.
 
-    Regression: reconnecting Obsidian to a different vault left the OLD
+    Regression: reconnecting WhatsApp to a different vault left the OLD
     vault's chunks in the KnowledgeStore forever (disconnect only cleared
     credentials, never indexed content). If the new vault contains a file
     at the same relative path as one in the old vault (e.g. both have a
@@ -128,23 +124,23 @@ def test_disconnect_purges_previously_ingested_content(app) -> None:
     with KnowledgeStore() as store:
         store.store(
             content="Stale content from a previously-connected vault",
-            source="obsidian",
+            source="whatsapp",
             doc_type="note",
-            doc_id="obsidian:Welcome.md",
+            doc_id="whatsapp:Welcome.md",
             title="Welcome",
             author="",
         )
         assert any(
-            r.metadata.get("source") == "obsidian"
+            r.metadata.get("source") == "whatsapp"
             for r in store.retrieve("stale content vault", top_k=10)
         )
 
-    resp = app.post("/v1/connectors/obsidian/disconnect")
+    resp = app.post("/v1/connectors/whatsapp/disconnect")
     assert resp.status_code == 200
 
     with KnowledgeStore() as fresh_store:
         assert not any(
-            r.metadata.get("source") == "obsidian"
+            r.metadata.get("source") == "whatsapp"
             for r in fresh_store.retrieve("stale content vault", top_k=10)
         )
 
@@ -159,8 +155,8 @@ def test_disconnect_cancels_inflight_sync_before_purge(app) -> None:
     disconnect_called = threading.Event()
 
     class BlockingConnector:
-        connector_id = "obsidian"
-        indexed_sources = ("obsidian",)
+        connector_id = "whatsapp"
+        indexed_sources = ("whatsapp",)
 
         def is_connected(self):
             return True
@@ -169,8 +165,8 @@ def test_disconnect_cancels_inflight_sync_before_purge(app) -> None:
             started.set()
             released.wait(timeout=2)
             yield Document(
-                doc_id="obsidian:late-write",
-                source="obsidian",
+                doc_id="whatsapp:late-write",
+                source="whatsapp",
                 doc_type="note",
                 content="must not survive disconnect",
             )
@@ -181,21 +177,21 @@ def test_disconnect_cancels_inflight_sync_before_purge(app) -> None:
         def sync_status(self):
             return SyncStatus()
 
-    _instances["obsidian"] = BlockingConnector()
+    _instances["whatsapp"] = BlockingConnector()
     responses = []
 
     def disconnect_request():
-        responses.append(app.post("/v1/connectors/obsidian/disconnect"))
+        responses.append(app.post("/v1/connectors/whatsapp/disconnect"))
 
     disconnect_thread = threading.Thread(target=disconnect_request)
     try:
-        assert app.post("/v1/connectors/obsidian/sync").status_code == 200
+        assert app.post("/v1/connectors/whatsapp/sync").status_code == 200
         assert started.wait(timeout=2)
         disconnect_thread.start()
 
         deadline = time.monotonic() + 2
         while time.monotonic() < deadline:
-            if app.get("/v1/connectors/obsidian/sync").json()["state"] == "stopping":
+            if app.get("/v1/connectors/whatsapp/sync").json()["state"] == "stopping":
                 break
             time.sleep(0.01)
         else:
@@ -210,13 +206,13 @@ def test_disconnect_cancels_inflight_sync_before_purge(app) -> None:
         assert disconnect_called.is_set()
         with KnowledgeStore() as store:
             assert not any(
-                result.metadata.get("doc_id") == "obsidian:late-write"
+                result.metadata.get("doc_id") == "whatsapp:late-write"
                 for result in store.retrieve("must survive disconnect", top_k=10)
             )
     finally:
         released.set()
         disconnect_thread.join(timeout=3)
-        _instances.pop("obsidian", None)
+        _instances.pop("whatsapp", None)
 
 
 def test_disconnect_timeout_preserves_source_and_guards_reconnect(
@@ -234,8 +230,8 @@ def test_disconnect_timeout_preserves_source_and_guards_reconnect(
     disconnect_called = threading.Event()
 
     class StuckConnector:
-        connector_id = "obsidian"
-        indexed_sources = ("obsidian",)
+        connector_id = "whatsapp"
+        indexed_sources = ("whatsapp",)
         auth_type = "filesystem"
 
         def __init__(self):
@@ -261,36 +257,36 @@ def test_disconnect_timeout_preserves_source_and_guards_reconnect(
             return SyncStatus()
 
     connector = StuckConnector()
-    _instances["obsidian"] = connector
+    _instances["whatsapp"] = connector
     monkeypatch.setattr(connectors_router, "_SYNC_STOP_TIMEOUT_SECONDS", 0.05)
     new_vault = tmp_path / "new-vault"
     new_vault.mkdir()
 
     try:
-        assert app.post("/v1/connectors/obsidian/sync").status_code == 200
+        assert app.post("/v1/connectors/whatsapp/sync").status_code == 200
         assert started.wait(timeout=2)
 
-        response = app.post("/v1/connectors/obsidian/disconnect")
+        response = app.post("/v1/connectors/whatsapp/disconnect")
         assert response.status_code == 409
         assert connector.is_connected()
         assert connector._vault_path == "old-vault"
         assert not disconnect_called.is_set()
 
         reconnect = app.post(
-            "/v1/connectors/obsidian/connect",
+            "/v1/connectors/whatsapp/connect",
             json={"path": str(new_vault)},
         )
         assert reconnect.status_code == 409
         assert connector._vault_path == "old-vault"
-        assert app.post("/v1/connectors/obsidian/sync").status_code == 409
+        assert app.post("/v1/connectors/whatsapp/sync").status_code == 409
 
         released.set()
         assert sync_thread is not None
         # Generator completion precedes the worker's checkpoint and cleanup.
         sync_thread.join(timeout=2)
         assert not sync_thread.is_alive()
-        assert app.get("/v1/connectors/obsidian/sync").json()["state"] == "stopping"
-        response = app.post("/v1/connectors/obsidian/disconnect")
+        assert app.get("/v1/connectors/whatsapp/sync").json()["state"] == "stopping"
+        response = app.post("/v1/connectors/whatsapp/disconnect")
         assert response.status_code == 200
         assert disconnect_called.is_set()
         assert not connector.is_connected()
@@ -298,7 +294,7 @@ def test_disconnect_timeout_preserves_source_and_guards_reconnect(
         released.set()
         if sync_thread is not None:
             sync_thread.join(timeout=3)
-        _instances.pop("obsidian", None)
+        _instances.pop("whatsapp", None)
 
 
 def test_disconnect_prevents_sync_start_racing_checkpoint_read(
@@ -330,8 +326,8 @@ def test_disconnect_prevents_sync_start_racing_checkpoint_read(
     monkeypatch.setattr(SyncEngine, "get_checkpoint", gated_get_checkpoint)
 
     class RacingConnector:
-        connector_id = "obsidian"
-        indexed_sources = ("obsidian",)
+        connector_id = "whatsapp"
+        indexed_sources = ("whatsapp",)
 
         def __init__(self):
             self.connected = True
@@ -342,8 +338,8 @@ def test_disconnect_prevents_sync_start_racing_checkpoint_read(
         def sync(self, **kwargs):
             sync_called.set()
             yield Document(
-                doc_id="obsidian:post-disconnect",
-                source="obsidian",
+                doc_id="whatsapp:post-disconnect",
+                source="whatsapp",
                 doc_type="note",
                 content="must never be written",
             )
@@ -354,16 +350,16 @@ def test_disconnect_prevents_sync_start_racing_checkpoint_read(
         def sync_status(self):
             return SyncStatus()
 
-    _instances["obsidian"] = RacingConnector()
+    _instances["whatsapp"] = RacingConnector()
     sync_response = []
     disconnect_response = []
     disconnect_done = threading.Event()
 
     def trigger_sync():
-        sync_response.append(app.post("/v1/connectors/obsidian/sync"))
+        sync_response.append(app.post("/v1/connectors/whatsapp/sync"))
 
     def disconnect():
-        disconnect_response.append(app.post("/v1/connectors/obsidian/disconnect"))
+        disconnect_response.append(app.post("/v1/connectors/whatsapp/disconnect"))
         disconnect_done.set()
 
     request_thread = threading.Thread(target=trigger_sync)
@@ -390,14 +386,14 @@ def test_disconnect_prevents_sync_start_racing_checkpoint_read(
 
         with KnowledgeStore() as store:
             assert not any(
-                result.metadata.get("doc_id") == "obsidian:post-disconnect"
+                result.metadata.get("doc_id") == "whatsapp:post-disconnect"
                 for result in store.retrieve("must never be written", top_k=10)
             )
     finally:
         release_baseline.set()
         request_thread.join(timeout=3)
         disconnect_thread.join(timeout=3)
-        _instances.pop("obsidian", None)
+        _instances.pop("whatsapp", None)
 
 
 def test_disconnect_preserves_source_owned_by_connected_peer(app) -> None:
@@ -451,8 +447,8 @@ def test_disconnect_restores_checkpoint_when_purge_fails(app, monkeypatch) -> No
     from phibe.connectors.sync_engine import SyncEngine
     from phibe.server.connectors_router import _instances
 
-    class FakeObsidian:
-        indexed_sources = ("obsidian",)
+    class FakeWhatsApp:
+        indexed_sources = ("whatsapp",)
 
         def is_connected(self):
             return True
@@ -462,52 +458,73 @@ def test_disconnect_restores_checkpoint_when_purge_fails(app, monkeypatch) -> No
 
     with KnowledgeStore() as store:
         with SyncEngine(pipeline=IngestionPipeline(store=store)) as engine:
-            engine._save_checkpoint("obsidian", 17, cursor="keep-me")
+            engine._save_checkpoint("whatsapp", 17, cursor="keep-me")
 
     def fail_purge(self, sources):
         raise RuntimeError("simulated purge failure")
 
     monkeypatch.setattr(KnowledgeStore, "delete_by_sources", fail_purge)
-    _instances["obsidian"] = FakeObsidian()
+    _instances["whatsapp"] = FakeWhatsApp()
     try:
-        response = app.post("/v1/connectors/obsidian/disconnect")
+        response = app.post("/v1/connectors/whatsapp/disconnect")
         assert response.status_code == 500
         with KnowledgeStore() as store:
             with SyncEngine(pipeline=IngestionPipeline(store=store)) as engine:
-                checkpoint = engine.get_checkpoint("obsidian")
+                checkpoint = engine.get_checkpoint("whatsapp")
                 assert checkpoint is not None
                 assert checkpoint["items_synced"] == 17
                 assert checkpoint["cursor"] == "keep-me"
-                engine.reset_checkpoint("obsidian")
+                engine.reset_checkpoint("whatsapp")
     finally:
-        _instances.pop("obsidian", None)
+        _instances.pop("whatsapp", None)
 
 
 def test_sync_status(app):
-    """GET /v1/connectors/obsidian/sync returns a response with a state field."""
-    resp = app.get("/v1/connectors/obsidian/sync")
+    """GET /v1/connectors/whatsapp/sync returns a response with a state field."""
+    resp = app.get("/v1/connectors/whatsapp/sync")
     assert resp.status_code == 200
     data = resp.json()
     assert "state" in data
-    assert data["connector_id"] == "obsidian"
+    assert data["connector_id"] == "whatsapp"
 
 
-def test_trigger_sync(app, tmp_path: Path) -> None:
-    """POST /v1/connectors/obsidian/sync triggers an incremental sync.
+def test_trigger_sync(app) -> None:
+    """POST /v1/connectors/<id>/sync triggers an incremental sync.
 
-    The endpoint is intentionally fire-and-forget — it starts the sync in
+    The endpoint is intentionally fire-and-forget: it starts the sync in
     a background thread and returns immediately with ``status=started``.
     Sync progress is observable via the separate ``GET .../sync`` endpoint.
     """
-    vault = tmp_path / "vault"
-    vault.mkdir()
-    (vault / "note.md").write_text("# Test note\n\nContent here.")
-    app.post("/v1/connectors/obsidian/connect", json={"path": str(vault)})
-    resp = app.post("/v1/connectors/obsidian/sync")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["connector_id"] == "obsidian"
-    assert data["status"] in {"started", "already_syncing"}
+    from phibe.connectors._stubs import SyncStatus
+    from phibe.server.connectors_router import _instances
+
+    class ConnectedConnector:
+        connector_id = "whatsapp"
+        indexed_sources = ("whatsapp",)
+        auth_type = "filesystem"
+
+        def is_connected(self):
+            return True
+
+        def sync(self, **kwargs):
+            if False:
+                yield
+
+        def disconnect(self):
+            pass
+
+        def sync_status(self):
+            return SyncStatus()
+
+    _instances["whatsapp"] = ConnectedConnector()
+    try:
+        resp = app.post("/v1/connectors/whatsapp/sync")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["connector_id"] == "whatsapp"
+        assert data["status"] in {"started", "already_syncing"}
+    finally:
+        _instances.pop("whatsapp", None)
 
 
 # ---------------------------------------------------------------------------
@@ -721,10 +738,10 @@ def test_permissions_are_listed_and_changed_only_where_a_source_can_write(app, t
     monkeypatch.setenv("PHIBE_HOME", str(tmp_path / "home"))
     listed = app.get("/v1/connectors/permissions").json()
     assert listed["gmail"]["level"] == "read" and "all" in listed["gmail"]["actions"]
-    assert listed["notion"]["actions"] == {}  # a source that is only read has nothing to allow
+    assert listed["whatsapp"]["actions"] == {}  # a source that is only read has nothing to allow
     assert app.put("/v1/connectors/gmail/permissions", json={"level": "write"}).json() == {"level": "write"}
     assert app.get("/v1/connectors/permissions").json()["gmail"]["level"] == "write"
     assert app.put("/v1/connectors/gmail/permissions", json={"level": "root"}).status_code == 422
-    assert app.put("/v1/connectors/notion/permissions", json={"level": "write"}).status_code == 400
+    assert app.put("/v1/connectors/whatsapp/permissions", json={"level": "write"}).status_code == 400
     assert app.put("/v1/connectors/nope/permissions", json={"level": "write"}).status_code == 404
     assert app.get("/v1/connectors/gmail/actions").json() == {"actions": []}

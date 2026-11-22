@@ -57,7 +57,7 @@ class KnowledgeSearchTool(BaseTool):
                         "type": "string",
                         "description": (
                             "Filter by source connector"
-                            " (e.g. 'gmail', 'slack', 'obsidian')."
+                            " (e.g. 'gmail', 'slack', 'gcalendar')."
                         ),
                     },
                     "doc_type": {

@@ -6,17 +6,23 @@ export function Popup({
   title,
   onClose,
   wide,
+  large,
   hideTitle,
   topGap = 28,
+  className = '',
   children,
 }: {
   title: string;
   onClose: () => void;
   wide?: boolean;
+  /** Room for a text editor. */
+  large?: boolean;
   /** Keep `title` for screen readers but do not draw it. */
   hideTitle?: boolean;
   /** With the title hidden, the space kept above the content for the close button, in px. */
   topGap?: number;
+  /** Extra classes for the dialog box. */
+  className?: string;
   children: React.ReactNode;
 }) {
   useEffect(() => {
@@ -33,8 +39,8 @@ export function Popup({
       <div
         role="dialog"
         aria-label={title}
-        className={wide ? 'relative w-full max-w-lg rounded-2xl p-5' : 'relative w-full max-w-md rounded-2xl p-5'}
-        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-strong, var(--color-border))' }}
+        className={`relative w-full ${large ? 'max-w-3xl' : wide ? 'max-w-lg' : 'max-w-md'} rounded-2xl p-5 ${className}`}
+        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-strong, var(--color-border))', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}
       >
         <button
           type="button"

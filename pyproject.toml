@@ -33,6 +33,7 @@ dependencies = [
     "datasets>=4.5.0",
     "ddgs>=9.11.4",
     "httpx>=0.27",
+    "pypdf>=4.0",
     "openai>=1.30",
     "nvidia-ml-py>=12.560.30",
     "rich>=13",
@@ -81,6 +82,8 @@ memory-colbert = [
 ]
 memory-pdf = ["pdfplumber>=0.10"]
 memory-bm25 = ["rank-bm25>=0.2.2"]
+# Optional: Mem0 Platform as the chat's memory (Apache-2.0 SDK; the service needs the user's own Mem0 account).
+mem0 = ["mem0ai>=2.2"]
 server = [
     "fastapi>=0.110",
     "uvicorn>=0.30",
@@ -268,6 +271,7 @@ type = "independence"
 modules = [
     "phibe.finances",
     "phibe.tasks",
+    "phibe.boards",
     "phibe.pings",
     "phibe.sessions",
     "phibe.speech",
@@ -283,7 +287,7 @@ type = "forbidden"
 source_modules = [
     "phibe.core", "phibe.engine", "phibe.tools", "phibe.security", "phibe.agents",
     "phibe.connectors", "phibe.memory", "phibe.telemetry", "phibe.traces", "phibe.skills",
-    "phibe.learning", "phibe.evals", "phibe.mcp", "phibe.finances", "phibe.tasks",
+    "phibe.learning", "phibe.evals", "phibe.mcp", "phibe.finances", "phibe.tasks", "phibe.boards",
     "phibe.pings", "phibe.sessions", "phibe.speech", "phibe.prompt", "phibe.operators",
     "phibe.daemon", "phibe.channels", "phibe.intelligence", "phibe.scheduler", "phibe.workflow",
 ]

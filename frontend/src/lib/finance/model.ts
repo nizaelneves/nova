@@ -3,7 +3,7 @@
  *  cycles) is worked out by the server; see `src/phibe/finances/calc.py`. */
 import type { IconName } from '../../components/Icon';
 
-export type TxKind = 'income' | 'expense' | 'savings' | 'transfer' | 'payment'; // payment: paying a credit card bill
+export type TxKind = 'income' | 'expense' | 'transfer' | 'payment'; // payment: paying a credit card bill
 export type PayMethod = 'cash' | 'pix' | 'debit' | 'credit';
 
 export interface Category {
@@ -22,9 +22,19 @@ export interface Account {
   logoKey?: string | null;
   opening: number;
   balance: number;
+  savings?: boolean; // a savings account: money is moved into it
+  target?: number | null; // what it should reach, in cents (savings only)
+  color?: string | null; // its progress bar (savings only)
+  monthsLeft?: number | null; // at the pace of the last 90 days (savings with a target)
 }
 
 /** A bank card. Debit spends from its account; credit spends from its own limit. */
+export const CARD_BRANDS = [
+  { id: 'visa', label: 'Visa' }, { id: 'mastercard', label: 'Mastercard' }, { id: 'elo', label: 'Elo' },
+  { id: 'amex', label: 'American Express' }, { id: 'hipercard', label: 'Hipercard' },
+] as const;
+export type CardBrandId = (typeof CARD_BRANDS)[number]['id'];
+
 export interface BankCard {
   id: string;
   accountId: string;
@@ -33,17 +43,9 @@ export interface BankCard {
   limit: number;
   dueDay: number;
   closeDaysBefore: number;
+  brand?: CardBrandId | null;
   used: number; // credit used in the current cycle
   cycle: { start: string; close: string; due: string };
-}
-
-export interface Goal {
-  id: string;
-  name: string;
-  target: number;
-  color: string;
-  saved: number;
-  monthsLeft: number | null;
 }
 
 export interface Tx {
@@ -57,8 +59,8 @@ export interface Tx {
   toAccountId?: string | null; // transfer only
   method: PayMethod;
   cardId?: string | null; // debit and credit only
-  goalId?: string | null; // savings only
   recurringId?: string | null; // recorded by a recurring expense
+  upcoming?: boolean; // a coming charge of a recurring expense that is not recorded yet
 }
 
 /** A monthly expense. `total` is the number of installments, or null when it repeats until stopped. */

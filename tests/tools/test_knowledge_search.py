@@ -44,14 +44,14 @@ def store(tmp_path):
         timestamp="2026-01-20T14:30:00Z",
     )
 
-    # Item 3 — obsidian document from sarah
+    # Item 3 — apple_notes document from sarah
     s.store(
         "Research notes on large language model fine-tuning strategies.",
-        source="obsidian",
+        source="apple_notes",
         doc_type="document",
         title="LLM Fine-tuning Notes",
         author="sarah@example.com",
-        url="obsidian://vault/llm-notes",
+        url="notes://llm-notes",
         timestamp="2026-02-01T09:00:00Z",
     )
 

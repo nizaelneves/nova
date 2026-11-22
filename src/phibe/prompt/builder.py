@@ -10,6 +10,13 @@ from phibe.core.paths import get_config_dir
 PromptCacheSegment = Literal["frozen_prefix", "dynamic_suffix"]
 
 
+def _mem0_replaces_user() -> bool:
+    """With Mem0 as the memory, USER.md stays out of the prompt (the memories come per question instead)."""
+    from phibe.connectors.memory_provider import is_active
+
+    return is_active()
+
+
 @dataclass(frozen=True, slots=True)
 class PromptSection:
     """Inspectable prompt section emitted by SystemPromptBuilder."""
@@ -115,7 +122,7 @@ class SystemPromptBuilder:
         )
         if soul:
             sections.append(f"## Agent Persona\n\n{soul}")
-        user = self._load_file(
+        user = "" if _mem0_replaces_user() else self._load_file(
             self._mf_config.user_path,
             self._sp_config.user_max_chars,
         )
@@ -206,13 +213,14 @@ class SystemPromptBuilder:
             path_str=self._mf_config.soul_path,
             max_chars=self._sp_config.soul_max_chars,
         )
-        self._append_file_section(
-            sections=sections,
-            name="user",
-            heading="User Profile",
-            path_str=self._mf_config.user_path,
-            max_chars=self._sp_config.user_max_chars,
-        )
+        if not _mem0_replaces_user():
+            self._append_file_section(
+                sections=sections,
+                name="user",
+                heading="User Profile",
+                path_str=self._mf_config.user_path,
+                max_chars=self._sp_config.user_max_chars,
+            )
         return sections
 
     def _append_file_section(

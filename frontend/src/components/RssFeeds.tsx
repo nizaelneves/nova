@@ -8,7 +8,7 @@ import { Icon } from './Icon';
  * feed with its button. Each row says how the last sync went. The list scrolls inside its own box, so it stays
  * the same size with two feeds or a hundred. *reload* changes after a sync, to read the results again.
  */
-export function RssFeeds({ reload }: { reload?: string }) {
+export function RssFeeds({ reload, onDisconnect }: { reload?: string; onDisconnect: () => void }) {
   const [feeds, setFeeds] = useState<RssFeed[] | null>(null);
   const [paste, setPaste] = useState('');
   const [query, setQuery] = useState('');
@@ -62,8 +62,8 @@ export function RssFeeds({ reload }: { reload?: string }) {
             <i data-state={f.error ? 'error' : f.checked ? 'ok' : 'new'} aria-hidden="true" />
             <span className="rf-name"><b>{f.name}</b><em title={f.url} data-error={!!f.error || undefined}>{f.error || f.url}</em></span>
             <small>{f.checked && !f.error ? `${f.items ?? 0} ${f.items === 1 ? 'item' : 'items'}` : ''}</small>
-            <button type="button" aria-label={`Remove ${f.name}`} title={feeds.length === 1 ? 'Disconnect RSS to remove the last feed' : 'Remove'}
-              disabled={busy || feeds.length === 1} onClick={() => void save(feeds.filter((x) => x.url !== f.url))}>
+            <button type="button" aria-label={`Remove ${f.name}`} title={feeds.length === 1 ? 'Remove (disconnects RSS)' : 'Remove'}
+              disabled={busy} onClick={() => (feeds.length === 1 ? onDisconnect() : void save(feeds.filter((x) => x.url !== f.url)))}>
               <Icon name="trash-bin-minimalistic" size={14} />
             </button>
           </li>

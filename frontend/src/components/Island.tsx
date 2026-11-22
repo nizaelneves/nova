@@ -6,12 +6,11 @@ import { IslandPanel, type IslandLevel, type IslandSection } from './IslandPanel
 import { useAppStore } from '../lib/store';
 import { getVoiceLevel } from '../lib/voiceReply';
 import { gazeToward } from '../lib/avatar/gaze';
-import { PhibeMist, type MistState } from './PhibeMist';
+import { PhibeNebula, nebulaSize, type NebulaMood } from './PhibeNebula';
 import { useVoiceEvents } from '../voice/VoiceCard';
 
 type IslandState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'done' | 'waiting';
 
-const LABEL: Record<IslandState, string> = { idle: '', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', done: '', waiting: '' };
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 /**
@@ -25,11 +24,10 @@ export function Island() {
   const speaking = useAppStore((s) => s.speaking);
   const thinking = useAppStore((s) => s.streamState.isStreaming);
   const { state: voice } = useVoiceEvents();
-  const [blink, setBlink] = useState(false);
   const [happy, setHappy] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [pulse, setPulse] = useState(false);
-  const [dissolve, setDissolve] = useState(false);
+  const [burst, setBurst] = useState(0); // a burst of stars when you move to another screen
   const firstScreen = useRef(true);
   const [pending, setPending] = useState<PendingApproval[]>([]);
   const [open, setOpen] = useState(false); // the panel with the sections
@@ -39,6 +37,9 @@ export function Island() {
   const waiting = pending.length;
   const level: IslandLevel = open ? 'panel' : hover && waiting > 0 ? 'card' : 'pill';
   const { pathname } = useLocation();
+
+  // Every time the island opens it opens on the chat (unless something asked for another section).
+  useEffect(() => { if (!open) setSection('chats'); }, [open]);
 
   const faceRef = useRef<HTMLDivElement>(null);
   // Where the eyes look, -1 to 1; the Orb reads it on every frame.
@@ -75,17 +76,13 @@ export function Island() {
   }, [effects]);
 
   // A small pulse whenever you move to another screen.
-  // The Orb also breaks into pixels and numbers and gathers again, like the menu bar does (not on the first screen).
+  // The Orb also bursts into stars (not on the first screen).
   useEffect(() => {
     setPulse(true);
     const t = window.setTimeout(() => setPulse(false), 377);
-    let d = 0;
-    if (!firstScreen.current && effects !== 'off') {
-      setDissolve(true);
-      d = window.setTimeout(() => setDissolve(false), 700);
-    }
+    if (!firstScreen.current && effects !== 'off') setBurst((n) => n + 1);
     firstScreen.current = false;
-    return () => { window.clearTimeout(t); window.clearTimeout(d); };
+    return () => window.clearTimeout(t);
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Approvals waiting for you: checked now and then, only while the window is visible.
@@ -134,28 +131,10 @@ export function Island() {
     };
   }, []);
 
-  // Random blinks, sometimes two in a row.
-  useEffect(() => {
-    if (effects === 'off') return;
-    let t = 0;
-    const loop = () => {
-      t = window.setTimeout(() => {
-        setBlink(true);
-        window.setTimeout(() => setBlink(false), 120);
-        if (Math.random() < 0.22) {
-          window.setTimeout(() => setBlink(true), 240);
-          window.setTimeout(() => setBlink(false), 360);
-        }
-        loop();
-      }, rand(2200, 5400));
-    };
-    loop();
-    return () => window.clearTimeout(t);
-  }, [effects]);
-
-  const text = state === 'waiting' ? `${waiting} to approve` : LABEL[state];
+  const text = state === 'waiting' ? `${waiting} to approve` : ''; // the only words left: approvals that wait for you
   const wide = text !== '';
-  const orbState: MistState = state === 'waiting' ? 'idle' : state;
+  const mood: NebulaMood = state === 'done' ? 'happy' : state === 'waiting' ? 'idle' : state;
+  const orb = nebulaSize(0.39);
   const still = effects === 'off' || hidden;
   return (
     <div
@@ -163,7 +142,7 @@ export function Island() {
       data-pulse={pulse}
       data-state={state}
       data-level={level}
-      style={{ ['--isl-extra' as string]: `${extra}px`, width: level === 'panel' ? 'min(580px, calc(100vw - 32px))' : level === 'card' ? 'min(400px, calc(100vw - 32px))' : wide ? 280 : 200 }}
+      style={{ ['--isl-extra' as string]: `${extra}px`, width: level === 'panel' ? 'min(610px, calc(100vw - 32px))' : level === 'card' ? 'min(400px, calc(100vw - 32px))' : wide ? 300 : 216 }}
       onClick={() => setOpen((v) => !v)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -172,8 +151,8 @@ export function Island() {
     >
       <div className="phibe-island-inner">
         <div className="phibe-island-facebox" ref={faceRef}>
-          <div style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: -43, marginTop: -43, pointerEvents: 'none' }}>
-            <PhibeMist size={86} state={orbState} blink={blink && !happy} lookRef={gaze} gazeScale={2.6} dissolve={dissolve} still={still} getLevel={getVoiceLevel} />
+          <div style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: -orb.width / 2, marginTop: -orb.height / 2, pointerEvents: 'none' }}>
+            <PhibeNebula mood={mood} palette="mint" scale={0.36} id="isl" gaze={gaze} getLevel={getVoiceLevel} burstKey={burst} still={still} />
           </div>
         </div>
         <span className="phibe-island-label" aria-hidden="true" style={{ opacity: wide ? 1 : 0, width: wide ? 'auto' : 0 }}>
@@ -181,7 +160,7 @@ export function Island() {
         </span>
       </div>
       <IslandPanel onExtra={setExtra} level={level} section={section} onSection={setSection} pending={pending} onClose={() => setOpen(false)}
-        onDecided={() => { setHappy(true); window.setTimeout(() => setHappy(false), 1400); fetchPendingApprovals().then(setPending).catch(() => setPending([])); }} />
+        onDecided={() => { setHappy(true); window.setTimeout(() => setHappy(false), 3300); fetchPendingApprovals().then(setPending).catch(() => setPending([])); }} />
     </div>
   );
 }

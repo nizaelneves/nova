@@ -129,7 +129,7 @@ export function ConnectorSettings({ id, name, permission, onLevel, onAuthorize, 
         {id === 'news_rss' && (
           <section>
             <h5>Feeds</h5>
-            <RssFeeds reload={statusLine} />
+            <RssFeeds reload={statusLine} onDisconnect={onDisconnect} />
           </section>
         )}
 

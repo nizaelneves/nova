@@ -60,8 +60,8 @@ const plain = (line: string): string => line.replace(/^\s*(?:[#>*\-•]+|\d+[.)]
 const KNOWN: Record<string, string> = {
   news_rss: 'RSS', gmail: 'Gmail', gmail_imap: 'Gmail', gcalendar: 'Google Calendar',
   apple_calendar: 'Apple Calendar',
-  github_notifications: 'GitHub Notifications', imessage: 'iMessage', whatsapp: 'WhatsApp', anytype: 'Anytype',
-  slack: 'Slack', notion: 'Notion', outlook: 'Outlook', weather: 'Weather',
+  github_notifications: 'GitHub Notifications', imessage: 'iMessage', whatsapp: 'WhatsApp',
+  slack: 'Slack', weather: 'Weather',
 };
 
 /** A source as the user knows it: "news_rss" is "RSS", "gmail" is "Gmail". */

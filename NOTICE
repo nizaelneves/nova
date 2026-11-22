@@ -12,8 +12,11 @@ and auto-update components, and rewriting the affected components in Python.
 Third-party design assets bundled with the Phibe interface:
   - Inter typeface (SIL Open Font License 1.1), via @fontsource-variable/inter.
   - League Spartan typeface (SIL Open Font License 1.1), via @fontsource-variable/league-spartan.
+  - Space Grotesk and JetBrains Mono typefaces (SIL Open Font License 1.1), via @fontsource-variable/space-grotesk and @fontsource-variable/jetbrains-mono.
   - Brand logos of connected services, from Iconify ("logos" and "simple-icons" sets, CC0). Logos belong to their owners and only identify each service.
   - Solar icon set by 480 Design (CC BY 4.0), via Iconify: https://icon-sets.iconify.design/solar/
+  - Two icons: Tabler Icons "writing-sign" and Phosphor Icons "terminal-window" (both MIT), via Iconify.
+  - Lucide "brain-cog" (ISC), via Iconify.
 
 Third-party software bundled for the Horizon Computer widget:
   - psutil 7.x (BSD 3-Clause). Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola. Reads processor, memory, disk, network, battery and process figures.

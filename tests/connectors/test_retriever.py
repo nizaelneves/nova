@@ -40,7 +40,7 @@ def store(tmp_path: Path) -> KnowledgeStore:
     )
     ks.store(
         content="AI research on distributed systems and cloud infrastructure.",
-        source="obsidian",
+        source="apple_notes",
         doc_type="note",
         author="bob@example.com",
     )
@@ -304,7 +304,7 @@ def test_reranker_caches_new_embeddings() -> None:
         RetrievalResult(
             content="Document about neural nets",
             score=1.0,
-            source="obsidian",
+            source="apple_notes",
             metadata={"chunk_id": "chunk-456"},
         ),
     ]

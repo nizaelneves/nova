@@ -2,7 +2,6 @@ import { apiFetch } from './api';
 
 export type PersonaFile = 'soul' | 'user' | 'instructions';
 export interface PersonaText { text: string; limit: number }
-export interface PromptSection { name: string; source: string; chars: number; text: string }
 
 /** At most *limit* characters of *text*, counted the way the server counts (one per character, not per UTF-16 unit). */
 export const clip = (text: string, limit: number): string => {
@@ -30,12 +29,6 @@ export async function savePersonaFile(file: PersonaFile, text: string): Promise<
   return res.json();
 }
 
-export async function getPromptPreview(): Promise<{ sections: PromptSection[]; chars: number }> {
-  const res = await apiFetch('/v1/persona-files/preview');
-  if (!res.ok) throw new Error(`Could not read the prompt: ${res.status}`);
-  return res.json();
-}
-
 export type SourcesMode = 'auto' | 'always' | 'off';
 
 export async function getSourcesMode(): Promise<SourcesMode> {
@@ -52,4 +45,24 @@ export async function setSourcesMode(mode: SourcesMode): Promise<SourcesMode> {
   });
   if (!res.ok) throw new Error(`Could not save: ${res.status}`);
   return (await res.json()).mode;
+}
+
+export type MemoryMode = 'local' | 'mem0';
+
+export type MemoryState = { mode: MemoryMode; installed: boolean };
+
+export async function getMemoryState(): Promise<MemoryState> {
+  const res = await apiFetch('/v1/memory-provider');
+  if (!res.ok) throw new Error(`Could not read the setting: ${res.status}`);
+  return res.json();
+}
+
+export async function setMemoryMode(mode: MemoryMode): Promise<MemoryState> {
+  const res = await apiFetch('/v1/memory-provider', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) throw new Error(`Could not save: ${res.status}`);
+  return res.json();
 }

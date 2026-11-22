@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { curveCatmullRom } from '@visx/curve';
 import { Icon, type IconName } from '../Icon';
 import {
-  type Category, type Goal, type Range, type SeriesPoint, type Slice, type Tx,
+  type Account, type Category, type Range, type SeriesPoint, type Slice, type Tx,
   money, parse, presetRange, rangeLabel,
 } from '../../lib/finance/model';
 import { Area } from '../charts/area';
@@ -18,7 +18,7 @@ import { ChartTooltip } from '../charts/tooltip';
 export const TABS = [
   { id: 'Overview', icon: 'widget-2' },
   { id: 'Accounts', icon: 'wallet' },
-  { id: 'Goals', icon: 'target' },
+  { id: 'Cards', icon: 'card-2' },
   { id: 'Transactions', icon: 'transfer-horizontal' },
   { id: 'Categories', icon: 'tag' },
 ] as const satisfies readonly { id: string; icon: IconName }[];
@@ -48,8 +48,8 @@ const PRESETS: { id: Range['preset']; label: string }[] = [
   { id: '7d', label: 'Last 7 Days' },
   { id: '15d', label: 'Last 15 Days' },
   { id: '30d', label: 'Last 30 Days' },
-  { id: 'month', label: 'This Month' },
   { id: '3m', label: 'Last 3 Months' },
+  { id: 'month', label: 'This Month' },
 ];
 
 export function DateRangePicker({ range, onChange }: { range: Range; onChange: (r: Range) => void }) {
@@ -88,7 +88,7 @@ export function DateRangePicker({ range, onChange }: { range: Range; onChange: (
             <label>To<input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} /></label>
             <button type="button" className="fin-apply" disabled={invalid}
               onClick={() => { onChange({ preset: 'custom', from, to }); setOpen(false); }}>
-              Apply dates
+              Apply Dates
             </button>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function StatCard({ label, icon, tone, value, delta, lowerIsBetter }: {
         <span className={`fin-delta ${good ? 'up' : 'down'}`}>
           {delta === null ? 'new' : `${delta > 0 ? '+' : ''}${delta}%`}
         </span>
-        <span>vs. last month</span>
+        <span>vs. Last Month</span>
       </p>
     </div>
   );
@@ -185,7 +185,7 @@ export function ExpenseBubbles({ slices, onView }: { slices: Slice[]; onView: ()
         <button type="button" className="fin-ghost" onClick={onView}>View Expenses</button>
       </div>
       {slices.length === 0 ? (
-        <p className="fin-empty">No expenses in this period.</p>
+        <p className="fin-empty">No Expenses In This Period.</p>
       ) : (
         <>
           <svg viewBox={`${-w / 2 - 2} ${-h / 2 - 2} ${w + 4} ${h + 4}`} className="fin-bubbles" role="img" aria-label="Expense share by category">
@@ -211,23 +211,26 @@ export function ExpenseBubbles({ slices, onView }: { slices: Slice[]; onView: ()
   );
 }
 
-// -- Goals progress ---------------------------------------------------------------
+// -- Savings progress ---------------------------------------------------------------
 
-export function GoalsProgress({ goals, onViewAll }: { goals: Goal[]; onViewAll?: () => void }) {
+/** The savings accounts that have a target, each with how far it has come. */
+export function SavingsProgress({ accounts, onViewAll }: { accounts: Account[]; onViewAll?: () => void }) {
+  const pots = accounts.filter((a) => a.savings && a.target);
   return (
     <div className="fin-card">
       <div className="fin-card-head">
-        <h3>Goals Progress</h3>
+        <h3>Savings Progress</h3>
         {onViewAll && <button type="button" className="fin-ghost" onClick={onViewAll}>View All</button>}
       </div>
+      {pots.length === 0 && <p className="fin-hint">No savings target yet. Add one to a savings account.</p>}
       <ul className="fin-goals">
-        {goals.map((g) => {
-          const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+        {pots.map((a) => {
+          const pct = Math.max(0, Math.min(100, Math.round((a.balance / (a.target ?? 1)) * 100)));
           return (
-            <li key={g.id}>
-              <div className="fin-goal-top"><b>{g.name}</b><span>{pct}%</span></div>
-              <p>{money(g.saved)} / {money(g.target)}</p>
-              <div className="fin-bar"><span style={{ width: `${pct}%`, background: g.color }} /></div>
+            <li key={a.id}>
+              <div className="fin-goal-top"><b>{a.name}</b><span>{pct}%</span></div>
+              <p>{money(a.balance)} / {money(a.target ?? 0)}</p>
+              <div className="fin-bar"><span style={{ width: `${pct}%`, background: a.color ?? '#20e7aa' }} /></div>
             </li>
           );
         })}
@@ -249,7 +252,7 @@ export function TransactionsTable({ txs, cats, onViewAll }: { txs: Tx[]; cats: C
         {onViewAll && <button type="button" className="fin-ghost" onClick={onViewAll}>View All</button>}
       </div>
       {txs.length === 0 ? (
-        <p className="fin-empty">No transactions in this period.</p>
+        <p className="fin-empty">No Transactions In This Period.</p>
       ) : (
         <div className="fin-table-wrap">
           <table className="fin-table">
@@ -257,8 +260,8 @@ export function TransactionsTable({ txs, cats, onViewAll }: { txs: Tx[]; cats: C
             <tbody>
               {txs.map((t) => {
                 const c = byId.get(t.categoryId);
-                const label = t.kind === 'savings' ? 'Savings' : t.kind === 'transfer' ? 'Transfer' : t.kind === 'payment' ? 'Card payment' : c?.name ?? 'Uncategorized';
-                const tint = c?.color ?? (t.kind === 'savings' ? '#f6c38f' : '#94a3b8');
+                const label = t.kind === 'transfer' ? 'Transfer' : t.kind === 'payment' ? 'Card Payment' : c?.name ?? 'Uncategorized';
+                const tint = c?.color ?? '#94a3b8';
                 const sign = t.kind === 'expense' || t.kind === 'payment' ? '−' : t.kind === 'transfer' ? '⇄' : '+';
                 return (
                   <tr key={t.id}>

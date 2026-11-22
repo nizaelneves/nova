@@ -216,7 +216,7 @@ class SyncEngine:
 
         Must be called whenever a connector is reconfigured to point at a
         different underlying data source (e.g. disconnect/reconnect with a
-        new Obsidian vault path). Without this, the next sync would resume
+        different account). Without this, the next sync would resume
         from the old source's cursor/``since`` watermark, inflating
         ``items_synced`` with the old source's count and potentially
         skipping new items whose timestamps predate that watermark.

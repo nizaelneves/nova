@@ -62,7 +62,7 @@ def test_ingest_single_short_document(
     doc = _make_doc(
         doc_id="doc:short:001",
         content="The quick brown fox jumps over the lazy dog.",
-        source="obsidian",
+        source="apple_notes",
         doc_type="note",
         title="Fox Note",
     )
@@ -74,7 +74,7 @@ def test_ingest_single_short_document(
 
     results = store.retrieve("quick brown fox", top_k=5)
     assert len(results) >= 1
-    assert results[0].metadata.get("source") == "obsidian"
+    assert results[0].metadata.get("source") == "apple_notes"
     assert results[0].metadata.get("doc_id") == "doc:short:001"
     assert results[0].metadata.get("title") == "Fox Note"
 
@@ -233,9 +233,9 @@ def test_ingest_multiple_sources_filter(
         title="Q1 Budget Email",
         author="alice@example.com",
     )
-    obsidian_doc = _make_doc(
-        doc_id="obsidian:note:xyz",
-        source="obsidian",
+    apple_notes_doc = _make_doc(
+        doc_id="apple_notes:note:xyz",
+        source="apple_notes",
         doc_type="note",
         content="Research notes on quarterly budget planning strategies.",
         title="Budget Note",
@@ -250,22 +250,22 @@ def test_ingest_multiple_sources_filter(
         author="carol@example.com",
     )
 
-    n = pipeline.ingest([gmail_doc, obsidian_doc, slack_doc])
+    n = pipeline.ingest([gmail_doc, apple_notes_doc, slack_doc])
     assert n == 3  # one chunk per short document
 
     # Filter by each source
     gmail_results = store.retrieve("quarterly budget", top_k=10, source="gmail")
-    obsidian_results = store.retrieve("quarterly budget", top_k=10, source="obsidian")
+    apple_notes_results = store.retrieve("quarterly budget", top_k=10, source="apple_notes")
     slack_results = store.retrieve("quarterly budget", top_k=10, source="slack")
 
     assert len(gmail_results) >= 1
-    assert len(obsidian_results) >= 1
+    assert len(apple_notes_results) >= 1
     assert len(slack_results) >= 1
 
     for r in gmail_results:
         assert r.metadata.get("source") == "gmail"
-    for r in obsidian_results:
-        assert r.metadata.get("source") == "obsidian"
+    for r in apple_notes_results:
+        assert r.metadata.get("source") == "apple_notes"
     for r in slack_results:
         assert r.metadata.get("source") == "slack"
 

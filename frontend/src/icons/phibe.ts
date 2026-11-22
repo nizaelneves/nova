@@ -30,7 +30,19 @@ export const PHIBE_ICONS = {
   'plug-off': line('<path d="M9 3v4M15 3v4M6.500 7h11v3.500a5.500 5.500 0 0 1-11 0z M12 16v5 M3.500 3.500l17 17"/>'),
   // Two sliders: the model settings.
   sliders: line('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'),
+  // A dot with two rings spreading out: a beat, the Pulse widget.
+  beat: line('<circle cx="12" cy="12" r="2.8" fill="currentColor"/><circle cx="12" cy="12" r="6.4"/><circle cx="12" cy="12" r="10" opacity=".55"/>'),
   // Signal waves around a dot: the feed of the quick digest.
   feed: line('<path d="M5 5a14 14 0 0 1 14 14M5 11a8 8 0 0 1 8 8"/><circle cx="6.500" cy="17.500" r="1.500" fill="currentColor"/>'),
   'pause-circle': line('<circle cx="12" cy="12" r="9.500"/><path d="M10 9v6M14 9v6"/>'),
+  // Tabler "writing-sign" (MIT): a hand signing, the Copies of the Swipe File.
+  'writing-sign': '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 19q5-3 5-6c0-3-1-3-2-3s-2.032 1.085-2 3c.034 2.048 1.658 2.877 2.5 4C8 19 9 19.5 10 18q1-1.5 1.5-2.5q1.5 3.5 4 3.5H18m2-2V5c0-1.121-.879-2-2-2s-2 .879-2 2v12l2 2zM16 7h4"/>',
+  // Phosphor "terminal-window" (MIT, 256 grid): the Prompts of the Swipe File.
+  'terminal-window': '<g transform="scale(.09375)" fill="currentColor"><path d="M128 128a8 8 0 0 1-3 6.25l-40 32a8 8 0 1 1-10-12.5L107.19 128L75 102.25a8 8 0 1 1 10-12.5l40 32a8 8 0 0 1 3 6.25m48 24h-40a8 8 0 0 0 0 16h40a8 8 0 0 0 0-16m56-96v144a16 16 0 0 1-16 16H40a16 16 0 0 1-16-16V56a16 16 0 0 1 16-16h176a16 16 0 0 1 16 16m-16 144V56H40v144z"/></g>',
+  // Tabler "edit" (MIT): the pen-and-page that edits a card.
+  edit: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="M7 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97L9 12v3h3zM16 5l3 3"/></g>',
+  // Tabler "recycle" (MIT): the Trash of Memoir.
+  recycle: '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="m12 17l-2 2l2 2"/><path d="M10 19h9a2 2 0 0 0 1.75-2.75l-.55-1M8.536 11l-.732-2.732L5.072 9"/><path d="m7.804 8.268l-4.5 7.794a2 2 0 0 0 1.506 2.89l1.141.024M15.464 11l2.732.732L18.928 9"/><path d="m18.196 11.732l-4.5-7.794a2 2 0 0 0-3.256-.14l-.591.976"/></g>',
+  // Lucide "brain-cog" (ISC): the Brain of Memoir.
+  'brain-cog': '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"><path d="m10.852 14.772l-.383.923m.383-6.467l-.383-.923m2.679 6.467l.382.924m0-7.391l-.382.923m1.624 1.624l.923-.383m-.923 2.679l.923.383m2.302-8.406a4 4 0 0 1 2.526 5.77"/><path d="M18 18a4 4 0 0 0 2-7.464"/><path d="M4.033 17.483A4 4 0 0 0 11.46 20c.184-.31.896-.31 1.076 0a4 4 0 0 0 7.43-2.517"/><path d="M6 18a4 4 0 0 1-2-7.464"/><path d="M6.002 5.125a4 4 0 0 0-2.525 5.77"/><path d="M6.293 6.294a3 3 0 0 1-.287-1.098l-.004-.07a3 3 0 0 1 5.968-.543c.05.02.057.01.059 0a3 3 0 0 1 5.968.542l-.004.071a3 3 0 0 1-.287 1.098m-8.478 4.558l-.923-.383m.923 2.679l-.923.383"/><circle cx="12" cy="12" r="3"/></g>',
 } as const;

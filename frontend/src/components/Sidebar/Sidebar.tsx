@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { Icon, type IconName } from '../Icon';
 import { useAppStore } from '../../lib/store';
 import { FX_WIDTH, useRailSurge } from '../../lib/railSurge';
+import { enterMemoir } from '../../lib/memoirTransition';
 
 interface Module {
   path: string;
@@ -19,6 +20,7 @@ const MODULES: Module[] = [
   { path: '/pings', icon: 'bell', label: 'Pings' },
   { path: '/finances', icon: 'wallet', label: 'Finances' },
   { path: '/agents', icon: 'bot', label: 'Agents' },
+  { path: '/notes', icon: 'atom', label: 'Memoir' },
   { path: '/connections', icon: 'plug', label: 'Connections' },
   { path: '/settings', icon: 'settings', label: 'Settings' },
 ];
@@ -105,7 +107,7 @@ export function Sidebar() {
                 module={m}
                 active={isActive(m.path)}
                 expanded={expanded}
-                onClick={() => navigate(m.path)}
+                onClick={() => (m.path === '/notes' ? void enterMemoir(navigate) : navigate(m.path))} // Memoir is entered with a jump
               />
             </div>
           ))}
