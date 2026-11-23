@@ -262,7 +262,7 @@ export function TaskForm({
             <button type="button" onClick={() => setConfirmDelete(true)}
               className="text-sm px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1.5"
               style={{ color: 'var(--color-error)' }}>
-              <Icon name="trash-bin-minimalistic" size={15} /> Delete
+              <Icon name="trash-bin-2" size={15} /> Delete
             </button>
           ) : <span />}
           <div className="flex gap-2">

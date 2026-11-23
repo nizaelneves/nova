@@ -351,7 +351,7 @@ const PingCard = memo(function PingCard({ ping, now, onChanged, onEdit, onDelete
         <div className="pg-icons">
           {!done && <button type="button" aria-label="Snooze ping" title="Snooze" disabled={busy} onClick={() => void act(() => snoozePing(ping.id))}><Icon name="clock-circle" size={15} /></button>}
           <button type="button" aria-label="Edit ping" title="Edit" onClick={() => onEdit(ping)}><Icon name="pen" size={15} /></button>
-          <button type="button" aria-label="Delete ping" title="Delete" disabled={busy} onClick={() => onDelete(ping)}><Icon name="trash-bin-minimalistic" size={15} /></button>
+          <button type="button" aria-label="Delete ping" title="Delete" disabled={busy} onClick={() => onDelete(ping)}><Icon name="trash-bin-2" size={15} /></button>
         </div>
       </div>
     </article>

@@ -1,5 +1,7 @@
 import { Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
+import { phibeChats } from '../../lib/memoirChats';
 import { useAppStore } from '../../lib/store';
 import { disintegrate } from '../../lib/disintegrate';
 
@@ -21,7 +23,8 @@ function formatRelativeTime(timestamp: number): string {
 
 export function ConversationList({ searchQuery }: Props) {
   const navigate = useNavigate();
-  const conversations = useAppStore((s) => s.conversations);
+  const allChats = useAppStore((s) => s.conversations);
+  const conversations = useMemo(() => phibeChats(allChats), [allChats]);
   const activeId = useAppStore((s) => s.activeId);
   const streamingConversationId = useAppStore((s) =>
     s.streamState.isStreaming ? s.streamState.conversationId : null,

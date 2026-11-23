@@ -48,6 +48,10 @@ class FileNotes(BaseModel):
     notes: List[str] = []
 
 
+class FileLabel(BaseModel):
+    label: str
+
+
 class FileTags(BaseModel):
     tags: List[str] = []
 
@@ -345,20 +349,27 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
         """Every picture and file kept with the notes: the ones the notes use (with those notes) and the ones uploaded on their own."""
         rows = get_store().attachments()
         names = note_files.labels()
-        sizes = dict(note_files.on_disk())
+        hand = note_files.renamed()
+        disk = {n: (s, m, c) for n, s, m, c in note_files.on_disk()}
+        sizes = {n: v[0] for n, v in disk.items()}
         tag_map = note_files.tags_map()
         link_map = note_files.links_map()
-        titles = get_store().titles_of({i for ids in link_map.values() for i in ids})
+        linked = {i for ids in link_map.values() for i in ids}
+        titles = get_store().titles_of(linked)
+        stamps = get_store().stamps_of(linked)
+        note_refs = lambda name: sorted(({"id": i, "title": titles[i], "at": stamps.get(i, 0)} for i in link_map.get(name, []) if i in titles), key=lambda n: -n["at"])  # newest first
         seen = {r["name"] for r in rows}
         for r in rows:
-            r["label"] = r["label"] or names.get(r["name"], "")
+            r["label"] = hand.get(r["name"]) or r["label"] or names.get(r["name"], "")
             r["size"] = sizes.get(r["name"], 0)
+            r["modified"] = disk.get(r["name"], (0, 0, 0))[1]
+            r["created"] = disk.get(r["name"], (0, 0, 0))[2]
             r["tags"] = tag_map.get(r["name"], [])
-            r["notes"] = [{"id": i, "title": titles[i]} for i in link_map.get(r["name"], []) if i in titles]  # only what the user connected
+            r["notes"] = note_refs(r["name"])  # only what the user connected
         for name, size in sorted(sizes.items()):
             if name not in seen:
                 ext = name.rsplit(".", 1)[-1]
-                rows.append({"name": name, "ext": ext, "label": names.get(name, ""), "image": ext in {"png", "jpg", "jpeg", "gif", "webp", "avif"}, "notes": [{"id": i, "title": titles[i]} for i in link_map.get(name, []) if i in titles], "size": size, "tags": tag_map.get(name, [])})
+                rows.append({"name": name, "ext": ext, "label": hand.get(name) or names.get(name, ""), "image": ext in {"png", "jpg", "jpeg", "gif", "webp", "avif"}, "notes": note_refs(name), "size": size, "modified": disk[name][1], "created": disk[name][2], "tags": tag_map.get(name, [])})
         return [r for r in rows if r["name"] in sizes]  # a file that is gone from the disk is not listed
 
     @router.post("/files")
@@ -370,6 +381,14 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
             raise HTTPException(status_code=413, detail=str(exc))
         note_files.remember(name, file.filename or "")
         return {"name": name, "url": note_files.url_of(name), "size": len(data)}
+
+    @router.put("/files/{name}/label")
+    def set_file_label(name: str, body: FileLabel) -> Dict[str, str]:
+        if note_files.path_of(name) is None:
+            raise HTTPException(status_code=404, detail="file not found")
+        if not body.label.strip():
+            raise HTTPException(status_code=422, detail="a file needs a name")
+        return {"label": note_files.set_label(name, body.label)}
 
     @router.put("/files/{name}/tags")
     def set_file_tags(name: str, body: FileTags) -> Dict[str, List[str]]:
@@ -475,6 +494,14 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
         except NotFound:
             raise HTTPException(status_code=404, detail="note not found")
         _kick_index()
+        return {"ok": True}
+
+    @router.delete("/{note_id}/purge")
+    def purge(note_id: str) -> Dict[str, Any]:
+        try:
+            get_store().purge(note_id)
+        except NotFound:
+            raise HTTPException(status_code=404, detail="note not found")
         return {"ok": True}
 
     @router.post("/{note_id}/restore")

@@ -104,12 +104,37 @@ def remember(name: str, filename: str) -> None:
     _names_file().write_text(json.dumps(known, ensure_ascii=False), encoding="utf-8")
 
 
+def _renamed_file() -> Path:
+    return folder() / ".renamed.json"
+
+
+def renamed() -> dict:
+    """The names the user gave files by hand (they win over the original name and the label written in a note)."""
+    import json
+
+    try:
+        return {str(k): str(v) for k, v in json.loads(_renamed_file().read_text(encoding="utf-8")).items()}
+    except (OSError, ValueError):
+        return {}
+
+
+def set_label(name: str, label: str) -> str:
+    import json
+
+    label = label.strip()[:200]
+    known = renamed()
+    known[name] = label
+    _renamed_file().parent.mkdir(parents=True, exist_ok=True)
+    _renamed_file().write_text(json.dumps(known, ensure_ascii=False), encoding="utf-8")
+    return label
+
+
 def on_disk() -> list:
-    """Every stored file: ``(name, size)``."""
+    """Every stored file: ``(name, size, modified, created)``. shortcut: st_ctime is the creation time on Windows only; on Linux it is the last metadata change."""
     base = folder()
     if not base.is_dir():
         return []
-    return [(p.name, p.stat().st_size) for p in base.iterdir() if p.is_file() and _NAME.match(p.name)]
+    return [(p.name, p.stat().st_size, p.stat().st_mtime, p.stat().st_ctime) for p in base.iterdir() if p.is_file() and _NAME.match(p.name)]
 
 
 def remove(name: str) -> bool:

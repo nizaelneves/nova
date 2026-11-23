@@ -70,3 +70,41 @@ def login() -> Dict[str, bool]:
     if binary is None:
         raise HTTPException(status_code=404, detail="Claude Code is not installed")
     return {"opened": _open_terminal([binary])}
+
+
+codex_router = APIRouter(prefix="/v1/cli/codex", tags=["cli"])
+
+
+def _codex_binary() -> Optional[str]:
+    return shutil.which("codex")
+
+
+@codex_router.get("/status")
+def codex_status() -> Dict[str, Any]:
+    """Whether Codex is installed and signed in (``codex login status``). No account details are returned."""
+    binary = _codex_binary()
+    if binary is None:
+        return {"installed": False, "signed_in": False}
+    try:
+        proc = subprocess.run(
+            [binary, "login", "status"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=15,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+        said = f"{proc.stdout or ''} {proc.stderr or ''}".lower()
+        signed_in = proc.returncode == 0 and "logged in" in said and "not logged in" not in said
+    except (OSError, subprocess.TimeoutExpired):
+        signed_in = False
+    return {"installed": True, "signed_in": signed_in}
+
+
+@codex_router.post("/login")
+def codex_login() -> Dict[str, bool]:
+    """Open the official Codex sign-in in a terminal."""
+    binary = _codex_binary()
+    if binary is None:
+        raise HTTPException(status_code=404, detail="Codex is not installed")
+    return {"opened": _open_terminal([binary, "login"])}

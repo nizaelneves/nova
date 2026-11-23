@@ -29,7 +29,7 @@ from phibe.server.finances_routes import (
     create_finances_router,
     get_shared_finance_store,
 )
-from phibe.server.cli_router import router as cli_router
+from phibe.server.cli_router import codex_router, router as cli_router
 from phibe.server.widgets_router import router as widgets_router
 from phibe.server.pings_router import create_pings_router, get_shared_ping_store
 from phibe.server.research_router import router as research_router
@@ -376,6 +376,7 @@ def create_app(
     connectors_router = create_connectors_router()
     app.include_router(connectors_router)
     app.include_router(cli_router)
+    app.include_router(codex_router)
     app.include_router(widgets_router)
     # Keep every auto-synced source up to date in the background.
     from phibe.connectors.autosync import start_auto_sync, start_source_sync

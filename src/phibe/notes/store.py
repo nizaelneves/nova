@@ -285,6 +285,12 @@ class NotesStore:
         self._conn.execute("UPDATE notes SET deleted_at = ? WHERE id = ?", (time.time(), note_id))
         self._conn.commit()
 
+    def purge(self, note_id: str) -> None:
+        """Delete a note that is already in the trash for good (its tags, links and collection places go with it)."""
+        self.get(note_id)
+        self._conn.execute("DELETE FROM notes WHERE id = ? AND deleted_at IS NOT NULL", (note_id,))
+        self._conn.commit()
+
     def restore(self, note_id: str) -> None:
         self.get(note_id)
         self._conn.execute("UPDATE notes SET deleted_at = NULL WHERE id = ?", (note_id,))
@@ -343,23 +349,23 @@ class NotesStore:
         back: Dict[str, List[Dict[str, str]]] = {i: [] for i in ids}
         for i in range(0, len(ids), 500):  # the notes that link to each row, for the "Backlinks" column
             chunk = ids[i : i + 500]
-            for dst, src, title in self._conn.execute(
-                "SELECT l.dst, n.id, n.title FROM links l JOIN notes n ON n.id = l.src "
-                f"WHERE n.deleted_at IS NULL AND l.dst IN ({','.join('?' * len(chunk))}) ORDER BY n.title",
+            for dst, src, title, at in self._conn.execute(
+                "SELECT l.dst, n.id, n.title, n.updated_at FROM links l JOIN notes n ON n.id = l.src "
+                f"WHERE n.deleted_at IS NULL AND l.dst IN ({','.join('?' * len(chunk))}) ORDER BY n.updated_at DESC",
                 chunk,
             ).fetchall():
-                if len(back[dst]) < 3 and all(b["id"] != src for b in back[dst]):
-                    back[dst].append({"id": src, "title": title})
+                if all(b["id"] != src for b in back[dst]):
+                    back[dst].append({"id": src, "title": title, "at": at})
         to: Dict[str, List[Dict[str, str]]] = {i: [] for i in ids}
         for i in range(0, len(ids), 500):
             chunk = ids[i : i + 500]
-            for src, dst, title in self._conn.execute(
-                "SELECT l.src, n.id, n.title FROM links l JOIN notes n ON n.id = l.dst "
-                f"WHERE n.deleted_at IS NULL AND l.src IN ({','.join('?' * len(chunk))}) ORDER BY n.title",
+            for src, dst, title, at in self._conn.execute(
+                "SELECT l.src, n.id, n.title, n.updated_at FROM links l JOIN notes n ON n.id = l.dst "
+                f"WHERE n.deleted_at IS NULL AND l.src IN ({','.join('?' * len(chunk))}) ORDER BY n.updated_at DESC",
                 chunk,
             ).fetchall():
-                if len(to[src]) < 3 and all(b["id"] != dst for b in to[src]):
-                    to[src].append({"id": dst, "title": title})
+                if all(b["id"] != dst for b in to[src]):
+                    to[src].append({"id": dst, "title": title, "at": at})
         out = []
         for r in rows:
             d = dict(r)
@@ -368,6 +374,14 @@ class NotesStore:
             d["linked_to"] = to[d["id"]]
             out.append(d)
         return out
+
+    def stamps_of(self, ids: Iterable[str]) -> Dict[str, float]:
+        """When each live note last changed."""
+        ids = list(ids)
+        if not ids:
+            return {}
+        rows = self._conn.execute(f"SELECT id, updated_at FROM notes WHERE deleted_at IS NULL AND id IN ({','.join('?' * len(ids))})", ids).fetchall()
+        return {r[0]: r[1] for r in rows}
 
     def titles_of(self, ids: Iterable[str]) -> Dict[str, str]:
         """The titles of the live notes among these ids."""
@@ -445,7 +459,7 @@ class NotesStore:
 
     def tags(self) -> List[Dict[str, Any]]:
         rows = self._conn.execute(
-            "SELECT t.name, t.kind, t.color, COUNT(n.id) AS count FROM tags t "
+            "SELECT t.name, t.kind, t.color, COUNT(n.id) AS count, COALESCE(MAX(n.updated_at), 0) AS modified FROM tags t "
             "LEFT JOIN note_tags nt ON nt.tag_id = t.id LEFT JOIN notes n ON n.id = nt.note_id AND n.deleted_at IS NULL "
             "GROUP BY t.id ORDER BY count DESC, t.name"
         ).fetchall()
@@ -453,7 +467,7 @@ class NotesStore:
 
     def collections(self) -> List[Dict[str, Any]]:
         rows = self._conn.execute(
-            "SELECT c.id, c.name, COUNT(n.id) AS count FROM collections c "
+            "SELECT c.id, c.name, COUNT(n.id) AS count, COALESCE(MAX(n.updated_at), 0) AS modified FROM collections c "
             "LEFT JOIN collection_notes cn ON cn.collection_id = c.id LEFT JOIN notes n ON n.id = cn.note_id AND n.deleted_at IS NULL "
             "GROUP BY c.id ORDER BY c.name"
         ).fetchall()

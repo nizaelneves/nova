@@ -10,8 +10,8 @@ export interface NoteSummary {
   updated_at: number;
   deleted_at: number | null;
   tags: string[];
-  linked_from?: { id: string; title: string }[];
-  linked_to?: { id: string; title: string }[]; // the notes it points at (a bookmark's backlinks are mostly these)
+  linked_from?: { id: string; title: string; at?: number }[];
+  linked_to?: { id: string; title: string; at?: number }[]; // the notes it points at (a bookmark's backlinks are mostly these)
 }
 
 export interface Note extends NoteSummary {
@@ -24,11 +24,11 @@ export interface Note extends NoteSummary {
   backlinks: { id: string; kind: string }[];
 }
 
-export interface TagCount { name: string; kind: string; count: number; color?: string }
-export interface CollectionCount { id: string; name: string; count: number }
+export interface TagCount { name: string; kind: string; count: number; color?: string; modified?: number }
+export interface CollectionCount { id: string; name: string; count: number; modified?: number }
 export interface SearchHit { id: string; title: string; snippet: string; score: number }
 
-export interface Attachment { tags?: string[]; size?: number; name: string; url: string; ext: string; label: string; image: boolean; notes: { id: string; title: string }[] }
+export interface Attachment { tags?: string[]; size?: number; modified?: number; created?: number; name: string; url: string; ext: string; label: string; image: boolean; notes: { id: string; title: string; at?: number }[] }
 
 export interface RelatedNote { id: string; title: string; kind: string; score: number; shared: string[] }
 
@@ -86,6 +86,7 @@ export const createNote = (body: { title: string; body?: string; kind?: 'page' |
   json('/v1/notes', { ...post, body: JSON.stringify(body) });
 export const patchNote = (id: string, draft: NoteDraft): Promise<Note> => json(`/v1/notes/${id}`, { ...patch, body: JSON.stringify(draft) });
 export const trashNote = (id: string): Promise<unknown> => json(`/v1/notes/${id}/trash`, post);
+export const purgeNote = (id: string): Promise<unknown> => json(`/v1/notes/${id}/purge`, { method: 'DELETE' });
 export const restoreNote = (id: string): Promise<unknown> => json(`/v1/notes/${id}/restore`, post);
 export const createCollection = (name: string): Promise<{ id: string; name: string }> =>
   json('/v1/notes/collections', { ...post, body: JSON.stringify({ name }) });
@@ -94,6 +95,7 @@ export const renameCollection = (id: string, name: string): Promise<{ id: string
 export const deleteCollection = (id: string): Promise<unknown> => json(`/v1/notes/collections/${id}`, { method: 'DELETE' });
 export const createBookmark = (url: string): Promise<Note> => json('/v1/notes/bookmark', { ...post, body: JSON.stringify({ url }) });
 export const deleteNoteFile = (name: string): Promise<unknown> => json(`/v1/notes/files/${name}`, { method: 'DELETE' });
+export const renameNoteFile = (name: string, label: string): Promise<unknown> => json(`/v1/notes/files/${name}/label`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
 export const setFileTags = (name: string, tags: string[]): Promise<unknown> =>
   json(`/v1/notes/files/${name}/tags`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tags }) });
 export const setFileNotes = (name: string, notes: string[]): Promise<unknown> =>

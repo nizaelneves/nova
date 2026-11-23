@@ -232,3 +232,23 @@ def get_engine(
 
 
 __all__ = ["discover_engines", "discover_models", "get_engine"]
+
+
+def with_installed_cli_engines(engines: List[Tuple[str, InferenceEngine]]) -> List[Tuple[str, InferenceEngine]]:
+    """Add the command-line engines (Claude Code, Codex) once they are installed, even if not signed in yet.
+
+    ``discover_engines`` only keeps healthy engines, and a CLI is healthy only when signed in. Without this, signing in
+    after the server started leaves the CLI models unknown and the chat sends them to the local engine.
+    """
+    have = {key for key, _ in engines}
+    out = list(engines)
+    for key in ("claude_cli", "codex_cli"):
+        if key in have:
+            continue
+        try:
+            cli = EngineRegistry.get(key)()
+            if cli._binary() is not None:
+                out.append((key, cli))
+        except Exception as exc:
+            logger.debug("CLI engine %r not added: %s", key, exc)
+    return out

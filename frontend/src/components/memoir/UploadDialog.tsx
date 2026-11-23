@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { SourceInput } from './SourceInput';
+import { Pick } from './Pick';
 import { createSwipeFolder, formatSize, kindInfo, saveLink, uploadSwipe, type SwipeFolder, type SwipeKind, type TextType } from '../../lib/swipe-api';
 
 const NEW = '\u0000new';
@@ -78,14 +79,11 @@ export function UploadDialog({ kind, types, sources = [], folders, folder, files
             <input type="file" multiple hidden accept={ext.join(',')} onChange={(e) => { if (e.target.files) add(e.target.files); e.target.value = ''; }} />
           </label>
         )}
-        {types && types.length > 1 && <div className="mm-row"><span>Type</span><select value={type} onChange={(e) => setType(e.target.value)} disabled={busy}>{types.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select></div>}
-        {types && <div className="mm-row"><span>Source</span><SourceInput value={source} onChange={setSource} options={sources} disabled={busy} /></div>}
+        {types && types.length > 1 && <div className="mm-row"><span>Type</span><Pick label="Type" value={type} onChange={(v) => setType(v)} disabled={busy} options={types.map((t) => ({ value: t.id, label: t.label }))} /></div>}
+        {types && <div className="mm-row"><span>Origin</span><SourceInput value={source} onChange={setSource} options={sources} disabled={busy} /></div>}
         {kind !== 'ideas' && !types && <div className="mm-row">
           <span>Folder</span>
-          <select value={dest} onChange={(e) => setDest(e.target.value)} disabled={busy}>
-            {folders.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
-            <option value={NEW}>New Folder…</option>
-          </select>
+          <Pick label="Folder" value={dest} onChange={setDest} disabled={busy} options={[...folders.map((f) => ({ value: f.name, label: f.name })), { value: NEW, label: 'New Folder…' }]} />
           {dest === NEW && <input value={fresh} onChange={(e) => setFresh(e.target.value)} placeholder="Folder name" disabled={busy} autoFocus />}
         </div>}
         <div className="mm-files">

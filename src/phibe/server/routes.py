@@ -179,6 +179,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
     model = request_body.model
     use_server_agent = (
         agent is not None
+        and not request_body.plain  # a plain request is a direct call to the model: no persona, no tools
         and not request_body.tools
         and (not request_body.stream or bool(getattr(agent, "_tools", None)))
     )
@@ -200,6 +201,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
         config is not None
         and config.agent.context_from_memory
         and request_body.messages
+        and not request_body.plain
     ):
         try:
             from phibe.tools.storage.context import ContextConfig, inject_context
@@ -302,7 +304,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
             )
 
     # Memory (Mem0 mode): keep what the user just said, and add what is remembered for this question, on this turn only.
-    if query_text_for_complexity:
+    if query_text_for_complexity and not request_body.plain:
         from phibe.connectors.memory_provider import TIMEOUT_S, is_active, provider
 
         if is_active():
@@ -319,7 +321,7 @@ async def chat_completions(request_body: ChatCompletionRequest, request: Request
                         break
 
     # Sources (RSS, mail, calendar...) found for this question, on this turn only.
-    if query_text_for_complexity:
+    if query_text_for_complexity and not request_body.plain:
         from phibe.connectors.chat_sources import sources_block
 
         extra = await asyncio.to_thread(sources_block, query_text_for_complexity)

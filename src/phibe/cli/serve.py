@@ -258,7 +258,9 @@ def serve(
         logger.debug("Engine instrumentation failed: %s", exc)
 
     # Discover models
-    all_engines = discover_engines(config)
+    from phibe.engine._discovery import with_installed_cli_engines
+
+    all_engines = with_installed_cli_engines(discover_engines(config))
     all_models = discover_models(all_engines)
     for ek, model_ids in all_models.items():
         merge_discovered_models(ek, model_ids)

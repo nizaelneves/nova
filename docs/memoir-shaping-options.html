@@ -1,0 +1,221 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shaping It Options</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #0b0f17; color: #dfe8f5; font: 14px system-ui, sans-serif; margin: auto; padding: 28px 16px 60px; max-width: 1100px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { color: #8a9bb3; margin: 0 0 22px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card { background: #101725; border: 1px solid #1f2a3d; border-radius: 16px; padding: 14px; }
+  .card.cur { border-color: #8fe3ff55; }
+  .card h2 { font-size: 14px; margin: 0 0 2px; color: #8fe3ff; }
+  .card small { color: #8a9bb3; display: block; margin-bottom: 10px; min-height: 34px; }
+  .stage { position: relative; height: 230px; border-radius: 12px; background: #070a12; overflow: hidden; display: grid; place-items: center; }
+  canvas { display: block; }
+  .line { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 13px; color: #bfeaff; }
+  .time { position: absolute; right: 12px; top: 10px; font: 11px ui-monospace, monospace; color: #6f819b; }
+  /* option 1 */
+  .settle { font: 600 15px ui-monospace, monospace; color: #bfeaff; line-height: 1.9; text-align: left; width: 250px; }
+  .settle div:first-child { font-size: 18px; color: #fff; }
+  /* option 4 */
+  .sk { width: 250px; padding: 16px; border-radius: 14px; border: 1px solid #25324a; background: linear-gradient(180deg, #111a2c, #0d1424); }
+  .sk i { display: block; height: 9px; border-radius: 6px; margin: 9px 0; background: linear-gradient(90deg, #1b2740 25%, #2e4468 50%, #1b2740 75%); background-size: 200% 100%; animation: shine 1.4s linear infinite; transform-origin: left; }
+  .sk i.t { height: 14px; width: 62%; }
+  .sk i.b { width: 0; animation: fill 5s ease-in-out infinite, shine 1.4s linear infinite; }
+  .sk i.b:nth-child(3) { animation-delay: .2s, 0s; } .sk i.b:nth-child(4) { animation-delay: .9s, 0s; } .sk i.b:nth-child(5) { animation-delay: 1.6s, 0s; } .sk i.b:nth-child(6) { animation-delay: 2.3s, 0s; }
+  @keyframes shine { to { background-position: -200% 0; } }
+  @keyframes fill { 0%, 8% { width: 0; } 35%, 85% { width: 92%; } 100% { width: 0; } }
+</style>
+<h1>Shaping It Options</h1>
+<p class="lead">All of them are live. Pick one (or mix): the waiting line and the timer stay in every option.</p>
+<div class="grid">
+  <div class="card cur"><h2>Current: Galaxy</h2><small>Dark matter and stardust that spin, breathe and send out waves. (Simplified here.)</small><div class="stage"><canvas id="c0" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>1. Text Settling</h2><small>The scrambled words land one by one into a title, a sentence and bullets: you see the note being made.</small><div class="stage"><div class="settle" id="s1"></div><div class="line">Pulling Out Key Points…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>2. Threads Connecting</h2><small>Key words appear as points and tie together with thin lines. Matches the Threads and the Brain.</small><div class="stage"><canvas id="c2" width="320" height="230"></canvas><div class="line">Finding Threads…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>3. Forge</h2><small>Your words fall as sparks into a glowing point, and a clean card comes out below.</small><div class="stage"><canvas id="c3" width="320" height="230"></canvas><div class="line">Polishing Edges…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>4. Card Sketch</h2><small>An empty Hunch card whose lines fill in one after the other, with a soft shimmer.</small><div class="stage"><div class="sk"><i class="t"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i></div><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>5. Words In Orbit</h2><small>The galaxy stays, but your own words orbit it and get pulled into the middle. Cheapest change.</small><div class="stage"><canvas id="c5" width="320" height="230"></canvas><div class="line">Gathering Words…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>6. Loom</h2><small>Vertical and horizontal threads weave into a small cloth. A literal take on threads, and on "Weaving Together".</small><div class="stage"><canvas id="c6" width="320" height="230"></canvas><div class="line">Weaving Together…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7. Chaos To Order</h2><small>Scattered dots drift, then snap into neat lines of text, over and over. It shows "raw speech becomes a clean note".</small><div class="stage"><canvas id="c7" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>8. Folding Card</h2><small>A sheet folds itself in 3D into a finished Hunch card, then unfolds and starts again.</small><div class="stage"><div class="fold"><div class="face"><i></i><i></i><i></i></div></div><div class="line">Polishing Edges…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>9. Aurora Ribbons</h2><small>Slow ribbons of cyan, violet and magenta flow across the screen. Calm, and the most "Phibe" colours.</small><div class="stage"><canvas id="c9" width="320" height="230"></canvas><div class="line">Almost There…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>10. Typewriter Draft</h2><small>A caret writes the note live: title first, then the sentence, then the bullets, each line a little faster than the last.</small><div class="stage"><div class="settle" id="s10"></div><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7a. Words Land In Lines</h2><small>Chaos To Order with real words: they drift around, then fly into place and form a title and bullet lines.</small><div class="stage"><canvas id="c7a" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7b. Scanner</h2><small>A soft light bar sweeps down the screen; whatever it passes turns from scattered dots into a tidy line.</small><div class="stage"><canvas id="c7b" width="320" height="230"></canvas><div class="line">Finding Threads…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7c. Letter Rain</h2><small>Letters fall and settle, one column at a time, until they read as lines of a note.</small><div class="stage"><canvas id="c7c" width="320" height="230"></canvas><div class="line">Pulling Out Key Points…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7d. Galaxy Unwinds</h2><small>The current galaxy spirals out and its stars slide into rows, then collapse back. Keeps the identity of today's animation.</small><div class="stage"><canvas id="c7d" width="320" height="230"></canvas><div class="line">Weaving Together…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>7e. Shuffle And Stack</h2><small>Loose little cards tumble around, then snap into one neat stack with a Hunch on top.</small><div class="stage"><canvas id="c7e" width="320" height="230"></canvas><div class="line">Almost There…</div><div class="time">0:07</div></div></div>
+</div>
+<style>
+  .fold { perspective: 700px; }
+  .fold .face { width: 170px; height: 110px; border-radius: 12px; border: 1px solid #3b5278; background: linear-gradient(135deg, #16233b, #0e1627); padding: 14px; transform-origin: 50% 0; animation: foldy 5s ease-in-out infinite; box-shadow: 0 10px 30px rgba(124,92,255,.25); }
+  .fold .face i { display: block; height: 7px; margin: 9px 0; border-radius: 4px; background: #2e4468; }
+  .fold .face i:first-child { width: 55%; background: #8fe3ff66; }
+  @keyframes foldy { 0% { transform: rotateX(80deg) scale(.6); opacity: 0; } 25% { transform: rotateX(0) scale(1); opacity: 1; } 60% { transform: rotateX(0) scale(1); opacity: 1; } 80% { transform: rotateX(-70deg) scale(.7); opacity: .3; } 100% { transform: rotateX(80deg) scale(.6); opacity: 0; } }
+  .caret::after { content: '▌'; color: #8fe3ff; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+<script>
+const R =(a, b) => a + Math.random() * (b - a);
+const ctx = (id) => { const c = document.getElementById(id); return [c.getContext('2d'), c.width, c.height]; };
+
+// current (simplified)
+(() => {
+  const [g, W, H] = ctx('c0'); const C = [W / 2, H / 2 - 12];
+  const st = Array.from({ length: 220 }, (_, i) => { const r = 12 + Math.pow(Math.random(), 1.6) * 84; return { r, a: (i % 3) * 2.09 + r * 0.05 + R(-.5, .5), w: 1.3 / (r * .05 + 1), s: R(.5, 1.8), h: r < 30 ? 200 : r < 60 ? 265 : 305, p: R(0, 6) }; });
+  let t = 0, last = performance.now();
+  const f = (n) => { const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt; g.fillStyle = 'rgba(7,10,18,.25)'; g.fillRect(0, 0, W, H);
+    for (const s of st) { s.a += s.w * dt; const x = C[0] + Math.cos(s.a) * s.r, y = C[1] + Math.sin(s.a) * s.r * .9; g.fillStyle = `hsla(${s.h},85%,72%,${.4 + .35 * Math.sin(t * 2 + s.p)})`; g.beginPath(); g.arc(x, y, s.s, 0, 7); g.fill(); }
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 1 text settling
+(() => {
+  const el = document.getElementById('s1');
+  const lines = ['A Clean Title', 'One sentence that sums it up.', '- first key point', '- second key point', '- next step'];
+  const glyphs = '▒░#%&@*+=?';
+  const rows = lines.map(() => { const d = document.createElement('div'); el.appendChild(d); return d; });
+  let t0 = performance.now();
+  const f = (n) => { const t = ((n - t0) / 1000) % 7;
+    rows.forEach((d, i) => { const start = 0.4 + i * 0.7, k = Math.max(0, Math.min(1, (t - start) / 1.2)), full = t > 6.2 ? 0 : 1;
+      d.textContent = [...lines[i]].map((ch, j) => (ch === ' ' ? ' ' : (j / lines[i].length < k * 1.1 && full ? ch : (t < start ? ' ' : glyphs[(Math.random() * glyphs.length) | 0])))).join(''); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 2 threads connecting
+(() => {
+  const [g, W, H] = ctx('c2'); const words = ['idea', 'park', 'game', 'photo', 'client', 'price', 'next', 'brand'];
+  const pts = words.map((w, i) => ({ w, x: R(40, W - 40), y: R(30, H - 60), vx: R(-.15, .15), vy: R(-.15, .15), at: i * 0.6 }));
+  let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.clearRect(0, 0, W, H); const tt = t % 9;
+    pts.forEach((p) => { p.x += p.vx; p.y += p.vy; if (p.x < 30 || p.x > W - 30) p.vx *= -1; if (p.y < 25 || p.y > H - 50) p.vy *= -1; });
+    const live = pts.filter((p) => tt > p.at);
+    live.forEach((a, i) => live.slice(i + 1).forEach((b) => { const d = Math.hypot(a.x - b.x, a.y - b.y); if (d < 130) { g.strokeStyle = `rgba(143,227,255,${(1 - d / 130) * .6})`; g.lineWidth = 1; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); } }));
+    live.forEach((p) => { const k = Math.min(1, (tt - p.at) * 2); g.fillStyle = `rgba(167,139,250,${k})`; g.beginPath(); g.arc(p.x, p.y, 3 + 2 * Math.sin(t * 3 + p.at), 0, 7); g.fill(); g.fillStyle = `rgba(223,232,245,${k * .85})`; g.font = '11px system-ui'; g.fillText(p.w, p.x + 8, p.y + 4); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 3 forge
+(() => {
+  const [g, W, H] = ctx('c3'); const words = ['idea', 'tomorrow', 'park', 'game', 'photos', 'client', 'plan'];
+  let parts = [], sparks = [], t = 0, last = performance.now(), nextAt = 0;
+  const f = (n) => { const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt; g.fillStyle = 'rgba(7,10,18,.3)'; g.fillRect(0, 0, W, H);
+    if (t > nextAt) { nextAt = t + .45; parts.push({ w: words[(Math.random() * words.length) | 0], x: R(60, W - 60), y: -10, v: R(50, 80) }); }
+    const fx = W / 2, fy = 120;
+    parts.forEach((p) => { p.y += p.v * dt; p.x += (fx - p.x) * dt * 1.4; g.fillStyle = 'rgba(223,232,245,.8)'; g.font = '11px system-ui'; g.fillText(p.w, p.x - 14, p.y); if (p.y > fy) { for (let i = 0; i < 6; i++) sparks.push({ x: fx, y: fy, vx: R(-70, 70), vy: R(-90, -10), l: 1 }); p.dead = true; } });
+    parts = parts.filter((p) => !p.dead);
+    sparks.forEach((s) => { s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 160 * dt; s.l -= dt * 1.4; g.fillStyle = `rgba(255,${150 + (s.l * 90) | 0},90,${Math.max(0, s.l)})`; g.fillRect(s.x, s.y, 2, 2); });
+    sparks = sparks.filter((s) => s.l > 0);
+    const gl = g.createRadialGradient(fx, fy, 0, fx, fy, 38); gl.addColorStop(0, 'rgba(255,190,110,.85)'); gl.addColorStop(1, 'rgba(255,120,60,0)'); g.fillStyle = gl; g.beginPath(); g.arc(fx, fy, 38, 0, 7); g.fill();
+    const k = (t % 6) / 6; g.fillStyle = `rgba(143,227,255,${Math.min(1, k * 2) * .85})`; g.fillRect(fx - 42, 170, 84 * Math.min(1, k * 1.6), 26); g.strokeStyle = 'rgba(143,227,255,.5)'; g.strokeRect(fx - 42, 170, 84, 26);
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 5 words in orbit
+(() => {
+  const [g, W, H] = ctx('c5'); const C = [W / 2, H / 2 - 12]; const words = ['idea', 'park', 'tomorrow', 'game', 'photos', 'client', 'plan', 'next'];
+  const ws = words.map((w, i) => ({ w, a: i * 0.8, r: R(60, 100), s: R(.5, 1) }));
+  const st = Array.from({ length: 120 }, () => { const r = R(10, 70); return { r, a: R(0, 6.28), w: 1.4 / (r * .05 + 1) }; });
+  let t = 0, last = performance.now();
+  const f = (n) => { const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt; g.fillStyle = 'rgba(7,10,18,.28)'; g.fillRect(0, 0, W, H);
+    st.forEach((s) => { s.a += s.w * dt; g.fillStyle = 'rgba(167,139,250,.55)'; g.fillRect(C[0] + Math.cos(s.a) * s.r, C[1] + Math.sin(s.a) * s.r * .9, 1.6, 1.6); });
+    ws.forEach((o) => { o.a += dt * o.s * 1.2; o.r -= dt * 9; if (o.r < 8) { o.r = R(95, 110); } const x = C[0] + Math.cos(o.a) * o.r, y = C[1] + Math.sin(o.a) * o.r * .9, k = Math.min(1, o.r / 40); g.fillStyle = `rgba(223,232,245,${.25 + .7 * k})`; g.font = `${8 + 4 * k}px system-ui`; g.fillText(o.w, x - 12, y); });
+    const gl = g.createRadialGradient(C[0], C[1], 0, C[0], C[1], 22); gl.addColorStop(0, 'rgba(232,121,249,.0)'); gl.addColorStop(.7, `rgba(167,139,250,${.25 + .1 * Math.sin(t * 3)})`); gl.addColorStop(1, 'rgba(167,139,250,0)'); g.fillStyle = gl; g.beginPath(); g.arc(C[0], C[1], 22, 0, 7); g.fill();
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 6 loom
+(() => {
+  const [g, W, H] = ctx('c6'); const n = 14, x0 = 80, y0 = 40, gap = 12;
+  let t = 0, last = performance.now();
+  const f = (now) => { t += Math.min(.05, (now - last) / 1000); last = now; g.clearRect(0, 0, W, H); const k = (t % 8) / 8;
+    for (let i = 0; i < n; i++) { const prog = Math.max(0, Math.min(1, k * 2.4 - i * .05)); g.strokeStyle = 'rgba(143,227,255,.55)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x0 + i * gap, y0); g.lineTo(x0 + i * gap, y0 + 150 * prog); g.stroke(); }
+    for (let j = 0; j < n; j++) { const prog = Math.max(0, Math.min(1, k * 2.4 - 0.6 - j * .05)); const y = y0 + j * 10.5;
+      for (let i = 0; i < n; i++) { const reach = (i + 1) / n; if (prog < reach) break; const over = (i + j) % 2 === 0; if (over) { g.strokeStyle = 'rgba(232,121,249,.8)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x0 + i * gap - gap / 2, y); g.lineTo(x0 + i * gap + gap / 2, y); g.stroke(); } } }
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 7 chaos to order
+(() => {
+  const [g, W, H] = ctx('c7'); const rows = 6, per = 14, dots = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < per; c++) dots.push({ tx: 60 + c * 14 + (r === 0 ? 0 : 0), ty: 50 + r * 24, x: R(0, W), y: R(0, H), ph: R(0, 6), len: r === 0 ? 7 : 14 - r });
+  let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); const k = (t % 7) / 7, order = k < .2 ? 0 : k < .55 ? (k - .2) / .35 : k < .8 ? 1 : 1 - (k - .8) / .2;
+    dots.forEach((d, i) => { const c = i % per; const show = c < d.len; const cx = d.x + Math.sin(t * 1.3 + d.ph) * 14, cy = d.y + Math.cos(t * 1.1 + d.ph) * 14; const e = order * order * (3 - 2 * order); const x = cx + (d.tx - cx) * e, y = cy + (d.ty - cy) * e; g.fillStyle = show || e < .5 ? `hsla(${190 + e * 100},85%,${65 + e * 8}%,${.45 + .4 * e})` : 'rgba(0,0,0,0)'; g.fillRect(x, y, 6 + e * 2, 3 + e * 1.2); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 9 aurora ribbons
+(() => {
+  const [g, W, H] = ctx('c9'); let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.fillStyle = 'rgba(7,10,18,.2)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+    [['60,160,255', 0], ['124,92,255', 2], ['232,121,249', 4]].forEach(([rgb, off]) => { g.beginPath(); for (let x = 0; x <= W; x += 8) { const y = 100 + Math.sin(x * .02 + t * .9 + off) * 32 + Math.sin(x * .05 - t * .6 + off) * 12; x ? g.lineTo(x, y) : g.moveTo(x, y); } const gr = g.createLinearGradient(0, 60, 0, 170); gr.addColorStop(0, `rgba(${rgb},0)`); gr.addColorStop(.5, `rgba(${rgb},.35)`); gr.addColorStop(1, `rgba(${rgb},0)`); g.strokeStyle = gr; g.lineWidth = 34; g.stroke(); });
+    g.globalCompositeOperation = 'source-over'; requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 10 typewriter draft
+(() => {
+  const el = document.getElementById('s10'); const lines = ['A Clean Title', 'One sentence that sums it up.', '- first key point', '- second key point', '- next step'];
+  const rows = lines.map(() => { const d = document.createElement('div'); el.appendChild(d); return d; }); let t0 = performance.now();
+  const f = (n) => { const t = ((n - t0) / 1000) % 9; let chars = Math.floor(t * 16); let active = -1;
+    rows.forEach((d, i) => { const take = Math.max(0, Math.min(lines[i].length, chars)); d.textContent = lines[i].slice(0, take); d.classList.remove('caret'); if (take < lines[i].length && active < 0) active = i; chars -= lines[i].length + 4; });
+    if (t > 7.5) rows.forEach((d) => { d.textContent = ''; }); if (active >= 0) rows[active].classList.add('caret'); else if (t <= 7.5) rows[rows.length - 1].classList.add('caret');
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+const ease = (x) => x * x * (3 - 2 * x);
+const cycle = (t, len) => { const k = (t % len) / len; return k < .18 ? 0 : k < .6 ? ease((k - .18) / .42) : k < .82 ? 1 : 1 - ease((k - .82) / .18); };
+
+// 7a words land in lines
+(() => {
+  const [g, W, H] = ctx('c7a'); const text = [['Shaping', 'Ideas'], ['one', 'clear', 'sentence', 'here'], ['first', 'key', 'point'], ['second', 'point'], ['next', 'step']];
+  const items = []; text.forEach((row, r) => { let x = 46; row.forEach((w) => { items.push({ w, tx: x, ty: 52 + r * 28, x: R(10, W - 50), y: R(10, H - 40), ph: R(0, 6), big: r === 0 }); x += w.length * (r === 0 ? 9.5 : 7) + 9; }); });
+  let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.clearRect(0, 0, W, H); const e = cycle(t, 8);
+    items.forEach((o) => { const cx = o.x + Math.sin(t + o.ph) * 12, cy = o.y + Math.cos(t * .8 + o.ph) * 12; const x = cx + (o.tx - cx) * e, y = cy + (o.ty - cy) * e; g.font = `${o.big ? 15 : 11}px system-ui`; g.fillStyle = `rgba(${200 + e * 40},${232 - e * 20},255,${.45 + e * .5})`; g.save(); g.translate(x, y); g.rotate((1 - e) * Math.sin(o.ph) * .6); g.fillText(o.w, 0, 0); g.restore(); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 7b scanner
+(() => {
+  const [g, W, H] = ctx('c7b'); const rows = 6, per = 16, dots = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < per - r; c++) dots.push({ tx: 50 + c * 14, ty: 50 + r * 24, x: R(20, W - 20), y: R(20, H - 40), ph: R(0, 6) });
+  let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.clearRect(0, 0, W, H); const k = (t % 7) / 7, sy = 30 + k * 1.25 * 200;
+    g.fillStyle = 'rgba(143,227,255,.12)'; g.fillRect(0, sy - 16, W, 32); g.fillStyle = 'rgba(143,227,255,.6)'; g.fillRect(0, sy, W, 1.5);
+    dots.forEach((d) => { const done = k < .85 ? (d.ty < sy ? 1 : 0) : 1 - (k - .85) / .15 * 1; const dd = k >= .85 ? 1 - (k - .85) / .15 : done; const x = d.x + Math.sin(t + d.ph) * 10, y = d.y + Math.cos(t + d.ph) * 10; const px = x + (d.tx - x) * dd, py = y + (d.ty - y) * dd; g.fillStyle = `hsla(${190 + dd * 100},85%,${62 + dd * 10}%,${.4 + dd * .5})`; g.fillRect(px, py, 6 + dd * 2, 3 + dd); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 7c letter rain
+(() => {
+  const [g, W, H] = ctx('c7c'); const lines = ['A CLEAN TITLE HERE', 'one sentence for the idea', '- first key point', '- second key point', '- next step']; const abc = 'abcdefghijklmnopqrstuvwxyz#%@';
+  const cols = 22, cw = 12; let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); g.font = '13px ui-monospace, monospace'; const k = (t % 8) / 8;
+    for (let c = 0; c < cols; c++) { const x = 28 + c * cw; const settleAt = .25 + c * .02; for (let r = 0; r < lines.length; r++) { const ch = lines[r][c]; if (!ch || ch === ' ') continue; const ty = 62 + r * 24; if (k > settleAt && k < .88) { g.fillStyle = `rgba(143,227,255,${r === 0 ? 1 : .85})`; g.fillText(ch, x, ty); } else if (k <= settleAt) { const y = ((t * 90 + c * 37 + r * 51) % (H + 20)) - 10; g.fillStyle = 'rgba(167,139,250,.55)'; g.fillText(abc[(Math.floor(t * 8) + c + r) % abc.length], x, y); } } }
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 7d galaxy unwinds
+(() => {
+  const [g, W, H] = ctx('c7d'); const C = [W / 2, H / 2 - 12]; const stars = [];
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 17 - r; c++) { const i = stars.length, rad = 12 + Math.pow((i * 0.618) % 1, 1.4) * 84; stars.push({ r: rad, a: i * 2.4, tx: 52 + c * 13, ty: 52 + r * 24, w: 1.3 / (rad * .05 + 1) }); }
+  let t = 0, last = performance.now();
+  const f = (n) => { const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt; g.fillStyle = 'rgba(7,10,18,.3)'; g.fillRect(0, 0, W, H); const e = cycle(t, 9);
+    stars.forEach((s) => { s.a += s.w * dt * (1 - e * .8); const gx = C[0] + Math.cos(s.a) * s.r, gy = C[1] + Math.sin(s.a) * s.r * .9; const x = gx + (s.tx - gx) * e, y = gy + (s.ty - gy) * e; g.fillStyle = `hsla(${200 + e * 100 + s.r},85%,${68}%,${.45 + e * .45})`; g.fillRect(x, y, 2 + e * 5, 2 + e * 1.4); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+
+// 7e shuffle and stack
+(() => {
+  const [g, W, H] = ctx('c7e'); const cards = Array.from({ length: 7 }, (_, i) => ({ x: R(40, W - 40), y: R(40, H - 70), a: R(-1, 1), ph: R(0, 6), i }));
+  let t = 0, last = performance.now();
+  const f = (n) => { t += Math.min(.05, (n - last) / 1000); last = n; g.clearRect(0, 0, W, H); const e = cycle(t, 7.5);
+    cards.forEach((c) => { const cx = c.x + Math.sin(t * .9 + c.ph) * 16, cy = c.y + Math.cos(t * .7 + c.ph) * 14, ca = c.a + Math.sin(t + c.ph) * .3; const tx = W / 2 - 34 + c.i * 1.5, ty = 70 - c.i * 2.5; const x = cx + (tx - cx) * e, y = cy + (ty - cy) * e, a = ca * (1 - e);
+      g.save(); g.translate(x + 34, y + 24); g.rotate(a); g.fillStyle = `hsl(${220 + c.i * 12},45%,${16 + c.i * 2}%)`; g.strokeStyle = 'rgba(143,227,255,.35)'; g.lineWidth = 1; g.beginPath(); g.roundRect(-34, -24, 68, 48, 6); g.fill(); g.stroke();
+      if (c.i === 6) { g.fillStyle = 'rgba(143,227,255,.7)'; g.fillRect(-26, -14, 30, 4); g.fillStyle = 'rgba(223,232,245,.35)'; g.fillRect(-26, -4, 52, 3); g.fillRect(-26, 4, 44, 3); g.fillRect(-26, 12, 36, 3); } g.restore(); });
+    requestAnimationFrame(f); }; requestAnimationFrame(f);
+})();
+</script>

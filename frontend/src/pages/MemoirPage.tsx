@@ -67,8 +67,8 @@ export function MemoirPage() {
   useEffect(() => { setFolder('All'); }, [kind]);
   useEffect(() => { try { localStorage.setItem(SAVED, section); } catch { /* not remembered */ } }, [section]);
   useEffect(() => { // a folder that no longer exists on disk falls back to All
-    if (folder !== 'All' && lib.folders.length && !lib.folders.some((f) => f.name === folder)) setFolder('All');
-  }, [lib, folder]);
+    if (kind !== 'ideas' && kind !== 'texts' && folder !== 'All' && lib.folders.length && !lib.folders.some((f) => f.name === folder)) setFolder('All');
+  }, [lib, folder, kind]);
 
   const rise = (n: number) => ({ '--n': n } as React.CSSProperties);
   return (

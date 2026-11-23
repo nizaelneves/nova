@@ -31,6 +31,8 @@ class ChatCompletionRequest(BaseModel):
     # Reasoning effort for the Claude CLI engine: low, medium, high, xhigh, max.
     # Ignored by every other engine.
     effort: Optional[str] = None
+    # A plain request: the caller's own instructions only. No remembered facts, no sources (mail, notes, feeds) are added to it.
+    plain: bool = False
 
 
 # ---------------------------------------------------------------------------

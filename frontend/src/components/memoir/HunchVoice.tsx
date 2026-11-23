@@ -6,25 +6,26 @@ import { useAppStore } from '../../lib/store';
 import { transcribeAudio } from '../../lib/api';
 import { streamChat } from '../../lib/sse';
 import { saveText } from '../../lib/swipe-api';
-import { ThreadPicker, useNoteTags } from './Threads';
+import { ThreadPicker } from './Threads';
 import { getShaper, getSpeechModel } from '../../lib/voice-notes';
+import { isCliModel } from '../../lib/model-capabilities';
 
-const PROMPT = `You turn a spoken thought into a short, clean note for a personal idea library.
-Keep the speaker's language and meaning. Invent nothing.
-Reply with exactly this Markdown and nothing else:
+const PROMPT = `You turn a spoken thought into a clean note for a personal idea library.
+Keep the speaker's language and meaning. Invent nothing: no advice, no suggestions, nothing the speaker did not say.
+Reply with exactly this and nothing else:
 # A short title
-One sentence that sums up the idea.
+The note, as plain text.
+Threads: the thread names, separated by commas.
 
-- the key points, as short bullets
-
-**Next steps:** only if the speaker mentioned any, as bullets.
-Threads: one to three of the existing threads when they fit, or short new ones, separated by commas.`;
+The title goes on the first line after "# ", with no bold and no quotes.
+The note is plain text, no bullet lists, no bold, no "Next steps". A short idea becomes one single paragraph that sums up everything that was said. Only a long idea (several different topics, or more than about 120 words) is split into parts, each with a short "## Heading" above it and still plain text.
+The "Threads:" line only exists when the speaker asked to put the idea in a thread (for example "put it in the thread X" or "add it to X"). Then use the name the speaker gave, preferring the same name from the existing threads when it matches, and leave the request itself out of the note. When the speaker did not ask for a thread, leave the "Threads:" line out entirely.`;
 const LIVE_EVERY = 3500; // while speaking, what has been said so far is written out again this often
 
 /** Reads a streamed chat answer into one piece of text. */
 async function ask(model: string, transcript: string, threads: string[], signal: AbortSignal): Promise<string> {
   let out = '';
-  for await (const ev of streamChat({ model, stream: true, temperature: 0.3, messages: [{ role: 'system', content: `${PROMPT}
+  for await (const ev of streamChat({ model, stream: true, temperature: 0.3, plain: true, ...(isCliModel(model) ? { effort: useAppStore.getState().settings.cliEffort } : {}), messages: [{ role: 'system', content: `${PROMPT}
 Existing threads: ${threads.slice(0, 40).join(', ') || 'none yet'}.` }, { role: 'user', content: transcript }] }, signal)) {
     if (ev.event) continue;
     try { out += (JSON.parse(ev.data) as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content ?? ''; } catch { /* a chunk that is not text */ }
@@ -84,7 +85,6 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [threads, setThreads] = useState<string[]>([]);
-  const fromNotes = useNoteTags();
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number>(0);
@@ -138,9 +138,9 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
     setPhase('shaping');
     abort.current = new AbortController();
     try {
-      const note = await ask(model, transcript, [...new Set([...inUse, ...fromNotes])], abort.current.signal);
+      const note = await ask(model, transcript, inUse, abort.current.signal);
       if (!note) throw new Error('The model sent nothing back');
-      const t = /^Threads:\s*(.+)$/im.exec(note);
+      const t = /^Threads?:\s*(.+)$/im.exec(note);
       const clean = t ? note.replace(t[0], '').trim() : note;
       setThreads(t ? t[1].split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 4) : []);
       const m = /^#\s+(.+)\n?/.exec(clean) ?? /^\*\*(.+?)\*\*\s*\n?/.exec(clean); // small models often bold the title instead

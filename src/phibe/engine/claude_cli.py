@@ -43,6 +43,19 @@ EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 # Above this many characters the system prompt is sent on stdin instead of the
 # command line, which is limited on Windows.
 _MAX_ARG_CHARS = 16_000
+
+
+def _passes_inline(system_prompt: str) -> bool:
+    """Whether the system prompt can go on the command line.
+
+    On Windows ``claude`` is a ``.cmd`` shim and cmd.exe cuts an argument at its first line break, so a prompt of
+    several lines would reach the model as its first line only. Those travel in the message instead.
+    """
+    if not system_prompt or len(system_prompt) > _MAX_ARG_CHARS:
+        return False
+    return not (sys.platform == "win32" and ("\n" in system_prompt or "\r" in system_prompt))
+
+
 _AUTH_CACHE_SECONDS = 60.0
 
 
@@ -159,13 +172,13 @@ class ClaudeCLIEngine(InferenceEngine):
             ]
         else:
             cmd += ["--output-format", "json"]
-        if system_prompt and len(system_prompt) <= _MAX_ARG_CHARS:
+        if _passes_inline(system_prompt):
             cmd += ["--system-prompt", system_prompt]
         return cmd
 
     @staticmethod
     def _stdin_text(system_prompt: str, prompt: str) -> str:
-        if system_prompt and len(system_prompt) > _MAX_ARG_CHARS:
+        if system_prompt and not _passes_inline(system_prompt):
             return f"Follow these instructions:\n{system_prompt}\n\n---\n\n{prompt}"
         return prompt
 

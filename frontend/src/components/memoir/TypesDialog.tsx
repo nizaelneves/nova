@@ -35,7 +35,7 @@ export function TypesDialog({ types, sources, counts, onChanged, onClose }: { ty
               <button type="button" aria-label="Rename" disabled={busy} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditing(t.id); setName(typeLabel(t.id)); }}><Icon name="edit" size={15} /></button>
               <button type="button" className="mm-types-del" data-sure={sure === t.id} aria-label="Delete Type" disabled={busy}
                 onClick={() => { if (sure === t.id) { setSure(null); run(deleteType(t.id), 'Type Moved To Trash'); } else setSure(t.id); }}>
-                <Icon name="trash-bin-minimalistic" size={15} />{sure === t.id && <em>Sure?</em>}
+                <Icon name="trash-bin-2" size={15} />{sure === t.id && <em>Sure?</em>}
               </button>
             </li>
           ))}

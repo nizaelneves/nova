@@ -92,5 +92,5 @@ def test_attachments_and_backlinks_are_listed_for_the_sets() -> None:
     assert items[f"{sha}.png"]["image"] and items[f"{sha}.png"]["label"] == "Chart"
     assert not items[f"{'b' * 64}.pdf"]["image"] and items[f"{sha}.png"]["notes"][0]["id"] == page
     row = next(r for r in s.list(kind="bookmark") if r["id"] == mark)
-    assert row["linked_from"] == [{"id": page, "title": "Page"}]
+    assert [{k: v for k, v in r.items() if k != "at"} for r in row["linked_from"]] == [{"id": page, "title": "Page"}]
     s.close()

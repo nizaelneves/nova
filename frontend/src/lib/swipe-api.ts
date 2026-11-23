@@ -124,3 +124,7 @@ export function splitThreads(raw: string): { threads: string[]; text: string } {
 
 export const renameSwipeFolder = (kind: SwipeKind, name: string, newName: string) =>
   json<{ name: string }>('/v1/swipe/folders', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, name, new_name: newName }) });
+
+/** Whether a video starts by itself when opened (Settings). Off until the user turns it on. */
+export const getAutoPlay = () => { try { return localStorage.getItem('phibe.video.autoplay') === '1'; } catch { return false; } };
+export const setAutoPlay = (on: boolean) => { try { localStorage.setItem('phibe.video.autoplay', on ? '1' : '0'); } catch { /* the choice lasts until the page reloads */ } };

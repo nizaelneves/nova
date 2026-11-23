@@ -8,7 +8,7 @@ import { generateId, useAppStore } from './store';
 import { serializeToolCallArguments } from './tool-call';
 import { speakReply, stopSpeaking } from './voiceReply';
 import { fileContext } from './docContext';
-import { mentorPrompt } from './mentor';
+import { mentor, mentorPrompt } from './mentor';
 import type {
   ChatMessage,
   MessageTelemetry,
@@ -359,7 +359,8 @@ export function useChat() {
       resetStream();
       abortRef.current = null;
 
-      const voiceMode = useAppStore.getState().settings.voiceReplies;
+      const voiceSettings = useAppStore.getState().settings;
+      const voiceMode = mentor.on ? voiceSettings.memoirVoiceReplies : voiceSettings.voiceReplies; // Memoir has its own
       if (accumulatedContent && (voiceMode === 'always' || (voiceMode === 'voice' && fromVoice))) {
         speakReply(accumulatedContent)
           .then((spoke) => {

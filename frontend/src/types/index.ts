@@ -111,6 +111,8 @@ export interface Conversation {
   model: string;
   messages: ChatMessage[];
   files?: ConversationFile[];
+  /** Memoir keeps its own conversations: they never show in Phibe's lists. */
+  space?: 'memoir';
 }
 
 // --- Stream State ---

@@ -9,6 +9,8 @@ interface ChatRequest {
   max_tokens?: number;
   /** Claude CLI models only: low, medium, high, xhigh or max. */
   effort?: string;
+  /** Only the caller's own instructions: no remembered facts and no sources (mail, notes, feeds) are added. */
+  plain?: boolean;
 }
 
 export async function* streamChat(

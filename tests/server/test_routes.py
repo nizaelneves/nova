@@ -101,6 +101,32 @@ class _SpyMemoryService:
         pass
 
 
+class TestPlainRequests:
+    def test_a_plain_request_gets_no_sources_added(self, monkeypatch):
+        monkeypatch.setattr("phibe.connectors.chat_sources.sources_block", lambda q: "FROM-SOURCES")
+        engine = _make_engine()
+        client = TestClient(create_app(engine, "test-model", config=_test_config()))
+
+        def seen(plain: bool) -> str:
+            engine.generate.reset_mock()
+            resp = client.post("/v1/chat/completions", json={"model": "test-model", "messages": [{"role": "user", "content": "shape this"}], "plain": plain})
+            assert resp.status_code == 200
+            return " ".join(m.text for m in engine.generate.call_args.args[0])
+
+        assert "FROM-SOURCES" in seen(False)
+        assert "FROM-SOURCES" not in seen(True)
+
+
+    def test_a_plain_request_skips_the_agent(self):
+        engine = _make_engine(content="direct reply")
+        agent = _make_agent(content="agent reply")
+        client = TestClient(create_app(engine, "test-model", agent=agent, config=_test_config()))
+        body = {"model": "test-model", "messages": [{"role": "user", "content": "shape this"}]}
+        assert client.post("/v1/chat/completions", json=body).json()["choices"][0]["message"]["content"] == "agent reply"
+        resp = client.post("/v1/chat/completions", json={**body, "plain": True})
+        assert resp.json()["choices"][0]["message"]["content"] == "direct reply"
+
+
 class TestMemoryServiceWiring:
     def test_non_streaming_completion_feeds_memory(self):
         engine = _make_engine(content="remembered reply")

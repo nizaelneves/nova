@@ -4,10 +4,12 @@ import { Icon } from '../Icon';
 import { disintegrate } from '../../lib/disintegrate';
 import { createTag, deleteTag, editTag, type TagCount } from '../../lib/notes-api';
 import { TAG_COLORS, tagStyle } from './SetTable';
+import { SortControl, sortRows, useSort } from '../memoir/SortControl';
 
 /** Tags in one place: search them, see how much each is used, and rename, colour, merge or delete with one click. */
-export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: TagCount[]; fileCounts: Record<string, number>; onOpen: (name: string) => void; onChanged: () => void }) {
+export function TagsManager({ tags, onOpen, onChanged }: { tags: TagCount[]; onOpen: (name: string) => void; onChanged: () => void }) {
   const [query, setQuery] = useState('');
+  const sort = useSort('tags', ['az', 'used']);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [palette, setPalette] = useState<string | null>(null);
@@ -16,8 +18,8 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     const rows = tags.filter((t) => !q || t.name.toLowerCase().includes(q));
-    return [...rows].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  }, [tags, query]);
+    return sortRows(rows, sort.mode, (t) => t.name, (t) => t.modified ?? 0, (t) => t.count);
+  }, [tags, query, sort.mode]);
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : 'Something Went Wrong');
   const done = (msg?: string) => { if (msg) toast.success(msg); onChanged(); };
 
@@ -27,15 +29,16 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
         <h1><Icon name="lucide-tags" size={26} /> Tags</h1>
         <p>{tags.length} {tags.length === 1 ? 'Tag' : 'Tags'}</p>
         <div className="nt-set-actions">
+          <SortControl sort={sort} />
           {adding === null
             ? <button type="button" className="nt-btn nt-primary" onClick={() => setAdding('')}><Icon name="add-circle" size={17} /> New Tag</button>
-            : <input autoFocus className="nt-add nt-url" value={adding} placeholder="Name The Tag And Press Enter" aria-label="Tag Name"
+            : <input autoFocus className="nt-add nt-url" value={adding} placeholder="Insert a name for a tag" aria-label="Tag Name"
                 onChange={(e) => setAdding(e.target.value)} onBlur={() => { if (!adding.trim()) setAdding(null); }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && adding.trim()) { createTag(adding.trim()).then(() => { setAdding(null); done('Tag Added'); }).catch(fail); } if (e.key === 'Escape') setAdding(null); }} />}
         </div>
       </header>
       <div className="nt-tagbar">
-        <div className="nt-search"><Icon name="magnifer" size={15} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find A Tag" aria-label="Find A Tag" /></div>
+        <div className="nt-search"><Icon name="magnifer" size={15} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Type to filter tags" aria-label="Find A Tag" /></div>
       </div>
       {shown.length === 0 ? <p className="nt-empty">{tags.length === 0 ? 'No Tags Yet' : 'No Tag Matches'}</p> : (
         <div className="nt-taggrid">
@@ -50,7 +53,7 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
               ) : (
                 <button type="button" className="nt-tagmain" onClick={() => onOpen(t.name)}>
                   <span className="nt-tagpill" style={tagStyle(t.name)}>{t.name}</span>
-                  <small>{t.count} {t.count === 1 ? 'Note' : 'Notes'}{fileCounts[t.name] ? ` · ${fileCounts[t.name]} ${fileCounts[t.name] === 1 ? 'File' : 'Files'}` : ''}</small>
+                  <small>{t.count} {t.count === 1 ? 'Note' : 'Notes'}</small>
                 </button>
               )}
               <span className="nt-tagacts">
@@ -60,7 +63,7 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
                   if (sure !== t.name) { setSure(t.name); return; }
                   setSure(null);
                   void disintegrate(document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`tag:${t.name}`)}"]`)).then(() => deleteTag(t.name)).then(() => done('Tag Deleted')).catch(fail);
-                }}><Icon name="trash-bin-minimalistic" size={14} />{sure === t.name && <em>Sure?</em>}</button>
+                }}><Icon name="trash-bin-2" size={14} />{sure === t.name && <em>Sure?</em>}</button>
               </span>
               {palette === t.name && (
                 <div className="nt-swatches" role="group" aria-label="Pick A Color">
@@ -72,7 +75,6 @@ export function TagsManager({ tags, fileCounts, onOpen, onChanged }: { tags: Tag
           ))}
         </div>
       )}
-      <p className="nt-tagnote">Renaming a tag to a name that already exists merges the two. Deleting a tag removes it from every note and file; they stay.</p>
     </div>
   );
 }

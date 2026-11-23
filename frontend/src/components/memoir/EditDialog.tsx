@@ -4,6 +4,7 @@ import { Icon } from '../Icon';
 import { disintegrate } from '../../lib/disintegrate';
 import { ThreadPicker } from './Threads';
 import { SourceInput } from './SourceInput';
+import { Pick } from './Pick';
 import { trashSwipe, updateSwipe, type SwipeFolder, type SwipeKind, type SwipeVideo } from '../../lib/swipe-api';
 
 const NEW = '\u0000new';
@@ -26,7 +27,7 @@ export function TrashButton({ kind, item, folders, onDone }: { kind: SwipeKind; 
   return (
     <button type="button" className="mm-edit mm-del" aria-label={`Move ${item.title} To Trash`}
       onClick={(e) => { e.stopPropagation(); const card = e.currentTarget.closest<HTMLElement>('.mm-ed, .mm-track'); void disintegrate(card).then(() => trashSwipe(kind, item)).then(() => { toast.success('Moved To Trash'); onDone(homeAfterTrash(item, folders)); }).catch((er) => toast.error(er instanceof Error ? er.message : 'Could not move it')); }}>
-      <Icon name="trash-bin-minimalistic" size={14} />
+      <Icon name="trash-bin-2" size={14} />
     </button>
   );
 }
@@ -69,18 +70,13 @@ export function EditDialog({ kind, item, folders, inUse = [], texts, sources = [
         <label className="mm-fld"><span>Title</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} autoFocus onKeyDown={(e) => { if (e.key === 'Enter' && changed && title.trim() && (texts || target) && !busy) void save(); }} />
         </label>
-        {texts && <div className="mm-fld"><span>Source</span><SourceInput value={source} onChange={setSource} options={sources} disabled={busy} /></div>}
-        {texts ? null : hunch ? <div className="mm-fld"><span>Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div> : <label className="mm-fld"><span>Folder</span>
-          <select value={dest} onChange={(e) => setDest(e.target.value)} disabled={busy}>
-            {names.map((n) => <option key={n} value={n}>{n}</option>)}
-            <option value={NEW}>New Folder…</option>
-          </select>
-        </label>}
+        {texts && <div className="mm-fld"><span>Origin</span><SourceInput value={source} onChange={setSource} options={sources} disabled={busy} /></div>}
+        {texts ? null : hunch ? <div className="mm-fld"><span>Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div> : <div className="mm-fld"><span>Folder</span><Pick label="Folder" value={dest} onChange={setDest} disabled={busy} options={[...names.map((n) => ({ value: n, label: n })), { value: NEW, label: 'New Folder…' }]} /></div>}
         {!hunch && !texts && dest === NEW && <label className="mm-fld"><span>New Folder</span><input value={fresh} onChange={(e) => setFresh(e.target.value)} placeholder="Folder name" disabled={busy} autoFocus /></label>}
         <div className="mm-acts">
           <button type="button" className="mm-btn mm-go mm-save" data-busy={busy} onClick={() => void save()} disabled={busy || !changed || !title.trim() || (!hunch && !texts && !target)}>Save</button>
           <button type="button" className="mm-btn mm-cancel" onClick={onClose} disabled={busy}>Cancel</button>
-          <button type="button" className="mm-btn mm-trash" onClick={() => void trash()} disabled={busy} aria-label="Move To Trash"><Icon name="trash-bin-minimalistic" size={16} />Trash</button>
+          <button type="button" className="mm-btn mm-trash" onClick={() => void trash()} disabled={busy} aria-label="Move To Trash"><Icon name="trash-bin-2" size={16} />Trash</button>
         </div>
       </div>
     </div>

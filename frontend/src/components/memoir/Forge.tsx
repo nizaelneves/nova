@@ -4,70 +4,68 @@ const LINES = [
   'Gathering Word', 'Finding Threads', 'Shaping Ideas', 'Connecting Dots',
   'Pulling Out Key Points', 'Weaving Together', 'Polishing Edges', 'Almost There',
 ];
-const SIZE = 210;
+const W = 320, H = 210;
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
+const ease = (x: number) => x * x * (3 - 2 * x);
+const clamp = (x: number) => Math.max(0, Math.min(1, x));
+const LENS = [8, 14, 13, 12, 14, 12, 11, 9]; // 93 dots: the lines of a note
+const ACTS = [['chaos', 3.4], ['toNote', 2.2], ['note', 1.4], ['toVortex', 1.6], ['vortex', 2.4], ['toChaos', 1.8]] as const;
+const TOTAL = ACTS.reduce((a, b) => a + b[1], 0);
+type P = [number, number];
+const mix = (a: P, b: P, w: number): P => [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
 
-/** A small galaxy of dark matter and stardust, in Phibe's colours but without its face. It spins, breathes and sends out waves, in turns. */
-function Orb() {
+/**
+ * The waiting screen's picture, in loops: dots drift with a magnet pulling them in and out and leave comet trails, line up
+ * as the lines of a note, swirl into a vortex, and scatter again.
+ */
+function Chaos() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const cv = ref.current;
-    const g = cv?.getContext('2d');
+    const cv = ref.current, g = cv?.getContext('2d');
     if (!cv || !g) return undefined;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    cv.width = cv.height = SIZE * dpr;
-    g.scale(dpr, dpr);
-    const C = SIZE / 2;
-    const stars = Array.from({ length: 260 }, (_, i) => {
-      const r = 12 + Math.pow(Math.random(), 1.6) * 84, arm = i % 3;
-      const hue = r < 30 ? [200, 90, 82] : r < 60 ? [265, 85, 72] : [305, 80, 70]; // cyan-white inside, violet, then magenta outside
-      return { r, a: (arm * Math.PI * 2) / 3 + r * 0.05 + rand(-0.5, 0.5), w: 1.3 / (r * 0.05 + 1), s: rand(0.5, 1.9), h: hue, p: rand(0, 6), tilt: rand(0.82, 1) };
-    });
-    let shoot: { x: number; y: number; vx: number; vy: number; life: number } | null = null;
+    cv.width = W * dpr; cv.height = H * dpr; g.scale(dpr, dpr);
+    const CX = W / 2, CY = H / 2;
+    const note: P[] = []; LENS.forEach((n, r) => { for (let c = 0; c < n; c++) note.push([CX - 94 + c * 14.5, 22 + r * 23]); });
+    const gold = 2.399963;
+    const dots = note.map((_, i) => ({ i, x: rand(8, W - 8), y: rand(8, H - 8), ph: rand(0, 6), sr0: (i * 37.3) % 92, sa: i * gold }));
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let raf = 0, last = performance.now(), t = 0;
+    let raf = 0, last = performance.now(), t = still ? 6.4 : 0;
     const draw = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
-      const phase = Math.floor(t / 5) % 3, k = (t % 5) / 5; // swirl, breathe, wave
-      const breathe = phase === 1 ? 0.86 + Math.sin(k * Math.PI * 2) * 0.16 : 1;
-      const spin = phase === 0 ? 1 : phase === 1 ? 1.5 : 0.8;
-      g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, 0, SIZE, SIZE);
-      g.globalCompositeOperation = 'lighter';
-      // haze: three soft clouds that drift round the middle
-      ([['124,92,255', 0], ['232,121,249', 2.1], ['60,160,255', 4.2]] as const).forEach(([rgb, off]) => {
-        const x = C + Math.cos(t * 0.5 + off) * 22, y = C + Math.sin(t * 0.42 + off) * 18;
-        const h = g.createRadialGradient(x, y, 0, x, y, 62 * breathe); h.addColorStop(0, `rgba(${rgb},.03)`); h.addColorStop(0.5, `rgba(${rgb},.17)`); h.addColorStop(1, `rgba(${rgb},0)`); // a ring of haze: the middle stays dark
-        g.fillStyle = h; g.beginPath(); g.arc(x, y, 62 * breathe, 0, 7); g.fill();
-      });
-      // the dark middle with a faint glowing edge
-      const ring = g.createRadialGradient(C, C, 6, C, C, 30 * breathe);
-      ring.addColorStop(0, 'rgba(143,227,255,0)'); ring.addColorStop(0.7, `rgba(167,139,250,${0.18 + Math.sin(t * 3) * 0.06})`); ring.addColorStop(1, 'rgba(167,139,250,0)');
-      g.fillStyle = ring; g.beginPath(); g.arc(C, C, 30 * breathe, 0, 7); g.fill();
-      const waveR = phase === 2 ? k * 96 : -1;
-      for (const s of stars) {
-        s.a += s.w * dt * spin;
-        const r = s.r * breathe, x = C + Math.cos(s.a) * r, y = C + Math.sin(s.a) * r * s.tilt;
-        const lit = waveR > 0 ? Math.max(0, 1 - Math.abs(r - waveR) / 9) : 0; // a wave passing makes stars flare
-        g.fillStyle = `hsla(${s.h[0]},${s.h[1]}%,${s.h[2] + lit * 20}%,${Math.min(1, 0.35 + 0.35 * Math.sin(t * 2.2 + s.p) + lit)})`;
-        g.beginPath(); g.arc(x, y, s.s + lit * 1.4, 0, 7); g.fill();
-      }
-      if (!shoot && Math.random() < dt * 0.35) { const a = rand(0, 6.28); shoot = { x: C + Math.cos(a) * 100, y: C + Math.sin(a) * 100, vx: -Math.cos(a) * 150, vy: -Math.sin(a) * 150 + rand(-40, 40), life: 1 }; }
-      if (shoot) {
-        shoot.x += shoot.vx * dt; shoot.y += shoot.vy * dt; shoot.life -= dt * 1.2;
-        g.strokeStyle = `rgba(220,245,255,${Math.max(0, shoot.life)})`; g.lineWidth = 1.2; g.beginPath(); g.moveTo(shoot.x, shoot.y); g.lineTo(shoot.x - shoot.vx * 0.09, shoot.y - shoot.vy * 0.09); g.stroke();
-        if (shoot.life <= 0) shoot = null;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!still) t += dt;
+      let k = t % TOTAL, act = 0;
+      while (k > ACTS[act][1]) { k -= ACTS[act][1]; act += 1; }
+      const name = ACTS[act][0], u = ease(clamp(k / ACTS[act][1]));
+      g.globalCompositeOperation = 'destination-out'; g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, 0, W, H); // the fade is what leaves the trails
+      g.globalCompositeOperation = 'source-over';
+      const spin = t * 0.9;
+      for (const d of dots) {
+        const dx = d.x - CX, dy = d.y - CY, dist = Math.hypot(dx, dy) || 1, pull = Math.sin(dist * 0.04 - t * 4) * 12; // the magnet, in and out
+        const chaos: P = [d.x + Math.sin(t + d.ph) * 11 - (dx / dist) * pull, d.y + Math.cos(t * 0.8 + d.ph) * 11 - (dy / dist) * pull];
+        const rr = 8 + ((((d.sr0 - t * 24) % 92) + 92) % 92), ang = d.sa + spin * (3.4 - rr / 34);
+        const vortex: P = [CX + Math.cos(ang) * rr, CY + Math.sin(ang) * rr * 0.8];
+        const NT = note[d.i];
+        let p: P, hue = 195, speed = 0, size = 1.7;
+        if (name === 'chaos') { p = chaos; }
+        else if (name === 'toNote') { p = mix(chaos, NT, u); hue = 195 + u * 70; speed = Math.sin(u * Math.PI); }
+        else if (name === 'note') { p = NT; hue = 265; size = 2; }
+        else if (name === 'toVortex') { p = mix(NT, vortex, u); hue = 265 + u * 50; speed = Math.sin(u * Math.PI); }
+        else if (name === 'vortex') { p = vortex; hue = 315 - (rr / 100) * 120; size = 1.3 + (1 - rr / 100) * 1.6; speed = (1 - rr / 100) * 0.6; }
+        else { p = mix(vortex, chaos, u); hue = 195 + (1 - u) * 120; speed = Math.sin(u * Math.PI); }
+        g.fillStyle = `hsla(${hue},90%,${64 + speed * 10}%,${0.5 + speed * 0.4})`;
+        g.beginPath(); g.arc(p[0], p[1], size + speed, 0, 7); g.fill();
       }
       if (!still) raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
   }, []);
-  return <canvas ref={ref} className="mm-forge-orb" style={{ width: SIZE, height: SIZE }} aria-hidden="true" />;
+  return <canvas ref={ref} className="mm-forge-orb" style={{ width: W, height: H }} aria-hidden="true" />;
 }
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-/** The waiting screen: the orb, a line that keeps changing, and a quiet timer of how long it has taken. */
+/** The waiting screen: the dots, a line that keeps changing, and a quiet timer of how long it has taken. */
 export function Forge() {
   const [n, setN] = useState(0);
   const [secs, setSecs] = useState(0);
@@ -78,7 +76,7 @@ export function Forge() {
   }, []);
   return (
     <div className="mm-vc mm-shaping" role="status">
-      <Orb />
+      <Chaos />
       <p key={n} className="mm-forge-line">{LINES[n]}…</p>
       <small className="mm-forge-time">{clock(secs)}</small>
     </div>

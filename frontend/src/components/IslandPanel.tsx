@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { phibeChats } from '../lib/memoirChats';
 import { toast } from 'sonner';
 import { AttachMenu } from './Chat/AttachMenu';
 import { EngineMenu } from './Chat/EngineMenu';
@@ -194,7 +195,7 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
         </button>
         <button type="button" className="composer-icon" data-on={think} aria-pressed={think} aria-label="Muse"
           title={think ? 'Muse: ON' : 'Muse: OFF'} onClick={() => setThink(!think)}>
-          <Icon name="lightbulb-bolt" size={18} />
+          <Icon name="brain-cog" size={18} />
         </button>
       </div>
     </>
@@ -285,7 +286,8 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
   decide: (id: string, a: 'approve' | 'deny', card?: HTMLElement | null) => Promise<void>;
 }) {
   const messages = useAppStore((s) => s.messages);
-  const conversations = useAppStore((s) => s.conversations);
+  const allChats = useAppStore((s) => s.conversations);
+  const conversations = useMemo(() => phibeChats(allChats), [allChats]);
   const activeId = useAppStore((s) => s.activeId);
   const model = useAppStore((s) => s.selectedModel);
   const stream = useAppStore((s) => s.streamState);
@@ -386,7 +388,7 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
                     const row = e.currentTarget.closest('.isl-hrow') as HTMLElement | null;
                     void disintegrate(row, '#ff6b6b').then(() => useAppStore.getState().deleteConversation(c.id));
                   }}>
-                  <Icon name="trash-bin-minimalistic" size={13} />
+                  <Icon name="trash-bin-2" size={13} />
                 </button>
               </div>
             );

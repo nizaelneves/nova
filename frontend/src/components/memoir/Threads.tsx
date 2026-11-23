@@ -1,25 +1,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon } from '../Icon';
-import { listTags } from '../../lib/notes-api';
 import { renameSwipeFolder, type SwipeKind } from '../../lib/swipe-api';
-
-/** The tags of All Notes, so a hunch can hang on the same projects and areas. Read once. */
-let known: string[] | null = null;
-export function useNoteTags(): string[] {
-  const [tags, setTags] = useState<string[]>(known ?? []);
-  useEffect(() => {
-    if (known) return;
-    listTags().then((t) => { known = t.map((x) => x.name); setTags(known); }).catch(() => { /* no suggestions */ });
-  }, []);
-  return tags;
-}
 
 /** Threads: as many as you like, chosen from your Notes' tags or made up on the spot. */
 export function ThreadPicker({ value, onChange, inUse = [] }: { value: string[]; onChange: (v: string[]) => void; inUse?: string[] }) {
   const [text, setText] = useState('');
-  const fromNotes = useNoteTags();
-  const options = [...new Set([...inUse, ...fromNotes])].filter((t) => !value.some((v) => v.toLowerCase() === t.toLowerCase()));
+  const options = inUse.filter((t) => !value.some((v) => v.toLowerCase() === t.toLowerCase()));
   const add = (raw: string) => {
     const t = raw.trim().replace(/^#/, '');
     if (t && !value.some((v) => v.toLowerCase() === t.toLowerCase())) onChange([...value, t]);

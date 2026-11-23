@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chaos To Order Options</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #0b0f17; color: #dfe8f5; font: 14px system-ui, sans-serif; margin: auto; padding: 28px 16px 60px; max-width: 1100px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.lead { color: #8a9bb3; margin: 0 0 22px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card { background: #101725; border: 1px solid #1f2a3d; border-radius: 16px; padding: 14px; }
+  .card.cur { border-color: #8fe3ff55; }
+  .card h2 { font-size: 14px; margin: 0 0 2px; color: #8fe3ff; }
+  .card small { color: #8a9bb3; display: block; margin-bottom: 10px; min-height: 48px; }
+  .stage { position: relative; height: 230px; border-radius: 12px; background: #070a12; overflow: hidden; }
+  canvas { display: block; }
+  .line { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 13px; color: #bfeaff; }
+  .time { position: absolute; right: 12px; top: 10px; font: 11px ui-monospace, monospace; color: #6f819b; }
+</style>
+<h1>Chaos To Order Options</h1>
+<p class="lead">Same idea, with more going on. Each one is a richer version of it; they can also be mixed (for example, B's trails with C's three acts).</p>
+<div class="grid">
+  <div class="card cur"><h2>Base: Chaos To Order</h2><small>What you liked: scattered dots drift, then snap into lines of a note, and scatter again.</small><div class="stage"><canvas id="c0" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>A. Shockwave</h2><small>When the lines form, a ring of light spreads from the middle and each line flashes as it passes.</small><div class="stage"><canvas id="c1" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>B. Comet Trails</h2><small>Every dot leaves a glowing trail as it flies in, and its colour shifts from cyan to violet to magenta on the way.</small><div class="stage"><canvas id="c2" width="320" height="230"></canvas><div class="line">Connecting Dots…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>C. Three Acts</h2><small>Chaos, then a galaxy spiral, then rows, then a light sweep and a check mark. It tells a small story before it repeats.</small><div class="stage"><canvas id="c3" width="320" height="230"></canvas><div class="line">Weaving Together…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>D. Magnet Pulse</h2><small>Waves of attraction pulse through the dots while they wait, pulling them in and out, until they lock into rows.</small><div class="stage"><canvas id="c4" width="320" height="230"></canvas><div class="line">Gathering Word…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>E. Shimmer Rows</h2><small>After the dots settle, a shine runs along each line one after the other, with a few sparkles and an underline under the title.</small><div class="stage"><canvas id="c5" width="320" height="230"></canvas><div class="line">Polishing Edges…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>F. Depth</h2><small>The dots start at different depths (big and blurry near, small far) and fly forward onto the page, like a camera pulling focus.</small><div class="stage"><canvas id="c6" width="320" height="230"></canvas><div class="line">Pulling Out Key Points…</div><div class="time">0:07</div></div></div>
+  <div class="card"><h2>G. Dots Become Words</h2><small>The dots land in rows, then melt into real words (title and bullets), which then dissolve back into dots.</small><div class="stage"><canvas id="c7" width="320" height="230"></canvas><div class="line">Shaping Ideas…</div><div class="time">0:07</div></div></div>
+</div>
+<script>
+const R = (a, b) => a + Math.random() * (b - a);
+const ease = (x) => x * x * (3 - 2 * x);
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ctx = (id) => { const c = document.getElementById(id); return [c.getContext('2d'), c.width, c.height]; };
+const LENS = [7, 15, 13, 11, 9, 6];
+const targets = () => { const out = []; LENS.forEach((n, r) => { for (let c = 0; c < n; c++) out.push({ tx: 50 + c * 14, ty: 46 + r * 24, r, c, n }); }); return out; };
+const make = (W, H) => targets().map((d) => ({ ...d, x: R(10, W - 10), y: R(10, H - 40), ph: R(0, 6), z: R(.35, 1.5) }));
+const cycle = (t, len) => { const k = (t % len) / len; return k < .18 ? 0 : k < .6 ? ease((k - .18) / .42) : k < .82 ? 1 : 1 - ease((k - .82) / .18); };
+const loop = (fn) => { let t = 0, last = performance.now(); const f = (n) => { const dt = Math.min(.05, (n - last) / 1000); last = n; t += dt; fn(t, dt); requestAnimationFrame(f); }; requestAnimationFrame(f); };
+const wob = (d, t, a = 12) => [d.x + Math.sin(t + d.ph) * a, d.y + Math.cos(t * .8 + d.ph) * a];
+const rect = (g, x, y, e, hue, al) => { g.fillStyle = `hsla(${hue},85%,${62 + e * 10}%,${al})`; g.fillRect(x, y, 6 + e * 2, 3 + e); };
+
+// base
+(() => { const [g, W, H] = ctx('c0'); const ds = make(W, H);
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); const e = cycle(t, 7);
+    ds.forEach((d) => { const [cx, cy] = wob(d, t); rect(g, cx + (d.tx - cx) * e, cy + (d.ty - cy) * e, e, 190 + e * 100, .45 + e * .45); }); }); })();
+
+// A shockwave
+(() => { const [g, W, H] = ctx('c1'); const ds = make(W, H);
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); const k = (t % 8) / 8, e = cycle(t, 8); const rad = (k - .5) * 520, ring = k > .5 && k < .82;
+    if (ring) { g.strokeStyle = `rgba(143,227,255,${.5 * (1 - (k - .5) / .32)})`; g.lineWidth = 2; g.beginPath(); g.arc(W / 2, 100, Math.max(1, rad), 0, 7); g.stroke(); }
+    ds.forEach((d) => { const [cx, cy] = wob(d, t); const x = cx + (d.tx - cx) * e, y = cy + (d.ty - cy) * e; const flash = ring ? clamp(1 - Math.abs(Math.hypot(x - W / 2, y - 100) - rad) / 28) : 0; g.fillStyle = `hsla(${190 + e * 100 - flash * 40},90%,${62 + e * 8 + flash * 28}%,${.45 + e * .4 + flash * .3})`; g.fillRect(x - flash * 1.5, y - flash, 6 + e * 2 + flash * 3, 3 + e + flash * 2); }); }); })();
+
+// B comet trails
+(() => { const [g, W, H] = ctx('c2'); const ds = make(W, H);
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.1)'; g.fillRect(0, 0, W, H); const e = cycle(t, 8);
+    ds.forEach((d) => { const [cx, cy] = wob(d, t, 16); const x = cx + (d.tx - cx) * e, y = cy + (d.ty - cy) * e; const moving = Math.abs(Math.sin(e * Math.PI)); g.fillStyle = `hsla(${190 + e * 115},90%,${64 + e * 8}%,${.4 + moving * .5 + e * .2})`; g.beginPath(); g.arc(x, y, 1.6 + moving * 1.4, 0, 7); g.fill(); if (e > .97) g.fillRect(x - 3, y - 1, 7, 3); });
+    if ((t % 8) / 8 > .8) { g.fillStyle = 'rgba(7,10,18,.3)'; g.fillRect(0, 0, W, H); } }); })();
+
+// C three acts
+(() => { const [g, W, H] = ctx('c3'); const ds = make(W, H).map((d, i) => ({ ...d, sr: 8 + Math.pow((i * .618) % 1, 1.3) * 80, sa: i * 2.399 }));
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.3)'; g.fillRect(0, 0, W, H); const k = (t % 11) / 11; const spin = t * .7;
+    const stage = k < .18 ? 0 : k < .38 ? 1 : k < .62 ? 2 : k < .86 ? 3 : 4;
+    ds.forEach((d) => { const [cx, cy] = wob(d, t); const sx = W / 2 + Math.cos(d.sa + spin) * d.sr, sy = 105 + Math.sin(d.sa + spin) * d.sr * .85; let x, y, e = 0;
+      if (k < .18) { x = cx; y = cy; } else if (k < .38) { const a = ease((k - .18) / .2); x = cx + (sx - cx) * a; y = cy + (sy - cy) * a; } else if (k < .62) { const a = ease((k - .38) / .24); x = sx + (d.tx - sx) * a; y = sy + (d.ty - sy) * a; e = a; } else if (k < .86) { x = d.tx; y = d.ty; e = 1; } else { const a = ease((k - .86) / .14); x = d.tx + (cx - d.tx) * a; y = d.ty + (cy - d.ty) * a; e = 1 - a; }
+      let flash = 0; if (stage === 3) flash = clamp(1 - Math.abs(y - (30 + ((k - .62) / .24) * 190)) / 22);
+      g.fillStyle = `hsla(${190 + e * 100},88%,${62 + e * 8 + flash * 25}%,${.45 + e * .4 + flash * .2})`; g.fillRect(x, y, 5 + e * 3, 3 + e); });
+    if (stage === 3) { const a = clamp((k - .76) / .06); g.strokeStyle = `rgba(94,242,176,${a})`; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(W - 50, 36); g.lineTo(W - 42, 44); g.lineTo(W - 28, 26); g.stroke(); } }); })();
+
+// D magnet pulse
+(() => { const [g, W, H] = ctx('c4'); const ds = make(W, H);
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.3)'; g.fillRect(0, 0, W, H); const e = cycle(t, 8.5); const k = (t % 8.5) / 8.5;
+    if (k < .6) { const r = ((t * 90) % 220); g.strokeStyle = `rgba(167,139,250,${.35 * (1 - r / 220)})`; g.lineWidth = 1.5; g.beginPath(); g.arc(W / 2, 105, r, 0, 7); g.stroke(); }
+    ds.forEach((d) => { const [cx, cy] = wob(d, t, 10); const dx = cx - W / 2, dy = cy - 105, dist = Math.hypot(dx, dy) || 1; const pull = Math.sin(dist * .045 - t * 5) * 14 * (1 - e); const px = cx - (dx / dist) * pull, py = cy - (dy / dist) * pull; rect(g, px + (d.tx - px) * e, py + (d.ty - py) * e, e, 190 + e * 100, .45 + e * .45); }); }); })();
+
+// E shimmer rows
+(() => { const [g, W, H] = ctx('c5'); const ds = make(W, H); const sparks = [];
+  loop((t, dt) => { g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); const k = (t % 9) / 9, e = cycle(t, 9);
+    ds.forEach((d) => { const [cx, cy] = wob(d, t); const x = cx + (d.tx - cx) * e, y = cy + (d.ty - cy) * e; let sh = 0; if (e > .95) { const p = ((k - .55) * 4 - d.r * .5) ; sh = clamp(1 - Math.abs(p * 12 - d.c) / 3.2); } rect(g, x, y, e, 190 + e * 100 - sh * 30, .45 + e * .4 + sh * .4); if (sh > .9 && Math.random() < .05) sparks.push({ x, y, vx: R(-20, 20), vy: R(-40, -5), l: 1 }); });
+    if (e > .95) { g.fillStyle = 'rgba(143,227,255,.8)'; g.fillRect(50, 62, Math.min(1, (k - .45) * 8) * 96 * 0 + 0, 0); }
+    sparks.forEach((s) => { s.x += s.vx * dt; s.y += s.vy * dt; s.l -= dt * 1.6; g.fillStyle = `rgba(255,255,255,${Math.max(0, s.l)})`; g.fillRect(s.x, s.y, 2, 2); }); for (let i = sparks.length - 1; i >= 0; i--) if (sparks[i].l <= 0) sparks.splice(i, 1);
+    if (e > .95) { const u = clamp((k - .5) * 6); g.fillStyle = 'rgba(143,227,255,.9)'; g.fillRect(50, 54, 98 * u, 2); } }); })();
+
+// F depth
+(() => { const [g, W, H] = ctx('c6'); const ds = make(W, H);
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.4)'; g.fillRect(0, 0, W, H); const e = cycle(t, 8);
+    ds.slice().sort((a, b) => a.z - b.z).forEach((d) => { const z = d.z + (1 - d.z) * e; const [cx, cy] = wob(d, t, 10 * d.z); const ox = W / 2 + (cx - W / 2) * (.6 + d.z * .8), oy = 105 + (cy - 105) * (.6 + d.z * .8); const x = ox + (d.tx - ox) * e, y = oy + (d.ty - oy) * e; g.shadowBlur = (1 - e) * Math.abs(d.z - 1) * 18; g.shadowColor = '#8fe3ff'; g.fillStyle = `hsla(${190 + e * 100},88%,${60 + e * 10}%,${.3 + z * .35 + e * .25})`; g.fillRect(x, y, (6 + e * 2) * z, (3 + e) * z); }); g.shadowBlur = 0; }); })();
+
+// G dots become words
+(() => { const [g, W, H] = ctx('c7'); const ds = make(W, H); const words = ['Shaping Ideas', 'one sentence that sums it up', '- first key point', '- second key point', '- the next step', '- one more'];
+  loop((t) => { g.fillStyle = 'rgba(7,10,18,.35)'; g.fillRect(0, 0, W, H); const k = (t % 9.5) / 9.5, e = cycle(t, 9.5); const word = clamp((k - .5) / .1) * clamp(1 - (k - .78) / .06);
+    ds.forEach((d) => { const [cx, cy] = wob(d, t); const x = cx + (d.tx - cx) * e, y = cy + (d.ty - cy) * e; rect(g, x, y, e, 190 + e * 100, (.45 + e * .45) * (1 - word * .85)); });
+    g.font = '12px system-ui'; words.forEach((w, r) => { g.fillStyle = `rgba(${r ? '223,232,245' : '143,227,255'},${word * .95})`; g.font = r ? '12px system-ui' : '600 15px system-ui'; g.fillText(w, 50, 52 + r * 24); }); }); })();
+</script>

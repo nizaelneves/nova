@@ -38,7 +38,7 @@ export function YourData() {
   const [chatQuery, setChatQuery] = useState('');
   const [chatDays, setChatDays] = useState(getChatRetention);
   const [confirmChats, setConfirmChats] = useState(false);
-  const chatCount = useAppStore((s) => s.conversations.length);
+  const chatCount = useAppStore((s) => s.conversations.filter((c) => c.space !== 'memoir').length);
   const pruneConversations = useAppStore((s) => s.pruneConversations);
 
   const changeChatDays = (days: number) => {
@@ -135,7 +135,7 @@ export function YourData() {
                 data-danger
                 data-armed={confirmChats || undefined}
               >
-                <Icon name="trash-bin-minimalistic" size={12} /> {confirmChats ? 'Click again to confirm' : 'Clear'}
+                <Icon name="trash-bin-2" size={12} /> {confirmChats ? 'Click again to confirm' : 'Clear'}
               </button>
             </div>
           </div>
@@ -178,7 +178,7 @@ export function YourData() {
                 data-danger
                 data-armed={confirmAll || undefined}
               >
-                <Icon name="trash-bin-minimalistic" size={12} /> {confirmAll ? 'Click again to confirm' : 'Clear'}
+                <Icon name="trash-bin-2" size={12} /> {confirmAll ? 'Click again to confirm' : 'Clear'}
               </button>
             </div>
           </div>
@@ -203,7 +203,7 @@ export function YourData() {
                     </button>
                   )}
                   <button type="button" onClick={(ev) => void disintegrate(ev.currentTarget.closest('li'), '#ff6b6b').then(() => remove(e.id))} aria-label="Delete entry" title="Delete" className="p-1 rounded cursor-pointer" style={{ color: 'var(--color-text-tertiary)' }}>
-                    <Icon name="trash-bin-minimalistic" size={16} />
+                    <Icon name="trash-bin-2" size={16} />
                   </button>
                 </li>
               ))}

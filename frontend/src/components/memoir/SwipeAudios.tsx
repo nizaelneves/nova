@@ -1,3 +1,4 @@
+import { Dates, SortControl, sortRows, useSort } from './SortControl';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 import { UploadDialog } from './UploadDialog';
@@ -60,7 +61,8 @@ const NEXT = 'M16 5h2v14h-2zM5 5.6v12.8a.8.8 0 0 0 1.25.66l8.25-5.4a.8.8 0 0 0 0
 export function SwipeAudios({ lib, folder, setFolder, reload }: {
   lib: SwipeLibrary; folder: string; setFolder: (f: string) => void; reload: () => void;
 }) {
-  const shown = folder === 'All' ? lib.items : lib.items.filter((v) => v.folder === folder);
+  const sort = useSort('audios');
+  const shown = sortRows((folder === 'All' ? lib.items : lib.items.filter((v) => v.folder === folder)), sort.mode, (v) => v.title, (v) => v.created ?? v.modified);
   const [now, setNow] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -105,6 +107,7 @@ export function SwipeAudios({ lib, folder, setFolder, reload }: {
       </div>
       <div className="mm-head">
         <FolderTitle kind="audios" folder={folder} text={folder === 'All' ? 'All Audios' : folder} onRenamed={setFolder} /><span>{shown.length} {shown.length === 1 ? 'Audio' : 'Audios'}</span>
+        <SortControl sort={sort} />
         <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="upload-minimalistic" size={15} />Upload</button>
       </div>
 
@@ -122,6 +125,7 @@ export function SwipeAudios({ lib, folder, setFolder, reload }: {
                   <span className="mm-tplay" aria-label={on && playing ? `Pause ${v.title}` : `Play ${v.title}`}><Glyph d={on && playing ? PAUSE : PLAY} /></span>
                   <b>{v.title}</b>
                   <small className="mm-cfoot"><span>{v.folder}</span><Length v={v} /><span>{formatSize(v.size)}</span><span className="mm-eq" aria-hidden="true"><i /><i /><i /><i /></span></small>
+                  <Dates created={v.created ?? v.modified} />
                 </div>
                 <EditButton label={v.title} onEdit={() => setEdit(v)} />
                 <TrashButton kind="audios" item={v} folders={lib.folders} onDone={(f) => { if (on) { audio.current?.pause(); setNow(null); } reload(); setFolder(f); }} />

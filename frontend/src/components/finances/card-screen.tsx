@@ -57,7 +57,7 @@ export function CardScreen({ cardId, onBack, startSettings = false }: { cardId: 
         <button type="button" className="fin-btn-quiet" onClick={onBack}>‹ Back to Cards</button>
         {credit && <button type="button" className="fin-btn-quiet" onClick={() => setModal({ t: 'pay' })}><Icon name="wallet-money" size={15} />Pay</button>}
         <button type="button" className="fin-btn-quiet" aria-expanded={settings} onClick={() => setSettings(!settings)}><Icon name="pen" size={15} />Settings</button>
-        <button type="button" className="fin-btn-quiet" onClick={() => setModal({ t: 'del-card' })}><Icon name="trash-bin-minimalistic" size={15} />Delete</button>
+        <button type="button" className="fin-btn-quiet" onClick={() => setModal({ t: 'del-card' })}><Icon name="trash-bin-2" size={15} />Delete</button>
       </Heading>
 
       {settings && (
@@ -105,7 +105,7 @@ export function CardScreen({ cardId, onBack, startSettings = false }: { cardId: 
                     <b>{t.description}</b>
                     <p>{t.kind === 'payment' ? 'Card Payment' : `${t.method === 'credit' ? 'Credit' : 'Debit'} · ${cat?.name ?? 'Uncategorized'}`}{t.upcoming ? ' · Scheduled' : t.recurringId ? ' · Recurring' : ''}</p>
                   </div>
-                  {!t.upcoming && <span className="fin-minis"><Mini icon="pen" label="Edit" onClick={() => setModal({ t: 'edit', tx: t })} /><Mini icon="trash-bin-minimalistic" label="Delete" onClick={() => setModal({ t: 'del', tx: t })} danger /></span>}
+                  {!t.upcoming && <span className="fin-minis"><Mini icon="pen" label="Edit" onClick={() => setModal({ t: 'edit', tx: t })} /><Mini icon="trash-bin-2" label="Delete" onClick={() => setModal({ t: 'del', tx: t })} danger /></span>}
                   <span className={`fin-amt ${t.kind === 'expense' ? 'neg' : ''}`}>{t.kind === 'expense' ? '−' : ''} {money(t.amount)}</span>
                 </div>
               );

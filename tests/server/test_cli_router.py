@@ -16,6 +16,7 @@ from phibe.server import cli_router
 def client() -> TestClient:
     app = FastAPI()
     app.include_router(cli_router.router)
+    app.include_router(cli_router.codex_router)
     return TestClient(app)
 
 
@@ -42,3 +43,21 @@ def test_login_opens_the_cli_in_a_terminal(client, monkeypatch) -> None:
 def test_login_without_the_cli_is_a_404(client, monkeypatch) -> None:
     monkeypatch.setattr(cli_router, "_binary", lambda: None)
     assert client.post("/v1/cli/claude/login").status_code == 404
+
+
+def test_codex_status_reads_the_login_and_returns_only_booleans(client, monkeypatch) -> None:
+    monkeypatch.setattr(cli_router, "_codex_binary", lambda: None)
+    assert client.get("/v1/cli/codex/status").json() == {"installed": False, "signed_in": False}
+    monkeypatch.setattr(cli_router, "_codex_binary", lambda: "codex")
+    for out, code, expected in [("Logged in using ChatGPT", 0, True), ("Not logged in", 1, False), ("Not logged in", 0, False)]:
+        monkeypatch.setattr(subprocess, "run", lambda *a, _o=out, _c=code, **k: SimpleNamespace(stdout=_o, stderr="", returncode=_c))
+        assert client.get("/v1/cli/codex/status").json() == {"installed": True, "signed_in": expected}
+
+
+def test_codex_login_opens_the_cli_in_a_terminal(client, monkeypatch) -> None:
+    opened = []
+    monkeypatch.setattr(cli_router, "_codex_binary", lambda: "codex")
+    monkeypatch.setattr(cli_router, "_open_terminal", lambda cmd: opened.append(cmd) or True)
+    assert client.post("/v1/cli/codex/login").json() == {"opened": True} and opened == [["codex", "login"]]
+    monkeypatch.setattr(cli_router, "_codex_binary", lambda: None)
+    assert client.post("/v1/cli/codex/login").status_code == 404

@@ -41,6 +41,16 @@ def test_create_edit_tag_trash_and_restore(client) -> None:
     assert len(client.get("/v1/notes").json()) == 1
 
 
+def test_purge_only_removes_a_note_that_is_in_the_trash(client) -> None:
+    nid = client.post("/v1/notes", json={"title": "Gone", "body": "x"}).json()["id"]
+    client.delete(f"/v1/notes/{nid}/purge")  # not in the trash: stays
+    assert len(client.get("/v1/notes").json()) == 1
+    client.post(f"/v1/notes/{nid}/trash")
+    assert client.delete(f"/v1/notes/{nid}/purge").json() == {"ok": True}
+    assert client.get("/v1/notes", params={"trashed": "true"}).json() == []
+    assert client.delete(f"/v1/notes/{nid}/purge").status_code == 404
+
+
 def test_errors_are_clear(client) -> None:
     assert client.get("/v1/notes/nope").status_code == 404
     assert client.patch("/v1/notes/nope", json={"title": "x"}).status_code == 404
@@ -116,7 +126,7 @@ def test_file_backlinks_tags_and_tag_management(client) -> None:
     row = client.get("/v1/notes/attachments").json()[0]
     assert row["notes"] == [] and row["label"] == "[ABORDAGEM]"  # written inside a note, but not connected
     assert client.put(f"/v1/notes/files/{up['name']}/notes", json={"notes": [a]}).json() == {"notes": [a]}
-    assert client.get("/v1/notes/attachments").json()[0]["notes"] == [{"id": a, "title": "One"}]
+    assert [n["id"] for n in client.get("/v1/notes/attachments").json()[0]["notes"]] == [a]
     assert client.put(f"/v1/notes/files/{up['name']}/tags", json={"tags": ["Old", "Ads"]}).json() == {"tags": ["Old", "Ads"]}
     assert client.patch("/v1/notes/tags", json={"name": "Old", "new_name": "New", "color": "#8fe3ff"}).json() == {"ok": True}
     tags = {t["name"]: t for t in client.get("/v1/notes/tags").json()}
@@ -133,9 +143,17 @@ def test_links_show_both_ways_and_can_be_removed(client) -> None:
     mark = client.post("/v1/notes", json={"title": "Mark", "kind": "bookmark", "body": "y"}).json()["id"]
     client.patch(f"/v1/notes/{mark}", json={"body": f"see [the page](/notes?note={page})"})
     rows = {r["id"]: r for r in client.get("/v1/notes").json()}
-    assert rows[mark]["linked_to"] == [{"id": page, "title": "Page"}] and rows[page]["linked_from"] == [{"id": mark, "title": "Mark"}]
+    assert [n["id"] for n in rows[mark]["linked_to"]] == [page] and [n["id"] for n in rows[page]["linked_from"]] == [mark]
     assert client.delete("/v1/notes/links", params={"src": mark, "dst": page}).json() == {"ok": True}
     assert client.get(f"/v1/notes/{mark}").json()["body"] == "see the page"
     rows = {r["id"]: r for r in client.get("/v1/notes").json()}
     assert rows[page]["linked_from"] == [] and rows[mark]["linked_to"] == []
     assert client.delete("/v1/notes/links", params={"src": mark, "dst": page}).status_code == 404
+
+
+def test_a_file_can_be_renamed(client) -> None:
+    up = client.post("/v1/notes/files", files={"file": ("brief.pdf", b"%PDF-1.4 hello", "application/pdf")}).json()
+    assert client.put(f"/v1/notes/files/{up['name']}/label", json={"label": "  Plan  "}).json() == {"label": "Plan"}
+    assert client.get("/v1/notes/attachments").json()[0]["label"] == "Plan"
+    assert client.put(f"/v1/notes/files/{up['name']}/label", json={"label": " "}).status_code == 422
+    assert client.put("/v1/notes/files/nope.pdf/label", json={"label": "x"}).status_code == 404

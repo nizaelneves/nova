@@ -6,12 +6,14 @@ import { Icon, type IconName } from '../components/Icon';
 import { disintegrate } from '../lib/disintegrate';
 import { CollectionEditor, TagEditor } from '../components/notes/Organize';
 import { GraphView } from '../components/notes/GraphView';
+import { FileUpload } from '../components/notes/FileUpload';
 import { AttachmentsTable, CollectionsTable, NotesTable, setTagColors } from '../components/notes/SetTable';
+import { SortControl, useSort } from '../components/memoir/SortControl';
 import { TagsManager } from '../components/notes/TagsManager';
 import { FileView } from '../components/notes/FileView';
 import {
   type Attachment, type CollectionCount, type Note, type NoteDraft, type RelatedNote, type NoteSummary, type NotesStatus, type SearchHit, type TagCount,
-  createBookmark, createCollection, createNote, deleteCollection, deleteNoteFile, setFileNotes, setFileTags, unlinkNotes, getNote, listAttachments, listCollections, listNotes, listTags,
+  createBookmark, createCollection, createNote, deleteCollection, renameCollection, deleteNoteFile, setFileNotes, setFileTags, getNote, listAttachments, listCollections, listNotes, listTags,
   notesStatus, patchNote, reindexNotes, relatedNotes, restoreNote, searchNotes, setNoteCollections, trashNote, uploadNoteFile,
 } from '../lib/notes-api';
 import { mentionedNoteId, plainSnippet, tidyMarkdown, whenText, withoutTitle } from '../lib/notes';
@@ -39,6 +41,8 @@ const message = (e: unknown) => (e instanceof Error ? e.message : 'Something Wen
 const SAVE_AFTER_MS = 900;
 
 /** Notes: Phibe's own second brain, laid out as a tree on the left, a set or a page in the middle. */
+const SORTED = new Set(['bookmarks', 'collections', 'files', 'images', 'pages', 'videos']); // screens with an order control
+
 export function NotesPage() {
   const [scope, setScope] = useState<Scope>({ kind: 'all' });
   const [notes, setNotes] = useState<NoteSummary[] | null>(null);
@@ -51,7 +55,9 @@ export function NotesPage() {
   const [picked, setPicked] = useState<Set<string>>(new Set()); // rows ticked, to delete several at once
   const [sure, setSure] = useState(false);
   const [viewing, setViewing] = useState<Attachment | null>(null); // a file opened inside Memoir
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [renamingColl, setRenamingColl] = useState<string | null>(null);
+  const [sureColl, setSureColl] = useState(false);
   const [status, setStatus] = useState<NotesStatus | null>(null);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[] | null>(null);
@@ -172,7 +178,7 @@ export function NotesPage() {
   };
 
   const pick = async (id: string) => { await flush(); setEditing(false); setQuery(''); setOpenId(id); };
-  const go = async (to: Scope) => { await flush(); setScope(to); setQuery(''); setOpenId(null); setEditing(false); setNewBookmark(null); setNewCollection(null); setPicked(new Set()); setSure(false); setViewing(null); };
+  const go = async (to: Scope) => { await flush(); setScope(to); setQuery(''); setOpenId(null); setEditing(false); setNewBookmark(null); setNewCollection(null); setPicked(new Set()); setSure(false); setViewing(null); setRenamingColl(null); setSureColl(false); };
 
   /** A note was made: show it in edit mode. */
   const show = (created: Note, edit: boolean) => {
@@ -231,7 +237,7 @@ export function NotesPage() {
     return job ? `Indexing ${job.done}/${job.total || '…'}` : null;
   }, [status]);
   const scopeTitle = scope.kind === 'all' ? 'All Notes' : scope.kind === 'bookmarks' ? 'Bookmarks' : scope.kind === 'pages' ? 'Pages' : scope.kind === 'collections' ? 'Collections' : scope.kind === 'files' ? 'Files' : scope.kind === 'images' ? 'Images' : scope.kind === 'videos' ? 'Videos' : scope.kind === 'tags' ? 'Tags' : scope.kind === 'trash' ? 'Trash' : scope.kind === 'graph' ? 'Graph' : scope.name;
-  const scopeIcon: IconName = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'ph-folders' : scope.kind === 'files' ? 'lucide-files' : scope.kind === 'images' ? 'lucide-images' : scope.kind === 'videos' ? 'tabler-player-play' : scope.kind === 'tags' ? 'lucide-tags' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'trash-bin-minimalistic' : scope.kind === 'graph' ? 'ph-graph' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'lucide-library';
+  const scopeIcon: IconName = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'ph-folders' : scope.kind === 'files' ? 'lucide-files' : scope.kind === 'images' ? 'lucide-images' : scope.kind === 'videos' ? 'tabler-player-play' : scope.kind === 'tags' ? 'lucide-tags' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'trash-bin-2' : scope.kind === 'graph' ? 'ph-graph' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'lucide-library';
   const canEdit = !!note && !note.deleted_at;
 
   const NavItem = ({ to, icon, label, count }: { to: Scope; icon: IconName; label: string; count?: number }) => (
@@ -256,11 +262,8 @@ export function NotesPage() {
   useEffect(() => { setTagColors(Object.fromEntries(tags.filter((t) => t.color).map((t) => [t.name, t.color as string]))); }, [tags]);
   const changeNoteTags = (id: string, list: string[]) => { patchNote(id, { tags: list }).then(() => refreshAll()).catch((e) => toast.error(message(e))); };
   const changeFileLinks = (name: string, ids: string[]) => { setFileNotes(name, ids).then(() => refreshSide()).catch((e) => toast.error(message(e))); };
-  const unlink = (src: string, dst: string) => { unlinkNotes(src, dst).then(() => refreshAll()).catch((e) => toast.error(message(e))); };
   const noteOptions = catalog.map((n) => ({ id: n.id, title: n.title })).filter((n) => n.title);
   const changeFileTags = (name: string, list: string[]) => { setFileTags(name, list).then(() => refreshSide()).catch((e) => toast.error(message(e))); };
-  const fileCounts: Record<string, number> = {};
-  attachments.forEach((a) => (a.tags ?? []).forEach((t) => { fileCounts[t] = (fileCounts[t] ?? 0) + 1; }));
   const isVideo = (a: { ext: string }) => VIDEO_EXT.includes(a.ext.toLowerCase());
   const files = attachments.filter((a) => !a.image && !isVideo(a));
   const images = attachments.filter((a) => a.image);
@@ -288,46 +291,61 @@ export function NotesPage() {
     refreshAll();
   };
 
-  const upload = async (list: FileList | null) => {
-    if (!list || list.length === 0) return;
-    try { for (const f of [...list]) await uploadNoteFile(f); toast.success(list.length > 1 ? 'Files Added' : 'File Added'); refreshSide(); }
-    catch (e) { toast.error(message(e)); }
-  };
-
   const makeCollection = async () => {
     const name = (newCollection ?? '').trim();
     if (!name) { setNewCollection(null); return; }
     try { await createCollection(name); toast.success('Collection Added'); setNewCollection(null); refreshSide(); } catch (e) { toast.error(message(e)); }
   };
 
+  const renameCurrent = () => {
+    if (scope.kind !== 'collection') return;
+    const name = (renamingColl ?? '').trim();
+    setRenamingColl(null);
+    if (!name || name === scope.name) return;
+    renameCollection(scope.id, name).then(() => { setScope({ ...scope, name }); toast.success('Collection Renamed'); refreshSide(); }).catch((e) => toast.error(message(e)));
+  };
+  const deleteCurrent = () => {
+    if (scope.kind !== 'collection') return;
+    if (!sureColl) { setSureColl(true); return; }
+    deleteCollection(scope.id).then(() => { toast.success('Collection Deleted'); void go({ kind: 'collections' }); refreshAll(); }).catch((e) => toast.error(message(e)));
+  };
+  const collectionTools = scope.kind === 'collection' && (
+    <>
+      {renamingColl === null
+        ? <button type="button" className="nt-btn" onClick={() => setRenamingColl(scope.name)}><Icon name="edit" size={14} /> Rename</button>
+        : <input autoFocus className="nt-add" value={renamingColl} aria-label="Collection Name" onChange={(e) => setRenamingColl(e.target.value)} onBlur={renameCurrent}
+            onKeyDown={(e) => { if (e.key === 'Enter') renameCurrent(); if (e.key === 'Escape') setRenamingColl(null); }} />}
+      <button type="button" className="nt-btn nt-danger" onClick={deleteCurrent} onBlur={() => setSureColl(false)}><Icon name="trash-bin-2" size={14} /> {sureColl ? 'Sure?' : 'Trash'}</button>
+    </>
+  );
+  const sort = useSort(scope.kind);
   const heading = (
     <header className="nt-set-head">
       <h1><Icon name={scopeIcon} size={26} /> {scopeTitle}</h1>
       <p>{scope.kind === 'collections' ? `${collections.length} ${collections.length === 1 ? 'Collection' : 'Collections'}` : scope.kind === 'files' ? `${files.length} ${files.length === 1 ? 'File' : 'Files'}` : scope.kind === 'images' ? `${images.length} ${images.length === 1 ? 'Image' : 'Images'}` : scope.kind === 'videos' ? `${videos.length} ${videos.length === 1 ? 'Video' : 'Videos'}` : notes ? `${notes.length} ${notes.length === 1 ? 'Note' : 'Notes'}` : 'Loading…'}</p>
       {scope.kind !== 'trash' && (
         <div className="nt-set-actions">
+          {SORTED.has(scope.kind) && <SortControl sort={sort} />}
           {filesScope ? (
             <>
-              <button type="button" className="nt-btn nt-primary" onClick={() => fileInput.current?.click()}><Icon name="upload-minimalistic" size={17} /> Upload</button>
-              <input ref={fileInput} type="file" multiple hidden accept={scope.kind === 'images' ? 'image/*' : scope.kind === 'videos' ? 'video/*' : undefined}
-                onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
+              <button type="button" className="nt-btn nt-primary" onClick={() => setUploading(true)}><Icon name="upload-minimalistic" size={17} /> Upload</button>
             </>
           ) : scope.kind === 'collections' ? (
             newCollection === null
               ? <button type="button" className="nt-btn nt-primary" onClick={() => setNewCollection('')}><Icon name="add-circle" size={17} /> New Collection</button>
-              : <input autoFocus className="nt-add nt-url" value={newCollection} placeholder="Name The Collection And Press Enter" aria-label="Collection Name"
+              : <input autoFocus className="nt-add nt-url" value={newCollection} placeholder="Insert a name to your collection" aria-label="Collection Name"
                   onChange={(e) => setNewCollection(e.target.value)} onBlur={() => { if (!newCollection.trim()) setNewCollection(null); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') void makeCollection(); if (e.key === 'Escape') setNewCollection(null); }} />
           ) : scope.kind === 'bookmarks' && newBookmark !== null ? (
             <input
-              autoFocus className="nt-add nt-url" value={newBookmark} placeholder="Paste An Address And Press Enter" aria-label="Bookmark Address"
+              autoFocus className="nt-add nt-url" value={newBookmark} placeholder="Paste an address link here" aria-label="Bookmark Address"
               onChange={(e) => setNewBookmark(e.target.value)} onBlur={() => { if (!newBookmark.trim()) setNewBookmark(null); }}
               onKeyDown={(e) => { if (e.key === 'Enter') void startBookmark(); if (e.key === 'Escape') setNewBookmark(null); }}
             />
           ) : scope.kind === 'bookmarks' ? (
             <button type="button" className="nt-btn nt-primary" onClick={() => setNewBookmark('')}><Icon name="add-circle" size={17} /> New Bookmark</button>
           ) : (
-            <button type="button" className="nt-btn nt-primary" onClick={() => void startNew()}><Icon name="add-circle" size={17} /> New Page</button>
+            <>{collectionTools}<button type="button" className="nt-btn nt-primary" onClick={() => void startNew()}><Icon name="add-circle" size={17} /> New Page</button></>
           )}
         </div>
       )}
@@ -382,21 +400,25 @@ export function NotesPage() {
             onOpenGroup={(n) => void go(n.type === 'tag' ? { kind: 'tag', name: n.label } : { kind: 'collection', id: n.id.replace('collection:', ''), name: n.label })}
           />
         ) : !openId && viewing ? (
-          <FileView file={viewing} onClose={() => setViewing(null)} onOpenNote={(id) => { setViewing(null); void pick(id); }} />
+          <FileView file={viewing} onClose={() => setViewing(null)} onOpenNote={(id) => { setViewing(null); void pick(id); }}
+            onChanged={(gone, label) => { if (gone) setViewing(null); else setViewing((v) => (v ? { ...v, label: label ?? v.label } : v)); refreshSide(); }} />
         ) : !openId && scope.kind === 'tags' ? (
           <div className="nt-set">
-            <TagsManager tags={tags} fileCounts={fileCounts} onOpen={(name) => void go({ kind: 'tag', name })} onChanged={refreshSide} />
+            <TagsManager tags={tags} onOpen={(name) => void go({ kind: 'tag', name })} onChanged={refreshSide} />
           </div>
         ) : !openId || !note ? (
           <div className="nt-set">
+            {(scope.kind === 'tag' || scope.kind === 'collection') && (
+              <button type="button" className="nt-btn nt-return" onClick={() => void go({ kind: scope.kind === 'tag' ? 'tags' : 'collections' })}>← {scope.kind === 'tag' ? 'Tags' : 'Collections'}</button>
+            )}
             {heading}
             {scope.kind === 'collections' ? (
-              <CollectionsTable rows={collections} picked={picked} onPick={togglePick} onOpen={(c) => void go({ kind: 'collection', id: c.id, name: c.name })} />
+              <CollectionsTable sort={sort.mode} rows={collections} picked={picked} onPick={togglePick} onOpen={(c) => void go({ kind: 'collection', id: c.id, name: c.name })} />
             ) : filesScope ? (
-              <AttachmentsTable onView={setViewing} noteOptions={noteOptions} onLinks={changeFileLinks} rows={scope.kind === 'images' ? images : scope.kind === 'videos' ? videos : files} picked={picked} onPick={togglePick} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
+              <AttachmentsTable sort={sort.mode} onView={setViewing} noteOptions={noteOptions} onLinks={changeFileLinks} rows={scope.kind === 'images' ? images : scope.kind === 'videos' ? videos : files} picked={picked} onPick={togglePick} known={known} onTags={changeFileTags} onTag={(name) => void go({ kind: 'tag', name })} onOpen={(id) => void pick(id)} />
             ) : notes === null ? <p className="nt-empty">Loading…</p>
               : notes.length === 0 ? <p className="nt-empty">{scope.kind === 'trash' ? 'The Trash Is Empty' : 'No Notes Here Yet'}</p>
-                : <NotesTable onUnlink={unlink} rows={notes} known={known} onTags={changeNoteTags} picked={picked} onPick={togglePick} onOpen={(id) => void pick(id)} onTag={(name) => void go({ kind: 'tag', name })} newLabel={scope.kind === 'bookmarks' ? 'New Bookmark' : 'New Page'} onNew={scope.kind === 'trash' ? undefined : scope.kind === 'bookmarks' ? () => setNewBookmark('') : () => void startNew()} />}
+                : <NotesTable sort={sort.mode} dates={scope.kind === 'pages' ? 'updated' : 'none'} rows={notes} known={known} onTags={changeNoteTags} picked={picked} onPick={togglePick} onOpen={(id) => void pick(id)} onTag={(name) => void go({ kind: 'tag', name })} newLabel={scope.kind === 'bookmarks' ? 'New Bookmark' : 'New Page'} onNew={scope.kind === 'trash' ? undefined : scope.kind === 'bookmarks' ? () => setNewBookmark('') : () => void startNew()} />}
             {scope.kind === 'tag' && attachments.some((a) => a.tags?.includes(scope.name)) && (
               <>
                 <h4 className="nt-types-h">Files With This Tag</h4>
@@ -415,11 +437,11 @@ export function NotesPage() {
               {editing && <span className="nt-save" data-state={saveState}>{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Could Not Save' : 'Saved'}</span>}
               {canEdit && (
                 <button type="button" className="nt-btn" onClick={() => { void flush(); setEditing(!editing); }}>
-                  <Icon name={editing ? 'check-circle' : 'pen'} size={14} /> {editing ? 'Done' : 'Edit'}
+                  <Icon name={editing ? 'check-circle' : 'edit'} size={14} /> {editing ? 'Done' : 'Edit'}
                 </button>
               )}
               <button type="button" className={`nt-btn${note.deleted_at ? '' : ' nt-danger'}`} onClick={() => void toggleTrash()}>
-                <Icon name={note.deleted_at ? 'refresh' : 'trash-bin-minimalistic'} size={14} /> {note.deleted_at ? 'Restore' : 'Trash'}
+                <Icon name={note.deleted_at ? 'refresh' : 'trash-bin-2'} size={14} /> {note.deleted_at ? 'Restore' : 'Trash'}
               </button>
             </div>
 
@@ -448,6 +470,10 @@ export function NotesPage() {
                           <button key={c.id} type="button" className="nt-chip" onClick={() => void go({ kind: 'collection', id: c.id, name: c.name })}><Icon name="folder" size={12} /> {c.name}</button>
                         ))}
                   </dd>
+                </div>
+                <div>
+                  <dt><Icon name="add-circle" size={14} /> Created</dt>
+                  <dd><span>{whenText(note.created_at)}</span></dd>
                 </div>
                 <div>
                   <dt><Icon name="clock-circle" size={14} /> Updated</dt>
@@ -536,11 +562,12 @@ export function NotesPage() {
           <div className="nt-selbar" role="toolbar" aria-label="Selection">
             <b>{picked.size} Selected</b>
             <button type="button" className="nt-btn nt-danger" onClick={() => void removePicked()}>
-              <Icon name="trash-bin-minimalistic" size={14} /> {sure ? 'Sure?' : scope.kind === 'collections' || filesScope ? 'Delete' : 'Trash'}
+              <Icon name="trash-bin-2" size={14} /> {sure ? 'Sure?' : scope.kind === 'collections' || filesScope ? 'Delete' : 'Trash'}
             </button>
             <button type="button" className="nt-btn" onClick={() => { setPicked(new Set()); setSure(false); }}>Clear</button>
           </div>
         )}
+        {uploading && <FileUpload noun={scope.kind === 'images' ? 'Images' : scope.kind === 'videos' ? 'Videos' : 'Files'} onClose={() => setUploading(false)} onDone={refreshSide} />}
       </main>
     </div>
   );

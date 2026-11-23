@@ -1,9 +1,11 @@
+import { Dates, SortControl, sortRows, useSort } from './SortControl';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 import { UploadDialog } from './UploadDialog';
 import { EditButton, EditDialog, TrashButton } from './EditDialog';
 import { FolderTitle } from './Threads';
-import { formatDuration, formatSize, videoUrl, type SwipeLibrary, type SwipeVideo } from '../../lib/swipe-api';
+import { VideoPlayer } from './VideoPlayer';
+import { formatDuration, formatSize, getAutoPlay, videoUrl, type SwipeLibrary, type SwipeVideo } from '../../lib/swipe-api';
 
 const key = (v: SwipeVideo) => `${v.folder}/${v.name}`;
 // Thumbnails are made once per video, a few at a time and only for what is on screen: one frame is drawn to a small image
@@ -81,7 +83,8 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
   const [upload, setUpload] = useState<File[] | null>(null);
   const [drag, setDrag] = useState(false);
   const [edit, setEdit] = useState<SwipeVideo | null>(null);
-  const shown = folder === 'All' ? lib.items : lib.items.filter((v) => v.folder === folder);
+  const sort = useSort('videos');
+  const shown = sortRows((folder === 'All' ? lib.items : lib.items.filter((v) => v.folder === folder)), sort.mode, (v) => v.title, (v) => v.created ?? v.modified);
 
   useEffect(() => {
     if (!playing) return;
@@ -109,9 +112,10 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
         <button type="button" className="mm-btn" onClick={() => setPlaying(null)}>← Return</button>
         <div className="mm-watch">
           <div>
-            <div className="mm-scr"><div className="mm-amb" /><video key={key(playing)} src={videoUrl(playing)} controls autoPlay playsInline /></div>
+            <div className="mm-scr"><div className="mm-amb" /><VideoPlayer key={key(playing)} src={videoUrl(playing)} autoPlay={getAutoPlay()} /></div>
             <h3>{playing.title}</h3>
             <small>{playing.folder} · {formatSize(playing.size)}</small>
+            <Dates created={playing.created ?? playing.modified} />
           </div>
           <div className="mm-next">
             {more.length > 0 && <h5>More In This Folder</h5>}
@@ -139,6 +143,7 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
       </div>
       <div className="mm-head">
         <FolderTitle kind="videos" folder={folder} text={folder === 'All' ? 'All Videos' : folder} onRenamed={setFolder} /><span>{shown.length} {shown.length === 1 ? 'Video' : 'Videos'}</span>
+        <SortControl sort={sort} />
         <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="upload-minimalistic" size={15} />Upload</button>
       </div>
       {shown.length === 0 ? (
@@ -150,7 +155,7 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
           {shown.map((v, i) => (
             <div key={key(v)} className="mm-ed">
               <button type="button" className="mm-vid" style={{ '--i': Math.min(i, 14) } as React.CSSProperties} onClick={() => setPlaying(v)}>
-                <Thumb v={v} /><b>{v.title}</b><small>{v.folder} · {formatSize(v.size)}</small>
+                <Thumb v={v} /><b>{v.title}</b><small>{v.folder} · {formatSize(v.size)}</small><Dates created={v.created ?? v.modified} />
               </button>
               <EditButton label={v.title} onEdit={() => setEdit(v)} />
               <TrashButton kind="videos" item={v} folders={lib.folders} onDone={(f) => { reload(); setFolder(f); }} />

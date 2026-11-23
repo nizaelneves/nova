@@ -1,3 +1,4 @@
+import { Dates, SortControl, sortRows, useSort } from './SortControl';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon } from '../Icon';
@@ -33,7 +34,7 @@ function TextEditor({ kind, item, folder, inUse, sources, onClose, onSaved }: { 
       <button type="button" className="mm-btn" onClick={onClose}>← Return</button>
       <div className="mm-doc">
         <input className="mm-doc-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" aria-label="Title" />
-        {kind === 'ideas' && <ThreadPicker value={threads} onChange={setThreads} inUse={inUse} />}
+        {kind === 'ideas' && <div className="mm-throw"><span className="mm-thlabel">Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div>}
         {sources && <div className="mm-doc-src"><SourceInput value={source} onChange={setSource} options={sources} /></div>}
         <div className="mm-doc-area">
           {ready ? (
@@ -71,7 +72,8 @@ export function SwipeDocs({ kind, lib, folder, setFolder, reload, types = [], re
   const hunches = kind === 'ideas'; // hunches hang on threads, not in folders: the chosen "folder" is a thread
   const threadNames = [...new Set(lib.items.flatMap((v) => v.threads ?? []))].sort((a, b) => a.localeCompare(b));
   const picked = hunches && folder !== 'All' && !threadNames.includes(folder) ? 'All' : texts && folder !== 'All' && !types.some((t) => t.id === folder) ? 'All' : folder;
-  const shown = picked === 'All' ? lib.items : hunches ? lib.items.filter((v) => v.threads?.includes(picked)) : texts ? lib.items.filter((v) => v.type === picked) : lib.items.filter((v) => v.folder === picked);
+  const sort = useSort(kind);
+  const shown = sortRows((picked === 'All' ? lib.items : hunches ? lib.items.filter((v) => v.threads?.includes(picked)) : texts ? lib.items.filter((v) => v.type === picked) : lib.items.filter((v) => v.folder === picked)), sort.mode, (v) => v.title, (v) => v.created ?? v.modified);
   const into = hunches || texts ? 'Unsorted' : picked === 'All' ? lib.folders[0]?.name ?? 'Unsorted' : picked;
   const writeType = texts ? (picked !== 'All' ? picked : types[0]?.id ?? 'emails') : kind; // a new text goes in the chosen type
   const done = (f: string) => { reload(); setFolder(hunches ? 'All' : texts ? picked : f); };
@@ -108,6 +110,7 @@ export function SwipeDocs({ kind, lib, folder, setFolder, reload, types = [], re
       </div>
       <div className="mm-head">
         {hunches || texts ? <h2>{picked === 'All' ? `All ${many}` : texts ? typeLabel(picked) : picked}</h2> : <FolderTitle kind={kind} folder={picked} text={picked === 'All' ? `All ${many}` : picked} onRenamed={setFolder} />}<span>{shown.length} {shown.length === 1 ? one : many}</span>
+        <SortControl sort={sort} />
         {kind === 'ideas' && <button type="button" className="mm-btn" onClick={() => setSpeak(true)}><Icon name="microphone" size={15} />Record</button>}
         <button type="button" className="mm-btn" onClick={() => setWriting(true)}><Icon name="pen" size={15} />Write {one}</button>
         <button type="button" className="mm-btn mm-go mm-up mm-nomargin" onClick={() => setUpload([])}><Icon name="upload-minimalistic" size={15} />Upload</button>
@@ -122,7 +125,8 @@ export function SwipeDocs({ kind, lib, folder, setFolder, reload, types = [], re
                 <Icon name={texts ? (v.name.toLowerCase().endsWith('.pdf') ? 'inbox' : 'writing-sign') : kind === 'prompts' ? 'terminal-window' : 'lightbulb-bolt'} size={24} />
                                 <b>{v.title}</b>
                 <p>{v.name.toLowerCase().endsWith('.pdf') ? `PDF · ${formatSize(v.size)}` : v.preview}</p>
-                {hunches ? <small className="mm-cthreads">{(v.threads ?? []).map((t) => <i key={t}>{t}</i>)}<time className="mm-cdate">{new Date((v.created ?? v.modified) * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</time></small> : (texts ? <small className="mm-cfoot"><span className="mm-badge">{typeLabel(v.type ?? '')}</span>{v.source && <span>{v.source}</span>}</small> : <small>{v.folder}</small>)}
+                {hunches ? <small className="mm-cthreads">{(v.threads ?? []).length > 0 && <span className="mm-thlabel">{(v.threads ?? []).length > 1 ? 'Threads' : 'Thread'}</span>}{(v.threads ?? []).map((t) => <i key={t}>{t}</i>)}<time className="mm-cdate">Created {new Date((v.created ?? v.modified) * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</time></small> : (texts ? <small className="mm-cfoot"><span className="mm-badge">{typeLabel(v.type ?? '')}</span>{v.source && <span>{v.source}</span>}</small> : <small className="mm-cfoot"><span>{v.folder}</span></small>)}
+                {!hunches && (texts ? <Dates created={v.created ?? v.modified} /> : <Dates updated={v.modified} />)}
               </button>
               <EditButton label={v.title} onEdit={() => setEdit(v)} />
               <TrashButton kind={ik(v)} item={v} folders={lib.folders} onDone={done} />

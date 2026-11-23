@@ -114,6 +114,8 @@ interface Settings {
   speechEnabled: boolean;
   // When Phibe speaks her replies: only after you spoke to her, always, or never.
   voiceReplies: 'voice' | 'always' | 'off';
+  // The same, for the Memoir chat.
+  memoirVoiceReplies: 'voice' | 'always' | 'off';
   // Reasoning effort for Claude CLI models (like the slider in the Claude app).
   cliEffort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   // Visual effects: full, balanced (lighter) or off (nothing animated in the background).
@@ -134,6 +136,7 @@ function loadSettings(): Settings {
     maxTokens: 4096,
     speechEnabled: true,
     voiceReplies: 'voice',
+    memoirVoiceReplies: 'voice',
     cliEffort: 'medium',
     effects: 'full',
     floatingPhibe: true,
@@ -195,12 +198,13 @@ interface AppState {
   // Actions: conversations
   loadConversations: () => void;
   importOverlayConversation: () => Promise<void>;
-  createConversation: (model?: string) => string;
+  createConversation: (model?: string, space?: 'memoir') => string;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
   /** Remove chats older than *days* days, or all of them with null. */
   pruneConversations: (days: number | null) => void;
   renameConversation: (id: string, title: string) => void;
+  setConversationSpace: (id: string, space: 'memoir' | undefined) => void;
   loadMessages: (conversationId: string | null) => void;
   addMessage: (conversationId: string, message: ChatMessage) => void;
   /** Attach a file (already converted to Markdown) to a conversation, or take one away. */
@@ -335,15 +339,16 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    createConversation: (model?: string) => {
+    createConversation: (model?: string, space?: 'memoir') => {
       const store = loadConversations();
       const conv: Conversation = {
         id: generateId(),
-        title: 'New chat',
+        title: space === 'memoir' ? 'New Conversation' : 'New chat',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         model: model || get().selectedModel || 'default',
         messages: [],
+        ...(space ? { space } : {}),
       };
       store.conversations[conv.id] = conv;
       store.activeId = conv.id;
@@ -376,6 +381,15 @@ export const useAppStore = create<AppState>((set, get) => {
       const conv = store.conversations[id];
       if (!conv) return;
       conv.title = clean;
+      saveConversations(store);
+      set({ conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt) });
+    },
+
+    setConversationSpace: (id: string, space: 'memoir' | undefined) => {
+      const store = loadConversations();
+      const conv = store.conversations[id];
+      if (!conv) return;
+      if (space) conv.space = space; else delete conv.space;
       saveConversations(store);
       set({ conversations: Object.values(store.conversations).sort((a, b) => b.updatedAt - a.updatedAt) });
     },

@@ -1,3 +1,4 @@
+import { dateText, sortRows, type SortMode } from '../memoir/SortControl';
 import { useState } from 'react';
 import { Icon } from '../Icon';
 import { SourceInput } from '../memoir/SourceInput';
@@ -49,23 +50,26 @@ function TagCell({ names, known, onTag, onChange }: { names: string[]; known: st
   );
 }
 
-function Backlinks({ list, onOpen, onRemove }: { list: { id: string; title: string }[]; onOpen: (id: string) => void; onRemove?: (id: string) => void }) {
+/** Backlinks as a number; hover or focus lists the first three notes. */
+function BacklinkCount({ list, onOpen }: { list: { id: string; title: string; at?: number }[]; onOpen: (id: string) => void }) {
+  if (!list.length) return null;
   return (
-    <>
-      {list.map((b) => (
-        <span key={b.id} className="nt-back nt-back-x">
-          <button type="button" className="nt-back-open" onClick={(e) => { e.stopPropagation(); onOpen(b.id); }}>
-            <Icon name="document-text" size={13} /> <span className="truncate">{b.title || 'Untitled'}</span>
-          </button>
-          {onRemove && <button type="button" className="nt-tagx" aria-label={`Remove ${b.title}`} onClick={(e) => { e.stopPropagation(); onRemove(b.id); }}>×</button>}
+    <span className="nt-bc" data-empty={list.length === 0} tabIndex={list.length ? 0 : -1} onClick={(e) => e.stopPropagation()}>
+      <Icon name="document-text" size={13} />{list.length}
+      {list.length > 0 && (
+        <span className="nt-bc-pop" role="tooltip">
+          {[...list].sort((a, b) => (b.at ?? 0) - (a.at ?? 0)).slice(0, 3).map((b) => (
+            <button key={b.id} type="button" onClick={(e) => { e.stopPropagation(); onOpen(b.id); }}><Icon name="document-text" size={13} /><span className="truncate">{b.title || 'Untitled'}</span></button>
+          ))}
+          {list.length > 3 && <em>+{list.length - 3} More</em>}
         </span>
-      ))}
-    </>
+      )}
+    </span>
   );
 }
 
 /** The notes a file is connected to: connect one with + (the field completes with the most likely title), remove with the x. */
-function NoteLinks({ list, options, onOpen, onChange }: { list: { id: string; title: string }[]; options: { id: string; title: string }[]; onOpen: (id: string) => void; onChange: (ids: string[]) => void }) {
+function NoteLinks({ list, options, onOpen, onChange }: { list: { id: string; title: string; at?: number }[]; options: { id: string; title: string }[]; onOpen: (id: string) => void; onChange: (ids: string[]) => void }) {
   const [adding, setAdding] = useState<string | null>(null);
   const ids = list.map((n) => n.id);
   const add = () => {
@@ -76,7 +80,7 @@ function NoteLinks({ list, options, onOpen, onChange }: { list: { id: string; ti
   };
   return (
     <span className="nt-tagcell" onClick={(e) => e.stopPropagation()}>
-      <Backlinks list={list} onOpen={onOpen} onRemove={(id) => onChange(ids.filter((i) => i !== id))} />
+      <BacklinkCount list={list} onOpen={onOpen} />
       {adding === null
         ? <button type="button" className="nt-tagplus" aria-label="Connect A Note" onClick={(e) => { e.stopPropagation(); setAdding(''); }}>+</button>
         : (
@@ -111,31 +115,28 @@ function Check({ on, onPick }: { on: boolean; onPick: (e: React.MouseEvent) => v
   );
 }
 
-const ATT = 'minmax(0,1.9fr) minmax(0,1.5fr) minmax(0,1.4fr)'; // Name, Backlinks, Tag
+const ATT = 'minmax(0,2fr) minmax(0,1.5fr) minmax(0,1.7fr)'; // Name, Backlinks, Tag
 const cols = (n: number) => ({ gridTemplateColumns: `minmax(0,1.6fr) ${Array(n).fill('minmax(0,1fr)').join(' ')}` });
 
-const az = <T,>(rows: T[], key: (r: T) => string) => [...rows].sort((a, b) => key(a).localeCompare(key(b), undefined, { sensitivity: 'base' })); // every list reads A to Z
-
 /** Pages, bookmarks and every other list of notes: Name, Backlinks, Tag. */
-export function NotesTable({ rows, onOpen, onTag, onNew, newLabel = 'New Page', picked, onPick, known, onTags, onUnlink }: {
-  rows: NoteSummary[]; onOpen: (id: string) => void; onTag: (name: string) => void; onNew?: () => void; newLabel?: string; picked: Set<string>; onPick: (key: string) => void; known: string[]; onTags: (id: string, tags: string[]) => void; onUnlink: (src: string, dst: string) => void;
+export function NotesTable({ sort = 'az', dates = 'none', rows, onOpen, onTag, onNew, newLabel = 'New Page', picked, onPick, known, onTags }: {
+  sort?: SortMode; dates?: 'updated' | 'none'; rows: NoteSummary[]; onOpen: (id: string) => void; onTag: (name: string) => void; onNew?: () => void; newLabel?: string; picked: Set<string>; onPick: (key: string) => void; known: string[]; onTags: (id: string, tags: string[]) => void;
 }) {
   return (
     <Table
-      head={['Name', 'Backlinks', 'Tag']}
+      head={dates === 'updated' ? ['Name', 'Backlinks', 'Tag', 'Updated'] : ['Name', 'Backlinks', 'Tag']}
       count={rows.length}
       picking={picked.size > 0}
       footer={onNew && <button type="button" className="nt-newrow" onClick={onNew}><Icon name="add-circle" size={15} /> {newLabel}</button>}
     >
-      {az(rows, (n) => n.title || 'Untitled').map((n) => (
-        <div key={n.id} role="row" tabIndex={0} data-key={n.id} data-picked={picked.has(n.id)} className="nt-tr nt-tr-link" style={cols(2)} onClick={() => onOpen(n.id)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen(n.id); }}>
+      {sortRows(rows, sort, (n) => n.title || 'Untitled', (n) => n.created_at).map((n) => (
+        <div key={n.id} role="row" tabIndex={0} data-key={n.id} data-picked={picked.has(n.id)} className="nt-tr nt-tr-link" style={cols(dates === 'updated' ? 3 : 2)} onClick={() => onOpen(n.id)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen(n.id); }}>
           <span className="nt-name" role="cell"><Check on={picked.has(n.id)} onPick={() => onPick(n.id)} /><Icon name={n.kind === 'bookmark' ? 'link-round' : 'document-text'} size={16} /><b className="truncate">{n.title || 'Untitled'}</b></span>
           <span className="nt-cell" role="cell">
-            {(n.kind === 'bookmark' ? [...(n.linked_from ?? []).map((b) => ({ ...b, out: false })), ...(n.linked_to ?? []).map((b) => ({ ...b, out: true }))] : (n.linked_from ?? []).map((b) => ({ ...b, out: false }))).slice(0, 3).map((b) => (
-              <Backlinks key={`${b.id}${b.out}`} list={[b]} onOpen={onOpen} onRemove={() => onUnlink(b.out ? n.id : b.id, b.out ? b.id : n.id)} />
-            ))}
+            <BacklinkCount onOpen={onOpen} list={[...(n.linked_from ?? []), ...(n.kind === 'bookmark' ? n.linked_to ?? [] : [])].filter((b, i, all) => all.findIndex((x) => x.id === b.id) === i)} />
           </span>
           <span className="nt-cell" role="cell"><TagCell names={n.tags} known={known} onTag={onTag} onChange={(t) => onTags(n.id, t)} /></span>
+          {dates === 'updated' && <span className="nt-cell nt-dim" role="cell">{dateText(n.updated_at)}</span>}
         </div>
       ))}
     </Table>
@@ -143,10 +144,10 @@ export function NotesTable({ rows, onOpen, onTag, onNew, newLabel = 'New Page', 
 }
 
 /** Files or Images: the thing itself, and the notes that use it. */
-export function AttachmentsTable({ rows, onOpen, onView, picked, onPick, known, onTags, onTag, noteOptions, onLinks, selectable = true }: { rows: Attachment[]; onOpen: (id: string) => void; onView: (a: Attachment) => void; picked: Set<string>; onPick: (key: string) => void; known: string[]; onTags: (name: string, tags: string[]) => void; onTag: (name: string) => void; noteOptions: { id: string; title: string }[]; onLinks: (name: string, ids: string[]) => void; selectable?: boolean }) {
+export function AttachmentsTable({ sort = 'az', rows, onOpen, onView, picked, onPick, known, onTags, onTag, noteOptions, onLinks, selectable = true }: { sort?: SortMode; rows: Attachment[]; onOpen: (id: string) => void; onView: (a: Attachment) => void; picked: Set<string>; onPick: (key: string) => void; known: string[]; onTags: (name: string, tags: string[]) => void; onTag: (name: string) => void; noteOptions: { id: string; title: string }[]; onLinks: (name: string, ids: string[]) => void; selectable?: boolean }) {
   return (
     <Table head={['Name', 'Backlinks', 'Tag']} count={rows.length} picking={picked.size > 0} template={ATT}>
-      {az(rows, (a) => a.label || a.name).map((a) => (
+      {sortRows(rows, sort, (a) => a.label || a.name, (a) => a.created ?? a.modified ?? 0).map((a) => (
         <div key={a.name} role="row" data-key={a.name} data-picked={picked.has(a.name)} className="nt-tr" style={{ gridTemplateColumns: ATT }}>
           <span className="nt-name nt-viewable" role="cell" tabIndex={0} onClick={() => onView(a)} onKeyDown={(e) => { if (e.key === 'Enter') onView(a); }}>
             {selectable && <Check on={picked.has(a.name)} onPick={() => onPick(a.name)} />}
@@ -162,13 +163,14 @@ export function AttachmentsTable({ rows, onOpen, onView, picked, onPick, known, 
 }
 
 /** Collections as a set, like the other types. */
-export function CollectionsTable({ rows, onOpen, picked, onPick }: { rows: CollectionCount[]; onOpen: (c: CollectionCount) => void; picked: Set<string>; onPick: (key: string) => void }) {
+export function CollectionsTable({ sort = 'az', rows, onOpen, picked, onPick }: { sort?: SortMode; rows: CollectionCount[]; onOpen: (c: CollectionCount) => void; picked: Set<string>; onPick: (key: string) => void }) {
   return (
-    <Table head={['Name', 'Notes']} count={rows.length} picking={picked.size > 0}>
-      {az(rows, (c) => c.name).map((c) => (
-        <div key={c.id} role="row" tabIndex={0} data-key={c.id} data-picked={picked.has(c.id)} className="nt-tr nt-tr-link" style={cols(1)} onClick={() => onOpen(c)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen(c); }}>
+    <Table head={['Name', 'Notes', 'Updated']} count={rows.length} picking={picked.size > 0}>
+      {sortRows(rows, sort, (c) => c.name, (c) => c.modified ?? 0).map((c) => (
+        <div key={c.id} role="row" tabIndex={0} data-key={c.id} data-picked={picked.has(c.id)} className="nt-tr nt-tr-link" style={cols(2)} onClick={() => onOpen(c)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen(c); }}>
           <span className="nt-name" role="cell"><Check on={picked.has(c.id)} onPick={() => onPick(c.id)} /><Icon name="folder" size={16} /><b className="truncate">{c.name}</b></span>
           <span className="nt-cell nt-dim" role="cell">{c.count}</span>
+          <span className="nt-cell nt-dim" role="cell">{dateText(c.modified)}</span>
         </div>
       ))}
     </Table>

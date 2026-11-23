@@ -196,7 +196,7 @@ export function GraphView({ onOpenNote, onOpenGroup }: { onOpenNote: (id: string
   return (
     <div className="nt-graph">
       <div className="nt-graph-key">
-        {(Object.keys(EDGE) as GraphEdge['type'][]).map((t) => (
+        {(Object.keys(EDGE) as GraphEdge['type'][]).sort((a, b) => EDGE[a].label.localeCompare(EDGE[b].label)).map((t) => (
           <label key={t}>
             <input type="checkbox" checked={shown[t]} onChange={() => setShown((s) => ({ ...s, [t]: !s[t] }))} />
             <i style={{ background: EDGE[t].color.replace(/[\d.]+\)$/, '1)') }} /> {EDGE[t].label}
