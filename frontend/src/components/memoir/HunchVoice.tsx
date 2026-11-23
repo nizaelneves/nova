@@ -85,6 +85,8 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [threads, setThreads] = useState<string[]>([]);
+  const base = useRef({ title: '', body: '', threads: '' }); // what the model wrote, to tell whether the user changed it
+  const [sure, setSure] = useState(false);
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<number>(0);
@@ -142,10 +144,13 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
       if (!note) throw new Error('The model sent nothing back');
       const t = /^Threads?:\s*(.+)$/im.exec(note);
       const clean = t ? note.replace(t[0], '').trim() : note;
-      setThreads(t ? t[1].split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 4) : []);
+      const nextThreads = t ? t[1].split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 4) : [];
+      setThreads(nextThreads);
       const m = /^#\s+(.+)\n?/.exec(clean) ?? /^\*\*(.+?)\*\*\s*\n?/.exec(clean); // small models often bold the title instead
-      setTitle(m ? m[1].trim() : transcript.slice(0, 40));
-      setBody(m ? clean.slice(m[0].length).trim() : clean);
+      const nextTitle = m ? m[1].trim() : transcript.slice(0, 40), nextBody = m ? clean.slice(m[0].length).trim() : clean;
+      setTitle(nextTitle);
+      setBody(nextBody);
+      base.current = { title: nextTitle, body: nextBody, threads: nextThreads.join('|') };
       setPhase('review');
     } catch (e) { if (gone.current) return; toast.error(e instanceof Error ? e.message : 'Could not shape the note'); setPhase('transcript'); }
   };
@@ -189,6 +194,7 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
             <label className="mm-fld"><span>Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
             <label className="mm-fld"><span>Note</span><textarea className="mm-vtext" value={body} onChange={(e) => setBody(e.target.value)} /></label>
             <div className="mm-fld"><span>Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div>
+            {sure && <small className="mm-hint">Reshape It writes the note again and replaces your edits.</small>}
           </>
         )}
         <div className="mm-acts">
@@ -198,7 +204,11 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
           </>}
           {phase === 'review' && <>
             <button type="button" className="mm-btn mm-go mm-save" onClick={() => void save()} disabled={!title.trim()}>Save</button>
-            <button type="button" className="mm-btn" onClick={() => void shape()}>Shape It</button>
+            <button type="button" className="mm-btn" onBlur={() => setSure(false)} onClick={() => {
+              const edited = title !== base.current.title || body !== base.current.body || threads.join('|') !== base.current.threads;
+              if (edited && !sure) { setSure(true); return; } // it would replace what was changed by hand: ask first
+              setSure(false); void shape();
+            }}>{sure ? 'Sure?' : 'Reshape It'}</button>
           </>}
           <button type="button" className="mm-btn mm-cancel" onClick={discard}>Discard</button>
         </div>
