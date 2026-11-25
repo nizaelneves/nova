@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INITIAL_VOICE_STATE, cardView, fibWindow, formatElapsed, keyParts, type VoiceState } from './voiceCardModel';
+import { INITIAL_VOICE_STATE, cardView, fibWindow, formatElapsed, keyParts, matchesShortcut, type VoiceState } from './voiceCardModel';
 
 const state = (over: Partial<VoiceState>): VoiceState => ({ ...INITIAL_VOICE_STATE, ...over });
 
@@ -75,6 +75,17 @@ describe('voice card model', () => {
   it('splits a shortcut into keys', () => {
     expect(keyParts('Ctrl+Alt+P')).toEqual(['Ctrl', 'Alt', 'P']);
     expect(keyParts('')).toEqual([]);
+  });
+
+  it('matches the shortcut by physical key and exact modifiers', () => {
+    const press = { ctrlKey: true, altKey: true, shiftKey: false, metaKey: false, code: 'KeyP', key: 'p' };
+    expect(matchesShortcut(press, 'Ctrl+Alt+P')).toBe(true);
+    expect(matchesShortcut({ ...press, key: 'π' }, 'Ctrl+Alt+P')).toBe(true); // AltGr can change the character
+    expect(matchesShortcut({ ...press, shiftKey: true }, 'Ctrl+Alt+P')).toBe(false);
+    expect(matchesShortcut({ ...press, altKey: false }, 'Ctrl+Alt+P')).toBe(false);
+    expect(matchesShortcut({ ...press, code: 'KeyO', key: 'o' }, 'Ctrl+Alt+P')).toBe(false);
+    expect(matchesShortcut({ ...press, ctrlKey: false, altKey: false, code: 'Space', key: ' ' }, 'Space')).toBe(true);
+    expect(matchesShortcut(press, '')).toBe(false);
   });
 });
 

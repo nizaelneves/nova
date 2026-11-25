@@ -143,3 +143,14 @@ export function formatElapsed(ms: number): string {
 export function keyParts(shortcut: string): string[] {
   return shortcut.split('+').map((k) => k.trim()).filter(Boolean);
 }
+
+/** Does this key press match a shortcut written like "Ctrl+Alt+P"? Letters go by physical key, so AltGr layouts (ABNT2) still match. */
+export function matchesShortcut(e: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean; code: string; key: string }, shortcut: string): boolean {
+  const parts = shortcut.split('+').map((p) => p.trim().toLowerCase()).filter(Boolean);
+  const key = parts.pop();
+  if (!key) return false;
+  const has = (...names: string[]) => parts.some((p) => names.includes(p));
+  if (e.ctrlKey !== has('ctrl', 'control') || e.altKey !== has('alt', 'option') || e.shiftKey !== has('shift') || e.metaKey !== has('meta', 'cmd', 'win', 'super')) return false;
+  const code = e.code.toLowerCase();
+  return code === key || code === `key${key}` || code === `digit${key}` || e.key.toLowerCase() === key;
+}

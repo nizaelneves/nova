@@ -12,13 +12,16 @@ const LENS = [8, 14, 13, 12, 14, 12, 11, 9]; // 93 dots: the lines of a note
 const ACTS = [['chaos', 3.4], ['toNote', 2.2], ['note', 1.4], ['toVortex', 1.6], ['vortex', 2.4], ['toChaos', 1.8]] as const;
 const TOTAL = ACTS.reduce((a, b) => a + b[1], 0);
 type P = [number, number];
+export type Palette = 'memoir' | 'phibe';
+/** Memoir's hues run from cyan (190) to violet (315); in Phibe's palette the same run goes from green (150) to teal (190). */
+export const phibeTone = (h: number) => 150 + ((h - 190) / 125) * 40;
 const mix = (a: P, b: P, w: number): P => [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w];
 
 /**
  * The waiting screen's picture, in loops: dots drift with a magnet pulling them in and out and leave comet trails, line up
  * as the lines of a note, swirl into a vortex, and scatter again.
  */
-function Chaos() {
+function Chaos({ palette }: { palette: Palette }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const cv = ref.current, g = cv?.getContext('2d');
@@ -52,21 +55,21 @@ function Chaos() {
         else if (name === 'toVortex') { p = mix(NT, vortex, u); hue = 265 + u * 50; speed = Math.sin(u * Math.PI); }
         else if (name === 'vortex') { p = vortex; hue = 315 - (rr / 100) * 120; size = 1.3 + (1 - rr / 100) * 1.6; speed = (1 - rr / 100) * 0.6; }
         else { p = mix(vortex, chaos, u); hue = 195 + (1 - u) * 120; speed = Math.sin(u * Math.PI); }
-        g.fillStyle = `hsla(${hue},90%,${64 + speed * 10}%,${0.5 + speed * 0.4})`;
+        g.fillStyle = `hsla(${palette === 'phibe' ? phibeTone(hue) : hue},90%,${64 + speed * 10}%,${0.5 + speed * 0.4})`;
         g.beginPath(); g.arc(p[0], p[1], size + speed, 0, 7); g.fill();
       }
       if (!still) raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [palette]);
   return <canvas ref={ref} className="mm-forge-orb" style={{ width: W, height: H }} aria-hidden="true" />;
 }
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 /** The waiting screen: the dots, a line that keeps changing, and a quiet timer of how long it has taken. */
-export function Forge() {
+export function Forge({ palette = 'memoir' }: { palette?: Palette }) {
   const [n, setN] = useState(0);
   const [secs, setSecs] = useState(0);
   useEffect(() => {
@@ -76,7 +79,7 @@ export function Forge() {
   }, []);
   return (
     <div className="mm-vc mm-shaping" role="status">
-      <Chaos />
+      <Chaos palette={palette} />
       <p key={n} className="mm-forge-line">{LINES[n]}…</p>
       <small className="mm-forge-time">{clock(secs)}</small>
     </div>

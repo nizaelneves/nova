@@ -94,6 +94,10 @@ export const renameCollection = (id: string, name: string): Promise<{ id: string
   json(`/v1/notes/collections/${id}`, { ...patch, body: JSON.stringify({ name }) });
 export const deleteCollection = (id: string): Promise<unknown> => json(`/v1/notes/collections/${id}`, { method: 'DELETE' });
 export const createBookmark = (url: string): Promise<Note> => json('/v1/notes/bookmark', { ...post, body: JSON.stringify({ url }) });
+export interface TrashedFile { name: string; title: string; size: number; deleted: number }
+export const listTrashedFiles = (): Promise<TrashedFile[]> => json('/v1/notes/trashed-files');
+export const restoreTrashedFile = (name: string): Promise<unknown> => json(`/v1/notes/trashed-files/${name}/restore`, post);
+export const purgeTrashedFile = (name: string): Promise<unknown> => json(`/v1/notes/trashed-files/${name}`, { method: 'DELETE' });
 export const deleteNoteFile = (name: string): Promise<unknown> => json(`/v1/notes/files/${name}`, { method: 'DELETE' });
 export const renameNoteFile = (name: string, label: string): Promise<unknown> => json(`/v1/notes/files/${name}/label`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
 export const setFileTags = (name: string, tags: string[]): Promise<unknown> =>

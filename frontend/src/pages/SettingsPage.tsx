@@ -283,7 +283,7 @@ export function SettingsPage() {
       } else {
         await setInferenceSource({ kind: 'ollama' });
       }
-      setSrcMsg('Saved — restart the app to apply.');
+      setSrcMsg(isTauri() ? 'Saved — restart the app to apply.' : 'Saved — restart Phibe to apply.');
     } catch (e: any) {
       setSrcMsg(e?.message ?? 'Failed to save.');
     }
@@ -374,11 +374,11 @@ export function SettingsPage() {
                     <option value="lemonade">Lemonade</option>
                   </select>
                 </SettingRow>
-                <SettingRow label="API key (optional)" description="Only if your server requires one">
+                {isTauri() && <SettingRow label="API key (optional)" description="Only if your server requires one">
                   <input type="password" value={customKey} onChange={(e) => { setCustomKey(e.target.value); setSrcMsg(''); }} placeholder="leave blank if none"
                     className="text-sm px-3 py-1.5 rounded-lg outline-none w-56"
                     style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }} />
-                </SettingRow>
+                </SettingRow>}
               </>
             )}
             {srcMsg && (

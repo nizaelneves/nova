@@ -43,8 +43,8 @@ export function FileView({ file, onClose, onOpenNote, onChanged }: { file: Attac
         <span className="nt-grow" />
         <time className="mm-cdate">Created {dateText(file.created ?? file.modified)}</time>
         {file.notes.map((n) => <button key={n.id} type="button" className="nt-back" onClick={() => onOpenNote(n.id)}><Icon name="document-text" size={13} /> <span className="truncate">{n.title || 'Untitled'}</span></button>)}
-        <button type="button" className="nt-btn" onClick={() => setRenaming(title)}><Icon name="edit" size={14} /> Rename</button>
-        <button type="button" className="nt-btn nt-danger" onClick={remove} onBlur={() => setSure(false)}><Icon name="trash-bin-2" size={14} /> {sure ? 'Sure?' : 'Trash'}</button>
+        <button type="button" className="nt-btn" onClick={() => setRenaming(title)}><Icon name="lucide-file-pen" size={14} /> Rename</button>
+        <button type="button" className="nt-btn nt-danger" onClick={remove} onBlur={() => setSure(false)}><Icon name="lucide-trash" size={14} /> {sure ? 'Sure?' : 'Trash'}</button>
       </div>
       <div className="nt-fv-stage">
         {IMAGES.includes(ext) ? <img src={src} alt={title} />

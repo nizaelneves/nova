@@ -1108,6 +1108,9 @@ def include_all_routes(app) -> None:
     app.include_router(websocket_router)
     app.include_router(learning_router)
     app.include_router(speech_router)
+    from phibe.server.inference_source import router as inference_router
+
+    app.include_router(inference_router)
     app.include_router(feedback_router)
     app.include_router(optimize_router)
 

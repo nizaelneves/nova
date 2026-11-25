@@ -419,7 +419,7 @@ export function PhibeMist({
       if (settled) return;
       raf = requestAnimationFrame(loop);
     };
-    const canMove = () => !live.current.still && !reduce.matches && !document.hidden && document.hasFocus();
+    const canMove = () => !live.current.still && !reduce.matches && !document.hidden; // not frozen by losing focus: only when the page is hidden
     const start = () => {
       cancelAnimationFrame(raf);
       a.last = 0;
@@ -439,14 +439,10 @@ export function PhibeMist({
     wake.current = start;
     start();
     document.addEventListener('visibilitychange', start);
-    window.addEventListener('focus', start);
-    window.addEventListener('blur', start);
     reduce.addEventListener('change', start);
     return () => {
       cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', start);
-      window.removeEventListener('focus', start);
-      window.removeEventListener('blur', start);
       reduce.removeEventListener('change', start);
     };
   }, [size]);

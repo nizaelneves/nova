@@ -171,7 +171,7 @@ export function BoardPanel({ workspaceId }: { workspaceId: string }) {
                   <button type="button" role="tab" aria-selected={v.id === view.id} data-on={v.id === view.id} onClick={() => setViewId(v.id)} onDoubleClick={() => setRenamingView(v.id)}>{v.name}</button>
                 )}
                 {v.id === view.id && renamingView !== v.id && (
-                  <button type="button" className="bd-x" aria-label={`Rename view ${v.name}`} title="Rename" onClick={() => setRenamingView(v.id)}><Icon name="pen" size={14} /></button>
+                  <button type="button" className="bd-x" aria-label={`Rename view ${v.name}`} title="Rename" onClick={() => setRenamingView(v.id)}><Icon name="lucide-file-pen" size={14} /></button>
                 )}
                 {v.id === view.id && board.views.length > 1 && (
                   <button type="button" className="bd-x" aria-label={`Delete view ${v.name}`} onClick={() => { setViewId(null); deleteView(v.id).catch(fail).finally(loadBoard); }}><Icon name="close-circle" size={14} /></button>

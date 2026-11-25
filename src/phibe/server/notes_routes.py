@@ -414,6 +414,23 @@ def create_notes_router(get_store: Callable[[], NotesStore]) -> APIRouter:
             raise HTTPException(status_code=404, detail="file not found")
         return {"ok": True}
 
+    @router.get("/trashed-files")
+    def trashed_files() -> List[Dict[str, Any]]:
+        names, hand = note_files.labels(), note_files.renamed()
+        return [{"name": n, "title": hand.get(n) or names.get(n) or n, "size": s, "deleted": d} for n, s, d in sorted(note_files.trashed(), key=lambda t: -t[2])]
+
+    @router.post("/trashed-files/{name}/restore")
+    def restore_file(name: str) -> Dict[str, bool]:
+        if not note_files.restore(name):
+            raise HTTPException(status_code=404, detail="not in the trash")
+        return {"ok": True}
+
+    @router.delete("/trashed-files/{name}")
+    def purge_file(name: str) -> Dict[str, bool]:
+        if not note_files.purge(name):
+            raise HTTPException(status_code=404, detail="not in the trash")
+        return {"ok": True}
+
     @router.get("/files/{name}")
     def get_file(name: str) -> FileResponse:
         path = note_files.path_of(name)

@@ -118,7 +118,7 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
             <Dates created={playing.created ?? playing.modified} />
           </div>
           <div className="mm-next">
-            {more.length > 0 && <h5>More In This Folder</h5>}
+            {more.length > 0 && <h5>More In This Shelf</h5>}
             {more.map((v, i) => (
               <button key={key(v)} type="button" className="mm-nx" style={{ '--i': i } as React.CSSProperties} onClick={() => setPlaying(v)}>
                 <Thumb v={v} big /><div><b>{v.title}</b><small>{v.folder}</small></div>
@@ -144,7 +144,7 @@ export function SwipeVideos({ lib, folder, setFolder, reload }: {
       <div className="mm-head">
         <FolderTitle kind="videos" folder={folder} text={folder === 'All' ? 'All Videos' : folder} onRenamed={setFolder} /><span>{shown.length} {shown.length === 1 ? 'Video' : 'Videos'}</span>
         <SortControl sort={sort} />
-        <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="upload-minimalistic" size={15} />Upload</button>
+        <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="lucide-cloud-upload" size={15} />Upload</button>
       </div>
       {shown.length === 0 ? (
         <div className="mm-empty">

@@ -68,7 +68,7 @@ function TaskCard({
       <b className="kb-title"><StrikeText done={task.status === 'done'}>{task.title}</StrikeText></b>
       {task.notes && <p className="kb-notes">{task.notes}</p>}
       <div className="kb-foot">
-        <span className="task-chip"><Icon name="calendar" size={11} />{formatDue(task)}</span>
+        <span className="task-chip"><Icon name="lucide-calendar-days" size={11} />{formatDue(task)}</span>
         {task.recurrence && <span className="task-chip" title="Repeats"><Icon name="repeat" size={11} /></span>}
         {task.priority && (
           <span className="task-chip" style={{ color: PRIORITY_COLOR[task.priority], marginLeft: 'auto' }}>
@@ -262,7 +262,7 @@ export function TaskForm({
             <button type="button" onClick={() => setConfirmDelete(true)}
               className="text-sm px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1.5"
               style={{ color: 'var(--color-error)' }}>
-              <Icon name="trash-bin-2" size={15} /> Delete
+              <Icon name="lucide-trash" size={15} /> Delete
             </button>
           ) : <span />}
           <div className="flex gap-2">

@@ -20,10 +20,10 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
         : reason === 'streaming'
           ? 'Wait for response'
           : state === 'recording'
-            ? 'Microphone: ON'
+            ? 'Dictate'
             : state === 'transcribing'
               ? 'Transcribing...'
-              : 'Microphone: OFF';
+              : 'Dictate';
 
   const isInactive = disabled || state === 'transcribing';
 
@@ -39,9 +39,9 @@ export function MicButton({ state, onClick, disabled, reason }: MicButtonProps) 
         className="composer-icon"
         data-recording={state === 'recording'}
         aria-label={tooltipText}
-        title={tooltipText}
+        data-tip={isInactive ? undefined : tooltipText}
       >
-        <Icon name={state === 'transcribing' ? 'refresh' : 'microphone'} size={20} className={state === 'transcribing' ? 'animate-spin' : undefined} />
+        <Icon name={state === 'transcribing' ? 'refresh' : 'lucide-mic'} size={18} className={state === 'transcribing' ? 'animate-spin' : undefined} />
       </button>
       {showTooltip && isInactive && (
         <div

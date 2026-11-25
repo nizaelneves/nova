@@ -145,6 +145,31 @@ def remove(name: str) -> bool:
     gone = folder() / ".deleted"
     gone.mkdir(parents=True, exist_ok=True)
     os.replace(path, gone / name)
+    os.utime(gone / name)  # the move keeps the old times: now is when it was deleted
+    return True
+
+
+def trashed() -> list:
+    """What was deleted and can come back: ``(name, size, deleted)``. Files deleted before the times were kept show their last change."""
+    gone = folder() / ".deleted"
+    if not gone.is_dir():
+        return []
+    return [(p.name, p.stat().st_size, p.stat().st_mtime) for p in gone.iterdir() if p.is_file() and _NAME.match(p.name)]
+
+
+def restore(name: str) -> bool:
+    src = folder() / ".deleted" / name
+    if not _NAME.match(name) or not src.is_file():
+        return False
+    os.replace(src, folder() / name)
+    return True
+
+
+def purge(name: str) -> bool:
+    src = folder() / ".deleted" / name
+    if not _NAME.match(name) or not src.is_file():
+        return False
+    src.unlink()
     return True
 
 

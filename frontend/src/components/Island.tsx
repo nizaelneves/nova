@@ -117,18 +117,12 @@ export function Island() {
     };
   }, []);
 
-  // The mist stops when the window is hidden or not focused.
+  // The mist rests only when the window is hidden (minimized or another tab). Losing focus to a window beside it must not freeze it.
   useEffect(() => {
-    const apply = () => setHidden(document.hidden || !document.hasFocus());
+    const apply = () => setHidden(document.hidden);
     apply();
     document.addEventListener('visibilitychange', apply);
-    window.addEventListener('focus', apply);
-    window.addEventListener('blur', apply);
-    return () => {
-      document.removeEventListener('visibilitychange', apply);
-      window.removeEventListener('focus', apply);
-      window.removeEventListener('blur', apply);
-    };
+    return () => document.removeEventListener('visibilitychange', apply);
   }, []);
 
   const text = state === 'waiting' ? `${waiting} to approve` : ''; // the only words left: approvals that wait for you

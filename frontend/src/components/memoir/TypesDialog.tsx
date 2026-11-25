@@ -32,10 +32,10 @@ export function TypesDialog({ types, sources, counts, onChanged, onClose }: { ty
               ) : <span className="mm-types-name"><b>{typeLabel(t.id)}</b><small>{counts[t.id] ?? 0}</small></span>}
               <button type="button" aria-label="Move Up" disabled={busy || i === 0} onClick={() => move(i, -1)}>↑</button>
               <button type="button" aria-label="Move Down" disabled={busy || i === types.length - 1} onClick={() => move(i, 1)}>↓</button>
-              <button type="button" aria-label="Rename" disabled={busy} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditing(t.id); setName(typeLabel(t.id)); }}><Icon name="edit" size={15} /></button>
+              <button type="button" aria-label="Rename" disabled={busy} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditing(t.id); setName(typeLabel(t.id)); }}><Icon name="lucide-file-pen" size={15} /></button>
               <button type="button" className="mm-types-del" data-sure={sure === t.id} aria-label="Delete Type" disabled={busy}
                 onClick={() => { if (sure === t.id) { setSure(null); run(deleteType(t.id), 'Type Moved To Trash'); } else setSure(t.id); }}>
-                <Icon name="trash-bin-2" size={15} />{sure === t.id && <em>Sure?</em>}
+                <Icon name="lucide-trash" size={15} />{sure === t.id && <em>Sure?</em>}
               </button>
             </li>
           ))}
@@ -49,7 +49,7 @@ export function TypesDialog({ types, sources, counts, onChanged, onClose }: { ty
                   onKeyDown={(e) => { if (e.key === 'Enter' && name.trim() && name.trim() !== src.name) { run(renameSource(src.name, name.trim()), 'Renamed'); setEditSource(null); } if (e.key === 'Escape') setEditSource(null); }}
                   onBlur={() => setEditSource(null)} />
               ) : <span className="mm-types-name"><b>{src.name}</b><small>{src.count}</small></span>}
-              <button type="button" aria-label="Rename Source" disabled={busy} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditSource(src.name); setName(src.name); }}><Icon name="edit" size={15} /></button>
+              <button type="button" aria-label="Rename Source" disabled={busy} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditSource(src.name); setName(src.name); }}><Icon name="lucide-file-pen" size={15} /></button>
             </li>
           ))}
         </ol>

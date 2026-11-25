@@ -71,7 +71,7 @@ export function DateRangePicker({ range, onChange }: { range: Range; onChange: (
   return (
     <div ref={ref} className="fin-range">
       <button type="button" className="fin-range-btn" onClick={() => { setFrom(range.from); setTo(range.to); setOpen(!open); }} aria-expanded={open}>
-        <Icon name="calendar" size={16} />
+        <Icon name="lucide-calendar-days" size={16} />
         <span>{rangeLabel(range)}</span>
         <Icon name="alt-arrow-down" size={14} />
       </button>

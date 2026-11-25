@@ -28,7 +28,7 @@ def test_a_video_dropped_in_a_folder_by_hand_shows_up(client) -> None:
     (base / "Ads" / "notes.txt").write_text("not a video")
     (base / "loose.webm").write_bytes(b"v")
     body = c.get("/v1/swipe/videos").json()
-    assert {f["name"]: f["count"] for f in body["folders"]} == {"Unsorted": 1, "Ads": 1}
+    assert {f["name"]: f["count"] for f in body["folders"]} == {"Unclassified": 1, "Ads": 1}
     assert sorted(v["title"] for v in body["items"]) == ["cold plunge", "loose"]
 
 
@@ -64,7 +64,7 @@ def test_create_folder(client) -> None:
     c, base = client
     assert c.post("/v1/swipe/folders", json={"name": "Hooks"}).json() == {"name": "Hooks"}
     assert (base / "Hooks").is_dir()
-    assert c.post("/v1/swipe/folders", json={"name": "Unsorted"}).status_code == 400
+    assert c.post("/v1/swipe/folders", json={"name": "Unclassified"}).status_code == 400
 
 
 def test_emails_take_pdfs_only_and_copy_is_saved_as_text(client) -> None:
@@ -125,7 +125,7 @@ def test_a_file_can_be_renamed_and_moved_but_never_over_another(client) -> None:
     r = c.patch("/v1/swipe/videos/file", json={"folder": "Ads", "name": "a.mp4", "title": "Better name", "new_folder": "Keep"})
     assert r.status_code == 200 and r.json() == {"folder": "Keep", "name": "Better name.mp4"}
     assert (base / "Keep" / "Better name.mp4").read_bytes() == b"v" and not (base / "Ads" / "a.mp4").exists()
-    assert c.patch("/v1/swipe/videos/file", json={"folder": "Keep", "name": "Better name.mp4", "title": "b", "new_folder": "Unsorted"}).status_code == 409
+    assert c.patch("/v1/swipe/videos/file", json={"folder": "Keep", "name": "Better name.mp4", "title": "b", "new_folder": "Unclassified"}).status_code == 409
     assert c.patch("/v1/swipe/videos/file", json={"folder": "Keep", "name": "nope.mp4"}).status_code == 404
 
 
@@ -138,16 +138,16 @@ def test_ideas_are_written_like_copy(client) -> None:
 
 def test_hunches_keep_threads_and_folders_can_be_renamed(client) -> None:
     c, base = client
-    saved = c.post("/v1/swipe/ideas/save", json={"folder": "Unsorted", "title": "Loop", "content": "Give a month.", "threads": ["Business Playbook", "Águas Correntes"]})
+    saved = c.post("/v1/swipe/ideas/save", json={"folder": "Unclassified", "title": "Loop", "content": "Give a month.", "threads": ["Business Playbook", "Águas Correntes"]})
     assert saved.status_code == 200
     item = c.get("/v1/swipe/ideas").json()["items"][0]
     assert item["threads"] == ["Business Playbook", "Águas Correntes"] and item["preview"].startswith("Give a month")
-    edited = c.patch("/v1/swipe/ideas/file", json={"folder": "Unsorted", "name": "Loop.md", "threads": ["Israel"]})
+    edited = c.patch("/v1/swipe/ideas/file", json={"folder": "Unclassified", "name": "Loop.md", "threads": ["Israel"]})
     assert edited.status_code == 200 and c.get("/v1/swipe/ideas").json()["items"][0]["threads"] == ["Israel"]
     (base / "Ads").mkdir(parents=True)
     assert c.patch("/v1/swipe/folders", json={"kind": "videos", "name": "Ads", "new_name": "Paid Ads"}).json() == {"name": "Paid Ads"}
     assert (base / "Paid Ads").is_dir() and not (base / "Ads").exists()
-    assert c.patch("/v1/swipe/folders", json={"kind": "videos", "name": "Paid Ads", "new_name": "Unsorted"}).status_code == 400
+    assert c.patch("/v1/swipe/folders", json={"kind": "videos", "name": "Paid Ads", "new_name": "Unclassified"}).status_code == 400
 
 
 def test_emails_remember_where_they_come_from_and_it_follows_the_file(client, monkeypatch) -> None:
@@ -189,8 +189,8 @@ def test_custom_text_types(client) -> None:
     assert c.post("/v1/swipe/types", json={"name": "Scripts"}).json() == {"id": "Scripts", "label": "Scripts"}
     assert c.post("/v1/swipe/types", json={"name": "E-Mails"}).status_code == 409
     assert c.post("/v1/swipe/types", json={"name": "videos"}).status_code == 409
-    r = c.post("/v1/swipe/Scripts/save", json={"folder": "Unsorted", "title": "Opening", "content": "hi", "source": "Amarante"})
-    assert r.json() == {"folder": "Unsorted", "name": "Opening.md"}
+    r = c.post("/v1/swipe/Scripts/save", json={"folder": "Unclassified", "title": "Opening", "content": "hi", "source": "Amarante"})
+    assert r.json() == {"folder": "Unclassified", "name": "Opening.md"}
     assert c.get("/v1/swipe/Scripts").json()["items"][0]["source"] == "Amarante"
     assert c.get("/v1/swipe/nope").status_code == 404
     assert c.patch("/v1/swipe/sources", json={"old": "Amarante", "new": "Amarante Hotéis"}).json() == {"changed": 1}
@@ -205,3 +205,13 @@ def test_custom_text_types(client) -> None:
     assert (item["kind"], item["title"]) == ("Pages", "Opening")
     c.post("/v1/swipe/trash/restore", json={"kind": "Pages", "folder": item["folder"], "name": item["name"]})
     assert c.get("/v1/swipe/Pages").json()["items"][0]["title"] == "Opening"
+
+
+def test_hunch_upload_keeps_threads(client) -> None:
+    import json as _json
+
+    client, _ = client
+    r = client.post("/v1/swipe/ideas", params={"folder": "Unclassified", "threads": _json.dumps(["Israel", "Business"])}, files={"file": ("a.md", b"---\nthreads: [\"Old\"]\n---\nbody", "text/markdown")})
+    assert r.status_code == 200, r.text
+    items = client.get("/v1/swipe/ideas").json()["items"]
+    assert items[0]["threads"] == ["Old", "Israel", "Business"]

@@ -57,13 +57,13 @@ export function TagsManager({ tags, onOpen, onChanged }: { tags: TagCount[]; onO
                 </button>
               )}
               <span className="nt-tagacts">
-                <button type="button" aria-label="Rename" onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditing(t.name); setName(t.name); }}><Icon name="edit" size={14} /></button>
+                <button type="button" aria-label="Rename" onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditing(t.name); setName(t.name); }}><Icon name="lucide-file-pen" size={14} /></button>
                 <button type="button" aria-label="Color" data-on={palette === t.name} onClick={() => setPalette(palette === t.name ? null : t.name)}><i style={{ background: TAG_COLORS[t.name] ?? tagStyle(t.name).color }} /></button>
                 <button type="button" className="nt-tagdel" data-sure={sure === t.name} aria-label="Delete" onClick={() => {
                   if (sure !== t.name) { setSure(t.name); return; }
                   setSure(null);
                   void disintegrate(document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`tag:${t.name}`)}"]`)).then(() => deleteTag(t.name)).then(() => done('Tag Deleted')).catch(fail);
-                }}><Icon name="trash-bin-2" size={14} />{sure === t.name && <em>Sure?</em>}</button>
+                }}><Icon name="lucide-trash" size={14} />{sure === t.name && <em>Sure?</em>}</button>
               </span>
               {palette === t.name && (
                 <div className="nt-swatches" role="group" aria-label="Pick A Color">

@@ -131,7 +131,7 @@ export function Mentor() {
               <>
                 <Pick className="mm-chatpick" label="Conversations" value={current} onChange={choose}
                   options={[...chats.filter((c) => c.messages.length > 0 || c.id === current).map((c) => ({ value: c.id, label: c.title })), { value: NEW, label: draft ? 'New Conversation' : 'New Conversation…' }]} />
-                {!draft && <button type="button" className="mm-ic" aria-label="Rename Conversation" title="Rename" onClick={() => setRenaming(chats.find((c) => c.id === current)?.title ?? '')}><Icon name="edit" size={15} /></button>}
+                {!draft && <button type="button" className="mm-ic" aria-label="Rename Conversation" title="Rename" onClick={() => setRenaming(chats.find((c) => c.id === current)?.title ?? '')}><Icon name="lucide-file-pen" size={15} /></button>}
               </>
             ) : (
               <input autoFocus className="mm-chatname" value={renaming} aria-label="Conversation Name" onChange={(e) => setRenaming(e.target.value)}
@@ -151,14 +151,14 @@ export function Mentor() {
               {!text && <Typed text="How can I help you with?" />}
             </div>
             <div className="mm-tools">
-              <button type="button" className="mm-ic" data-on={speech.state === 'recording'} aria-label={speech.state === 'recording' ? 'Microphone: On' : 'Microphone'} title="Dictate" disabled={speech.state === 'transcribing' || streaming} onClick={() => void onMic()}>
-                <Icon name={speech.state === 'transcribing' ? 'refresh' : 'microphone'} size={17} />
+              <button type="button" className="mm-ic" data-on={speech.state === 'recording'} aria-label="Dictate" data-tip="Dictate" disabled={speech.state === 'transcribing' || streaming} onClick={() => void onMic()}>
+                <Icon name={speech.state === 'transcribing' ? 'refresh' : 'lucide-mic'} size={17} />
               </button>
-              <button type="button" className="mm-ic mm-muse" data-on={think} aria-pressed={think} aria-label="Muse" title={think ? 'Muse: ON' : 'Muse: OFF'} onClick={() => setThink(!think)}>
+              <button type="button" className="mm-ic mm-muse" data-glow={think} aria-pressed={think} aria-label="Muse" data-tip="Muse" onClick={() => setThink(!think)}>
                 <Icon name="brain-cog" size={17} />
               </button>
-              <button type="button" className="mm-ic" data-on={speech.state === 'recording'} aria-label="Voice Mode" title="Voice Mode" onClick={() => void onVoice()}>
-                <Icon name="soundwave" size={17} />
+              <button type="button" className="mm-ic" data-on={speech.state === 'recording'} aria-label="Voice" data-tip="Voice" onClick={() => void onVoice()}>
+                <Icon name="phibe-voice" size={17} />
               </button>
               {streaming
                 ? <button type="button" className="mm-send" aria-label="Stop" onClick={stop}><Icon name="stop-circle" size={18} /></button>

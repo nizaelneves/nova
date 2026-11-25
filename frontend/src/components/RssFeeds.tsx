@@ -64,7 +64,7 @@ export function RssFeeds({ reload, onDisconnect }: { reload?: string; onDisconne
             <small>{f.checked && !f.error ? `${f.items ?? 0} ${f.items === 1 ? 'item' : 'items'}` : ''}</small>
             <button type="button" aria-label={`Remove ${f.name}`} title={feeds.length === 1 ? 'Remove (disconnects RSS)' : 'Remove'}
               disabled={busy} onClick={() => (feeds.length === 1 ? onDisconnect() : void save(feeds.filter((x) => x.url !== f.url)))}>
-              <Icon name="trash-bin-2" size={14} />
+              <Icon name="lucide-trash" size={14} />
             </button>
           </li>
         ))}

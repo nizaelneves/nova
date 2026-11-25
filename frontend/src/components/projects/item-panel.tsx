@@ -147,7 +147,7 @@ export function ItemPanel({ item, items, props, onPatch, onAddSub, onDelete, onE
                 <li key={s.id}>
                   <button type="button" onClick={() => onOpen(s.id)}>{s.title}</button>
                   {status && <div className="bd-subcell"><Cell prop={status} item={s} onChange={(v) => onPatch(s.id, { values: { [status.id]: v } })} onEdit={() => onEditProp(status)} /></div>}
-                  <button type="button" className="bd-x" aria-label={`Delete ${s.title}`} onClick={() => onDelete(s.id)}><Icon name="trash-bin-2" size={15} /></button>
+                  <button type="button" className="bd-x" aria-label={`Delete ${s.title}`} onClick={() => onDelete(s.id)}><Icon name="lucide-trash" size={15} /></button>
                 </li>
               ))}
             </ul>
@@ -164,7 +164,7 @@ export function ItemPanel({ item, items, props, onPatch, onAddSub, onDelete, onE
             <li key={f.id}>
               <button type="button" onClick={() => downloadFile(f).catch((e) => toast.error(e instanceof Error ? e.message : 'Download failed'))}>{f.name}</button>
               <small>{f.size < 1024 * 1024 ? `${Math.max(1, Math.round(f.size / 1024))} KB` : `${(f.size / 1024 / 1024).toFixed(1)} MB`}</small>
-              <button type="button" className="bd-x" aria-label={`Remove ${f.name}`} onClick={() => deleteFile(f.id).then(loadExtras).catch(() => undefined)}><Icon name="trash-bin-2" size={15} /></button>
+              <button type="button" className="bd-x" aria-label={`Remove ${f.name}`} onClick={() => deleteFile(f.id).then(loadExtras).catch(() => undefined)}><Icon name="lucide-trash" size={15} /></button>
             </li>
           ))}
         </ul>
@@ -185,7 +185,7 @@ export function ItemPanel({ item, items, props, onPatch, onAddSub, onDelete, onE
             <li key={c.id}>
               <p>{c.body}</p>
               <small>{new Date(c.created_at).toLocaleString()}</small>
-              <button type="button" className="bd-x" aria-label="Delete comment" onClick={() => deleteComment(c.id).then(loadComments).catch(() => undefined)}><Icon name="trash-bin-2" size={14} /></button>
+              <button type="button" className="bd-x" aria-label="Delete comment" onClick={() => deleteComment(c.id).then(loadComments).catch(() => undefined)}><Icon name="lucide-trash" size={14} /></button>
             </li>
           ))}
         </ul>

@@ -697,14 +697,24 @@ export async function getInferenceSource(): Promise<InferenceSource> {
       throw new Error(e?.message ?? e ?? 'Failed to read inference source');
     }
   }
-  return { kind: 'ollama' };
+  // In the browser the server keeps the choice (config.toml).
+  const res = await apiFetch('/v1/inference/source');
+  return res.ok ? res.json() : { kind: 'ollama' };
 }
 
 export async function setInferenceSource(
   src: InferenceSource & { apiKey?: string },
   options: { pending?: boolean } = {},
 ): Promise<void> {
-  if (!isTauri()) throw new Error('Inference source is configurable in the desktop app only.');
+  if (!isTauri()) {
+    const res = await apiFetch('/v1/inference/source', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: src.kind, engine: src.engine, host: src.host, model: src.model }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail ?? 'Failed to save inference source');
+    return;
+  }
   try {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke<void>('set_inference_source', {

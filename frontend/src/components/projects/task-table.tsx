@@ -70,7 +70,7 @@ function TitleCell({ task, onRename, onOpen }: { task: Task; onRename: (title: s
       <button type="button" className="tt-title-btn" title="Click to rename" onClick={() => setEditing(true)}>
         <StrikeText done={task.status === 'done'}>{task.title}</StrikeText>
       </button>
-      <button type="button" className="tt-open" aria-label={`Open ${task.title}`} title="Open" onClick={onOpen}><Icon name="pen" size={14} /></button>
+      <button type="button" className="tt-open" aria-label={`Open ${task.title}`} title="Open" onClick={onOpen}><Icon name="lucide-file-pen" size={14} /></button>
     </div>
   );
 }

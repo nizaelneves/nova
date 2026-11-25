@@ -15,12 +15,12 @@ export function TimerButton() {
       <button
         type="button"
         className="composer-icon"
-        data-on={t.running}
-        aria-label="Timer"
-        title={t.running ? `Timer: ${clock(t.remaining)} left` : 'Timer'}
+                aria-label="Timer"
+        data-glow={t.running}
+        data-tip={t.running ? `Timer · ${clock(t.remaining)}` : 'Timer'}
         onClick={() => setOpen(true)}
       >
-        <Icon name="focus-timer" size={18} />
+        <Icon name="tabler-stopwatch" size={18} />
       </button>
       {open && (
         <PickerModal tabs={[{ id: 'timer', label: 'Timer' }, { id: 'length', label: 'Length' }]} tab={tab} onTab={setTab} onClose={() => setOpen(false)}>

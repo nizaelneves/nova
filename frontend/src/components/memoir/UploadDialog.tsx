@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { SourceInput } from './SourceInput';
 import { Pick } from './Pick';
-import { createSwipeFolder, formatSize, kindInfo, saveLink, uploadSwipe, type SwipeFolder, type SwipeKind, type TextType } from '../../lib/swipe-api';
+import { ThreadPicker } from './Threads';
+import { createSwipeFolder, formatSize, kindInfo, saveLink, shelfOptions, uploadSwipe, type SwipeFolder, type SwipeKind, type TextType } from '../../lib/swipe-api';
 
 const NEW = '\u0000new';
 
 interface Row { file: File; done: number; error?: string }
 
 /** Choose videos (or drop them on the page), pick the folder they go in, and send them. */
-export function UploadDialog({ kind, types, sources = [], folders, folder, files, onClose, onDone }: {
-  kind: SwipeKind; types?: TextType[]; sources?: string[]; folders: SwipeFolder[]; folder: string; files: File[]; onClose: () => void; onDone: (folder: string) => void;
+export function UploadDialog({ kind, types, shelvesOf, folders, folder, files, inUse = [], onClose, onDone }: {
+  inUse?: string[]; kind: SwipeKind; types?: TextType[]; shelvesOf?: (type: string) => SwipeFolder[]; folders: SwipeFolder[]; folder: string; files: File[]; onClose: () => void; onDone: (folder: string) => void;
 }) {
   const [type, setType] = useState(kind); // text types: pick which one it goes in
   const { ext, one, many } = kindInfo(type);
   const isOk = (f: File) => ext.some((e) => f.name.toLowerCase().endsWith(e));
   const [rows, setRows] = useState<Row[]>(() => files.filter(isOk).map((file) => ({ file, done: 0 })));
-  const [dest, setDest] = useState(kind === 'ideas' ? 'Unsorted' : folders.some((f) => f.name === folder) ? folder : folders[0]?.name ?? NEW);
+  const shelves = types && shelvesOf ? shelvesOf(type) : folders;
+  const [dest, setDest] = useState(kind === 'ideas' || types ? 'Unclassified' : folders.some((f) => f.name === folder) ? folder : folders[0]?.name ?? NEW);
   const [fresh, setFresh] = useState('');
-  const [source, setSource] = useState(''); // texts: where it comes from (there are no folders for texts)
+  const [threads, setThreads] = useState<string[]>([]); // Hunches: the threads every file gets
   const [busy, setBusy] = useState(false);
 
   const add = (list: FileList | File[]) => {
@@ -32,14 +33,14 @@ export function UploadDialog({ kind, types, sources = [], folders, folder, files
   const [link, setLink] = useState('');
 
   const send = async () => {
-    const name = types ? 'Unsorted' : dest === NEW ? fresh.trim() : dest;
-    if (!name) { toast.error('Give the folder a name'); return; }
+    const name = dest === NEW ? fresh.trim() : dest;
+    if (!name) { toast.error('Give the shelf a name'); return; }
     setBusy(true);
     let failed = 0;
     try {
-      if (!types && dest === NEW) await createSwipeFolder(name, type);
+      if (dest === NEW) await createSwipeFolder(name, type);
       if (mode === 'link') {
-        try { await saveLink(type, link.trim(), name, source.trim()); }
+        try { await saveLink(type, link.trim(), name); }
         catch (e) { failed = 1; toast.error(e instanceof Error ? e.message : 'Could not save that link'); }
         setBusy(false);
         onDone(name);
@@ -49,10 +50,10 @@ export function UploadDialog({ kind, types, sources = [], folders, folder, files
       for (const [i, row] of rows.entries()) {
         if (row.done >= 1) continue;
         patch(i, { error: undefined });
-        try { await uploadSwipe(type, name, row.file, (done) => patch(i, { done }), source.trim()); patch(i, { done: 1 }); }
+        try { await uploadSwipe(type, name, row.file, (done) => patch(i, { done }), '', threads); patch(i, { done: 1 }); }
         catch (e) { failed += 1; patch(i, { error: e instanceof Error ? e.message : 'Upload failed' }); }
       }
-    } catch (e) { failed = rows.length; toast.error(e instanceof Error ? e.message : 'Could not create the folder'); }
+    } catch (e) { failed = rows.length; toast.error(e instanceof Error ? e.message : 'Could not create the shelf'); }
     setBusy(false);
     onDone(name);
     if (!failed) { toast.success(rows.length > 1 ? `${many} Added` : `${one} Added`); onClose(); }
@@ -79,12 +80,12 @@ export function UploadDialog({ kind, types, sources = [], folders, folder, files
             <input type="file" multiple hidden accept={ext.join(',')} onChange={(e) => { if (e.target.files) add(e.target.files); e.target.value = ''; }} />
           </label>
         )}
-        {types && types.length > 1 && <div className="mm-row"><span>Type</span><Pick label="Type" value={type} onChange={(v) => setType(v)} disabled={busy} options={types.map((t) => ({ value: t.id, label: t.label }))} /></div>}
-        {types && <div className="mm-row"><span>Origin</span><SourceInput value={source} onChange={setSource} options={sources} disabled={busy} /></div>}
-        {kind !== 'ideas' && !types && <div className="mm-row">
-          <span>Folder</span>
-          <Pick label="Folder" value={dest} onChange={setDest} disabled={busy} options={[...folders.map((f) => ({ value: f.name, label: f.name })), { value: NEW, label: 'New Folder…' }]} />
-          {dest === NEW && <input value={fresh} onChange={(e) => setFresh(e.target.value)} placeholder="Folder name" disabled={busy} autoFocus />}
+        {types && types.length > 0 && <div className="mm-row"><span>Type</span><Pick label="Type" value={type} onChange={(v) => { setType(v); setDest('Unclassified'); }} disabled={busy} options={types.map((t) => ({ value: t.id, label: t.label }))} /></div>}
+        {kind === 'ideas' && <div className="mm-fld"><span>Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div>}
+        {kind !== 'ideas' && <div className="mm-row">
+          <span>Shelf</span>
+          <Pick label="Shelf" value={dest} onChange={setDest} disabled={busy} options={shelfOptions(shelves.map((f) => f.name))} />
+          {dest === NEW && <input value={fresh} onChange={(e) => setFresh(e.target.value)} placeholder="Shelf name" disabled={busy} autoFocus />}
         </div>}
         <div className="mm-files">
           {rows.map((r, i) => (

@@ -93,3 +93,14 @@ def test_a_damaged_backup_is_refused(home) -> None:
         z.writestr("notes.db", b"this is not a database")
     with pytest.raises((sqlite3.DatabaseError, ValueError)):
         backup.verify(bad)
+
+
+def test_a_deleted_file_waits_in_the_trash_and_can_come_back(home) -> None:
+    from phibe.notes import files
+
+    name = files.save(PNG)
+    assert files.remove(name) and files.path_of(name) is None
+    assert [t[0] for t in files.trashed()] == [name]
+    assert files.restore(name) and files.path_of(name) is not None and files.trashed() == []
+    files.remove(name)
+    assert files.purge(name) and files.trashed() == [] and not files.restore(name)

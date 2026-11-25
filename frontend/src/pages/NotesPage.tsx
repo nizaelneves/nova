@@ -237,7 +237,7 @@ export function NotesPage() {
     return job ? `Indexing ${job.done}/${job.total || '…'}` : null;
   }, [status]);
   const scopeTitle = scope.kind === 'all' ? 'All Notes' : scope.kind === 'bookmarks' ? 'Bookmarks' : scope.kind === 'pages' ? 'Pages' : scope.kind === 'collections' ? 'Collections' : scope.kind === 'files' ? 'Files' : scope.kind === 'images' ? 'Images' : scope.kind === 'videos' ? 'Videos' : scope.kind === 'tags' ? 'Tags' : scope.kind === 'trash' ? 'Trash' : scope.kind === 'graph' ? 'Graph' : scope.name;
-  const scopeIcon: IconName = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'ph-folders' : scope.kind === 'files' ? 'lucide-files' : scope.kind === 'images' ? 'lucide-images' : scope.kind === 'videos' ? 'tabler-player-play' : scope.kind === 'tags' ? 'lucide-tags' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'trash-bin-2' : scope.kind === 'graph' ? 'ph-graph' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'lucide-library';
+  const scopeIcon: IconName = scope.kind === 'bookmarks' ? 'link-round' : scope.kind === 'collections' ? 'ph-folders' : scope.kind === 'files' ? 'lucide-files' : scope.kind === 'images' ? 'lucide-images' : scope.kind === 'videos' ? 'tabler-player-play' : scope.kind === 'tags' ? 'lucide-tags' : scope.kind === 'pages' ? 'document-text' : scope.kind === 'trash' ? 'lucide-trash' : scope.kind === 'graph' ? 'ph-graph' : scope.kind === 'collection' ? 'folder' : scope.kind === 'tag' ? 'tag' : 'lucide-library';
   const canEdit = !!note && !note.deleted_at;
 
   const NavItem = ({ to, icon, label, count }: { to: Scope; icon: IconName; label: string; count?: number }) => (
@@ -312,10 +312,10 @@ export function NotesPage() {
   const collectionTools = scope.kind === 'collection' && (
     <>
       {renamingColl === null
-        ? <button type="button" className="nt-btn" onClick={() => setRenamingColl(scope.name)}><Icon name="edit" size={14} /> Rename</button>
+        ? <button type="button" className="nt-btn" onClick={() => setRenamingColl(scope.name)}><Icon name="lucide-file-pen" size={14} /> Rename</button>
         : <input autoFocus className="nt-add" value={renamingColl} aria-label="Collection Name" onChange={(e) => setRenamingColl(e.target.value)} onBlur={renameCurrent}
             onKeyDown={(e) => { if (e.key === 'Enter') renameCurrent(); if (e.key === 'Escape') setRenamingColl(null); }} />}
-      <button type="button" className="nt-btn nt-danger" onClick={deleteCurrent} onBlur={() => setSureColl(false)}><Icon name="trash-bin-2" size={14} /> {sureColl ? 'Sure?' : 'Trash'}</button>
+      <button type="button" className="nt-btn nt-danger" onClick={deleteCurrent} onBlur={() => setSureColl(false)}><Icon name="lucide-trash" size={14} /> {sureColl ? 'Sure?' : 'Trash'}</button>
     </>
   );
   const sort = useSort(scope.kind);
@@ -328,7 +328,7 @@ export function NotesPage() {
           {SORTED.has(scope.kind) && <SortControl sort={sort} />}
           {filesScope ? (
             <>
-              <button type="button" className="nt-btn nt-primary" onClick={() => setUploading(true)}><Icon name="upload-minimalistic" size={17} /> Upload</button>
+              <button type="button" className="nt-btn nt-primary" onClick={() => setUploading(true)}><Icon name="lucide-cloud-upload" size={17} /> Upload</button>
             </>
           ) : scope.kind === 'collections' ? (
             newCollection === null
@@ -437,11 +437,11 @@ export function NotesPage() {
               {editing && <span className="nt-save" data-state={saveState}>{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Could Not Save' : 'Saved'}</span>}
               {canEdit && (
                 <button type="button" className="nt-btn" onClick={() => { void flush(); setEditing(!editing); }}>
-                  <Icon name={editing ? 'check-circle' : 'edit'} size={14} /> {editing ? 'Done' : 'Edit'}
+                  <Icon name={editing ? 'check-circle' : 'lucide-file-pen'} size={14} /> {editing ? 'Done' : 'Edit'}
                 </button>
               )}
               <button type="button" className={`nt-btn${note.deleted_at ? '' : ' nt-danger'}`} onClick={() => void toggleTrash()}>
-                <Icon name={note.deleted_at ? 'refresh' : 'trash-bin-2'} size={14} /> {note.deleted_at ? 'Restore' : 'Trash'}
+                <Icon name={note.deleted_at ? 'refresh' : 'lucide-trash'} size={14} /> {note.deleted_at ? 'Restore' : 'Trash'}
               </button>
             </div>
 
@@ -562,7 +562,7 @@ export function NotesPage() {
           <div className="nt-selbar" role="toolbar" aria-label="Selection">
             <b>{picked.size} Selected</b>
             <button type="button" className="nt-btn nt-danger" onClick={() => void removePicked()}>
-              <Icon name="trash-bin-2" size={14} /> {sure ? 'Sure?' : scope.kind === 'collections' || filesScope ? 'Delete' : 'Trash'}
+              <Icon name="lucide-trash" size={14} /> {sure ? 'Sure?' : scope.kind === 'collections' || filesScope ? 'Delete' : 'Trash'}
             </button>
             <button type="button" className="nt-btn" onClick={() => { setPicked(new Set()); setSure(false); }}>Clear</button>
           </div>

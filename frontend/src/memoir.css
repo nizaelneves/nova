@@ -40,7 +40,7 @@
   position: fixed; inset: 0; z-index: 1; display: grid; grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr);
   background: var(--mm-bg); color: var(--mm-text); font-family: var(--mm-ui); overflow: hidden;
 }
-.mm-neb { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; opacity: .55; }
+.mm-neb { position: absolute; border-radius: 50%; pointer-events: none; opacity: .55; will-change: transform; } /* no blur filter: the gradients are already soft, and a blurred layer this size costs a lot of memory */
 .mm-n1 { width: 620px; height: 620px; right: -120px; top: -200px; background: radial-gradient(circle, rgba(124, 92, 255, .55), transparent 68%); animation: mm-d1 38s ease-in-out infinite alternate; }
 .mm-n2 { width: 560px; height: 560px; left: -120px; bottom: -200px; background: radial-gradient(circle, rgba(232, 121, 249, .38), transparent 68%); animation: mm-d2 46s ease-in-out infinite alternate; }
 .mm-n3 { width: 520px; height: 420px; left: 38%; top: 30%; background: radial-gradient(circle, rgba(40, 120, 255, .22), transparent 68%); animation: mm-d3 54s ease-in-out infinite alternate; }
@@ -791,7 +791,7 @@
 .mm-dd-menu { position: absolute; z-index: 60; left: 0; top: calc(100% + 6px); display: flex; flex-direction: column; gap: 2px; min-width: 100%; width: max-content; max-width: 300px; max-height: 240px; overflow: auto; padding: 6px; border-radius: 14px; border: 1px solid rgba(143, 227, 255, .28); background: rgba(16, 20, 38, .97); backdrop-filter: blur(10px); box-shadow: 0 12px 32px rgba(0, 0, 0, .5), 0 0 24px rgba(124, 92, 255, .18); animation: mm-card .18s var(--mm-out) both; }
 .mm-dd-menu button { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; border: 0; border-radius: 9px; background: none; color: var(--mm-text); font: 13px var(--mm-ui); text-align: left; cursor: pointer; }
 .mm-dd-menu button:hover { background: rgba(143, 227, 255, .12); color: #fff; }
-.mm-dd-menu button[data-on='true'] { color: #bfeaff; }
+.mm-dd-menu button[data-on='true'] { color: var(--color-accent-light, #20e7aa); }
 .mm-dd-menu small { font: 11px var(--mm-mono); color: var(--mm-mute); }
 .mm-root .nt-organize .nt-add { padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(160, 175, 255, .22); background: linear-gradient(180deg, rgba(143, 227, 255, .08), rgba(124, 92, 255, .045)); color: var(--mm-text); font: 13px var(--mm-ui); outline: 0; transition: border-color .2s, box-shadow .25s; }
 .mm-root .nt-organize .nt-add:hover { border-color: rgba(143, 227, 255, .4); }
@@ -836,3 +836,10 @@
 /* the two cards of a row take the height they need: no empty gap between the sliders */
 .mm-cfg-row { align-items: start; }
 .mm-cfg-row > .mm-cfg-card { align-content: start; }
+.mm-tin { position: relative; flex: 1; min-width: 90px; display: flex; }
+.mm-tin input { width: 100%; box-sizing: border-box; }
+.mm-tghost { position: absolute; inset: 0; display: flex; align-items: center; padding: 4px; overflow: hidden; white-space: pre; pointer-events: none; font: 13px var(--mm-ui); color: var(--mm-mute, rgba(238, 240, 255, .35)); }
+.mm-tghost i { font-style: normal; visibility: hidden; }
+.mm-tools { --tip-tone: 143, 227, 255; }
+.mm-ic[data-glow='true'] { color: #8fe3ff; background: rgba(143, 227, 255, .08); border-color: rgba(143, 227, 255, .55); box-shadow: 0 0 14px rgba(143, 227, 255, .35); animation: none; }
+.mm-fld .mm-tchips input, .mm-fld .mm-tchips input:hover, .mm-fld .mm-tchips input:focus { padding: 4px; border: 0; border-radius: 0; background: none; box-shadow: none; font: 13px var(--mm-ui); }

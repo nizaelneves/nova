@@ -54,8 +54,8 @@ export function MemoirChats() {
                   : <b>{c.title}</b>}
                 <small>{c.messages.length} {c.messages.length === 1 ? 'Message' : 'Messages'} · Updated {when(c.updatedAt)}</small>
               </div>
-              <button type="button" className="mm-btn" onClick={() => setEditing({ id: c.id, name: c.title })}><Icon name="edit" size={14} />Rename</button>
-              <button type="button" className="mm-btn mm-danger" onBlur={() => setSure(null)} onClick={() => { if (sure === c.id) { remove(c.id); setSure(null); } else setSure(c.id); }}><Icon name="trash-bin-2" size={14} />{sure === c.id ? 'Sure?' : 'Delete'}</button>
+              <button type="button" className="mm-btn" onClick={() => setEditing({ id: c.id, name: c.title })}><Icon name="lucide-file-pen" size={14} />Rename</button>
+              <button type="button" className="mm-btn mm-danger" onBlur={() => setSure(null)} onClick={() => { if (sure === c.id) { remove(c.id); setSure(null); } else setSure(c.id); }}><Icon name="lucide-trash" size={14} />{sure === c.id ? 'Sure?' : 'Delete'}</button>
             </li>
           ))}
         </ol>

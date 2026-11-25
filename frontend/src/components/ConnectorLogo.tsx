@@ -3,7 +3,7 @@ import { Icon, type IconName } from './Icon';
 
 // Connectors without a brand logo get a plain icon instead.
 const FALLBACK: Record<string, IconName> = {
-  upload: 'upload-minimalistic',
+  upload: 'lucide-cloud-upload',
   weather: 'layers',
 };
 

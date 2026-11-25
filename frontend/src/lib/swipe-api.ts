@@ -2,19 +2,22 @@ import { apiFetch, authHeaders, getBase } from './api';
 
 export interface SwipeVideo { folder: string; name: string; title: string; size: number; modified: number; created?: number; type?: string; preview?: string; threads?: string[]; source?: string }
 export interface SwipeFolder { name: string; count: number }
-export interface SwipeLibrary { folders: SwipeFolder[]; items: SwipeVideo[] }
+export interface SwipeLibrary { folders: SwipeFolder[]; items: SwipeVideo[]; /** Copies: the shelves of each type. */ byType?: Record<string, SwipeFolder[]> }
 /** A kind of Swipe File: videos, audios, prompts, hunches (ideas), or a text type (E-mails, Copies, or one you made). */
 export type SwipeKind = string;
 export interface TextType { id: string; label: string }
 export const TEXT_EXT = ['.pdf', '.md', '.txt'];
+const NOTE_EXT = ['.md', '.txt'];
+/** Documents Hunches and Prompts also take: Phibe reads their text and keeps it as a note. */
+const DOC_EXT = ['.docx', '.pdf', '.html', '.htm', '.pptx'];
 
 export const VIDEO_EXTENSIONS = ['.mp4', '.m4v', '.mov', '.webm', '.mkv'];
 /** What each kind of swipe accepts, and how it is named in the interface. */
 export const KINDS: Record<string, { ext: string[]; one: string; many: string }> = {
   videos: { ext: VIDEO_EXTENSIONS, one: 'Video', many: 'Videos' },
   audios: { ext: ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.opus', '.flac', '.weba'], one: 'Audio', many: 'Audios' },
-  prompts: { ext: ['.md', '.txt'], one: 'Prompt', many: 'Prompts' },
-  ideas: { ext: ['.md', '.txt'], one: 'Hunch', many: 'Hunches' }, // the name is only here: change these two words to rename the screen
+  prompts: { ext: [...NOTE_EXT, ...DOC_EXT], one: 'Prompt', many: 'Prompts' },
+  ideas: { ext: [...NOTE_EXT, ...DOC_EXT], one: 'Hunch', many: 'Hunches' }, // the name is only here: change these two words to rename the screen
 };
 /** What a kind takes and how it is named; any other kind is a text type. */
 export const kindInfo = (kind: SwipeKind) => KINDS[kind] ?? { ext: TEXT_EXT, one: 'Text', many: 'Texts' };
@@ -46,6 +49,13 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Shelf choices: "New Shelf…" first, then Unclassified, then the shelves that exist. */
+export const NEW_SHELF = '\u0000new';
+export const shelfOptions = (names: string[]) => [
+  { value: NEW_SHELF, label: 'New Shelf…' }, { value: 'Unclassified', label: 'Unclassified' },
+  ...names.filter((n) => n !== 'Unclassified').map((n) => ({ value: n, label: n })),
+];
+
 export const listSwipe = (kind: SwipeKind) => json<SwipeLibrary>(`/v1/swipe/${kind}`);
 
 export const createSwipeFolder = (name: string, kind: SwipeKind) =>
@@ -74,10 +84,10 @@ export const saveLink = (kind: SwipeKind, url: string, folder: string, source = 
   json<SwipeVideo>(`/v1/swipe/${encodeURIComponent(kind)}/link`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, folder, source }) });
 
 /** Sends one file into a folder, reporting progress (0 to 1) as it goes. */
-export function uploadSwipe(kind: SwipeKind, folder: string, file: File, onProgress: (done: number) => void, source = ''): Promise<SwipeVideo> {
+export function uploadSwipe(kind: SwipeKind, folder: string, file: File, onProgress: (done: number) => void, source = '', threads: string[] = []): Promise<SwipeVideo> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${getBase()}/v1/swipe/${kind}?folder=${encodeURIComponent(folder)}${source ? `&source=${encodeURIComponent(source)}` : ''}`);
+    xhr.open('POST', `${getBase()}/v1/swipe/${kind}?folder=${encodeURIComponent(folder)}${source ? `&source=${encodeURIComponent(source)}` : ''}${threads.length ? `&threads=${encodeURIComponent(JSON.stringify(threads))}` : ''}`);
     for (const [k, v] of Object.entries(authHeaders())) xhr.setRequestHeader(k, v);
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
     xhr.onerror = () => reject(new Error('The upload was interrupted'));

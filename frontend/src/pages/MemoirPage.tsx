@@ -49,7 +49,8 @@ export function MemoirPage() {
     const counts = new Map<string, number>();
     items.forEach((i) => counts.set(i.folder, (counts.get(i.folder) ?? 0) + 1));
     const folders = [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name)); // texts have no folders on screen: only the Source of each
-    setLibs((p) => ({ ...p, texts: { folders, items } }));
+    const byType = Object.fromEntries(libsOf.map(({ t, l }) => [t.id, l.folders]));
+    setLibs((p) => ({ ...p, texts: { folders, items, byType } }));
   }, []);
   const reload = useCallback(() => {
     const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : 'Could not read the Swipe File');

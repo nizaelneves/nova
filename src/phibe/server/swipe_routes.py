@@ -35,7 +35,7 @@ TEXT_TYPES = KINDS["emails"]  # every text type (E-mails, Copies, or one the use
 LEGACY_TYPES = {"emails": "E-Mails"}  # the first type keeps its folder name on disk
 BUILTIN = ("videos", "audios", "prompts", "ideas")
 PREVIEW = 220
-UNSORTED = "Unsorted"  # loose files in the videos folder itself
+UNSORTED = "Unclassified"  # loose files in the videos folder itself
 CHUNK = 1024 * 1024
 _FM = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
 
@@ -111,12 +111,29 @@ def split_threads(text: str) -> tuple[List[str], str]:
 def with_threads(body: str, threads: List[str]) -> str:
     names = list(dict.fromkeys(t.strip() for t in threads if t.strip()))
     return f"---\nthreads: {json.dumps(names, ensure_ascii=False)}\n---\n{body}" if names else body
+
+
+def _tagged(kind: str, text: str, threads: str) -> str:
+    """A Hunch sent with threads (a JSON list in the query) gets them in its header, beside any it already had."""
+    if kind != "ideas" or not threads:
+        return text
+    try:
+        extra = [str(t) for t in json.loads(threads)]
+    except ValueError:
+        return text
+    old, body = split_threads(text)
+    return with_threads(body, old + extra)
+
+
 _BAD = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
 def _custom(kind: str) -> bool:
     """A text type the user made: a folder of its own inside the Swipe File."""
     return bool(kind) and kind not in KINDS and not kind.startswith(".") and clean(kind) == kind and (get_config_dir() / "swipe-file" / kind).is_dir()
+
+
+DOCUMENTS = {".docx", ".pdf", ".html", ".htm", ".pptx"}  # read to Markdown when sent to Hunches or Prompts
 
 
 def exts(kind: str) -> Dict[str, str]:
@@ -164,7 +181,7 @@ def clean(name: str) -> str:
 def _folder_path(kind: str, folder: str) -> Path:
     name = clean(folder)
     if not name:
-        raise HTTPException(status_code=400, detail="Give the folder a name")
+        raise HTTPException(status_code=400, detail="Give the shelf a name")
     return root(kind) if name == UNSORTED else root(kind) / name
 
 
@@ -399,7 +416,7 @@ def create_swipe_router() -> APIRouter:
     def create_folder(body: FolderBody) -> Dict[str, Any]:
         name = clean(body.name)
         if not name or name == UNSORTED:
-            raise HTTPException(status_code=400, detail="Pick another folder name")
+            raise HTTPException(status_code=400, detail="Pick another shelf name")
         (root(body.kind) / name).mkdir(parents=True, exist_ok=True)
         return {"name": name}
 
@@ -407,12 +424,12 @@ def create_swipe_router() -> APIRouter:
     def rename_folder(body: RenameFolderBody) -> Dict[str, Any]:
         old, new = clean(body.name), clean(body.new_name)
         if not new or UNSORTED in (old, new):
-            raise HTTPException(status_code=400, detail="Pick another folder name")
+            raise HTTPException(status_code=400, detail="Pick another shelf name")
         src, dest = root(body.kind) / old, root(body.kind) / new
         if not src.is_dir():
-            raise HTTPException(status_code=404, detail="folder not found")
+            raise HTTPException(status_code=404, detail="shelf not found")
         if dest.exists() and dest.name.lower() != src.name.lower():
-            raise HTTPException(status_code=409, detail="A folder with this name already exists")
+            raise HTTPException(status_code=409, detail="A shelf with this name already exists")
         if dest != src:
             src.rename(dest)
         return {"name": new}
@@ -468,13 +485,31 @@ def create_swipe_router() -> APIRouter:
         return {"folder": target.name if target != root(kind) else UNSORTED, "name": dest.name, "size": dest.stat().st_size}
 
     @router.post("/{kind}")
-    async def upload_file(kind: str, folder: str = Query(...), source: str = Query(""), file: UploadFile = File(...)) -> Dict[str, Any]:
+    async def upload_file(kind: str, folder: str = Query(...), source: str = Query(""), threads: str = Query(""), file: UploadFile = File(...)) -> Dict[str, Any]:
         types = exts(kind)
         if not types:
             raise HTTPException(status_code=404, detail="unknown swipe file kind")
         suffix = Path(file.filename or "").suffix.lower()
-        if suffix not in types:
-            raise HTTPException(status_code=415, detail=f"Only {kind} files can go here ({', '.join(sorted(types))})")
+        convert = kind in ("ideas", "prompts") and suffix in DOCUMENTS
+        if suffix not in types and not convert:
+            raise HTTPException(status_code=415, detail=f"Only {kind} files can go here ({', '.join(sorted(types) + sorted(DOCUMENTS) if kind in ('ideas', 'prompts') else sorted(types))})")
+        if convert:  # a Word, PDF or web page is read to text; the Swipe File keeps it as a Markdown note
+            from phibe.connectors.markitdown_convert import to_markdown
+
+            try:
+                text = to_markdown(await file.read(), file.filename or "file" + suffix)
+            except Exception:
+                raise HTTPException(status_code=422, detail="Could not read the text of that file")
+            if not text:
+                raise HTTPException(status_code=422, detail="That file has no text to keep")
+            target = _folder_path(kind, folder)
+            target.mkdir(parents=True, exist_ok=True)
+            stem = clean(Path(file.filename or "file").stem) or "file"
+            dest, n = target / f"{stem}.md", 2
+            while dest.exists():
+                dest, n = target / f"{stem} ({n}).md", n + 1
+            dest.write_text(_tagged(kind, text, threads), encoding="utf-8")
+            return {"folder": target.name if target != root(kind) else UNSORTED, "name": dest.name, "size": dest.stat().st_size}
         target = _folder_path(kind, folder)
         target.mkdir(parents=True, exist_ok=True)
         stem = clean(Path(file.filename or "file").stem) or "file"
@@ -489,6 +524,8 @@ def create_swipe_router() -> APIRouter:
             part.replace(dest)
         finally:
             part.unlink(missing_ok=True)
+        if kind == "ideas" and threads:
+            dest.write_text(_tagged(kind, dest.read_text(encoding="utf-8", errors="replace"), threads), encoding="utf-8")
         if has_source(kind) and source.strip():
             write_source(dest, source)
         return {"folder": target.name if target != root(kind) else UNSORTED, "name": dest.name, "size": dest.stat().st_size}

@@ -152,7 +152,7 @@ export function EditProject({ name, look, color, personal, onSave, onClose }: {
           : (
             <div className="pj-icons">
               <button type="button" data-on={!!image} aria-label={image ? 'Change or crop image' : 'Upload image'} title="Upload image" onClick={() => (image ? void open(image) : file.current?.click())}>
-                {image ? <img src={image} alt="" /> : <Icon name="upload-minimalistic" size={18} />}
+                {image ? <img src={image} alt="" /> : <Icon name="lucide-cloud-upload" size={18} />}
               </button>
               <button type="button" data-on={!icon && !image} aria-label="Initials" onClick={() => { setIcon(undefined); setImage(undefined); }}>Aa</button>
               {PROJECT_ICONS.map((n) => (

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe · Voice visualizer v3</title>
+<style>
+  :root { --bg: #070b10; --card: #0d141c; --line: rgba(255,255,255,.08); --txt: #e6edf3; --mute: #8b98a5; --mint: #20e7aa; --cyan: #10c3d3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, rgba(20,184,166,.12), transparent 60%), var(--bg); color: var(--txt); font: 14px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 18px 80px; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  h3 { margin: 30px 0 4px; font-size: 1.1rem; color: var(--mint); }
+  .lead, .sub { margin: 0 0 14px; color: var(--mute); max-width: 76ch; }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 14px; margin: 0 0 8px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,14,20,.9); backdrop-filter: blur(8px); color: var(--mute); }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; }
+  .bar select, .bar input[type=range] { accent-color: var(--mint); background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font: inherit; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .card h2 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--mint); font: 700 .8rem ui-monospace, Consolas, monospace; }
+  .card p { margin: 0; color: var(--mute); font-size: .86rem; }
+  .stage { position: relative; height: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.5) 0 .6px, transparent 1px) 0 0/46px 38px,
+    radial-gradient(circle at 70% 60%, rgba(143,227,255,.45) 0 .6px, transparent 1px) 0 0/61px 53px,
+    radial-gradient(ellipse at 50% 40%, rgba(20,184,166,.18), transparent 70%), #05080c; }
+  .pill { position: absolute; display: flex; align-items: center; gap: 10px; padding: 7px 13px; border-radius: 999px; background: rgba(9,15,22,.86); border: 1px solid rgba(32,231,170,.26); box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 0 18px rgba(32,231,170,.08); backdrop-filter: blur(8px); cursor: grab; touch-action: none; user-select: none; white-space: nowrap; }
+  .pill.drag { cursor: grabbing; border-color: rgba(32,231,170,.55); }
+  .pill canvas { display: block; }
+  /* the numbers */
+  .num { display: inline-flex; justify-content: flex-end; min-width: 5.6ch; font-variant-numeric: tabular-nums; }
+  .num span { display: inline-block; width: .62em; text-align: center; }
+  .txt { font: 600 .78rem ui-monospace, Consolas, monospace; color: #cfe9e3; min-width: 3.2ch; text-align: right; }
+  .odo { font: 500 .95rem ui-monospace, "Cascadia Mono", Consolas, monospace; color: #d9fff3; text-shadow: 0 0 10px rgba(32,231,170,.45); }
+  .grad { font: 300 1.05rem "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; letter-spacing: .06em; }
+  .grad span { background: linear-gradient(180deg, #d9fff3, #20e7aa 55%, #10c3d3); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 6px rgba(32,231,170,.5)); }
+  .hint { color: var(--mute); font-size: .76rem; display: flex; justify-content: space-between; }
+  .ask { margin-top: 26px; padding: 16px; border: 1px dashed rgba(32,231,170,.35); border-radius: 14px; color: var(--mute); }
+  .ask b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Voice visualizer · v3</h1>
+  <p class="lead">Fica como está: <b>Ouvindo = Matriz de pontos</b>. Aqui ficam as três partes que faltam: o número do envio (até 5 dígitos, mais devagar e mais estilizado), o “enviado” e o marcador de “vivo” da Onda.</p>
+
+  <div class="bar">
+    <label>nível da voz <input type="range" id="lvl" min="0" max="100" value="55"></label>
+    <label><input type="checkbox" id="auto" checked> voz automática</label>
+    <label>velocidade do número
+      <select id="speed"><option value="0.45">rápida</option><option value="0.7" selected>calma (padrão)</option><option value="1.1">bem lenta</option></select>
+    </label>
+    <label>nasce em
+      <select id="spawn"><option value="bc">embaixo, no centro</option><option value="tc">em cima, no centro</option><option value="br">embaixo, à direita</option><option value="tr">em cima, à direita</option></select>
+    </label>
+  </div>
+
+  <h3>A · Enviando: o número de Fibonacci, em 3 estilos</h3>
+  <p class="sub">Conta 0, 1, 1, 2, 3, 5 … até 75025 (5 dígitos) e recomeça do zero. A velocidade está no seletor acima.</p>
+  <div class="grid" id="gA"></div>
+
+  <h3>B · Enviado: 5 ideias</h3>
+  <p class="sub">Todas repetem sozinhas, a cada 3 segundos, só para você ver.</p>
+  <div class="grid" id="gB"></div>
+
+  <h3>C · Falando · Onda: o que fica no lugar do nome “Phibe”</h3>
+  <p class="sub">Algo que dê a ideia de que ela está viva. A onda violeta é a mesma; muda só o marcador ao lado.</p>
+  <div class="grid" id="gC"></div>
+
+  <div class="ask"><b>Para decidir:</b> um estilo de número (A), uma ideia de “enviado” (B) e um marcador de vida (C). Se quiser, dá para mudar a velocidade e os dígitos depois.</div>
+</div>
+
+<script>
+const TAU = Math.PI * 2;
+const G1 = '#10c3d3', G2 = '#20e7aa', VIOLET = '#a78bfa', LILAC = '#e9d5ff';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const wob = (t, i, k = 1) => 0.55 + 0.45 * Math.sin(t * 6 * k + i * 1.7);
+let speed = 0.7;
+
+const FIB = [0, 1]; while (FIB[FIB.length - 1] < 46368) FIB.push(FIB[FIB.length - 1] + FIB[FIB.length - 2]); FIB.push(75025); // 5 digits at most
+const fibAt = (t) => FIB[Math.floor(t / speed) % FIB.length];
+
+const COLS = 12, ROWS = 3;
+function dot(c, i, j, a, col) { c.globalAlpha = a; c.fillStyle = col; c.beginPath(); c.arc(4 + i * 7.6, 4.5 + j * 8.5, 2, 0, TAU); c.fill(); }
+const colorOf = (i) => (i % 4 === 3 ? G2 : G1);
+const sendDots = (c, w, h, L, t) => { for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) dot(c, i, j, 0.14 + 0.86 * Math.max(0, Math.sin(t * 5 - (i + j * 2) * 0.55)), colorOf(i)); c.globalAlpha = 1; };
+const DOTS = { w: 92, h: 26 };
+
+/* ---------- B · Enviado ---------- */
+const CHECK = [[4, 1], [5, 2], [6, 1], [7, 0]];
+const sentDots = {
+  check(c, w, h, L, t) { const p = t % 3; for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) dot(c, i, j, 0.12, G1); CHECK.forEach(([i, j], k) => dot(c, i, j, clamp((p - 0.15 - k * 0.14) / 0.12, 0, 1) * (1 - clamp((p - 2.3) / 0.6, 0, 1)), G2)); c.globalAlpha = 1; },
+  wave(c, w, h, L, t) { const p = (t % 3) / 1.4; for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) { const d = p * (COLS + 6) - i; dot(c, i, j, d < 0 ? 0.14 : 0.14 + 0.86 * Math.max(0, 1 - d / 7), G2); } c.globalAlpha = 1; },
+  burst(c, w, h, L, t) { const p = clamp((t % 3) / 1.2, 0, 1.4); for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) { const d = Math.hypot(i - 5.5, (j - 1) * 1.6) - p * 8; dot(c, i, j, 0.14 + 0.86 * Math.max(0, 1 - Math.abs(d) / 1.8), d < 0 ? G1 : G2); } c.globalAlpha = 1; },
+  breath(c, w, h, L, t) { const p = (t % 3) / 2.2, e = Math.sin(clamp(p, 0, 1) * Math.PI); for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) dot(c, i, j, 0.14 + 0.86 * e, G2); c.globalAlpha = 1; },
+  fly(c, w, h, L, t) { const p = (t % 3) / 1.6; for (let i = 0; i < COLS; i++) for (let j = 0; j < ROWS; j++) { const head = p * (COLS + 5) - 3, d = head - i; dot(c, i, j, d < 0 ? 0.14 : j === 1 ? 0.14 + 0.86 * Math.max(0, 1 - d / 4.5) : 0.14 + 0.5 * Math.max(0, 1 - d / 2.5), i % 2 ? G2 : G1); } c.globalAlpha = 1; },
+};
+
+/* ---------- C · marcadores de vida ---------- */
+const alive = {
+  orb(c, w, h, L, t) { const cx = w / 2, cy = h / 2, r = 8.5 + Math.sin(t * 2.2) * 0.7 + L * 1.2; const g = c.createRadialGradient(cx - 2, cy - 3, 1, cx, cy, r + 4); g.addColorStop(0, '#eadcff'); g.addColorStop(0.5, VIOLET); g.addColorStop(1, 'rgba(167,139,250,0)'); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r + 4, 0, TAU); c.fill();
+    const blink = (t % 3.4) < 0.14 ? 0.15 : 1, look = Math.sin(t * 0.8) * 1.6; c.fillStyle = '#1b1033'; for (const ex of [-3.2, 3.2]) { c.beginPath(); c.ellipse(cx + ex + look, cy + 0.5, 1.5, 2.3 * blink, 0, 0, TAU); c.fill(); } },
+  heart(c, w, h, L, t) { c.strokeStyle = VIOLET; c.lineWidth = 1.7; c.lineJoin = 'round'; c.lineCap = 'round'; c.beginPath(); for (let x = 0; x <= w; x += 1) { const ph = ((x / w) * 1.7 - t * 0.85) % 1, q = ((ph + 1) % 1); let y = 0; if (q > 0.2 && q < 0.26) y = -(q - 0.2) / 0.06 * 8; else if (q >= 0.26 && q < 0.32) y = -8 + (q - 0.26) / 0.06 * 15; else if (q >= 0.32 && q < 0.38) y = 7 - (q - 0.32) / 0.06 * 7; x ? c.lineTo(x, h / 2 + y * (0.6 + L * 0.5)) : c.moveTo(x, h / 2); } c.globalAlpha = 0.95; c.stroke(); c.globalAlpha = 1; },
+  breathe(c, w, h, L, t) { const cx = w / 2, cy = h / 2, b = 0.5 + 0.5 * Math.sin(t * 2.1), g = c.createRadialGradient(cx, cy, 0, cx, cy, 11); g.addColorStop(0, `rgba(233,213,255,${0.6 + 0.4 * b})`); g.addColorStop(0.45, `rgba(167,139,250,${0.35 + 0.4 * b})`); g.addColorStop(1, 'rgba(167,139,250,0)'); c.fillStyle = g; c.beginPath(); c.arc(cx, cy, 11, 0, TAU); c.fill(); c.fillStyle = LILAC; c.beginPath(); c.arc(cx, cy, 2.6 + b * 1.2, 0, TAU); c.fill();
+    for (let k = 0; k < 2; k++) { const a = t * (1.6 + k * 0.5) + k * 3; c.fillStyle = VIOLET; c.beginPath(); c.arc(cx + Math.cos(a) * (8 + k * 2), cy + Math.sin(a) * (8 + k * 2), 1.1, 0, TAU); c.fill(); } },
+  sparks(c, w, h, L, t) { const P = [[7, 8, 0], [17, 18, 1.3], [25, 7, 2.6], [11, 20, 3.9], [22, 14, 5.2]]; for (const [x, y, ph] of P) { const s = Math.max(0, Math.sin(t * 2.4 + ph)) ** 2; if (s < 0.02) continue; const r = 1 + s * 4.5; c.globalAlpha = s; c.strokeStyle = i2(ph); c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 0.8, 0, TAU); c.fill(); } c.globalAlpha = 1; },
+};
+const i2 = (ph) => (ph > 2.5 && ph < 4 ? G2 : LILAC);
+
+const waveDots = (c, w, h, L, t) => { for (let i = 0; i < COLS; i++) { const y = 1 + Math.sin(t * 5 + i * 0.6) * (0.4 + L * 0.9); for (let j = 0; j < ROWS; j++) dot(c, i, j, clamp(1 - Math.abs(j - y) * 0.75, 0.12, 1), i % 4 === 3 ? LILAC : VIOLET); } c.globalAlpha = 1; };
+
+/* ---------- 3×5 dot digits ---------- */
+const GLYPH = { 0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111' };
+function dotNumber(c, w, h, str, t, born) {
+  const slot = 3 * 3.6 + 3.4, x0 = w - str.length * slot;
+  for (let k = 0; k < str.length; k++) { const g = GLYPH[str[k]]; const pop = born ? clamp(1 - (t - born[k]) / 0.35, 0, 1) : 0;
+    for (let r = 0; r < 5; r++) for (let q = 0; q < 3; q++) { const on = g[r * 3 + q] === '1'; c.globalAlpha = on ? 0.75 + 0.25 * pop : 0.09; c.fillStyle = on ? (pop > 0.1 ? '#d9fff3' : G2) : G1; c.beginPath(); c.arc(x0 + k * slot + q * 3.6 + 1.5, 2.5 + r * 3.6, on ? 1.25 + pop * 0.3 : 0.9, 0, TAU); c.fill(); } }
+  c.globalAlpha = 1;
+}
+
+/* ---------- the cards ---------- */
+const sendPart = (kind) => kind === 'dots' ? { type: 'dotnum' } : { type: kind };
+const defs = [
+  { grid: 'gA', id: 'A1', name: 'Odômetro', about: 'Cada dígito rola para cima ao mudar, como um contador de painel. Brilho suave verde-água.', dots: sendDots, num: 'odo' },
+  { grid: 'gA', id: 'A2', name: 'Gradiente luminoso', about: 'Números finos e largos, com degradê do verde ao azul e brilho. Cada dígito sobe suavemente.', dots: sendDots, num: 'grad' },
+  { grid: 'gA', id: 'A3', name: 'Números em pontos', about: 'Os próprios dígitos são feitos de pontinhos, como a matriz. Os dígitos que mudam acendem mais forte.', dots: sendDots, num: 'dots' },
+  { grid: 'gB', id: 'B1', name: 'Check de pontos', about: 'Quatro pontos acendem em sequência desenhando um visto no meio da matriz.', dots: sentDots.check, text: () => '✓' },
+  { grid: 'gB', id: 'B2', name: 'Onda de confirmação', about: 'Uma frente de luz verde atravessa a matriz da esquerda para a direita e deixa um rastro que apaga.', dots: sentDots.wave, text: () => 'ok' },
+  { grid: 'gB', id: 'B3', name: 'Estouro', about: 'Um anel de luz abre do centro para as pontas, como um pulso de “recebido”.', dots: sentDots.burst, text: () => '✓' },
+  { grid: 'gB', id: 'B4', name: 'Respiro', about: 'A matriz inteira acende uma vez, devagar, e volta a descansar. A mais calma.', dots: sentDots.breath, text: () => 'ok' },
+  { grid: 'gB', id: 'B5', name: 'Voo', about: 'Um cometa de pontos sai voando para a direita, como a mensagem indo embora.', dots: sentDots.fly, text: () => '→' },
+  { grid: 'gC', id: 'C1', name: 'Mini orbe com olhos', about: 'Uma bolinha violeta que respira e pisca, olhando de lado de vez em quando. É o jeito mais direto de parecer viva.', dots: waveDots, alive: alive.orb, aw: 30, ah: 30 },
+  { grid: 'gC', id: 'C2', name: 'Batimento', about: 'Uma linha de pulso passando, como um coração. Acelera um pouco quando ela fala mais forte.', dots: waveDots, alive: alive.heart, aw: 46, ah: 26 },
+  { grid: 'gC', id: 'C3', name: 'Ponto que respira', about: 'Um ponto de luz que infla e esvazia, com dois satélites minúsculos orbitando.', dots: waveDots, alive: alive.breathe, aw: 30, ah: 30 },
+  { grid: 'gC', id: 'C4', name: 'Faíscas', about: 'Pequenas estrelinhas que acendem e apagam em tempos diferentes, como vagalumes.', dots: waveDots, alive: alive.sparks, aw: 32, ah: 28 },
+];
+
+const SPAWN = { bc: (W, H, w, h) => [(W - w) / 2, H - h - 12], tc: (W, H, w, h) => [(W - w) / 2, 12], br: (W, H, w, h) => [W - w - 12, H - h - 12], tr: (W, H, w, h) => [W - w - 12, 12] };
+let spawn = 'bc', level = 0;
+const cards = [];
+const mkCanvas = (w, h) => { const cv = document.createElement('canvas'), d = 2; cv.width = w * d; cv.height = h * d; cv.style.width = w + 'px'; cv.style.height = h + 'px'; const c = cv.getContext('2d'); c.scale(d, d); return { cv, c, w, h }; };
+
+for (const d of defs) {
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2><b>${d.id}</b>${d.name}</h2><div class="stage"></div><p>${d.about}</p><div class="hint"><span>arraste a pílula</span><span>duplo clique: volta</span></div>`;
+  const stage = card.querySelector('.stage'), pill = document.createElement('div'); pill.className = 'pill';
+  const main = mkCanvas(DOTS.w, DOTS.h); pill.appendChild(main.cv);
+  const e = { d, pill, stage, main, x: 0, y: 0, moved: false, last: '', born: [], digits: [] };
+  if (d.num === 'odo' || d.num === 'grad') { const n = document.createElement('span'); n.className = 'num ' + d.num; for (let k = 0; k < 5; k++) n.appendChild(document.createElement('span')); pill.appendChild(n); e.numEl = n; }
+  else if (d.num === 'dots') { e.dn = mkCanvas(80, 18); pill.appendChild(e.dn.cv); }
+  else if (d.text) { const s = document.createElement('span'); s.className = 'txt'; pill.appendChild(s); e.txt = s; }
+  else if (d.alive) { e.al = mkCanvas(d.aw, d.ah); pill.appendChild(e.al.cv); }
+  stage.appendChild(pill);
+  const place = () => { const [x, y] = SPAWN[spawn](stage.clientWidth, stage.clientHeight, pill.offsetWidth, pill.offsetHeight); e.x = x; e.y = y; pill.style.left = x + 'px'; pill.style.top = y + 'px'; e.moved = false; };
+  e.place = place; let drag = null;
+  pill.addEventListener('pointerdown', (ev) => { pill.setPointerCapture(ev.pointerId); pill.classList.add('drag'); drag = { dx: ev.clientX - e.x, dy: ev.clientY - e.y }; });
+  pill.addEventListener('pointermove', (ev) => { if (!drag) return; e.x = clamp(ev.clientX - drag.dx, 0, stage.clientWidth - pill.offsetWidth); e.y = clamp(ev.clientY - drag.dy, 0, stage.clientHeight - pill.offsetHeight); pill.style.left = e.x + 'px'; pill.style.top = e.y + 'px'; e.moved = true; });
+  const end = () => { drag = null; pill.classList.remove('drag'); };
+  pill.addEventListener('pointerup', end); pill.addEventListener('pointercancel', end); pill.addEventListener('dblclick', place);
+  document.getElementById(d.grid).appendChild(card); cards.push(e);
+}
+const placeAll = () => cards.forEach((e) => e.place());
+addEventListener('resize', () => cards.forEach((e) => { if (!e.moved) e.place(); }));
+document.getElementById('spawn').addEventListener('change', (ev) => { spawn = ev.target.value; placeAll(); });
+document.getElementById('speed').addEventListener('change', (ev) => { speed = +ev.target.value; });
+const auto = document.getElementById('auto'), lvl = document.getElementById('lvl');
+
+function setNumber(e, str, t) {
+  const padded = str.padStart(5, ' ');
+  if (e.d.num === 'dots') {
+    if (str !== e.last) { const old = e.last.padStart(5, ' '); e.born = [...str].map((ch, k) => (padded[5 - str.length + k] !== old[5 - str.length + k] ? t : -9)); }
+    e.dn.c.clearRect(0, 0, 80, 18); dotNumber(e.dn.c, 80, 18, str, t, e.born); e.last = str; return;
+  }
+  if (str === e.last) return;
+  const old = e.last.padStart(5, ' ');
+  [...padded].forEach((ch, k) => { const s = e.numEl.children[k]; if (s.textContent !== ch.trim()) { s.textContent = ch.trim(); if (old[k] !== ch) s.animate([{ transform: 'translateY(55%)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' }); } });
+  e.last = str;
+}
+
+function frame(now) {
+  const t = now / 1000;
+  const target = auto.checked ? clamp(0.1 + 1.1 * Math.max(0, Math.sin(t * 1.7) * Math.sin(t * 0.63 + 1) + 0.15) ** 0.8 + 0.12 * Math.sin(t * 13), 0, 1) : lvl.value / 100;
+  level += (target - level) * (target > level ? 0.45 : 0.14);
+  for (const e of cards) {
+    const { d, main } = e; main.c.clearRect(0, 0, main.w, main.h); d.dots(main.c, main.w, main.h, level, t);
+    if (d.num) setNumber(e, String(fibAt(t)), t);
+    else if (d.text) e.txt.textContent = d.text();
+    else if (e.al) { e.al.c.clearRect(0, 0, e.al.w, e.al.h); d.alive(e.al.c, e.al.w, e.al.h, level, t); }
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame((n) => { placeAll(); frame(n); });
+</script>
+</body>
+</html>

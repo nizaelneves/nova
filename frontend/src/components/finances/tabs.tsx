@@ -125,8 +125,8 @@ export function AccountsTab() {
                 <h4>{sel.name}</h4>
                 <p>{sel.savings ? 'Savings' : myCards.length ? `${myCards.length} ${myCards.length > 1 ? 'Cards' : 'Card'} · ${myCards.map((c) => c.name).join(', ')}` : 'No Cards'}</p>
               </div>
-              <button type="button" className="fin-btn-quiet" onClick={() => setModal({ t: 'account', a: sel })}><Icon name="pen" size={14} />Edit</button>
-              <button type="button" className="fin-btn-quiet danger" onClick={() => setModal({ t: 'del-acc', a: sel })}><Icon name="trash-bin-2" size={14} />Delete</button>
+              <button type="button" className="fin-btn-quiet" onClick={() => setModal({ t: 'account', a: sel })}><Icon name="lucide-file-pen" size={14} />Edit</button>
+              <button type="button" className="fin-btn-quiet danger" onClick={() => setModal({ t: 'del-acc', a: sel })}><Icon name="lucide-trash" size={14} />Delete</button>
             </header>
 
             <div className="ac-top">
@@ -218,7 +218,7 @@ export function CardsTab({ onOpenCard }: { onOpenCard: (c: BankCard, settings?: 
             <div className="cd-actions">
               {isCredit && <button type="button" className="fin-btn" onClick={() => setModal({ t: 'pay', c: card })}><Icon name="wallet-money" size={15} />Pay</button>}
               <button type="button" className="fin-btn-quiet" onClick={() => onOpenCard(card)}>Open</button>
-              <button type="button" className="fin-btn-quiet" onClick={() => onOpenCard(card, true)}><Icon name="pen" size={14} />Settings</button>
+              <button type="button" className="fin-btn-quiet" onClick={() => onOpenCard(card, true)}><Icon name="lucide-file-pen" size={14} />Settings</button>
             </div>
           </section>
         </div>
@@ -288,7 +288,7 @@ export function TransactionsTab({ range, initialKind, accountId, onClearAccount 
                       <b>{t.description}</b>
                       <p>{t.kind === 'transfer' ? 'Transfer' : t.kind === 'payment' ? 'Card Payment' : cat?.name ?? 'Uncategorized'}{t.recurringId ? ' · Recurring' : ''} · {where(t)}</p>
                     </div>
-                    <span className="fin-minis"><Mini icon="pen" label="Edit" onClick={() => setModal({ t: 'edit', tx: t })} /><Mini icon="trash-bin-2" label="Delete" onClick={() => setModal({ t: 'del', tx: t })} danger /></span>
+                    <span className="fin-minis"><Mini icon="lucide-file-pen" label="Edit" onClick={() => setModal({ t: 'edit', tx: t })} /><Mini icon="lucide-trash" label="Delete" onClick={() => setModal({ t: 'del', tx: t })} danger /></span>
                     <span className={`fin-amt ${t.kind === 'expense' ? 'neg' : t.kind === 'income' ? 'pos' : ''}`}>{t.kind === 'expense' ? '−' : t.kind === 'income' ? '+' : ''} {money(t.amount)}</span>
                   </div>
                 );
@@ -333,8 +333,8 @@ export function CategoriesTab({ range }: { range: Range }) {
                 <span className="fin-cat-icon"><Icon name={c.icon} size={22} /></span>
                 <div><h4>{c.name}</h4><p>{money(totals[c.id] ?? 0)} This Period</p></div>
                 <span className="fin-minis always">
-                  <Mini icon="pen" label={`Edit ${c.name}`} onClick={() => setModal({ t: 'cat', c })} />
-                  <Mini icon="trash-bin-2" label={`Delete ${c.name}`} onClick={() => setModal({ t: 'del', c })} danger />
+                  <Mini icon="lucide-file-pen" label={`Edit ${c.name}`} onClick={() => setModal({ t: 'cat', c })} />
+                  <Mini icon="lucide-trash" label={`Delete ${c.name}`} onClick={() => setModal({ t: 'del', c })} danger />
                 </span>
               </header>
               <div className="fin-subs">

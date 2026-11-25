@@ -108,7 +108,7 @@ export function SwipeAudios({ lib, folder, setFolder, reload }: {
       <div className="mm-head">
         <FolderTitle kind="audios" folder={folder} text={folder === 'All' ? 'All Audios' : folder} onRenamed={setFolder} /><span>{shown.length} {shown.length === 1 ? 'Audio' : 'Audios'}</span>
         <SortControl sort={sort} />
-        <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="upload-minimalistic" size={15} />Upload</button>
+        <button type="button" className="mm-btn mm-go mm-up" onClick={() => setUpload([])}><Icon name="lucide-cloud-upload" size={15} />Upload</button>
       </div>
 
       {shown.length === 0 ? (

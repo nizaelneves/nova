@@ -7,6 +7,7 @@ import { TuneMenu } from './Chat/TuneMenu';
 import { Terminal } from './IslandTerminal';
 import { MicButton } from './Chat/MicButton';
 import { TimerButton } from './TimerButton';
+import { PromptPicker, RecordHunch } from '../horizon/QuickSwipe';
 import { Icon, type IconName } from './Icon';
 import { useSpeech } from '../hooks/useSpeech';
 import { approveAction, completePing, denyAction, fetchPings, isTauri } from '../lib/api';
@@ -68,6 +69,7 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
   const setPendingVoice = useAppStore((s) => s.setPendingVoice);
   const speech = useSpeech();
   const [draft, setDraft] = useState('');
+  const [quick, setQuick] = useState<'record' | 'prompts' | null>(null);
   const dictated = useRef(false);
   const first = pending[0];
 
@@ -188,15 +190,22 @@ export function IslandPanel({ level, section, onSection, pending, onDecided, onC
       </div>
 
       <div className="isl-dock" onClick={(e) => e.stopPropagation()}>
-        <TimerButton />
         <MicButton state={speech.state} onClick={() => void onMic()} disabled={micDisabled} reason={micReason} />
-        <button type="button" className="composer-icon" data-on={speech.state === 'recording'} aria-label="Voice Mode" title="Voice Mode" onClick={() => void onVoice()}>
-          <Icon name="soundwave" size={18} />
-        </button>
-        <button type="button" className="composer-icon" data-on={think} aria-pressed={think} aria-label="Muse"
-          title={think ? 'Muse: ON' : 'Muse: OFF'} onClick={() => setThink(!think)}>
+        <button type="button" className="composer-icon" data-glow={think} aria-pressed={think} aria-label="Muse" data-tip="Muse" onClick={() => setThink(!think)}>
           <Icon name="brain-cog" size={18} />
         </button>
+        <button type="button" className="composer-icon" aria-label="Prompts" data-tip="Prompts" onClick={() => setQuick('prompts')}>
+          <Icon name="terminal-window" size={18} />
+        </button>
+        <button type="button" className="composer-icon" aria-label="Hunch" data-tip="Hunch" onClick={() => setQuick('record')}>
+          <Icon name="phibe-hunch" size={18} />
+        </button>
+        <TimerButton />
+        <button type="button" className="composer-icon" data-on={speech.state === 'recording'} aria-label="Voice" data-tip="Voice" onClick={() => void onVoice()}>
+          <Icon name="phibe-voice" size={18} />
+        </button>
+        {quick === 'record' && <RecordHunch onClose={() => setQuick(null)} />}
+        {quick === 'prompts' && <PromptPicker onClose={() => setQuick(null)} />}
       </div>
     </>
   );
@@ -264,7 +273,7 @@ function Pings() {
           <div className="isl-ping">
             <b>{p.text}</b>
             <div className="isl-when">
-              <i data-k="date"><Icon name="calendar" size={12} />{dayLabel(p.date)}</i>
+              <i data-k="date"><Icon name="lucide-calendar-days" size={12} />{dayLabel(p.date)}</i>
               <i data-k="time"><Icon name="clock-circle" size={12} />{p.time}</i>
               {p.repeat_type !== 'none' && <i data-k="repeat" title="Repeats"><Icon name="repeat" size={12} /></i>}
             </div>
@@ -381,14 +390,14 @@ function Chats({ draft, setDraft, send, stop, onExtra, pending, decide }: {
                 )}
                 <button type="button" aria-label="Rename chat" title="Rename" onMouseDown={(e) => e.preventDefault()}
                   onClick={() => { setName(c.title); setRenaming(c.id); }}>
-                  <Icon name="pen" size={13} />
+                  <Icon name="lucide-file-pen" size={13} />
                 </button>
                 <button type="button" aria-label="Delete chat" title={busy ? 'Stop generating first' : 'Delete'} disabled={busy}
                   onClick={(e) => {
                     const row = e.currentTarget.closest('.isl-hrow') as HTMLElement | null;
                     void disintegrate(row, '#ff6b6b').then(() => useAppStore.getState().deleteConversation(c.id));
                   }}>
-                  <Icon name="trash-bin-2" size={13} />
+                  <Icon name="lucide-trash" size={13} />
                 </button>
               </div>
             );

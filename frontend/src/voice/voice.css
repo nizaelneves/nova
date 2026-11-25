@@ -243,3 +243,38 @@
   .vc-card, .vc-dot, .vc-fib span, .vc-fab::before, .vc-fab::after, .phibe-fab::before, .phibe-fab::after { animation: none !important; }
 
 }
+
+/* The voice pill (inside the app): small, calm, and it can be dragged. It is born above the message box. */
+.vp {
+  position: fixed;
+  left: 50%;
+  bottom: max(7rem, 30%);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(9, 15, 22, 0.86);
+  border: 1px solid rgba(32, 231, 170, 0.26);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 18px rgba(32, 231, 170, 0.08);
+  backdrop-filter: blur(8px);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  white-space: nowrap;
+  width: max-content;
+  height: fit-content;
+  max-width: calc(100vw - 2rem);
+}
+.vp[data-moved='true'] { transform: none; bottom: auto; } /* once dragged it is placed by left and top only: with bottom set as well the pill would stretch */
+.vp:active { cursor: grabbing; border-color: rgba(32, 231, 170, 0.55); }
+.vp canvas { display: block; }
+.vp-txt { font: 600 0.78rem ui-monospace, Consolas, monospace; color: #cfe9e3; min-width: 4.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+.vp-odo { display: inline-flex; justify-content: flex-end; min-width: 5.6ch; font: 500 0.95rem ui-monospace, 'Cascadia Mono', Consolas, monospace; color: #d9fff3; text-shadow: 0 0 10px rgba(32, 231, 170, 0.45); font-variant-numeric: tabular-nums; }
+.vp-odo span { display: inline-block; width: 0.62em; text-align: center; }
+.vp[data-mode='error'] { border-color: rgba(251, 113, 133, 0.45); white-space: normal; max-width: min(420px, calc(100vw - 2rem)); }
+.vp-bang { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: rgba(251, 113, 133, 0.18); color: #fb7185; font: 700 0.8rem system-ui, sans-serif; }
+.vp-msg { font-size: 0.78rem; line-height: 1.3; color: #e6edf3; }
+.vp-act { flex: none; border: 1px solid rgba(32, 231, 170, 0.4); background: rgba(32, 231, 170, 0.12); color: #d9fff3; border-radius: 999px; padding: 3px 10px; font: 600 0.74rem system-ui, sans-serif; cursor: pointer; }

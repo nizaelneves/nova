@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon } from '../Icon';
-import { Forge } from './Forge';
+import { Forge, phibeTone } from './Forge';
 import { useAppStore } from '../../lib/store';
 import { transcribeAudio } from '../../lib/api';
 import { streamChat } from '../../lib/sse';
@@ -37,7 +37,7 @@ Existing threads: ${threads.slice(0, 40).join(', ') || 'none yet'}.` }, { role: 
 const pretty = (id: string) => id.replace(/^ollama:/, '').replace(/([a-z])(\d)/gi, '$1 $2').replace(/[:_-]+/g, ' ').replace(/(^|\s)([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase());
 
 /** Listening: a grid of dots that swells outward from the middle, behind the button, like a pebble in water. */
-function DotRipple() {
+function DotRipple({ phibe }: { phibe?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const cv = ref.current, g = cv?.getContext('2d');
@@ -51,14 +51,14 @@ function DotRipple() {
       g.clearRect(0, 0, 240, 150);
       for (let x = 0; x < 17; x++) for (let y = 0; y < 11; y++) {
         const d = Math.hypot(x - 8, y - 5), k = Math.max(0, Math.sin(d * 0.9 - t * 4));
-        g.fillStyle = `hsla(${190 + d * 12},85%,${60 + k * 20}%,${0.22 + k * 0.7})`;
+        g.fillStyle = `hsla(${phibe ? phibeTone(190 + d * 12) : 190 + d * 12},85%,${60 + k * 20}%,${0.22 + k * 0.7})`;
         g.beginPath(); g.arc(8 + x * 14, 10 + y * 13, 1 + k * 3, 0, 7); g.fill();
       }
       if (!still) raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [phibe]);
   return <canvas ref={ref} className="mm-ripple" style={{ width: 240, height: 150 }} aria-hidden="true" />;
 }
 
@@ -75,7 +75,7 @@ type Phase ='idle' | 'recording' | 'writing' | 'transcript' | 'shaping' | 'revie
  * Record a hunch: the words appear as you speak, you can fix them, a better model puts them in shape,
  * and you check the note before it is saved.
  */
-export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClose: () => void; onDone: () => void }) {
+export function HunchVoice({ inUse, onClose, onDone, theme = 'memoir' }: { inUse: string[]; onClose: () => void; onDone: () => void; theme?: 'memoir' | 'phibe' }) {
   const speechEnabled = useAppStore((s) => s.settings.speechEnabled);
   const mentorModel = useAppStore((s) => s.selectedModel);
   const model = getShaper() || mentorModel;
@@ -156,7 +156,7 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
   };
 
   const save = async () => {
-    try { const r = await saveText('ideas', 'Unsorted', title.trim(), body, '', threads); toast.success('Hunch Saved'); onDone(); onClose(); }
+    try { const r = await saveText('ideas', 'Unclassified', title.trim(), body, '', threads); toast.success('Hunch Saved'); onDone(); onClose(); }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save'); }
   };
 
@@ -169,9 +169,9 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
         {(phase === 'idle' || phase === 'recording' || phase === 'writing') && (
           <div className="mm-vc">
             {phase !== 'writing' && <div className="mm-vstage">
-              {recording && <DotRipple />}
+              {recording && <DotRipple phibe={theme === 'phibe'} />}
               <button type="button" className="mm-vmic" data-on={recording} aria-label={recording ? 'Stop' : 'Record'} onClick={() => (recording ? stop() : void start())}>
-                <Icon name={recording ? 'stop-circle' : 'microphone'} size={30} />
+                <Icon name={recording ? 'stop-circle' : 'lucide-audio-lines'} size={30} />
               </button>
             </div>}
             {phase === 'writing' && <div className="mm-type" aria-hidden="true"><span>▒▒▒▒ ▒▒▒ ▒▒▒▒▒▒ ▒▒</span><span>▒▒ ▒▒▒▒▒ ▒▒▒ ▒▒▒▒</span><span>▒▒▒▒▒ ▒▒ ▒▒▒▒</span></div>}
@@ -187,11 +187,11 @@ export function HunchVoice({ inUse, onClose, onDone }: { inUse: string[]; onClos
           </>
         )}
         {phase === 'shaping' && (
-          <Forge />
+          <Forge palette={theme} />
         )}
         {phase === 'review' && (
           <>
-            <label className="mm-fld"><span>Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
+            <label className="mm-fld"><span>Name</span><input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
             <label className="mm-fld"><span>Note</span><textarea className="mm-vtext" value={body} onChange={(e) => setBody(e.target.value)} /></label>
             <div className="mm-fld"><span>Threads</span><ThreadPicker value={threads} onChange={setThreads} inUse={inUse} /></div>
             {sure && <small className="mm-hint">Reshape It writes the note again and replaces your edits.</small>}
