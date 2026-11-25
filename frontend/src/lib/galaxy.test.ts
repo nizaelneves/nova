@@ -18,9 +18,9 @@ describe('star field', () => {
   });
 
   it('draws a rich sky that grows with the screen up to a cap', () => {
-    expect(starCount(1024, 768, 'full')).toBeGreaterThan(150);
-    expect(starCount(3840, 2160, 'full')).toBe(420);
-    expect(starCount(400, 300, 'full')).toBe(160);
+    expect(starCount(1024, 768, 'full')).toBeGreaterThanOrEqual(150);
+    expect(starCount(3840, 2160, 'full')).toBe(360);
+    expect(starCount(400, 300, 'full')).toBe(150);
     expect(starCount(1920, 1080, 'balanced')).toBeLessThan(starCount(1920, 1080, 'full'));
     expect(starCount(1920, 1080, 'off')).toBe(0);
   });

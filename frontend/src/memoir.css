@@ -40,7 +40,7 @@
   position: fixed; inset: 0; z-index: 1; display: grid; grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: 56px minmax(0, 1fr);
   background: var(--mm-bg); color: var(--mm-text); font-family: var(--mm-ui); overflow: hidden;
 }
-.mm-neb { position: absolute; border-radius: 50%; pointer-events: none; opacity: .55; will-change: transform; } /* no blur filter: the gradients are already soft, and a blurred layer this size costs a lot of memory */
+.mm-neb { position: absolute; border-radius: 50%; pointer-events: none; opacity: .44; will-change: transform; } /* no blur filter: the gradients are already soft, and a blurred layer this size costs a lot of memory */
 .mm-n1 { width: 620px; height: 620px; right: -120px; top: -200px; background: radial-gradient(circle, rgba(124, 92, 255, .55), transparent 68%); animation: mm-d1 38s ease-in-out infinite alternate; }
 .mm-n2 { width: 560px; height: 560px; left: -120px; bottom: -200px; background: radial-gradient(circle, rgba(232, 121, 249, .38), transparent 68%); animation: mm-d2 46s ease-in-out infinite alternate; }
 .mm-n3 { width: 520px; height: 420px; left: 38%; top: 30%; background: radial-gradient(circle, rgba(40, 120, 255, .22), transparent 68%); animation: mm-d3 54s ease-in-out infinite alternate; }

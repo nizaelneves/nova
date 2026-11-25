@@ -1108,13 +1108,13 @@
   contain: strict; /* nothing inside can change the page's layout or paint outside the screen */
   /* The first three are the faint haze (circles placed in screen units, so no layer bigger than the screen is needed) */
   background:
-    radial-gradient(circle 28.5vmax at calc(50vw + 15vmax) calc(44vh - 15vmax), rgba(45, 212, 191, 0.27), transparent),
-    radial-gradient(circle 32.7vmax at calc(50vw - 20vmax) calc(44vh + 20vmax), rgba(129, 140, 248, 0.25), transparent),
-    radial-gradient(circle 27.3vmax at 50vw calc(44vh - 32.5vmax), rgba(20, 184, 166, 0.17), transparent),
-    radial-gradient(ellipse 60% 55% at 50% 44%, rgba(20, 184, 166, 0.37), transparent 74%),
-    radial-gradient(ellipse 45% 40% at 50% 44%, rgba(45, 212, 191, 0.16), transparent 70%),
-    radial-gradient(ellipse 70% 55% at 12% 88%, rgba(99, 102, 241, 0.25), transparent 70%),
-    radial-gradient(ellipse 60% 45% at 90% 8%, rgba(20, 184, 166, 0.2), transparent 70%),
+    radial-gradient(circle 28.5vmax at calc(50vw + 15vmax) calc(44vh - 15vmax), rgba(45, 212, 191, 0.21), transparent),
+    radial-gradient(circle 32.7vmax at calc(50vw - 20vmax) calc(44vh + 20vmax), rgba(129, 140, 248, 0.2), transparent),
+    radial-gradient(circle 27.3vmax at 50vw calc(44vh - 32.5vmax), rgba(20, 184, 166, 0.135), transparent),
+    radial-gradient(ellipse 60% 55% at 50% 44%, rgba(20, 184, 166, 0.29), transparent 74%),
+    radial-gradient(ellipse 45% 40% at 50% 44%, rgba(45, 212, 191, 0.125), transparent 70%),
+    radial-gradient(ellipse 70% 55% at 12% 88%, rgba(99, 102, 241, 0.2), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 90% 8%, rgba(20, 184, 166, 0.16), transparent 70%),
     var(--color-bg);
   transition: opacity 0.6s ease;
 }

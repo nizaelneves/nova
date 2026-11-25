@@ -34,10 +34,10 @@ export interface Star {
 
 const COLOR_COUNT = 4; // white, light cyan, teal, and a few violet ones
 
-/** How many stars to draw: a rich sky (about 175 on a 1024 x 768 window, 420 at most). Cheap anyway: they are tiny squares on one small canvas. */
+/** How many stars to draw: a rich sky (about 150 on a 1024 x 768 window, 360 at most). Cheap anyway: they are tiny squares on one small canvas. */
 export function starCount(width: number, height: number, quality: EffectsQuality): number {
   if (quality === 'off') return 0;
-  const full = Math.min(420, Math.max(160, Math.round((width * height) / 4500)));
+  const full = Math.min(360, Math.max(150, Math.round((width * height) / 5200)));
   return quality === 'balanced' ? Math.round(full * 0.6) : full;
 }
 
@@ -53,8 +53,8 @@ export function createStars(count: number, width: number, height: number, seed =
       x: random() * width,
       y: random() * height,
       depth,
-      size: glow ? 2 + random() * 0.7 : 1 + depth * 1.2,
-      alpha: glow ? 0.7 + depth * 0.3 : Math.min(1, 0.58 + depth * 0.42),
+      size: glow ? 1.7 + random() * 0.5 : 0.9 + depth * 1.0,
+      alpha: glow ? 0.5 + depth * 0.25 : Math.min(1, 0.5 + depth * 0.35),
       vx: -(4 + depth * 12),
       vy: 1.2 + depth * 3.6,
       twinkleSpeed: 0.5 + random() * 1.3,
@@ -120,13 +120,13 @@ export interface SkyPalette {
 /** Phibe: green and cyan, with a few violet stars. */
 export const PHIBE_SKY: SkyPalette = {
   stars: ['#ffffff', '#8fe3ff', '#5eead4', '#c4b5fd'],
-  halo: ['rgba(143, 227, 255, 0.6)', 'rgba(94, 234, 212, 0.2)', 'rgba(20, 184, 166, 0)'],
+  halo: ['rgba(143, 227, 255, 0.42)', 'rgba(94, 234, 212, 0.13)', 'rgba(20, 184, 166, 0)'],
   tail: ['rgba(94, 234, 212, 0)', 'rgba(143, 227, 255, 0.5)'],
 };
 
 /** Memoir: cyan, violet and pink. */
 export const MEMOIR_SKY: SkyPalette = {
   stars: ['#ffffff', '#8fe3ff', '#c4b5fd', '#f0abfc'],
-  halo: ['rgba(143, 227, 255, 0.6)', 'rgba(196, 181, 253, 0.22)', 'rgba(124, 92, 255, 0)'],
+  halo: ['rgba(143, 227, 255, 0.42)', 'rgba(196, 181, 253, 0.15)', 'rgba(124, 92, 255, 0)'],
   tail: ['rgba(124, 92, 255, 0)', 'rgba(143, 227, 255, 0.5)'],
 };
