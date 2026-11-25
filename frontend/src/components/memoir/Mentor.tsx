@@ -59,6 +59,7 @@ export function Mentor() {
     was.current = streaming;
   }, [streaming]);
   const mood: NebulaMood | undefined = streaming ? 'thinking' : pleased ? 'happy' : undefined;
+  const effects = useAppStore((s) => s.settings.effects);
 
   useEffect(() => { mentor.on = true; return () => { mentor.on = false; }; }, []);
   useEffect(() => () => { const id = before.current; if (id && useAppStore.getState().conversations.some((c) => c.id === id)) useAppStore.getState().selectConversation(id); }, []);
@@ -121,7 +122,7 @@ export function Mentor() {
   return (
     <>
       <button type="button" className="mm-fab" onClick={() => { setPuff((n) => n + 1); toggle(); }} aria-expanded={open} aria-label="Mentor">
-        <PhibeNebula mood={mood} burstKey={puff} />
+        <PhibeNebula mood={mood} burstKey={puff} life={mood === undefined && effects !== 'off'} />
       </button>
       {open && (
         <div className="mm-mentor" role="dialog" aria-label="Mentor">

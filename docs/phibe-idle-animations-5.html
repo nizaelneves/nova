@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe · Ociosidade v5</title>
+<style>
+  :root { --bg: #070b10; --card: #0d141c; --line: rgba(255,255,255,.08); --txt: #e6edf3; --mute: #8b98a5; --mint: #20e7aa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, rgba(20,184,166,.12), transparent 60%), var(--bg); color: var(--txt); font: 14px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  h3 { margin: 30px 0 2px; font-size: 1.1rem; color: var(--mint); }
+  .lead, .sub { margin: 0 0 12px; color: var(--mute); max-width: 82ch; }
+  .lead b { color: var(--txt); }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; margin: 0 0 8px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,14,20,.94); backdrop-filter: blur(8px); color: var(--mute); }
+  .bar select { background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font: inherit; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card h2 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--mint); font: 700 .8rem ui-monospace, Consolas, monospace; }
+  .card p { margin: 0; color: var(--mute); font-size: .86rem; }
+  .stage { position: relative; height: 210px; border-radius: 12px; overflow: hidden; background: #02060a; border: 1px solid var(--line); display: grid; place-items: center; }
+  .eyeBig { width: 100%; height: 96px; display: block; background: #02060a; border: 1px solid var(--line); border-radius: 12px; }
+  .mockIsland { height: 120px !important; display: grid; justify-items: center; align-items: start !important; background: linear-gradient(#0b1117, #05080c) !important; }
+  .pill { width: 216px; height: 76px; border-radius: 0 0 26px 26px; background: #000; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,.1); border-top: 0; box-shadow: 0 10px 34px rgba(32,231,170,.14); }
+  .pill canvas { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .mockFab { height: 190px !important; background: radial-gradient(ellipse at 70% 30%, rgba(124,92,255,.3), transparent 60%), radial-gradient(ellipse at 20% 90%, rgba(232,121,249,.2), transparent 60%), #05060f !important; }
+  .bar2 { height: 4px; background: #0a1118; border-radius: 2px; overflow: hidden; } .bar2 i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #10c3d3, #20e7aa); }
+  canvas { display: block; }
+  .dirctl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 10px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--mute); }
+  .dirctl select { background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; font: inherit; }
+  .dirctl table { border-collapse: collapse; font-size: .82rem; width: 100%; } .dirctl td, .dirctl th { padding: 3px 10px; border-bottom: 1px solid var(--line); text-align: left; } .dirctl th { color: var(--txt); }
+  .log { font: .78rem ui-monospace, Consolas, monospace; color: var(--mute); min-height: 3.2em; }
+  .ask { margin-top: 24px; padding: 16px; border: 1px dashed rgba(32,231,170,.35); border-radius: 14px; color: var(--mute); }
+  .ask b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Phibe · ociosidade, versão 5 · tamanho real</h1>
+  <p class="lead">Escolhas até aqui: <b>Olhar em volta = Natural</b>, <b>Bolhas = em cacho</b>, <b>Estrela = rápida</b>, <b>Cantarolando = H1 (notas suaves e meia-lua)</b>, <b>Dançando = N2 (oito luminoso e olhar brilhante)</b> (você escreveu “H2”, mas o nome que você usou é o do N2; estou tratando como N2), <b>Sonolenta = Cabeceando</b>, <b>Dormindo = bocejo e espreguiçar</b>, <b>Sono profundo = pó com Zzzz</b> e <b>Acordando = lâmpada T1</b>. Antes de levar tudo para o app, duas coisas para você aprovar: <b>os olhos do H1, mais refinados</b>, e <b>como tudo fica no tamanho real</b>, dentro da ilha e do botão do Memoir, onde os olhos têm poucos pixels e o que sai pela borda é cortado.</p>
+  <div class="bar"><label>velocidade <select id="speed"><option value="1">normal</option><option value="0.5">devagar</option><option value="2">rápido</option></select></label></div>
+
+  <h3>1 · Os olhos do H1: o atual e três refinados</h3>
+  <p class="sub">Em cima, os olhos ampliados; embaixo, a ilha no tamanho real (216 × 76), onde cada olho tem uns 6 pixels. A bolinha canta sem parar para você ver a meia-lua em movimento.</p>
+  <div class="grid" id="gE"></div>
+
+  <h3>2 · O conjunto escolhido no tamanho real</h3>
+  <p class="sub">A ilha e o botão do Memoir, com o corte de verdade: a imagem da Phibe só existe dentro da caixa dela, e a ilha esconde o que passa da borda. Ligue a música para ver quando ela canta e dança. Os olhos mostrados aqui são os que você escolher no seletor.</p>
+  <div class="grid" id="gR"></div>
+  <div id="dirctl" class="dirctl"></div>
+
+  <h3>3 · Quando cada fase começa (proposta)</h3>
+  <div class="dirctl"><table><tr><th>Fase</th><th>Começa depois de ficar sem mexer o mouse ou o teclado</th></tr>
+    <tr><td>Ociosa (olha em volta, bolhas, estrela; com música, canta e dança)</td><td>8 segundos</td></tr>
+    <tr><td>Sonolenta (cabeceando)</td><td>1 minuto</td></tr>
+    <tr><td>Dormindo (bocejo e espreguiçar)</td><td>1 minuto e 30 segundos</td></tr>
+    <tr><td>Sono profundo (pó com Zzzz)</td><td>3 minutos</td></tr>
+    <tr><td>Acordando (lâmpada T1)</td><td>assim que você mexe o mouse, aperta uma tecla, volta para a aba ou começa a gravar a voz</td></tr></table>
+    <span>A fase vem do relógio de parede desde a última atividade, então, se a aba ficar escondida, ela já está dormindo quando você volta, e acorda na hora. Os tempos são constantes fáceis de mudar.</span></div>
+
+  <div class="ask"><b>Para decidir:</b> qual dos olhos refinados (R1, R2 ou R3, ou o atual), se o corte no tamanho real está aceitável (se algo importante some, eu ajusto os movimentos para caber), e se os tempos da tabela servem. Falta também saber de onde vem o sinal de “tem música tocando”.</div>
+</div>
+
+<script>
+const W = 360, H = 280, CX = W / 2, CY = H / 2, TAU = Math.PI * 2;
+const COLS = ['32,231,170', '143,244,230', '80,190,255'], HALO = '32,231,170', C2 = '#20e7aa', TONE = '#bff8f3', DARK = '2,8,8';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v)), rnd = (a, b) => a + Math.random() * (b - a), ramp = (x, a, b) => clamp((x - a) / (b - a), 0, 1), ease = (x) => x * x * (3 - 2 * x);
+const FIB = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
+const state = { speed: 1 };
+document.getElementById('speed').onchange = (e) => { state.speed = +e.target.value; };
+
+/* ---------- the orb ---------- */
+class Orb {
+  constructor(canvas, v, loop) {
+    this.v = v; this.loop = loop; this.cv = canvas; this.g = canvas.getContext('2d'); this.T = 0;
+    const dpr = Math.min(2, devicePixelRatio || 1), S = v.scale || 0.62;
+    canvas.width = Math.round(W * S * dpr); canvas.height = Math.round(H * S * dpr); canvas.style.width = W * S + 'px'; canvas.style.height = H * S + 'px'; this.g.scale(dpr * S, dpr * S);
+    this.ring = Array.from({ length: 90 }, (_, i) => ({ a: Math.random() * 6.28, r: 30 + Math.random() * 70, s: (0.15 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1), z: 0.7 + Math.random() * 1.5, c: COLS[i % 3] }));
+    this.px = CX; this.py = CY; this.vx = 0; this.vy = 0; this.t = 0; this.ph = 0; this.blinkT = 3; this.fx = 0; this.fy = 0; this.parts = []; this.st = {};
+    this.p = {};
+  }
+  glow(x, y, r, c, a) { const g = this.g, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  frame(dtRaw) {
+    const dt = Math.min(0.05, dtRaw) * state.speed; this.dt = dt; this.T = (this.T + dt) % this.loop; const T = this.T, t = (this.t += dt), g = this.g, P = this.p;
+    Object.assign(P, { size: 1, bright: 1, lid: 0, gx: 0, gy: 0, bx: 0, by: 0, mist: 1, tilt: 0, sx: 1, sy: 1, spin: 1, breathAmp: 0.05, breathSpd: 1.7, happy: 0, ease: 0.3, es: '', em: 0, sparkle: 0, eyeBeat: 0, wink: 0 });
+    this.blinkT -= dt; if (this.blinkT < 0) this.blinkT = rnd(2.4, 5.6); const blink = this.blinkT < 0.13;
+    eyeVar = this.v.eye ?? ui.eye; const e = this.v.env(T); this.e = e;
+    this.v.drive(this, T, e, dt);
+    if (blink) P.lid = Math.max(P.lid, 0.95);
+    this.ph += dt * 60 * 0.016 * P.spin;
+    const k60 = dt * 60, tx = CX + P.bx + Math.sin(t * 0.7) * 5 * P.spin, ty = CY + P.by + Math.sin(t * 1.3) * 6 * P.spin;
+    for (let i = 0; i < Math.max(1, Math.round(k60)); i++) { this.vx += (tx - this.px) * 0.03; this.vy += (ty - this.py) * 0.03; this.vx *= 0.86; this.vy *= 0.86; this.px += this.vx; this.py += this.vy; }
+    this.fx += (P.gx - this.fx) * (1 - Math.pow(1 - P.ease, k60)); this.fy += (P.gy - this.fy) * (1 - Math.pow(1 - P.ease, k60));
+    const px = this.px, py = this.py, br = P.bright * P.mist, sc = P.size * (1 + Math.sin(t * P.breathSpd) * P.breathAmp);
+    g.clearRect(0, 0, W, H);
+    const M = (fn) => { g.save(); g.translate(px, py); g.scale(P.sx * sc, P.sy * sc); fn(); g.restore(); };
+    g.globalCompositeOperation = 'lighter';
+    M(() => { this.glow(0, 0, 130, HALO, 0.3 * br); for (let i = 0; i < 10; i++) { const a = this.ph * 60 * 0.35 + i * 0.628, rr = 34 + Math.sin(t * 0.7 + i * 1.7) * 16; this.glow(Math.cos(a) * rr * 1.2, Math.sin(a * 1.15) * rr * 0.85, 50 + Math.sin(t + i) * 8, COLS[i % 3], 0.27 * br); } });
+    g.globalCompositeOperation = 'source-over';
+    const lobes = [];
+    M(() => { for (let i = 0; i < 9; i++) { const a = this.ph * 60 * (0.2 + i * 0.045) * (i % 2 ? 1 : -1) + i * 0.7, rr = i ? 26 + Math.sin(t * 0.6 + i * 2.1) * 14 : 0, rad = i ? 40 + Math.sin(t * 0.9 + i) * 9 : 56; const x = Math.cos(a) * rr * 1.25, y = Math.sin(a * 1.1) * rr * 0.9; lobes.push([x, y, rad, a]); const d = g.createRadialGradient(x, y, 2, x, y, rad); d.addColorStop(0, `rgba(${DARK},${0.96 * P.mist})`); d.addColorStop(0.6, `rgba(${DARK},${0.8 * P.mist})`); d.addColorStop(1, `rgba(${DARK},0)`); g.fillStyle = d; g.beginPath(); g.arc(x, y, rad, 0, TAU); g.fill(); } });
+    g.globalCompositeOperation = 'lighter';
+    M(() => lobes.forEach(([x, y, rad, a], i) => { if (i) this.glow(x + Math.cos(a + 1.2) * rad * 0.8, y + Math.sin(a + 1.2) * rad * 0.7, 26, COLS[i % 3], (0.3 + Math.sin(t * 1.4 + i) * 0.09) * br); }));
+    for (const q of this.ring) { q.a += q.s * 0.008 * dt * 60 * P.spin; const x = px + Math.cos(q.a) * q.r * 1.25 * sc, y = py + Math.sin(q.a) * q.r * 0.85 * sc; this.glow(x, y, q.z * 4, q.c, 0.42 * P.mist); g.fillStyle = `rgba(255,255,255,${0.75 * P.mist})`; g.beginPath(); g.arc(x, y, q.z * 0.7, 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'source-over';
+    drawEyes(this, g, P, px, py, sc, t);
+    this.v.overlay?.(this, g, T, e, dt);
+    this.drawParts(g, dt);
+  }
+  /* particles: txt (letters and numbers), dot (pixels), spark (glow), bub (bubbles) */
+  add(q) { this.parts.push(Object.assign({ l: 1, life: 3, vx: 0, vy: 0, size: 3, col: '#20e7aa', grav: 0 }, q)); }
+  drawParts(g, dt) {
+    for (let i = this.parts.length - 1; i >= 0; i--) {
+      const q = this.parts[i];
+      if (q.pull) { q.vx += (this.px - q.x) * q.pull * dt; q.vy += (this.py - q.y) * q.pull * dt; q.vx *= 0.96; q.vy *= 0.96; }
+      q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; if (q.sway) q.vx += Math.sin(q.y * 0.05) * q.sway * dt; q.l -= dt / q.life;
+      if (q.l <= 0 || (q.die && Math.hypot(q.x - this.px, q.y - this.py) < 8)) { if (q.kind === 'bub' && q.l <= 0) { const n = Math.round(5 + q.size * 0.7); for (let k = 0; k < n; k++) { const an = (k / n) * TAU, v = rnd(20, 46); this.parts.push({ kind: 'spark', x: q.x + Math.cos(an) * q.size * 0.7, y: q.y + Math.sin(an) * q.size * 0.7, vx: Math.cos(an) * v, vy: Math.sin(an) * v, l: 1, life: 0.7, size: 1.3, rgb: k % 2 ? '143,244,230' : '32,231,170', grav: 0 }); } } this.parts.splice(i, 1); continue; }
+      const a = Math.min(1, q.l * 1.5);
+      if (q.kind === 'txt') { g.save(); g.globalAlpha = a * 0.9; g.fillStyle = q.col; g.font = `${q.bold ? 700 : 600} ${q.size * (q.pop ? 0.6 + 0.4 * Math.min(1, (1 - q.l) * 6) : 1)}px ui-monospace, Consolas, monospace`; g.textAlign = 'center'; g.fillText(q.txt, q.x, q.y); g.restore(); }
+      else if (q.kind === 'spark') { this.glow(q.x, q.y, q.size * 3.5, q.rgb || '32,231,170', a * 0.8); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(q.x, q.y, q.size * 0.5, 0, TAU); g.fill(); }
+      else if (q.kind === 'bub') { const r = q.size * (1 + (1 - q.l) * 0.25); g.save(); g.globalAlpha = Math.min(1, a * 1.1) * 0.95; const bg = g.createRadialGradient(q.x - r * 0.3, q.y - r * 0.3, r * 0.1, q.x, q.y, r); bg.addColorStop(0, 'rgba(217,255,243,.22)'); bg.addColorStop(0.7, 'rgba(32,231,170,.10)'); bg.addColorStop(1, 'rgba(16,195,211,.38)'); g.fillStyle = bg; g.beginPath(); g.arc(q.x, q.y, r, 0, TAU); g.fill(); const rim = g.createLinearGradient(q.x - r, q.y - r, q.x + r, q.y + r); rim.addColorStop(0, 'rgba(217,255,243,.95)'); rim.addColorStop(0.5, 'rgba(143,244,230,.5)'); rim.addColorStop(1, 'rgba(80,190,255,.85)'); g.strokeStyle = rim; g.lineWidth = 1.3; g.stroke(); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(q.x - r * 0.42, q.y - r * 0.42, r * 0.2, r * 0.12, -0.7, 0, TAU); g.fill();
+        if (q.reflect) { g.fillStyle = 'rgba(191,248,243,.85)'; for (const dx of [-0.28, 0.28]) { g.beginPath(); g.ellipse(q.x + dx * r, q.y + r * 0.1, r * 0.1, r * 0.17, 0, 0, TAU); g.fill(); } } g.restore(); }
+      else { g.globalAlpha = a * 0.9; g.fillStyle = q.col; g.fillRect(q.x, q.y, q.size, q.size); g.globalAlpha = 1; }
+    }
+  }
+  every(key, secs, fn) { this.st[key] = (this.st[key] ?? secs) - this.dt; if (this.st[key] <= 0) { this.st[key] += secs; fn(); } }
+}
+
+/* ---------- the eyes: tall glowing ovals; they can close, shine, pulse with the beat, wink or turn into stars ---------- */
+let eyeVar = 0;
+function crescentEye(g, a, up, bright) {
+  if (eyeVar) return crescentVariant(g, a, up, bright, eyeVar);
+  g.save(); g.globalAlpha = a; if (!up) g.scale(1, -1);
+  const h = g.createRadialGradient(0, -1, 0, 0, -1, 14); h.addColorStop(0, `rgba(32,231,170,${0.42 * Math.min(1.3, bright)})`); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, -1, 14, 0, TAU); g.fill();
+  const gr = g.createLinearGradient(0, -9, 0, 5); gr.addColorStop(0, '#fff'); gr.addColorStop(0.45, TONE); gr.addColorStop(1, C2); g.fillStyle = gr;
+  g.beginPath(); g.moveTo(-8.5, 4); g.quadraticCurveTo(0, -13, 8.5, 4); g.quadraticCurveTo(0, -4.2, -8.5, 4); g.closePath(); g.fill();
+  g.beginPath(); g.arc(-8.5, 4, 1.7, 0, TAU); g.arc(8.5, 4, 1.7, 0, TAU); g.fill();
+  g.restore();
+}
+function crescentVariant(g, a, up, bright, v) {
+  g.save(); g.globalAlpha = a; if (!up) g.scale(1, -1);
+  const hal = (r, k) => { const h = g.createRadialGradient(0, -1, 0, 0, -1, r); h.addColorStop(0, `rgba(32,231,170,${k * Math.min(1.3, bright)})`); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, -1, r, 0, TAU); g.fill(); };
+  if (v === 1) { // soft: tapered tips and a thin highlight along the top
+    hal(17, 0.4);
+    const gr = g.createLinearGradient(0, -10, 0, 5); gr.addColorStop(0, '#fff'); gr.addColorStop(0.4, TONE); gr.addColorStop(1, C2); g.fillStyle = gr;
+    g.beginPath(); g.moveTo(-9.5, 4.6); g.quadraticCurveTo(0, -14, 9.5, 4.6); g.quadraticCurveTo(0, -5.8, -9.5, 4.6); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 0.9; g.lineCap = 'round'; g.beginPath(); g.moveTo(-6.4, -1.4); g.quadraticCurveTo(0, -9.6, 6.4, -1.4); g.stroke();
+  } else if (v === 2) { // neon: a lit stroke with a white core and a spark at each tip
+    hal(18, 0.5);
+    const gr = g.createLinearGradient(-9, 0, 9, 0); gr.addColorStop(0, C2); gr.addColorStop(0.5, '#fff'); gr.addColorStop(1, C2);
+    g.lineCap = 'round'; g.strokeStyle = gr; g.lineWidth = 3.8; g.shadowColor = '#20e7aa'; g.shadowBlur = 6; g.beginPath(); g.moveTo(-8.5, 3.4); g.quadraticCurveTo(0, -9.5, 8.5, 3.4); g.stroke();
+    g.shadowBlur = 0; g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(-7.5, 2.4); g.quadraticCurveTo(0, -7.4, 7.5, 2.4); g.stroke();
+    g.fillStyle = '#fff'; for (const sx of [-8.8, 8.8]) { g.beginPath(); g.arc(sx, 3.6, 1.2, 0, TAU); g.fill(); }
+  } else { // wide and low, friendlier, with a soft glow underneath
+    hal(18, 0.34);
+    g.fillStyle = 'rgba(32,231,170,.22)'; g.beginPath(); g.ellipse(0, 6.4, 8, 3, 0, 0, TAU); g.fill();
+    const gr = g.createLinearGradient(0, -8, 0, 5); gr.addColorStop(0, '#fff'); gr.addColorStop(0.5, TONE); gr.addColorStop(1, '#5eead4'); g.fillStyle = gr;
+    g.beginPath(); g.moveTo(-10.5, 4); g.quadraticCurveTo(0, -10, 10.5, 4); g.quadraticCurveTo(0, -2.6, -10.5, 4); g.closePath(); g.fill();
+    g.beginPath(); g.arc(-10.5, 4, 1.9, 0, TAU); g.arc(10.5, 4, 1.9, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.arc(-3.2, -3.6, 1.1, 0, TAU); g.fill();
+  }
+  g.restore();
+}
+function starEye(g, a, t, side) {
+  g.save(); g.globalAlpha = a; const r = 9 * (0.85 + 0.15 * Math.sin(t * 7 + side)), rot = Math.sin(t * 2.4 + side) * 0.35;
+  const h = g.createRadialGradient(0, 0, 0, 0, 0, 17); h.addColorStop(0, 'rgba(255,255,255,.55)'); h.addColorStop(0.4, 'rgba(32,231,170,.3)'); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, 0, 17, 0, TAU); g.fill();
+  g.rotate(rot); const gr = g.createRadialGradient(0, 0, 0, 0, 0, r); gr.addColorStop(0, '#fff'); gr.addColorStop(0.6, TONE); gr.addColorStop(1, C2); g.fillStyle = gr; g.beginPath();
+  for (let k = 0; k < 8; k++) { const an = (k / 8) * TAU - Math.PI / 2, rr = k % 2 ? r * 0.3 : r; k ? g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); } g.closePath(); g.fill(); g.restore();
+}
+function glint(g, x, y, r, a) { g.save(); g.globalAlpha = a; g.fillStyle = '#fff'; g.beginPath(); for (let k = 0; k < 8; k++) { const an = (k / 8) * TAU - Math.PI / 2, rr = k % 2 ? r * 0.25 : r; k ? g.lineTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr) : g.moveTo(x + Math.cos(an) * rr, y + Math.sin(an) * rr); } g.closePath(); g.fill(); g.restore(); }
+function drawEyes(o, g, P, px, py, sc, t) {
+  const open = 1 - P.lid, closedA = clamp((P.lid - 0.72) / 0.28, 0, 1), es = P.es, em = es ? clamp(P.em, 0, 1) : 0, hap = clamp(P.happy || 0, 0, 1);
+  g.save(); g.translate(px + o.fx, py + o.fy - 2); g.rotate(P.tilt * Math.PI / 180); g.scale(sc, sc);
+  for (const x of [-21, 21]) {
+    const side = x < 0 ? -1 : 1, win = P.wink === side ? 1 : 0, cres = Math.max(hap, es === 'crescent' ? em : 0, win), bliss = es === 'bliss' ? em : 0, stars = es === 'stars' ? em : 0, replaced = clamp(Math.max(cres, bliss, stars), 0, 1);
+    g.save(); g.translate(x, 0);
+    const openA = (1 - closedA) * (1 - replaced);
+    if (openA > 0.01) {
+      const sp = P.sparkle, sx = 1 + 0.12 * sp, sy = Math.max(0.05, open) * (1 + 0.16 * sp) * (1 + 0.22 * P.eyeBeat);
+      g.save(); g.scale(sx, sy); g.globalAlpha = openA;
+      g.save(); g.scale(11 + 3 * sp, 15 + 3 * sp); const hh = g.createRadialGradient(0, 0, 0, 0, 0, 1); hh.addColorStop(0, `rgba(32,231,170,${(0.55 + 0.2 * sp) * Math.min(1.4, P.bright)})`); hh.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = hh; g.beginPath(); g.arc(0, 0, 1.6, 0, TAU); g.fill(); g.restore();
+      g.save(); g.scale(6.8, 10); const eg = g.createRadialGradient(-0.38, -0.5, 0, 0, 0, 1.4); eg.addColorStop(0, '#fff'); eg.addColorStop(0.5, TONE); eg.addColorStop(1, C2); g.fillStyle = eg; g.beginPath(); g.arc(0, 0, 1, 0, TAU); g.fill(); g.restore();
+      g.fillStyle = 'rgba(255,255,255,.92)'; g.beginPath(); g.ellipse(-1.8, -3.2 - 1.6 * P.eyeBeat, 2, 2.8, 0, 0, TAU); g.fill();
+      if (sp > 0.02) { glint(g, -2.6, -4.4, 4.4 * sp * (0.75 + 0.25 * Math.sin(t * 9 + side)), openA); glint(g, 2.6, 4.2, 2.4 * sp * (0.75 + 0.25 * Math.sin(t * 7 + 2 + side)), openA); }
+      g.restore();
+    }
+    if (closedA > 0 && replaced < 1) { g.globalAlpha = closedA * (1 - replaced) * (0.55 + 0.45 * Math.min(1, P.bright)); g.strokeStyle = TONE; g.lineWidth = 3.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-7, -1); g.quadraticCurveTo(0, 6, 7, -1); g.stroke(); g.globalAlpha = 1; }
+    if (cres > 0.01) crescentEye(g, cres, true, P.bright);
+    if (bliss > 0.01) crescentEye(g, bliss, false, P.bright);
+    if (stars > 0.01) starEye(g, stars, t, side);
+    g.restore();
+  }
+  g.restore();
+}
+const glowAt = (o, x, y, r, c, a) => o.glow(x, y, r, c, a);
+const num = (o, x, y, vx, vy, size = 12, life = 3.2, pop = true) => { o.st.fi = ((o.st.fi ?? -1) + 1) % FIB.length; o.add({ kind: 'txt', txt: FIB[o.st.fi], x, y, vx, vy, size, life, pop, col: o.st.fi % 2 ? '#bff8f3' : '#20e7aa', sway: 6 }); };
+const spark = (o, x, y, vx, vy, size = 2, life = 1.4, rgb = '32,231,170') => o.add({ kind: 'spark', x, y, vx, vy, size, life, rgb });
+
+/* ---------- the chosen sleep: Dormindo (yawn and stretch) and Sono profundo (dust and Zzzz) ---------- */
+function sleepPose(o, e) { // e: yawn, asleep, deep
+  const P = o.p, y = e.yawn || 0, a = e.asleep || 0, d = e.deep || 0;
+  P.lid = Math.max(P.lid, y * 0.85 + (e.drowsy || 0) * 0.4 + a * 0.5 + d * 0.6);
+  P.sy *= 1 + 0.2 * y; P.sx *= 1 - 0.1 * y; P.by += -8 * y + 22 * a * (1 - d) + 4 * d; P.size *= 1 - 0.28 * a * (1 - d) - 0.05 * d;
+  P.bright *= 1 - 0.5 * a * (1 - d) - 0.3 * d; P.spin *= 1 - 0.7 * a * (1 - d) - 0.6 * d; P.mist *= 1 - 0.95 * d;
+  if (e.shake) P.bx += Math.sin(o.t * 40) * 5 * e.shake;
+}
+function deepOverlay(o, e, dt) {
+  const d = e.deep || 0;
+  if (d > 0.1 && d < 0.999) for (let i = 0; i < 4; i++) { const an = Math.random() * TAU, r = Math.random() * 70; o.add({ kind: 'dot', x: o.px + Math.cos(an) * r * 1.2, y: o.py + Math.sin(an) * r * 0.85, vx: rnd(5, 28), vy: rnd(-22, -4), life: rnd(2, 4.5), size: 2 + Math.random() * 1.6, col: Math.random() < 0.5 ? '#20e7aa' : '#10c3d3' }); }
+  if (d > 0.7) o.every('zz', 0.7, () => { const k = (o.st.zk = ((o.st.zk ?? -1) + 1) % 4); if (k === 3) return; const sizes = [12, 16, 22]; o.add({ kind: 'txt', txt: k === 0 ? 'z' : 'Z', x: o.px + 30 + k * 11, y: o.py - 28 - k * 14, vx: 9, vy: -13, size: sizes[k], life: 3.4, bold: true, col: '#bff8f3', sway: 5, pop: true }); });
+}
+
+/* ================= v3: the behaviours that Phibe draws by lot, and the lamp ================= */
+const fade = (s, D, a = 0.7, b = 0.7) => ease(ramp(s, 0, a)) * (1 - ease(ramp(s, D - b, D)));
+function star4(g, x, y, r, rot, a) { g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha = a; g.fillStyle = '#fff'; g.beginPath(); for (let k = 0; k < 8; k++) { const an = (k / 8) * TAU - Math.PI / 2, rr = k % 2 ? r * 0.28 : r; k ? g.lineTo(Math.cos(an) * rr, Math.sin(an) * rr) : g.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); } g.closePath(); g.fill(); g.restore(); }
+function drawStar(o, g, x, y, w, t, pulse = 1) { o.glow(x, y, 20 * pulse, '255,255,255', 0.5 * w); o.glow(x, y, 34 * pulse, '143,244,230', 0.25 * w); star4(g, x, y, 8 * pulse, t * 1.6, w); }
+const note = (o, x, y, size = 17) => o.add({ kind: 'txt', txt: Math.random() < 0.5 ? '♪' : '♫', x, y, vx: 10, vy: -22, size, life: 2.6, col: Math.random() < 0.5 ? '#bff8f3' : '#20e7aa', sway: 8, pop: true });
+const BEH = { look: {}, bubbles: {}, star: {}, hum: {}, dance: {} };
+const NAMES = { look: 'olhando em volta', bubbles: 'soprando bolhas', star: 'seguindo a estrela', hum: 'cantarolando', dance: 'dançando' };
+const ui = { music: false, eye: 1, ver: { look: 1, bubbles: 2, star: 1, hum: 1, dance: 2 } };
+
+/* ----- look around ----- */
+BEH.look[1] = { D: 9, drive(o, s, w) { const B = o.st.l1 || (o.st.l1 = { t: 0, gx: 0, gy: 0, sx: 0, sy: 0 }), P = o.p; B.t -= o.dt; if (B.t <= 0) { B.t = rnd(1, 2.3); const c = [[-1, -0.2], [0.9, -0.3], [0.5, 0.6], [-0.6, 0.5], [0, -0.7], [1, 0.2], [-0.9, 0.4]], n = c[Math.floor(Math.random() * c.length)]; B.gx = n[0]; B.gy = n[1]; if (Math.random() < 0.35) o.blinkT = 0.05; } const k = 1 - Math.exp(-o.dt * 2.4); B.sx += (B.gx - B.sx) * k; B.sy += (B.gy - B.sy) * k; P.ease = 0.5; P.gx += B.gx * 13 * w; P.gy += B.gy * 9 * w; P.bx += B.sx * 16 * w; P.by += B.sy * 9 * w; P.tilt += B.sx * 10 * w; } };
+BEH.look[2] = { D: 10, drive(o, s, w) { const P = o.p, k = Math.floor(s / 2.4), ph = (s % 2.4) / 2.4, pos = [-1, -0.3, 0.4, 1][k % 4]; let g = pos, pop = 0; if (ph > 0.55 && ph < 0.75) g = -pos * 0.7; if (ph >= 0.75) { g = pos * 1.1; pop = Math.sin(clamp((ph - 0.75) / 0.2, 0, 1) * Math.PI); } P.ease = 0.45; P.gx += g * 13 * w; P.gy -= 2 * w; P.bx += g * 14 * w; P.tilt += g * 9 * w; P.sy *= 1 + 0.1 * pop * w; P.size *= 1 + 0.04 * pop * w; } };
+BEH.look[3] = { D: 10, drive(o, s, w) { const P = o.p, c = s % 4.2, at = ease(ramp(c, 3.0, 3.3)) * (1 - ease(ramp(c, 3.9, 4.2))), pan = Math.sin(s * 0.5) * 0.95 * (1 - at); P.ease = 0.3; P.gx += pan * 13 * w; P.bx += pan * 18 * w; P.tilt += pan * 8 * w; P.size *= 1 + 0.06 * at * w; P.gy -= 1 * at * w; if (at > 0.9 && !o.st.bl3) { o.st.bl3 = 1; o.blinkT = 0.05; } if (at < 0.1) o.st.bl3 = 0; } };
+
+/* ----- blowing bubbles ----- */
+const puffPose = (P, puff, w) => { P.size *= 1 + 0.07 * puff * w; P.lid += 0.5 * puff * w; P.bx -= 6 * puff * w; P.gx += 5 * w; };
+BEH.bubbles[1] = { D: 8.6, drive(o, s, w) { const C = 2.9, k = Math.floor(s / C), ph = s % C, puff = ph < 0.9 ? ease(ph / 0.9) : 0; puffPose(o.p, puff, w); if (ph >= 0.9 && o.st.rk !== k && w > 0.3) { o.st.rk = k; o.add({ kind: 'bub', x: o.px + 50, y: o.py - 4, vx: rnd(8, 16), vy: -16, size: rnd(9, 13), life: 3, sway: 6 }); } } };
+BEH.bubbles[2] = { D: 9, drive(o, s, w) { const C = 4.4, ph = s % C, on = ph > 0.5 && ph < 2.3; puffPose(o.p, on ? 0.5 + 0.5 * Math.abs(Math.sin(ph * 9)) : ease(clamp(ph / 0.5, 0, 1)) * 0.5, w); if (on && w > 0.3) { o.st.nx = (o.st.nx ?? 0) - o.dt; if (o.st.nx <= 0) { o.st.nx = 0.34; o.add({ kind: 'bub', x: o.px + 50, y: o.py - 4, vx: rnd(8, 26), vy: rnd(-26, -12), size: rnd(4, 9), life: rnd(2, 3.6), sway: 8 }); } } } };
+BEH.bubbles[3] = { D: 10, drive(o, s, w) { const C = 5.2, k = Math.floor(s / C), ph = s % C, puff = ph < 1.3 ? ease(ph / 1.3) : 0, P = o.p; puffPose(P, puff, w); if (ph >= 1.3 && o.st.rk !== k && w > 0.3) { o.st.rk = k; o.add({ kind: 'bub', reflect: true, x: o.px + 52, y: o.py - 4, vx: 12, vy: -12, size: 17, life: 3.8, sway: 4 }); } const q = o.parts.find((p) => p.kind === 'bub' && p.reflect); if (q) { P.gx += clamp((q.x - o.px) / 16, -1, 1) * 11 * w; P.gy += clamp((q.y - o.py) / 12, -1, 1) * 8 * w; P.tilt += 5 * w; if (q.l < 0.15) P.happy += 0.8 * w; } } };
+
+/* ----- following the star ----- */
+BEH.star[1] = { D: 10, drive(o, s, w) { const P = o.p, a = s * 1.5, x = CX + Math.cos(a) * 118, y = CY + Math.sin(a * 1.3) * 62, ph = s % 3.2, lunge = ph < 0.35 ? Math.sin(ph / 0.35 * Math.PI) : 0; o.st.sx = x; o.st.sy = y; o.st.fl = lunge; P.ease = 0.35; P.gx += clamp((x - CX) / 12, -1, 1) * 11 * w; P.gy += clamp((y - CY) / 9, -1, 1) * 8 * w; P.bx += (x - CX) * (0.12 + 0.3 * lunge) * w; P.by += (y - CY) * (0.12 + 0.3 * lunge) * w; P.size *= 1 + 0.05 * lunge * w; },
+  overlay(o, g, s, w) { const x = o.st.sx; if (x === undefined) return; drawStar(o, g, x, o.st.sy, w, s, 1 + 0.5 * (o.st.fl || 0)); o.every('tr', 0.05, () => { if (w > 0.2) spark(o, x, o.st.sy, 0, 0, 1.1, 0.55, '143,244,230'); }); } };
+BEH.star[2] = { D: 11, drive(o, s, w) { const B = o.st.f2 || (o.st.f2 = { x: CX + 90, y: CY - 30, tx: CX + 90, ty: CY - 30, t: 0 }), P = o.p; B.t += o.dt; if (B.t >= 1.5) { B.t -= 1.5; const an = rnd(0, TAU); B.tx = CX + Math.cos(an) * rnd(85, 120) * 1.15; B.ty = CY + Math.sin(an) * rnd(45, 62); o.st.pn = 0.4; } o.st.pn = Math.max(0, (o.st.pn ?? 0) - o.dt); const run = o.st.pn > 0; B.x += (B.tx - B.x) * (1 - Math.exp(-o.dt * (run ? 10 : 1.6))); B.y += (B.ty - B.y) * (1 - Math.exp(-o.dt * (run ? 10 : 1.6))); o.st.sx = B.x + Math.sin(s * 3) * 2; o.st.sy = B.y + Math.cos(s * 2.4) * 2; const pounce = B.t > 1.1 ? Math.sin(clamp((B.t - 1.1) / 0.4, 0, 1) * Math.PI) : 0; P.ease = 0.35; P.gx += clamp((B.x - CX) / 12, -1, 1) * 11 * w; P.gy += clamp((B.y - CY) / 9, -1, 1) * 8 * w; P.bx += (B.x - CX) * (0.14 + 0.4 * pounce) * w; P.by += (B.y - CY) * (0.14 + 0.4 * pounce) * w; P.size *= 1 + 0.05 * pounce * w; P.sx *= 1 + 0.06 * pounce * w; o.st.fl = run ? 0.8 : 0; },
+  overlay(o, g, s, w) { const x = o.st.sx; if (x === undefined) return; drawStar(o, g, x, o.st.sy, w, s, 1 + 0.4 * (o.st.fl || 0)); if (o.st.fl) o.every('tr', 0.03, () => spark(o, x, o.st.sy, 0, 0, 1.2, 0.5, '143,244,230')); } };
+BEH.star[3] = { D: 10, drive(o, s, w) { const C = 4.6, k = Math.floor(s / C), ph = s % C, P = o.p, p = clamp(ph / 1.5, 0, 1), e2 = p * p, x = lerpN(W + 16, CX - 24, e2), y = lerpN(-12, CY + 6, e2); o.st.sx = ph < 1.5 ? x : undefined; o.st.sy = y; const hop = ph > 1.5 ? Math.sin(clamp((ph - 1.5) / 0.6, 0, 1) * Math.PI) : 0, happy = ph > 1.6 && ph < 3.6 ? ease(ramp(ph, 1.6, 2.0)) * (1 - ease(ramp(ph, 3.2, 3.6))) : 0; P.ease = 0.4; if (ph < 1.5) { P.gx += clamp((x - CX) / 14, -1, 1) * 11 * w; P.gy += clamp((y - CY) / 10, -1, 1) * 8 * w; P.bx += (x - CX) * 0.1 * w; } P.by -= 16 * hop * w; P.sy *= 1 + 0.08 * hop * w; P.happy += happy * w; P.tilt += Math.sin(ph * 14) * 7 * happy * w; if (ph >= 1.5 && o.st.bk !== k && w > 0.2) { o.st.bk = k; for (let i = 0; i < 22; i++) { const an = rnd(0, TAU), v = rnd(30, 110); spark(o, o.px, o.py, Math.cos(an) * v, Math.sin(an) * v, rnd(1, 2.2), 1.2, i % 2 ? '143,244,230' : '32,231,170'); } } },
+  overlay(o, g, s, w) { const x = o.st.sx; if (x === undefined) return; drawStar(o, g, x, o.st.sy, w, s, 1.1); o.every('tr', 0.025, () => spark(o, x, o.st.sy, 24, -18, 1.3, 0.6, '143,244,230')); } };
+const lerpN = (a, b, k) => a + (b - a) * k;
+
+/* ----- humming (with music) ----- */
+const eyes = (P, es, em, w) => { P.es = es; P.em = Math.max(P.em, em * w); };
+BEH.hum[1] = { D: 12, drive(o, s, w) { const P = o.p, b = Math.sin(s * TAU * 0.55); P.by -= Math.abs(b) * 8 * w; P.tilt += b * 7 * w; P.bx += Math.sin(s * TAU * 0.275) * 14 * w; eyes(P, 'crescent', 1, w); P.gx += b * 4 * w; P.sy *= 1 + Math.abs(b) * 0.05 * w; o.every('n', 0.95, () => { if (w > 0.3) note(o, o.px + rnd(30, 56), o.py - 20); }); } };
+const STAFF = (o, g, s, w) => { const sx = o.px + 60, sy = o.py - 22; g.save(); g.lineWidth = 0.9; for (let i = 0; i < 5; i++) { g.strokeStyle = `rgba(143,244,230,${0.4 * w})`; g.beginPath(); for (let x = 0; x <= 150; x += 6) { const yy = sy + i * 5 + Math.sin((sx + x) * 0.05 + s * 1.2) * 1.6; x ? g.lineTo(Math.min(W, sx + x), yy) : g.moveTo(sx + x, yy); } g.stroke(); }
+  const pitch = [0, -1, 1, 0, 2, -1, 1, -2]; for (let j = Math.floor((s - 4) / 0.8); j <= Math.floor(s / 0.8); j++) { const age = s - j * 0.8; if (j < 0 || age < 0 || age > 4) continue; const x = sx + 6 + age * 30, y = sy + 10 + pitch[((j % 8) + 8) % 8] * 3.2, al = Math.min(1, age * 4) * (1 - ease(ramp(age, 3.2, 4))) * w; g.globalAlpha = al; g.fillStyle = j % 2 ? '#bff8f3' : '#20e7aa'; g.beginPath(); g.ellipse(x, y, 3.4, 2.5, -0.4, 0, TAU); g.fill(); g.strokeStyle = g.fillStyle; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x + 3, y - 1); g.lineTo(x + 3, y - 12); g.stroke(); } g.restore(); };
+BEH.hum[2] = { D: 12, drive(o, s, w) { const P = o.p, bob = Math.max(0, 1 - (s % 0.8) / 0.25), j = Math.floor(s / 0.8), age = s - j * 0.8; P.by -= 5 * bob * w; P.tilt += Math.sin(s * TAU * 0.3) * 6 * w; P.bx += Math.sin(s * TAU * 0.15) * 10 * w; P.sparkle = Math.max(P.sparkle, 0.9 * w); P.gx += clamp((o.px + 66 + age * 30 - CX) / 16, -1, 1) * 9 * w; P.gy -= 3 * w; },
+  overlay: STAFF };
+BEH.hum[3] = { D: 12, drive(o, s, w) { const P = o.p; P.tilt -= 7 * w; P.by -= (3 + Math.sin(s * 3) * 3) * w; P.bx += Math.sin(s * 1.1) * 8 * w; P.gy -= 7 * w; P.gx += 5 * w; P.sparkle = Math.max(P.sparkle, 0.35 * w); P.ease = 0.15; o.every('n', 1.3, () => { if (w > 0.3) note(o, o.px + rnd(60, 90), o.py - rnd(14, 34), 15); }); } };
+BEH.hum[4] = { D: 12, drive(o, s, w) { const P = o.p, ph = (s % 1.5) / 1.5, nt = Math.sin(clamp(ph / 0.6, 0, 1) * Math.PI); P.size *= 1 + 0.07 * nt * w; P.tilt -= (5 + 4 * nt) * w; P.by -= 3 * nt * w; P.bx += Math.sin(s * 0.9) * 6 * w; eyes(P, 'bliss', 1, w); P.bright *= 1 + 0.25 * nt * w; if (ph < (o.st.hp ?? 1) && w > 0.3) { note(o, o.px + rnd(32, 54), o.py - 22, 18); for (let i = 0; i < 3; i++) spark(o, o.px + rnd(-30, 30), o.py - 30, rnd(-14, 14), rnd(-30, -12), 1.2, 0.9, '143,244,230'); } o.st.hp = ph; } };
+BEH.hum[5] = { D: 12, drive(o, s, w) { const P = o.p, b = Math.sin(s * TAU * 0.5); P.by -= Math.abs(b) * 7 * w; P.tilt += b * 6 * w; P.bx += Math.sin(s * TAU * 0.25) * 12 * w; eyes(P, 'stars', 1, w); o.every('n', 0.7, () => { if (w > 0.3) { if (Math.random() < 0.5) note(o, o.px + rnd(30, 56), o.py - 20, 16); else spark(o, o.px + rnd(20, 60), o.py - rnd(10, 30), rnd(8, 22), rnd(-34, -16), 2, 1.6, '255,255,255'); } }); } };
+
+/* ----- dancing (with music) ----- */
+BEH.dance[1] = { D: 12, drive(o, s, w) { const P = o.p, b = s * TAU * 0.9, sn = Math.sin(b), cs = Math.abs(Math.cos(b)); P.bx += sn * 22 * w; P.tilt += sn * 10 * w; P.by -= cs * 8 * w; P.sx *= 1 + cs * 0.05 * w; P.sy *= 1 - cs * 0.05 * w; P.sparkle = Math.max(P.sparkle, 0.5 * w); P.eyeBeat = Math.max(P.eyeBeat, Math.cos(b * 2) * 0.9 * w); const ph = (s * 0.9) % 1; if (ph < (o.st.lp ?? 1) && w > 0.3) for (let i = 0; i < 4; i++) spark(o, o.px + rnd(-40, 40), o.py + rnd(-26, 26), rnd(-22, 22), rnd(-36, -10), 1.4, 0.9, '143,244,230'); o.st.lp = ph; } };
+BEH.dance[2] = { D: 12, drive(o, s, w) { const P = o.p, b = s * TAU * 0.6; P.bx += Math.sin(b) * 30 * w; P.by += Math.sin(2 * b) * 10 * w; P.tilt += Math.cos(b) * 9 * w; P.sparkle = Math.max(P.sparkle, 0.95 * w); P.gx += Math.cos(b) * 8 * w; o.every('tr', 0.05, () => { (o.st.trail = o.st.trail || []).push({ x: o.px, y: o.py }); if (o.st.trail.length > 26) o.st.trail.shift(); }); },
+  overlay(o, g, s, w) { const tr = o.st.trail || []; tr.forEach((q, i) => o.glow(q.x, q.y + 18, 7 + i * 0.25, i % 2 ? '143,244,230' : '32,231,170', (i / tr.length) * 0.35 * w)); } };
+BEH.dance[3] = { D: 12, drive(o, s, w) { const P = o.p, b = s * TAU * 0.95, k = Math.floor(b / TAU), pulse = Math.pow(Math.max(0, Math.cos(b)), 4); if (o.st.bk !== k && w > 0.2) { o.st.bk = k; (o.st.rg = o.st.rg || []).push(0); if (k % 4 === 3) o.st.hop = 1; } o.st.hop = Math.max(0, (o.st.hop ?? 0) - o.dt * 1.6); const hop = Math.sin(o.st.hop * Math.PI); P.size *= 1 + 0.06 * pulse * w; P.by -= 16 * hop * w; P.sy *= 1 + 0.08 * hop * w; eyes(P, 'crescent', 1, w); P.tilt += (k % 2 ? 1 : -1) * 5 * pulse * w; if (o.st.rg) o.st.rg = o.st.rg.map((t) => t + o.dt).filter((t) => t < 1); },
+  overlay(o, g, s, w) { g.save(); (o.st.rg || []).forEach((t) => { g.strokeStyle = `rgba(32,231,170,${(1 - t) * 0.55 * w})`; g.lineWidth = 2; g.beginPath(); g.ellipse(o.px, o.py, 50 + t * 95, 36 + t * 66, 0, 0, TAU); g.stroke(); }); g.restore(); } };
+BEH.dance[4] = { D: 12, drive(o, s, w) { const P = o.p, b = s * TAU * 0.8, sn = Math.sin(b), cs = Math.abs(Math.cos(b)), k = Math.floor(s / 2.5), phase = (s % 2.5) / 2.5; P.bx += sn * 24 * w; P.tilt += sn * 9 * w; P.by -= cs * 7 * w; P.sparkle = Math.max(P.sparkle, 0.6 * w); if (phase > 0.55 && phase < 0.8) P.wink = k % 2 ? 1 : -1; if (phase > 0.56 && (o.st.wk ?? -1) !== k && w > 0.3) { o.st.wk = k; for (let i = 0; i < 6; i++) spark(o, o.px + (k % 2 ? 22 : -22), o.py - 4, rnd(-40, 40), rnd(-44, -6), 1.4, 0.8, '255,255,255'); } } };
+BEH.dance[5] = { D: 12, drive(o, s, w) { const P = o.p, b = s * TAU * 0.55, sw = Math.sin(b); P.tilt += sw * 34 * w; P.bx += Math.sin(b * 0.5) * 22 * w; P.by -= Math.abs(Math.cos(b)) * 10 * w; P.sx *= 1 + Math.abs(Math.sin(b * 2)) * 0.1 * w; P.sy *= 1 - Math.abs(Math.sin(b * 2)) * 0.08 * w; eyes(P, 'stars', 1, w); o.every('sp', 0.12, () => { if (w > 0.3) { const a = rnd(0, TAU); spark(o, o.px + Math.cos(a) * 70, o.py + Math.sin(a) * 48, Math.cos(a + 1.6) * 40, Math.sin(a + 1.6) * 28, 1.6, 0.8, '143,244,230'); } }); } };
+/* ----- the director: it draws by lot what she does, and she hums and dances only while music plays ----- */
+const WEIGHTS = { calm: { look: 50, bubbles: 20, star: 30, hum: 0, dance: 0 }, music: { look: 20, bubbles: 8, star: 7, hum: 35, dance: 30 } };
+const DURS = { look: [6, 10], bubbles: [6, 9], star: [7, 11], hum: [8, 14], dance: [8, 14] };
+function directorDrive(o) {
+  const d = o.dir || (o.dir = { cur: null, gap: 0.6, s: 0, D: 0, last: null, log: [] });
+  if (!d.cur) { d.gap -= o.dt; if (d.gap <= 0) { const W = ui.music ? WEIGHTS.music : WEIGHTS.calm; let tot = 0; const ws = Object.keys(W).map((k) => { const v = W[k] * (k === d.last ? 0.25 : 1); tot += v; return [k, v]; }); let r = Math.random() * tot, pick = ws[0][0]; for (const [k, v] of ws) { if ((r -= v) <= 0) { pick = k; break; } } d.cur = pick; d.s = 0; d.D = rnd(...DURS[pick]); d.last = pick; o.st = {}; d.log.unshift(NAMES[pick] + (ui.music ? ' ♪' : '')); d.log.length = Math.min(d.log.length, 6); } }
+  else { d.s += o.dt; if (d.s >= d.D) { d.cur = null; d.gap = rnd(0.8, 2); } }
+  if (d.cur) { const b = BEH[d.cur][ui.ver[d.cur]]; b.drive(o, d.s, fade(d.s, d.D)); }
+  else BEH.look[1].drive(o, 0, 0); // resting: nothing extra
+}
+function directorOverlay(o, g) { const d = o.dir; if (d && d.cur) { const b = BEH[d.cur][ui.ver[d.cur]]; b.overlay && b.overlay(o, g, d.s, fade(d.s, d.D)); } }
+
+/* ----- sleepy: nodding ----- */
+const nod = (o, T, e) => { const P = o.p, ph = (T / 2.6) % 1, dip = ph < 0.75 ? ease(ph / 0.75) : 0, jerk = ph < 0.1 ? 1 - ph / 0.1 : 0, d = e.drowsy * (1 - e.asleep); P.by += 20 * dip * d; P.lid = Math.max(P.lid, (0.25 + 0.6 * dip) * d) * (1 - 0.9 * jerk * d); P.size *= 1 + 0.07 * jerk * d; P.tilt += 6 * dip * e.drowsy; };
+
+/* ----- waking: the lamp, refined (L1) and five new ones ----- */
+const lampEyes = (o, T, openAt) => { o.p.lid = 1 - ramp(T, openAt, openAt + 1.6); };
+const pullDust = (o, T) => { if (T > 3 && T < 4.5) for (const q of o.parts) if (q.kind !== 'spark') { q.pull = 3; q.die = true; } };
+const FL = [[3.0, 3.12, 0.22], [3.4, 3.5, 0.12], [3.75, 3.95, 0.5], [4.2, 4.28, 0.28], [4.45, 4.62, 0.62]];
+const LAMPS = [
+  { id: 'L1', name: 'Fluorescente refinada', about: 'O pó volta, a luz pisca em ritmo irregular, como uma lâmpada fluorescente (cada piscada solta uma faísca), acende com um estalo e um anel de luz e os olhos abrem devagar.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); let on = ramp(T, 4.7, 5.5); for (const [a, b, v] of FL) if (T > a && T < b) on = Math.max(on, v); const pop = T > 4.7 ? Math.exp(-(T - 4.7) * 3.2) : 0; P.mist = Math.max(P.mist, on); P.bright = (0.6 + 0.5 * on) * (1 + 0.5 * pop); P.size *= 1 + 0.06 * pop; lampEyes(o, T, 5.2); if (T > 3 && T < 4.7) P.bx += (on > 0.1 && on < 0.7 ? rnd(-1.5, 1.5) : 0); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); FL.forEach(([a], i) => { if (T > a && (o.st['f' + i] ?? 0) === 0) { o.st['f' + i] = 1; for (let k = 0; k < 4; k++) spark(o, o.px + rnd(-18, 18), o.py - 30, rnd(-40, 40), rnd(-50, -10), 1.2, 0.6, '143,244,230'); } }); const s = clamp((T - 4.7) / 1.0, 0, 1); if (s > 0 && s < 1) { g.save(); g.strokeStyle = `rgba(217,255,243,${(1 - s) * 0.6})`; g.lineWidth = 2; g.beginPath(); g.ellipse(o.px, o.py, 40 + s * 110, 30 + s * 78, 0, 0, TAU); g.stroke(); g.restore(); } } },
+  { id: 'L2', name: 'Filamento', about: 'Primeiro surge só um fio de luz no centro, que esquenta e brilha forte, e então se abre num oval de luz de onde nasce o corpo inteiro, como o filamento de uma lâmpada.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const b = ramp(T, 4.3, 5.8); P.mist = b * b; P.size *= 0.4 + 0.6 * ease(ramp(T, 4.2, 5.6)); P.bright = 0.6 + 0.6 * b; lampEyes(o, T, 5.8); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const grow = ramp(T, 3.0, 4.0), a = grow * (1 - ramp(T, 4.3, 5.0)); if (a > 0.01) { const len = 8 + 56 * grow, fl = 0.85 + 0.15 * Math.sin(T * 40); o.glow(o.px, o.py, 16 + 36 * grow, '255,255,255', 0.45 * a * fl); o.glow(o.px, o.py, 30 + 50 * grow, '32,231,170', 0.35 * a); g.save(); g.globalAlpha = a; g.strokeStyle = '#fff'; g.lineWidth = 2.2; g.lineCap = 'round'; g.shadowColor = '#20e7aa'; g.shadowBlur = 14; g.beginPath(); g.moveTo(o.px - len, o.py); g.lineTo(o.px + len, o.py); g.stroke(); g.restore(); } } },
+  { id: 'L3', name: 'Neon', about: 'Segmentos de um tubo de neon acendem um a um em volta dela, piscando e zumbindo, até fechar o anel; então a luz enche o corpo e os olhos abrem.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const b = ramp(T, 4.7, 5.8); P.mist = b * b; P.bright = 0.6 + 0.6 * b; P.size *= 0.7 + 0.3 * ease(b); lampEyes(o, T, 5.5); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const fade2 = 1 - ramp(T, 5.2, 6.4); g.save(); g.lineCap = 'round'; for (let k = 0; k < 10; k++) { const t0 = 3.0 + k * 0.15, on = T > t0 ? (T < t0 + 0.4 ? (Math.floor(T * 30) % 2 ? 1 : 0.25) : 1) : 0; if (!on) continue; const a0 = (k / 10) * TAU, a1 = a0 + (TAU / 10) * 0.8; g.strokeStyle = `rgba(32,231,170,${0.9 * on * fade2})`; g.lineWidth = 3; g.shadowColor = '#20e7aa'; g.shadowBlur = 12; g.beginPath(); g.ellipse(o.px, o.py, 86, 60, 0, a0, a1); g.stroke(); } g.restore(); } },
+  { id: 'L4', name: 'Interruptor', about: 'Um interruptorzinho aparece no canto; alguém o liga com um clique, e a luz volta de uma vez, com um pulo, e os olhos abrem num susto bom.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const on = ramp(T, 3.85, 4.15), pop = T > 3.85 ? Math.exp(-(T - 3.85) * 4) : 0; P.mist = Math.max(P.mist, on); P.bright = (0.6 + 0.4 * on) * (1 + 0.8 * pop); P.size *= 1 + 0.12 * pop; lampEyes(o, T, 4.1); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const a = ramp(T, 2.6, 3.2) * (1 - ramp(T, 7.0, 8.0)); if (a > 0.01) { const x = 318, y = 54, up = T > 3.85 ? 1 : 0; g.save(); g.globalAlpha = a; g.fillStyle = 'rgba(13,20,28,.9)'; g.strokeStyle = up ? '#20e7aa' : 'rgba(143,244,230,.5)'; g.lineWidth = 1.5; g.beginPath(); g.roundRect(x - 13, y - 20, 26, 40, 6); g.fill(); g.stroke(); g.fillStyle = up ? '#20e7aa' : '#5b6b78'; g.shadowColor = up ? '#20e7aa' : 'transparent'; g.shadowBlur = up ? 10 : 0; g.beginPath(); g.roundRect(x - 8, up ? y - 16 : y + 2, 16, 14, 4); g.fill(); g.restore(); if (T > 3.85 && (o.st.sw ?? 0) === 0) { o.st.sw = 1; for (let k = 0; k < 8; k++) spark(o, 318, 54, rnd(-60, 60), rnd(-60, 60), 1.4, 0.6, '143,244,230'); } } } },
+  { id: 'L5', name: 'Vela que vira lâmpada', about: 'Começa como a chama minúscula de uma vela, que vacila e vai crescendo devagar até virar a luz inteira, mais suave e mais calma que as outras.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const b = ramp(T, 4.4, 6.4); P.mist = b * b; P.size *= 0.5 + 0.5 * ease(b); P.bright = 0.6 + 0.5 * b; lampEyes(o, T, 6.2); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const grow = ramp(T, 3.0, 5.4), a = ramp(T, 3.0, 3.5) * (1 - ramp(T, 5.4, 6.4)); if (a > 0.01) { const r = 4 + 18 * grow, fl = 1 + Math.sin(T * 17) * 0.08 + Math.sin(T * 29) * 0.05; o.glow(o.px, o.py - r * 0.4, r * 3.2, '32,231,170', 0.35 * a); g.save(); g.globalAlpha = a; const gr = g.createRadialGradient(o.px, o.py, 0, o.px, o.py, r * 1.6); gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(0.5, 'rgba(143,244,230,.7)'); gr.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(o.px, o.py - r * 2.1 * fl); g.quadraticCurveTo(o.px + r * 1.1, o.py + r * 0.2, o.px, o.py + r * 1.1); g.quadraticCurveTo(o.px - r * 1.1, o.py + r * 0.2, o.px, o.py - r * 2.1 * fl); g.fill(); g.restore(); } } },
+  { id: 'L6', name: 'Liga com zumbido', about: 'Estala e zumbe: o corpo treme, faíscas elétricas saltam em volta e a luz pisca rápido, até um clarão branco que estabiliza tudo; os olhos se abrem apertados e depois relaxam.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const buzz = T > 3 && T < 4.5 ? 1 : 0, rv = (Math.floor(T * 18) * 7919) % 3, on = T < 4.5 ? (buzz ? [0.15, 0.55, 0.3][rv] : 0) : ramp(T, 4.5, 4.8), pop = T > 4.5 ? Math.exp(-(T - 4.5) * 4) : 0; P.mist = Math.max(P.mist, on); P.bright = (0.6 + 0.5 * on) * (1 + 1.2 * pop); P.bx += Math.sin(T * 110) * 2.6 * buzz; P.size *= 1 + 0.1 * pop; lampEyes(o, T, 5.0); if (T > 5 && T < 6.2) P.lid = Math.max(P.lid, 0.5 * (1 - ramp(T, 5.4, 6.2))); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); if (T > 3 && T < 4.5 && Math.floor(T * 30) % 2) { g.save(); g.strokeStyle = 'rgba(217,255,243,.9)'; g.lineWidth = 1.3; for (let k = 0; k < 2; k++) { let x = o.px + rnd(-50, 50), y = o.py + rnd(-34, 34); g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 4; j++) { x += rnd(-12, 12); y += rnd(-10, 10); g.lineTo(x, y); } g.stroke(); } g.restore(); } const s = T > 4.5 ? Math.exp(-(T - 4.5) * 5) : 0; if (s > 0.02) o.glow(o.px, o.py, 170, '255,255,255', 0.6 * s); } },
+];
+
+/* ----- the lamp that tries to turn on: six new versions ----- */
+const TRY = [
+  { id: 'T1', name: 'Tentativas que vão pegando', about: 'Três tentativas, cada uma mais forte e mais longa que a anterior: pisca, falha, pisca de novo e, na terceira, pega e fica. Depois dá uma respirada de alívio.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const A = [[3.0, 3.25, 0.3], [3.9, 4.35, 0.5], [4.9, 5.7, 0.8]]; let on = ramp(T, 5.7, 6.2); for (const [a, b, v] of A) if (T > a && T < b) on = Math.max(on, v * (0.7 + 0.3 * Math.sin((T - a) * 30))); const sigh = T > 6.2 ? Math.sin(clamp((T - 6.2) / 1.4, 0, 1) * Math.PI) : 0; P.mist = Math.max(P.mist, on); P.bright = 0.6 + 0.5 * on + 0.3 * sigh; P.size *= 1 + 0.06 * sigh; lampEyes(o, T, 6.0); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); [[3.0], [3.9], [4.9]].forEach(([a], i) => { if (T > a && !o.st['t' + i]) { o.st['t' + i] = 1; for (let k = 0; k < 3 + i * 2; k++) spark(o, o.px + rnd(-20, 20), o.py - 28, rnd(-40, 40), rnd(-60, -10), 1.2, 0.6, '143,244,230'); } }); } },
+  { id: 'T2', name: 'Motor de partida', about: 'Como um motor que não pega: o corpo treme com esforço, solta uma tossida de faíscas e fumaça de luz, treme de novo e de novo, até o motor pegar com um tranco e um brilho forte.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const C = [[3.0, 3.5], [3.8, 4.4], [4.7, 5.5]]; let eff = 0; for (const [a, b] of C) if (T > a && T < b) eff = 1; const catchAt = 5.5, pop = T > catchAt ? Math.exp(-(T - catchAt) * 3.5) : 0, on = T < catchAt ? (eff ? 0.3 + 0.3 * Math.abs(Math.sin(T * 22)) : 0) : ramp(T, catchAt, catchAt + 0.5); P.mist = Math.max(P.mist, on); P.bright = (0.6 + 0.5 * on) * (1 + 1.0 * pop); P.bx += Math.sin(T * 70) * 3.2 * eff; P.by += Math.sin(T * 55) * 1.6 * eff; P.size *= 1 + 0.12 * pop; lampEyes(o, T, 5.8); if (eff) P.lid = Math.max(P.lid, 0.9); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); [3.0, 3.8, 4.7].forEach((a, i) => { if (T > a + 0.4 && !o.st['c' + i]) { o.st['c' + i] = 1; for (let k = 0; k < 9; k++) o.add({ kind: 'spark', x: o.px + rnd(-14, 14), y: o.py - 20, vx: rnd(-40, 40), vy: rnd(-70, -20), size: rnd(1.4, 2.6), life: 0.9, rgb: '143,244,230' }); } }); if (T > 5.5 && T < 5.9) o.glow(o.px, o.py, 160, '255,255,255', 0.5 * (1 - (T - 5.5) / 0.4)); } },
+  { id: 'T3', name: 'Bateria fraca', about: 'Um ícone de bateria aparece no canto. Ela tenta ligar com 1 barrinha, pisca e apaga; tenta com 2, brilha um pouco mais e apaga; na carga cheia acende de vez.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const A = [[3.0, 3.5, 0.3], [4.1, 4.9, 0.55]]; let on = ramp(T, 5.4, 6.0); for (const [a, b, v] of A) if (T > a && T < b) on = Math.max(on, v * ramp(T, a, a + 0.15) * (1 - ramp(T, b - 0.3, b))); P.mist = Math.max(P.mist, on); P.bright = 0.6 + 0.5 * on; lampEyes(o, T, 5.8); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const a = ramp(T, 2.6, 3.0) * (1 - ramp(T, 7.4, 8.2)); if (a > 0.01) { const bars = T < 3.5 ? 1 : T < 4.1 ? 0 : T < 4.9 ? 2 : T < 5.4 ? 0 : T < 5.9 ? 3 : 4; g.save(); g.globalAlpha = a; g.strokeStyle = bars ? '#bff8f3' : 'rgba(255,120,100,.9)'; g.lineWidth = 1.6; g.beginPath(); g.roundRect(292, 40, 34, 16, 3); g.stroke(); g.fillStyle = g.strokeStyle; g.fillRect(327, 45, 3, 6); g.fillStyle = bars >= 3 ? '#20e7aa' : '#bff8f3'; for (let k = 0; k < bars; k++) g.fillRect(295 + k * 8, 43, 6, 10); g.restore(); } } },
+  { id: 'T4', name: 'Mau contato', about: 'Um fio solto faz faíscas num canto, e a luz só pisca quando ele estala. Depois de três estalos ela dá uma batidinha no fio (um pulinho) e a luz firma.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const Z = [3.0, 3.6, 4.1, 4.9]; let on = ramp(T, 5.4, 5.9); for (const z of Z) if (T > z && T < z + 0.18) on = Math.max(on, 0.55); const tap = T > 5.1 && T < 5.5 ? Math.sin((T - 5.1) / 0.4 * Math.PI) : 0; P.mist = Math.max(P.mist, on); P.bright = 0.6 + 0.5 * on; P.by -= 10 * tap; P.bx -= 14 * tap; P.size *= 1 + 0.05 * tap; lampEyes(o, T, 5.8); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const a = ramp(T, 2.6, 3.0) * (1 - ramp(T, 7.0, 8.0)); if (a > 0.01) { g.save(); g.globalAlpha = a; g.strokeStyle = '#6b7a86'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(40, 40); g.quadraticCurveTo(60, 70, 84, 58); g.stroke(); g.restore(); for (const z of [3.0, 3.6, 4.1, 4.9]) if (T > z && T < z + 0.18 && Math.floor(T * 90) % 2) { g.save(); g.strokeStyle = '#d9fff3'; g.lineWidth = 1.4; for (let k = 0; k < 3; k++) { let x = 84, y = 58; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 3; j++) { x += rnd(-12, 12); y += rnd(-12, 8); g.lineTo(x, y); } g.stroke(); } g.restore(); } } } },
+  { id: 'T5', name: 'Falha e tenta de novo', about: 'Acende fraquinha, parece que vai, e se apaga com um suspiro, cabisbaixa. Respira, junta coragem, tenta de novo e agora pega, com um pulinho de alegria.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const up1 = ramp(T, 3.0, 3.8) * (1 - ramp(T, 4.0, 4.9)), droop = ramp(T, 4.0, 4.9) * (1 - ramp(T, 5.6, 6.0)), on2 = ramp(T, 5.9, 6.5), pop = T > 6.5 ? Math.sin(clamp((T - 6.5) / 0.7, 0, 1) * Math.PI) : 0; const on = Math.max(up1 * 0.45, on2); P.mist = Math.max(P.mist, on); P.bright = 0.6 + 0.5 * on + 0.4 * pop; P.by += 10 * droop - 16 * pop; P.tilt += 6 * droop; P.sy *= 1 + 0.08 * pop; lampEyes(o, T, 6.3); if (droop > 0.2) P.lid = Math.max(P.lid, 0.8 * droop); P.happy += 0; },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); if (T > 6.5 && !o.st.j) { o.st.j = 1; for (let k = 0; k < 14; k++) { const an = rnd(0, TAU), v = rnd(30, 90); spark(o, o.px, o.py, Math.cos(an) * v, Math.sin(an) * v, 1.6, 1.0, k % 2 ? '143,244,230' : '32,231,170'); } } } },
+  { id: 'T6', name: 'Carregando (anel)', about: 'Um anel fino em volta dela vai enchendo aos soquinhos, e a cada soquinho o corpo faz um sobressalto e solta um pulso de luz fraco. Quando o anel fecha, ela acende de uma vez.',
+    drive(o, T, e) { const P = o.p; sleepPose(o, e); const prog = clamp(ramp(T, 3.0, 5.6) * (1 + 0.0), 0, 1), step = Math.floor(prog * 6) / 6, done = ramp(T, 5.8, 6.3), jolt = Math.max(0, 1 - ((T * 2.4) % 1) * 4); const on = T < 5.8 ? step * 0.4 * (0.6 + 0.4 * jolt) : done; P.mist = Math.max(P.mist, on); P.bright = 0.6 + 0.5 * on; P.size *= 1 + 0.04 * jolt * (T < 5.8 && T > 3 ? 1 : 0); lampEyes(o, T, 6.1); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); pullDust(o, T); const prog = clamp(ramp(T, 3.0, 5.6), 0, 1), step = Math.floor(prog * 6) / 6, a = ramp(T, 2.8, 3.2) * (1 - ramp(T, 6.0, 6.8)); if (a > 0.01) { g.save(); g.globalAlpha = a; g.strokeStyle = 'rgba(143,244,230,.18)'; g.lineWidth = 3; g.beginPath(); g.ellipse(o.px, o.py, 92, 64, 0, 0, TAU); g.stroke(); g.strokeStyle = '#20e7aa'; g.shadowColor = '#20e7aa'; g.shadowBlur = 10; g.lineCap = 'round'; g.beginPath(); g.ellipse(o.px, o.py, 92, 64, 0, -Math.PI / 2, -Math.PI / 2 + step * TAU); g.stroke(); g.restore(); } } },
+];
+
+/* ---------- build ---------- */
+const orbs = [];
+function card(gridId, id, name, about, v, loop, extra = '') {
+  const el = document.createElement('div'); el.className = 'card';
+  const stage = v.mock === 'island' ? '<div class="stage mockIsland"><div class="pill"><canvas></canvas></div></div>' : v.mock === 'fab' ? '<div class="stage mockFab"><canvas></canvas></div>' : '<div class="stage"><canvas></canvas></div>';
+  el.innerHTML = `<h2><b>${id}</b>${name}</h2>${v.big ? '<canvas class="eyeBig"></canvas>' : ''}${stage}<div class="bar2"><i></i></div>${extra}<p>${about}</p>`;
+  document.getElementById(gridId).appendChild(el); const o = new Orb(el.querySelector('.stage canvas'), v, loop); o.bar = el.querySelector('.bar2 i'); o.logEl = el.querySelector('.log'); if (v.big) o.big = el.querySelector('.eyeBig'); orbs.push(o); return o;
+}
+const envNone = () => ({});
+const envLamp = (T) => ({ deep: 1 - ramp(T, 3, 4.5), asleep: 1 - ramp(T, 3, 4.5), T });
+const envFull = (T) => ({ drowsy: ramp(T, 12, 22) * (1 - ramp(T, 46, 48)), yawn: ramp(T, 24, 25.5) * (1 - ramp(T, 25.5, 28)), asleep: ramp(T, 28, 30) * (1 - ramp(T, 46, 47.5)), shake: ramp(T, 30, 30.3) * (1 - ramp(T, 30.3, 31.3)), deep: ramp(T, 36, 39) * (1 - ramp(T, 46, 47.5)), T });
+const CYCLE = { env: envFull,
+  drive(o, T, e, dt) { const P = o.p; if (T < 12) directorDrive(o); sleepPose(o, e); if (T >= 12 && T < 30) nod(o, T, e); if (T >= 43) TRY[0].drive(o, T - 43, e); },
+  overlay(o, g, T, e, dt) { if (T < 12) directorOverlay(o, g); deepOverlay(o, e, dt); if (T >= 43) TRY[0].overlay(o, g, T - 43, e, dt); } };
+const EYEV = ['Atual', 'R1 · Suave', 'R2 · Neon', 'R3 · Larga'];
+const EYEABOUT = ['O que você viu no H1: um arco cheio com brilho.', 'Pontas mais finas e uma linha de luz bem fininha no alto do arco. Mais delicado, o mais parecido com o atual.', 'Um traço aceso, com o miolo branco e uma faísca em cada ponta, como um sorriso de neon. Lê melhor em tamanho pequeno.', 'Mais largo e mais baixo, com um brilho suave embaixo, como uma bochecha. O mais simpático.'];
+EYEV.forEach((name, i) => { const b = BEH.hum[1]; card('gE', i ? 'R' + i : 'Atual', name, EYEABOUT[i], { env: envNone, eye: i, big: true, scale: 0.36, mock: 'island', drive: (o, T) => { b.drive(o, T, fade(T, 13)); }, overlay: (o, g, T) => b.overlay && b.overlay(o, g, T, fade(T, 13)) }, 14); });
+const bigEyes = (o) => { const c = o.big, g = c.getContext('2d'), dpr = Math.min(2, devicePixelRatio || 1); if (c.width !== c.clientWidth * dpr) { c.width = c.clientWidth * dpr; c.height = c.clientHeight * dpr; } g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, c.clientWidth, c.clientHeight); const cx = c.clientWidth / 2, cy = c.clientHeight / 2 + 4, k = 3.2, bob = Math.sin(o.t * 3.4) * 2; g.save(); g.translate(cx, cy + bob); g.rotate(Math.sin(o.t * 1.7) * 0.12); g.scale(k, k); eyeVar = o.v.eye; for (const x of [-21, 21]) { g.save(); g.translate(x, 0); crescentEye(g, 1, true, 1); g.restore(); } g.restore(); };
+card('gR', 'Ilha', 'Ilha · o sorteio no tamanho real', 'A ilha de 216 × 76, com a Phibe na escala real (0,36). O que passa da caixa da Phibe é cortado, como no app.', { env: envNone, mock: 'island', scale: 0.36, drive: (o) => directorDrive(o), overlay: (o, g) => directorOverlay(o, g) }, 1e9, '<div class="log"></div>');
+card('gR', 'Ilha', 'Ilha · o ciclo todo', 'Ociosa → cabeceando → bocejo → pó com Zzzz → lâmpada T1, em 56 segundos. No app cada fase dura bem mais, segundo a tabela.', Object.assign({ mock: 'island', scale: 0.36 }, CYCLE), 56);
+card('gR', 'Memoir', 'Botão do Memoir · o sorteio', 'O orbe do Memoir, na escala dele (0,46). Aqui com as cores da Phibe; no app ele usa as cores do Memoir.', { env: envNone, mock: 'fab', scale: 0.46, drive: (o) => directorDrive(o), overlay: (o, g) => directorOverlay(o, g) }, 1e9, '<div class="log"></div>');
+
+/* controls */
+const ctl = document.getElementById('dirctl');
+ctl.innerHTML = `<label><input type="checkbox" id="music"> tocando música</label><label>olhos do cantarolar nos mockups: <select id="eyesel">${EYEV.map((n, i) => `<option value="${i}" ${i === 1 ? 'selected' : ''}>${n}</option>`).join('')}</select></label><span>Chances do sorteio: sem música 50% olhar, 20% bolhas, 30% estrela; com música 20% olhar, 8% bolhas, 7% estrela, 35% cantarolar, 30% dançar.</span>`;
+document.getElementById('music').onchange = (e) => { ui.music = e.target.checked; };
+document.getElementById('eyesel').onchange = (e) => { ui.eye = +e.target.value; };
+
+let last = performance.now();
+function loop(n) { requestAnimationFrame(loop); const dt = (n - last) / 1000; last = n; if (document.hidden) return; for (const o of orbs) { const before = o.T; o.frame(dt); if (o.big) bigEyes(o); if (o.T < before) { o.parts.length = 0; o.st = {}; if (o.dir) { o.dir.cur = null; } } o.bar.style.width = o.loop > 1e6 ? '0' : (o.T / o.loop * 100) + '%'; if (o.logEl && o.dir) o.logEl.textContent = (o.dir.cur ? 'agora: ' + NAMES[o.dir.cur] + (ui.music ? ' ♪' : '') : 'descansando…') + '\n' + o.dir.log.slice(0, 5).join(' ← '); } }
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>

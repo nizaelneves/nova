@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phibe · todas as animações</title>
+  <script>
+    // Some viewers open this file in a sandbox where localStorage is blocked; the app's store needs one, so give it a memory one.
+    for (const name of ['localStorage', 'sessionStorage']) {
+      try { window[name].getItem('x'); } catch (e) {
+        const data = {};
+        Object.defineProperty(window, name, { configurable: true, value: { getItem: (k) => (k in data ? data[k] : null), setItem: (k, v) => { data[k] = String(v); }, removeItem: (k) => { delete data[k]; }, clear: () => { for (const k in data) delete data[k]; }, key: () => null, length: 0 } });
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/gallery/main.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe · Movimento do orbe: opções</title>
+<style>
+  :root { --bg: #070b10; --card: #0d141c; --line: rgba(255,255,255,.08); --txt: #e6edf3; --mute: #8b98a5; --mint: #20e7aa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, rgba(20,184,166,.12), transparent 60%), var(--bg); color: var(--txt); font: 14px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  .lead { margin: 0 0 14px; color: var(--mute); max-width: 80ch; }
+  .lead b { color: var(--txt); }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 14px; margin: 0 0 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,14,20,.92); backdrop-filter: blur(8px); color: var(--mute); }
+  .bar select { background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font: inherit; }
+  .badge { margin-left: auto; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: .8rem; }
+  .badge[data-out='true'] { color: #fbbf24; border-color: rgba(251,191,36,.5); }
+  .badge[data-out='false'] { color: var(--mint); border-color: rgba(32,231,170,.4); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card h2 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--mint); font: 700 .8rem ui-monospace, Consolas, monospace; }
+  .card p { margin: 0; color: var(--mute); font-size: .86rem; }
+  .card p span { color: var(--txt); }
+  .stage { position: relative; height: 210px; border-radius: 12px; overflow: hidden; background: #02060a; border: 1px solid var(--line); display: grid; place-items: center; cursor: pointer; }
+  canvas { display: block; }
+  .ask { margin-top: 24px; padding: 16px; border: 1px dashed rgba(32,231,170,.35); border-radius: 14px; color: var(--mute); }
+  .ask b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Phibe · movimento do orbe</h1>
+  <p class="lead">Seis jeitos de ela se mover, todos com o <b>mesmo desenho</b> de hoje (só muda o movimento). <b>Mova o mouse pela página</b> como faria na Phibe: os olhos e o corpo seguem o cursor. <b>Leve o mouse para cima, para fora da janela, e volte</b>: é o momento em que hoje ela “se perde”. Clique em uma caixa para um pulinho.</p>
+
+  <div class="bar">
+    <label>quando o mouse sai da janela:
+      <select id="exit">
+        <option value="own" selected>cada versão tem o seu</option>
+        <option value="center">hoje: ela volta a olhar para baixo/centro</option>
+        <option value="follow">olha até onde você saiu</option>
+        <option value="search">procura você, olhando em volta</option>
+      </select>
+    </label>
+    <span class="badge" id="badge" data-out="false">mouse na janela</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="ask"><b>Para decidir:</b> qual movimento (A a F) e qual comportamento ao sair da janela. Dá para misturar: por exemplo, o corpo da B com os olhos da D.</div>
+</div>
+
+<script>
+const W = 360, H = 280, CX = W / 2, CY = H / 2;
+const COLS = ['32,231,170', '143,244,230', '80,190,255'], HALO = '32,231,170', C2 = '#20e7aa', TONE = '#bff8f3', DARK = '2,8,8';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+/* The same way the app turns "where the cursor is" into a gaze from -1 to 1. */
+function gazeToward(dx, dy) { const d = Math.hypot(dx, dy); if (d < 0.5) return [0, 0]; const a = Math.min(1, (d / 260) ** 0.75); return [dx / d * a, dy / d * a]; }
+
+/* How each version moves. Every number is a feel: spring stiffness, damping, how far the body leans... */
+const VARIANTS = [
+  { id: 'A', name: 'Atual', about: 'Como é hoje: o corpo se move pouco, os olhos seguem o cursor. Ao sair da janela, ela volta a olhar para baixo.', exit: 'center',
+    lean: 0.2, k: 0.028, damp: 0.86, eye: 0.22, bobX: 6, bobY: 7, fx: 0.7, fy: 1.3, breath: 0.05, squash: 0.04, squashMax: 0.16, sacc: 0, latency: 0, near: 0, grow: 0, hop: false, away: 0, wander: true, chase: 0, blink2: 0.0 },
+  { id: 'B', name: 'Elástica', about: 'O corpo se inclina bem mais para o cursor, balança como mola ao parar e estica ao correr. Ao sair, olha para onde você foi.', exit: 'follow',
+    lean: 0.5, k: 0.05, damp: 0.8, eye: 0.3, bobX: 5, bobY: 6, fx: 0.8, fy: 1.4, breath: 0.06, squash: 0.07, squashMax: 0.24, sacc: 0.5, latency: 0, near: 0, grow: 0, hop: true, away: 0, wander: false, chase: 0, blink2: 0.25 },
+  { id: 'C', name: 'Curiosa', about: 'Quando o cursor chega perto, ela se anima: abre os olhos, cresce um pouco e inclina a cabeça. Ao sair, procura você.', exit: 'search',
+    lean: 0.3, k: 0.035, damp: 0.84, eye: 0.2, bobX: 6, bobY: 7, fx: 0.7, fy: 1.2, breath: 0.05, squash: 0.05, squashMax: 0.18, sacc: 0.5, latency: 0.12, near: 330, grow: 0.14, hop: false, away: 0, wander: false, chase: 0, blink2: 0.2 },
+  { id: 'D', name: 'Flutuante', about: 'Paira como se estivesse na água: vai e vem em curvas lentas, respira e faz micro-movimentos nos olhos. Segue o cursor com um leve atraso.', exit: 'follow',
+    lean: 0.12, k: 0.02, damp: 0.9, eye: 0.14, bobX: 16, bobY: 20, fx: 0.45, fy: 0.7, breath: 0.07, squash: 0.03, squashMax: 0.12, sacc: 1.3, latency: 0.28, near: 0, grow: 0, hop: false, away: 7, wander: false, chase: 0, blink2: 0.1 },
+  { id: 'E', name: 'Brincalhona', about: 'Persegue o cursor com um pouco de atraso, dá um pulinho quando ele para e faz piscadas duplas. Ao sair, procura você.', exit: 'search',
+    lean: 0.4, k: 0.06, damp: 0.78, eye: 0.28, bobX: 6, bobY: 8, fx: 0.9, fy: 1.5, breath: 0.06, squash: 0.08, squashMax: 0.26, sacc: 0.4, latency: 0.18, near: 0, grow: 0, hop: true, away: 0, wander: false, chase: 0.16, blink2: 0.5 },
+  { id: 'F', name: 'Calma e atenta', about: 'Quase parada, mas viva: respira, move os olhos de leve e, de vez em quando, desvia o olhar e volta. Ao sair, olha para onde você foi.', exit: 'follow',
+    lean: 0.08, k: 0.018, damp: 0.92, eye: 0.18, bobX: 3, bobY: 4, fx: 0.6, fy: 0.9, breath: 0.04, squash: 0.02, squashMax: 0.1, sacc: 0.35, latency: 0.08, near: 0, grow: 0, hop: false, away: 10, wander: false, chase: 0, blink2: 0.15 },
+];
+
+const pointer = { x: -1, y: -1, inside: false, seen: false, lastMove: 0, vx: 0, vy: 0, lastX: 0, lastY: 0, exitX: 0, exitY: 0, exitAt: 0 };
+const exitSel = document.getElementById('exit'), badge = document.getElementById('badge');
+const setBadge = () => { badge.dataset.out = String(pointer.seen && !pointer.inside); badge.textContent = pointer.inside || !pointer.seen ? 'mouse na janela' : 'mouse FORA da janela'; };
+addEventListener('pointermove', (e) => { pointer.seen = true; pointer.x = e.clientX; pointer.y = e.clientY; pointer.inside = true; pointer.lastMove = performance.now() / 1000; setBadge(); }, { passive: true });
+document.documentElement.addEventListener('pointerleave', (e) => { pointer.inside = false; pointer.exitAt = performance.now() / 1000; pointer.exitX = clamp(e.clientX, 0, innerWidth); pointer.exitY = clamp(e.clientY, 0, innerHeight); setBadge(); });
+document.documentElement.addEventListener('pointerenter', () => { pointer.inside = true; setBadge(); });
+
+class Orb {
+  constructor(canvas, b) {
+    this.b = b; this.cv = canvas; this.g = canvas.getContext('2d');
+    const dpr = Math.min(2, devicePixelRatio || 1), S = 0.62; this.S = S;
+    canvas.width = Math.round(W * S * dpr); canvas.height = Math.round(H * S * dpr); canvas.style.width = W * S + 'px'; canvas.style.height = H * S + 'px';
+    this.g.scale(dpr * S, dpr * S);
+    this.ring = Array.from({ length: 90 }, (_, i) => ({ a: Math.random() * 6.28, r: 30 + Math.random() * 70, s: (0.15 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1), z: 0.7 + Math.random() * 1.5, c: COLS[i % 3] }));
+    this.dust = []; this.t = 0; this.ph = 0; this.px = CX; this.py = CY; this.vx = 0; this.vy = 0; this.bounce = 0; this.blinkT = 3; this.blinkTwice = 0;
+    this.ex = 0; this.ey = 0; this.sx = 0; this.sy = 0; this.nextSacc = 1; this.mood = 0; this.hist = []; this.wanderG = [0, 0]; this.wanderT = 0; this.awayT = rnd(4, 9); this.awayUntil = 0; this.awayG = [0, 0]; this.stillFor = 0; this.hopped = false; this.exitMode = null;
+  }
+  glow(x, y, r, c, a) { const g = this.g, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); }
+  burst() { this.bounce = 1; for (let i = 0; i < 34; i++) { const a = Math.random() * 6.28, v = 0.8 + Math.random() * 2.6; this.dust.push({ x: this.px, y: this.py, vx: Math.cos(a) * v, vy: Math.sin(a) * v, l: 1, s: 1 + Math.random() * 1.6 }); } }
+
+  /* Where the eyes should look this moment, -1 to 1. */
+  target(now) {
+    const b = this.b, r = this.cv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const mode = exitSel.value === 'own' ? b.exit : exitSel.value;
+    if (!pointer.seen) return [0, 0];
+    if (!pointer.inside) {
+      const out = now - pointer.exitAt;
+      if (mode === 'center') return [0, 0.2];
+      if (mode === 'follow') { const g = gazeToward(pointer.exitX - cx, pointer.exitY - cy); const k = out > 5 ? Math.max(0, 1 - (out - 5) / 3) : 1; return [g[0] * k, g[1] * k + (out > 5 ? 0.05 : 0)]; }
+      return out < 0.8 ? gazeToward(pointer.exitX - cx, pointer.exitY - cy) : [Math.sin(out * 0.95) * 0.95, -0.15 + Math.sin(out * 0.55) * 0.25]; // search
+    }
+    if (b.wander && now - pointer.lastMove > 3) { this.wanderT -= 0.016; if (this.wanderT < 0) { this.wanderT = 3.2; this.wanderG = [[-1, -0.4, 0.6, 1][Math.floor(Math.random() * 4)] * 0.8, rnd(-0.3, 0.3)]; } return this.wanderG; }
+    return gazeToward(pointer.x - cx, pointer.y - cy);
+  }
+
+  frame(dtRaw) {
+    const b = this.b, g = this.g, dt = Math.min(0.05, dtRaw), k60 = dt * 60, now = performance.now() / 1000;
+    this.t += dt;
+    const t = this.t, r = this.cv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    // the cursor's speed, to know when it stops (the playful ones hop)
+    const sp = Math.hypot(pointer.x - pointer.lastX, pointer.y - pointer.lastY); pointer.lastX = pointer.x; pointer.lastY = pointer.y;
+
+    // gaze, with a small delay for the ones that "think" before they look
+    let gz = this.target(now);
+    this.hist.push([now, gz]); while (this.hist.length > 2 && this.hist[1][0] < now - b.latency) this.hist.shift();
+    gz = this.hist[0][1];
+    // glancing away now and then
+    if (b.away && pointer.inside) { if (now > this.awayT) { this.awayUntil = now + rnd(0.9, 1.6); this.awayG = [rnd(-0.9, 0.9), rnd(0.2, 0.8)]; this.awayT = now + b.away * rnd(0.8, 1.3); } if (now < this.awayUntil) gz = this.awayG; }
+    // micro-movements of the eyes
+    if (t > this.nextSacc) { this.sx = (Math.random() - 0.5) * b.sacc * 0.5; this.sy = (Math.random() - 0.5) * b.sacc * 0.35; this.nextSacc = t + rnd(0.35, 1.6); }
+    this.sx *= Math.pow(0.9, k60); this.sy *= Math.pow(0.9, k60);
+    const gxn = clamp(gz[0] + this.sx, -1, 1), gyn = clamp(gz[1] + this.sy, -1, 1);
+
+    // curiosity: she perks up when the cursor is near and moving
+    const dist = Math.hypot(pointer.x - cx, pointer.y - cy), moving = now - pointer.lastMove < 1.2 && pointer.inside;
+    const want = b.near && moving && dist < b.near ? 1 : 0; this.mood += (want - this.mood) * (1 - Math.pow(1 - 0.06, k60));
+    const m = this.mood;
+    // a hop when the cursor stops after moving
+    if (b.hop && pointer.inside) { if (sp > 3) { this.stillFor = 0; this.hopped = false; } else { this.stillFor += dt; if (this.stillFor > 0.9 && !this.hopped && now - pointer.lastMove < 3) { this.hopped = true; this.bounce = 0.7; } } }
+
+    this.ph += dt * 60 * 0.016 * (1 + m * 0.5); const T = this.ph;
+    this.ex += (gxn * 9 - this.ex) * (1 - Math.pow(1 - b.eye, k60)); this.ey += (gyn * 6.5 - this.ey) * (1 - Math.pow(1 - b.eye, k60));
+    // the body
+    const cl = (v) => clamp(v, -300, 300), chaseX = clamp((pointer.x - cx) / this.S, -80, 80) * b.chase * (pointer.inside ? 1 : 0), chaseY = clamp((pointer.y - cy) / this.S, -60, 60) * b.chase * (pointer.inside ? 1 : 0);
+    const tx = CX + gxn * 90 * b.lean + chaseX + Math.sin(t * b.fx) * b.bobX + Math.sin(t * b.fx * 2.3) * b.bobX * 0.25, ty = CY + gyn * 90 * b.lean * 0.8 + chaseY + Math.sin(t * b.fy) * b.bobY - this.bounce * 18;
+    for (let i = 0; i < Math.max(1, Math.round(k60)); i++) { this.vx += (tx - this.px) * b.k; this.vy += (ty - this.py) * b.k; this.vx *= b.damp; this.vy *= b.damp; this.px += this.vx; this.py += this.vy; }
+    this.bounce = Math.max(0, this.bounce - 0.02 * k60);
+    const spd = Math.hypot(this.vx, this.vy), sq = Math.min(b.squashMax, spd * b.squash), ang = Math.atan2(this.vy, this.vx);
+    const size = 1 - m * 0.08 + m * b.grow, breath = (1 + Math.sin(t * 1.7) * b.breath + this.bounce * 0.1) * size, bright = 1 + m * 0.35;
+    const px = this.px, py = this.py;
+
+    g.clearRect(0, 0, W, H);
+    const M = (fn) => { g.save(); g.translate(px, py); g.rotate(ang); g.scale((1 + sq) * breath, (1 - sq * 0.6) * breath); g.rotate(-ang); fn(); g.restore(); };
+    g.globalCompositeOperation = 'lighter';
+    M(() => { this.glow(0, 0, 130, HALO, 0.3 * bright); for (let i = 0; i < 10; i++) { const a = T * 0.35 * 60 + i * 0.628, rr = 34 + Math.sin(t * 0.7 + i * 1.7) * 16; this.glow(Math.cos(a) * rr * 1.2, Math.sin(a * 1.15) * rr * 0.85, 50 + Math.sin(t + i) * 8, COLS[i % 3], 0.27 * bright); } });
+    g.globalCompositeOperation = 'source-over';
+    const lobes = [];
+    M(() => { for (let i = 0; i < 9; i++) { const a = T * 60 * (0.2 + i * 0.045) * (i % 2 ? 1 : -1) + i * 0.7, rr = i ? 26 + Math.sin(t * 0.6 + i * 2.1) * 14 : 0, rad = i ? 40 + Math.sin(t * 0.9 + i) * 9 : 56; const x = Math.cos(a) * rr * 1.25, y = Math.sin(a * 1.1) * rr * 0.9; lobes.push([x, y, rad, a]); const d = g.createRadialGradient(x, y, 2, x, y, rad); d.addColorStop(0, `rgba(${DARK},.96)`); d.addColorStop(0.6, `rgba(${DARK},.8)`); d.addColorStop(1, `rgba(${DARK},0)`); g.fillStyle = d; g.beginPath(); g.arc(x, y, rad, 0, 6.283); g.fill(); } });
+    g.globalCompositeOperation = 'lighter';
+    M(() => lobes.forEach(([x, y, rad, a], i) => { if (!i) return; this.glow(x + Math.cos(a + 1.2) * rad * 0.8, y + Math.sin(a + 1.2) * rad * 0.7, 26, COLS[i % 3], (0.3 + Math.sin(t * 1.4 + i) * 0.09) * bright); const n = lobes[(i % 8) + 1]; this.glow((x + n[0]) / 2, (y + n[1]) / 2, 18, COLS[(i + 1) % 3], 0.16 * bright); }));
+    for (const p of this.ring) { p.a += p.s * 0.008 * k60; p.r += Math.sin(t * 0.5 + p.a * 3) * 0.08; const x = px + Math.cos(p.a) * p.r * 1.25 * size, y = py + Math.sin(p.a) * p.r * 0.85 * size; this.glow(x, y, p.z * 4, p.c, 0.42); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(x, y, p.z * 0.7, 0, 6.283); g.fill(); }
+    if (Math.random() < 0.5) { const a = Math.random() * 6.28, rr = 40 + Math.random() * 40; this.dust.push({ x: px + Math.cos(a) * rr * 1.1, y: py + Math.sin(a) * rr * 0.85, vx: Math.cos(a) * 0.3 + this.vx * 0.2, vy: Math.sin(a) * 0.3 - 0.15, l: 1, s: 0.8 + Math.random() * 1.3 }); }
+    for (let i = this.dust.length - 1; i >= 0; i--) { const d = this.dust[i]; d.x += d.vx * k60; d.y += d.vy * k60; d.l -= 0.013 * k60; if (d.l <= 0) { this.dust.splice(i, 1); continue; } this.glow(d.x, d.y, d.s * 4, COLS[i % 3], d.l * 0.5); g.fillStyle = `rgba(255,255,255,${d.l})`; g.beginPath(); g.arc(d.x, d.y, d.s * 0.7, 0, 6.283); g.fill(); }
+    g.globalCompositeOperation = 'source-over';
+
+    // the eyes: tall glowing ovals, white at the heart
+    this.blinkT -= dt; if (this.blinkT < 0) { this.blinkT = rnd(2.4, 5.6); if (Math.random() < b.blink2) this.blinkTwice = 0.3; }
+    if (this.blinkTwice > 0) { this.blinkTwice -= dt; if (this.blinkTwice < 0) this.blinkT = 0.05; }
+    const bl = this.blinkT < 0.13 ? 0.06 : 1, sx = 1 + m * 0.1, sy = (1 + m * 0.3) * bl, tilt = (7 * m + 0) * gxn * 0.9;
+    g.save(); g.translate(px + this.ex, py + this.ey - 2); g.rotate(tilt * Math.PI / 180); g.scale(breath, breath);
+    for (const x of [-21, 21]) {
+      g.save(); g.translate(x, 0); g.scale(sx, sy);
+      g.save(); g.scale(11, 15); const h = g.createRadialGradient(0, 0, 0, 0, 0, 1); h.addColorStop(0, 'rgba(32,231,170,.55)'); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, 0, 1.6, 0, 6.283); g.fill(); g.restore();
+      g.save(); g.scale(6.8, 10); const e = g.createRadialGradient(-0.38, -0.5, 0, 0, 0, 1.4); e.addColorStop(0, '#fff'); e.addColorStop(0.5, TONE); e.addColorStop(1, C2); g.fillStyle = e; g.beginPath(); g.arc(0, 0, 1, 0, 6.283); g.fill(); g.restore();
+      g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(-1.8, -3.2, 2, 2.8, 0, 0, 6.283); g.fill();
+      g.restore();
+    }
+    g.restore();
+  }
+}
+
+const orbs = [];
+const grid = document.getElementById('grid');
+for (const v of VARIANTS) {
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2><b>${v.id}</b>${v.name}</h2><div class="stage"><canvas></canvas></div><p>${v.about}</p>`;
+  grid.appendChild(card);
+  const orb = new Orb(card.querySelector('canvas'), v); orbs.push(orb);
+  card.querySelector('.stage').addEventListener('click', () => orb.burst());
+}
+let last = performance.now();
+function loop(n) { requestAnimationFrame(loop); const dt = (n - last) / 1000; last = n; if (!document.hidden) for (const o of orbs) o.frame(dt); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

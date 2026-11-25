@@ -264,6 +264,9 @@ interface AppState {
   // True while Phibe's voice is playing (drives the orb)
   speaking: boolean;
   setSpeaking: (speaking: boolean) => void;
+  /** Music is playing on this computer (Spotify or another player): Phibe may hum and dance. Nothing sets it yet. */
+  musicPlaying: boolean;
+  setMusicPlaying: (on: boolean) => void;
 
   // Model loading
   modelLoading: boolean;
@@ -599,6 +602,8 @@ export const useAppStore = create<AppState>((set, get) => {
     // ── Voice ───────────────────────────────────────────────────────
     speaking: false,
     setSpeaking: (speaking) => set({ speaking }),
+    musicPlaying: false,
+    setMusicPlaying: (on) => set({ musicPlaying: on }),
 
     // ── Model loading ───────────────────────────────────────────────
     modelLoading: false,

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe · Ociosidade v2</title>
+<style>
+  :root { --bg: #070b10; --card: #0d141c; --line: rgba(255,255,255,.08); --txt: #e6edf3; --mute: #8b98a5; --mint: #20e7aa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, rgba(20,184,166,.12), transparent 60%), var(--bg); color: var(--txt); font: 14px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  h3 { margin: 30px 0 2px; font-size: 1.1rem; color: var(--mint); }
+  .lead, .sub { margin: 0 0 12px; color: var(--mute); max-width: 82ch; }
+  .lead b { color: var(--txt); }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; margin: 0 0 8px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,14,20,.94); backdrop-filter: blur(8px); color: var(--mute); }
+  .bar select { background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font: inherit; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card h2 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--mint); font: 700 .8rem ui-monospace, Consolas, monospace; }
+  .card p { margin: 0; color: var(--mute); font-size: .86rem; }
+  .stage { position: relative; height: 210px; border-radius: 12px; overflow: hidden; background: #02060a; border: 1px solid var(--line); display: grid; place-items: center; }
+  .bar2 { height: 4px; background: #0a1118; border-radius: 2px; overflow: hidden; } .bar2 i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #10c3d3, #20e7aa); }
+  canvas { display: block; }
+  .ask { margin-top: 24px; padding: 16px; border: 1px dashed rgba(32,231,170,.35); border-radius: 14px; color: var(--mute); }
+  .ask b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Phibe · ociosidade, versão 2</h1>
+  <p class="lead">Já decidido: <b>Dormindo = Bocejo e espreguiçar</b> e <b>Sono profundo = Pó de Fibonacci</b>, com <b>“Zzzz”</b> no lugar dos números. Aqui estão as ideias novas para <b>Ociosa</b>, <b>Sonolenta</b> e <b>Acordando</b>. Cada caixa repete só a sua fase; as de Sonolenta terminam entrando no bocejo, e as de Acordando começam no sono profundo, para você ver como se encaixam.</p>
+  <div class="bar"><label>velocidade <select id="speed"><option value="1">normal</option><option value="0.5">devagar</option><option value="2">rápido</option></select></label></div>
+
+  <h3>Pacote escolhido · o ciclo todo</h3>
+  <p class="sub">Com transições simples nas três fases que ainda estão em aberto, para você ver o conjunto. Ociosa, sonolenta, dormindo (bocejo), sono profundo (pó e Zzzz) e acordando.</p>
+  <div class="grid" id="gP"></div>
+
+  <h3>Ociosa · 8 ideias</h3>
+  <p class="sub">Ela está acordada, você acabou de sair da tela.</p>
+  <div class="grid" id="gA"></div>
+
+  <h3>Sonolenta · 8 ideias</h3>
+  <p class="sub">O sono vai chegando; termina no bocejo escolhido.</p>
+  <div class="grid" id="gB"></div>
+
+  <h3>Acordando · 8 ideias</h3>
+  <p class="sub">Começa no sono profundo (pó e Zzzz) e você volta à tela.</p>
+  <div class="grid" id="gC"></div>
+
+  <div class="ask"><b>Para decidir:</b> uma ideia de Ociosa (A1 a A8), uma de Sonolenta (B1 a B8) e uma de Acordando (C1 a C8). Se nenhuma agradar, diga o clima que você quer e eu gero outra rodada.</div>
+</div>
+
+<script>
+const W = 360, H = 280, CX = W / 2, CY = H / 2, TAU = Math.PI * 2;
+const COLS = ['32,231,170', '143,244,230', '80,190,255'], HALO = '32,231,170', C2 = '#20e7aa', TONE = '#bff8f3', DARK = '2,8,8';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v)), rnd = (a, b) => a + Math.random() * (b - a), ramp = (x, a, b) => clamp((x - a) / (b - a), 0, 1), ease = (x) => x * x * (3 - 2 * x);
+const FIB = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
+const state = { speed: 1 };
+document.getElementById('speed').onchange = (e) => { state.speed = +e.target.value; };
+
+/* ---------- the orb ---------- */
+class Orb {
+  constructor(canvas, v, loop) {
+    this.v = v; this.loop = loop; this.cv = canvas; this.g = canvas.getContext('2d'); this.T = 0;
+    const dpr = Math.min(2, devicePixelRatio || 1), S = 0.62;
+    canvas.width = Math.round(W * S * dpr); canvas.height = Math.round(H * S * dpr); canvas.style.width = W * S + 'px'; canvas.style.height = H * S + 'px'; this.g.scale(dpr * S, dpr * S);
+    this.ring = Array.from({ length: 90 }, (_, i) => ({ a: Math.random() * 6.28, r: 30 + Math.random() * 70, s: (0.15 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1), z: 0.7 + Math.random() * 1.5, c: COLS[i % 3] }));
+    this.px = CX; this.py = CY; this.vx = 0; this.vy = 0; this.t = 0; this.ph = 0; this.blinkT = 3; this.fx = 0; this.fy = 0; this.parts = []; this.st = {};
+    this.p = {};
+  }
+  glow(x, y, r, c, a) { const g = this.g, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  frame(dtRaw) {
+    const dt = Math.min(0.05, dtRaw) * state.speed; this.dt = dt; this.T = (this.T + dt) % this.loop; const T = this.T, t = (this.t += dt), g = this.g, P = this.p;
+    Object.assign(P, { size: 1, bright: 1, lid: 0, gx: 0, gy: 0, bx: 0, by: 0, mist: 1, tilt: 0, sx: 1, sy: 1, spin: 1, breathAmp: 0.05, breathSpd: 1.7, happy: 0, ease: 0.3 });
+    this.blinkT -= dt; if (this.blinkT < 0) this.blinkT = rnd(2.4, 5.6); const blink = this.blinkT < 0.13;
+    const e = this.v.env(T); this.e = e;
+    this.v.drive(this, T, e, dt);
+    if (blink) P.lid = Math.max(P.lid, 0.95);
+    this.ph += dt * 60 * 0.016 * P.spin;
+    const k60 = dt * 60, tx = CX + P.bx + Math.sin(t * 0.7) * 5 * P.spin, ty = CY + P.by + Math.sin(t * 1.3) * 6 * P.spin;
+    for (let i = 0; i < Math.max(1, Math.round(k60)); i++) { this.vx += (tx - this.px) * 0.03; this.vy += (ty - this.py) * 0.03; this.vx *= 0.86; this.vy *= 0.86; this.px += this.vx; this.py += this.vy; }
+    this.fx += (P.gx - this.fx) * (1 - Math.pow(1 - P.ease, k60)); this.fy += (P.gy - this.fy) * (1 - Math.pow(1 - P.ease, k60));
+    const px = this.px, py = this.py, br = P.bright * P.mist, sc = P.size * (1 + Math.sin(t * P.breathSpd) * P.breathAmp);
+    g.clearRect(0, 0, W, H);
+    const M = (fn) => { g.save(); g.translate(px, py); g.scale(P.sx * sc, P.sy * sc); fn(); g.restore(); };
+    g.globalCompositeOperation = 'lighter';
+    M(() => { this.glow(0, 0, 130, HALO, 0.3 * br); for (let i = 0; i < 10; i++) { const a = this.ph * 60 * 0.35 + i * 0.628, rr = 34 + Math.sin(t * 0.7 + i * 1.7) * 16; this.glow(Math.cos(a) * rr * 1.2, Math.sin(a * 1.15) * rr * 0.85, 50 + Math.sin(t + i) * 8, COLS[i % 3], 0.27 * br); } });
+    g.globalCompositeOperation = 'source-over';
+    const lobes = [];
+    M(() => { for (let i = 0; i < 9; i++) { const a = this.ph * 60 * (0.2 + i * 0.045) * (i % 2 ? 1 : -1) + i * 0.7, rr = i ? 26 + Math.sin(t * 0.6 + i * 2.1) * 14 : 0, rad = i ? 40 + Math.sin(t * 0.9 + i) * 9 : 56; const x = Math.cos(a) * rr * 1.25, y = Math.sin(a * 1.1) * rr * 0.9; lobes.push([x, y, rad, a]); const d = g.createRadialGradient(x, y, 2, x, y, rad); d.addColorStop(0, `rgba(${DARK},${0.96 * P.mist})`); d.addColorStop(0.6, `rgba(${DARK},${0.8 * P.mist})`); d.addColorStop(1, `rgba(${DARK},0)`); g.fillStyle = d; g.beginPath(); g.arc(x, y, rad, 0, TAU); g.fill(); } });
+    g.globalCompositeOperation = 'lighter';
+    M(() => lobes.forEach(([x, y, rad, a], i) => { if (i) this.glow(x + Math.cos(a + 1.2) * rad * 0.8, y + Math.sin(a + 1.2) * rad * 0.7, 26, COLS[i % 3], (0.3 + Math.sin(t * 1.4 + i) * 0.09) * br); }));
+    for (const q of this.ring) { q.a += q.s * 0.008 * dt * 60 * P.spin; const x = px + Math.cos(q.a) * q.r * 1.25 * sc, y = py + Math.sin(q.a) * q.r * 0.85 * sc; this.glow(x, y, q.z * 4, q.c, 0.42 * P.mist); g.fillStyle = `rgba(255,255,255,${0.75 * P.mist})`; g.beginPath(); g.arc(x, y, q.z * 0.7, 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'source-over';
+    // eyes: ovals that close into a sleeping curve, or into a happy arch
+    const open = 1 - P.lid, closed = clamp((P.lid - 0.72) / 0.28, 0, 1), hap = P.happy;
+    g.save(); g.translate(px + this.fx, py + this.fy - 2); g.rotate(P.tilt * Math.PI / 180); g.scale(sc, sc);
+    for (const x of [-21, 21]) {
+      g.save(); g.translate(x, 0);
+      if (closed < 1 && hap < 1) {
+        g.save(); g.scale(1, Math.max(0.05, open)); g.globalAlpha = (1 - closed) * (1 - hap);
+        g.save(); g.scale(11, 15); const h = g.createRadialGradient(0, 0, 0, 0, 0, 1); h.addColorStop(0, `rgba(32,231,170,${0.55 * Math.min(1.4, P.bright)})`); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, 0, 1.6, 0, TAU); g.fill(); g.restore();
+        g.save(); g.scale(6.8, 10); const eg = g.createRadialGradient(-0.38, -0.5, 0, 0, 0, 1.4); eg.addColorStop(0, '#fff'); eg.addColorStop(0.5, TONE); eg.addColorStop(1, C2); g.fillStyle = eg; g.beginPath(); g.arc(0, 0, 1, 0, TAU); g.fill(); g.restore();
+        g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(-1.8, -3.2, 2, 2.8, 0, 0, TAU); g.fill(); g.restore();
+      }
+      if (closed > 0) { g.globalAlpha = closed * (0.55 + 0.45 * Math.min(1, P.bright)) * (1 - hap); g.strokeStyle = TONE; g.lineWidth = 3.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-7, -1); g.quadraticCurveTo(0, 6, 7, -1); g.stroke(); }
+      if (hap > 0) { g.globalAlpha = hap; g.strokeStyle = TONE; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(-7, 3); g.quadraticCurveTo(0, -6, 7, 3); g.stroke(); }
+      g.globalAlpha = 1; g.restore();
+    }
+    g.restore();
+    this.v.overlay?.(this, g, T, e, dt);
+    this.drawParts(g, dt);
+  }
+  /* particles: txt (letters and numbers), dot (pixels), spark (glow), bub (bubbles) */
+  add(q) { this.parts.push(Object.assign({ l: 1, life: 3, vx: 0, vy: 0, size: 3, col: '#20e7aa', grav: 0 }, q)); }
+  drawParts(g, dt) {
+    for (let i = this.parts.length - 1; i >= 0; i--) {
+      const q = this.parts[i];
+      if (q.pull) { q.vx += (this.px - q.x) * q.pull * dt; q.vy += (this.py - q.y) * q.pull * dt; q.vx *= 0.96; q.vy *= 0.96; }
+      q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; if (q.sway) q.vx += Math.sin(q.y * 0.05) * q.sway * dt; q.l -= dt / q.life;
+      if (q.l <= 0 || (q.die && Math.hypot(q.x - this.px, q.y - this.py) < 8)) { this.parts.splice(i, 1); continue; }
+      const a = Math.min(1, q.l * 1.5);
+      if (q.kind === 'txt') { g.save(); g.globalAlpha = a * 0.9; g.fillStyle = q.col; g.font = `${q.bold ? 700 : 600} ${q.size * (q.pop ? 0.6 + 0.4 * Math.min(1, (1 - q.l) * 6) : 1)}px ui-monospace, Consolas, monospace`; g.textAlign = 'center'; g.fillText(q.txt, q.x, q.y); g.restore(); }
+      else if (q.kind === 'spark') { this.glow(q.x, q.y, q.size * 3.5, q.rgb || '32,231,170', a * 0.8); g.fillStyle = `rgba(255,255,255,${a})`; g.beginPath(); g.arc(q.x, q.y, q.size * 0.5, 0, TAU); g.fill(); }
+      else if (q.kind === 'bub') { const r = q.size * (1 + (1 - q.l) * 0.3); g.save(); g.globalAlpha = a * 0.8; g.strokeStyle = 'rgba(143,244,230,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(q.x, q.y, r, 0, TAU); g.stroke(); g.fillStyle = 'rgba(32,231,170,.12)'; g.fill(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(q.x - r * 0.35, q.y - r * 0.35, r * 0.18, 0, TAU); g.fill(); g.restore(); }
+      else { g.globalAlpha = a * 0.9; g.fillStyle = q.col; g.fillRect(q.x, q.y, q.size, q.size); g.globalAlpha = 1; }
+    }
+  }
+  every(key, secs, fn) { this.st[key] = (this.st[key] ?? secs) - this.dt; if (this.st[key] <= 0) { this.st[key] += secs; fn(); } }
+}
+const glowAt = (o, x, y, r, c, a) => o.glow(x, y, r, c, a);
+const num = (o, x, y, vx, vy, size = 12, life = 3.2, pop = true) => { o.st.fi = ((o.st.fi ?? -1) + 1) % FIB.length; o.add({ kind: 'txt', txt: FIB[o.st.fi], x, y, vx, vy, size, life, pop, col: o.st.fi % 2 ? '#bff8f3' : '#20e7aa', sway: 6 }); };
+const spark = (o, x, y, vx, vy, size = 2, life = 1.4, rgb = '32,231,170') => o.add({ kind: 'spark', x, y, vx, vy, size, life, rgb });
+
+/* ---------- the chosen sleep: Dormindo (yawn and stretch) and Sono profundo (dust and Zzzz) ---------- */
+function sleepPose(o, e) { // e: yawn, asleep, deep
+  const P = o.p, y = e.yawn || 0, a = e.asleep || 0, d = e.deep || 0;
+  P.lid = Math.max(P.lid, y * 0.85 + (e.drowsy || 0) * 0.4 + a * 0.5 + d * 0.6);
+  P.sy *= 1 + 0.2 * y; P.sx *= 1 - 0.1 * y; P.by += -8 * y + 22 * a * (1 - d) + 4 * d; P.size *= 1 - 0.28 * a * (1 - d) - 0.05 * d;
+  P.bright *= 1 - 0.5 * a * (1 - d) - 0.3 * d; P.spin *= 1 - 0.7 * a * (1 - d) - 0.6 * d; P.mist *= 1 - 0.95 * d;
+  if (e.shake) P.bx += Math.sin(o.t * 40) * 5 * e.shake;
+}
+function deepOverlay(o, e, dt) {
+  const d = e.deep || 0;
+  if (d > 0.1 && d < 0.999) for (let i = 0; i < 4; i++) { const an = Math.random() * TAU, r = Math.random() * 70; o.add({ kind: 'dot', x: o.px + Math.cos(an) * r * 1.2, y: o.py + Math.sin(an) * r * 0.85, vx: rnd(5, 28), vy: rnd(-22, -4), life: rnd(2, 4.5), size: 2 + Math.random() * 1.6, col: Math.random() < 0.5 ? '#20e7aa' : '#10c3d3' }); }
+  if (d > 0.7) o.every('zz', 0.7, () => { const k = (o.st.zk = ((o.st.zk ?? -1) + 1) % 4); if (k === 3) return; const sizes = [12, 16, 22]; o.add({ kind: 'txt', txt: k === 0 ? 'z' : 'Z', x: o.px + 30 + k * 11, y: o.py - 28 - k * 14, vx: 9, vy: -13, size: sizes[k], life: 3.4, bold: true, col: '#bff8f3', sway: 5, pop: true }); });
+}
+
+/* ---------- the three "free" stages, each version has its own clock (loop) ---------- */
+const envFull = (T) => ({ drowsy: ramp(T, 8, 16) * (1 - ramp(T, 40, 42)), yawn: ramp(T, 18, 19.5) * (1 - ramp(T, 19.5, 22)), asleep: ramp(T, 22, 24) * (1 - ramp(T, 40, 41.5)), shake: ramp(T, 24, 24.3) * (1 - ramp(T, 24.3, 25.3)), deep: ramp(T, 30, 33) * (1 - ramp(T, 40, 41.5)), wk: ramp(T, 40, 41) * (1 - ramp(T, 44, 46)) });
+const envA = (T) => ({ T });
+const envB = (T) => ({ drowsy: ramp(T, 0.5, 7), yawn: ramp(T, 8, 9.4) * (1 - ramp(T, 9.4, 11.5)), asleep: ramp(T, 11.5, 13) * (1 - ramp(T, 15, 16)), shake: ramp(T, 13, 13.3) * (1 - ramp(T, 13.3, 14.3)), T });
+const envC = (T) => ({ deep: 1 - ramp(T, 3, 4.5), wk: ramp(T, 3, 4) * (1 - ramp(T, 12, 14)), T });
+
+const P_VARIANT = { id: 'P', name: 'Ciclo completo', about: 'Ociosa → sonolenta → bocejo e espreguiçar → pó de Fibonacci com Zzzz → acordando, com transições simples.', loop: 48, env: envFull,
+  drive(o, T, e) { const P = o.p; const alertish = 1 - e.asleep; P.gx = Math.sin(o.t * 0.7) * 9 * (1 - e.drowsy); P.gy = 3 * e.drowsy; P.bx = Math.sin(o.t * 0.45) * 10 * (1 - e.drowsy); sleepPose(o, e); if (e.wk) { P.size *= 1 + 0.08 * Math.sin(e.wk * Math.PI); } },
+  overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); } };
+
+/* ====== Ociosa ====== */
+const A = [
+  { id: 'A1', name: 'Olhares ao redor', about: 'Olha para os cantos da tela, um depois do outro, inclinando a cabeça e se deslocando de leve para onde olha, como quem procura alguém.',
+    drive(o, T) { const P = o.p, tg = [[-1, 0], [0.6, -0.5], [1, 0.3], [0, 0.8], [-0.7, -0.5], [0.2, 0]][Math.floor(T / 2.3) % 6]; P.gx = tg[0] * 13; P.gy = tg[1] * 9; P.bx = tg[0] * 16; P.by = tg[1] * 8; P.tilt = tg[0] * 12; P.ease = 0.22; } },
+  { id: 'A2', name: 'Cantarolando', about: 'Balança no ritmo de uma música que só ela ouve, de olhos meio fechados e felizes, soltando notinhas musicais que sobem.',
+    drive(o, T) { const P = o.p, b = Math.sin(T * TAU * 0.55); P.by = -Math.abs(b) * 9; P.tilt = b * 7; P.bx = Math.sin(T * TAU * 0.275) * 14; P.sy = 1 + Math.abs(b) * 0.05; P.lid = 0.3; P.happy = 0.5; P.gx = b * 5; },
+    overlay(o) { o.every('n', 1.1, () => o.add({ kind: 'txt', txt: Math.random() < 0.5 ? '♪' : '♫', x: o.px + rnd(30, 56), y: o.py - 20, vx: 10, vy: -22, size: 17, life: 2.6, col: '#bff8f3', sway: 8, pop: true })); } },
+  { id: 'A3', name: 'Contando números', about: 'Olha para cima e “conta” baixinho: números de Fibonacci aparecem um a um sobre a cabeça e ela os acompanha com os olhos.',
+    drive(o, T) { const P = o.p, i = Math.floor(T / 1.0), ph = (T % 1.0); P.gy = -7; P.gx = Math.sin(i * 1.9) * 9; P.tilt = Math.sin(i * 1.9) * 6; P.lid = 0.1; P.by = -4; },
+    overlay(o) { o.every('c', 1.0, () => { const k = Math.floor(o.T); num(o, o.px + Math.sin(k * 1.9) * 40, o.py - 62, 0, -8, 18, 1.8, true); }); } },
+  { id: 'A4', name: 'Soprando bolhas', about: 'Enche as bochechas, de olhos apertados, e sopra bolhas que sobem e estouram em pontinhos de luz.',
+    drive(o, T) { const P = o.p, ph = (T % 2.4) / 2.4, blow = ph < 0.5 ? ease(ph / 0.5) : 0, rel = ph >= 0.5 && ph < 0.6 ? 1 - (ph - 0.5) / 0.1 : 0; P.size = 1 + 0.07 * blow; P.lid = 0.55 * blow; P.bx = -6 * blow; P.sx = 1 + 0.05 * rel; P.gx = 5; },
+    overlay(o, g, T) { if (o.st.lastPh === undefined) o.st.lastPh = 0; const ph = (T % 2.4) / 2.4; if (ph >= 0.5 && o.st.lastPh < 0.5) o.add({ kind: 'bub', x: o.px + 52, y: o.py - 4, vx: rnd(8, 18), vy: -16, size: rnd(7, 12), life: 2.6, sway: 6 }); if (ph < o.st.lastPh) { /* new cycle */ } o.st.lastPh = ph;
+      for (const q of o.parts) if (q.kind === 'bub' && q.l < 0.1 && !q.popped) { q.popped = true; for (let i = 0; i < 6; i++) spark(o, q.x, q.y, rnd(-30, 30), rnd(-30, 30), 1.4, 0.7, '143,244,230'); } } },
+  { id: 'A5', name: 'Caçando uma faísca', about: 'Uma faísca voa em volta e ela a persegue com o olhar e com o corpo, dando um pequeno bote quando a faísca passa perto.',
+    drive(o, T) { const P = o.p, a = T * 1.4, sx = CX + Math.cos(a) * 118, sy = CY + Math.sin(a * 1.3) * 62; o.st.sx = sx; o.st.sy = sy; const near = Math.hypot(sx - o.px, sy - o.py) < 90 ? 1 : 0; P.gx = clamp((sx - CX) / 12, -1, 1) * 11; P.gy = clamp((sy - CY) / 9, -1, 1) * 8; P.bx = (sx - CX) * (0.12 + 0.2 * near); P.by = (sy - CY) * (0.12 + 0.2 * near); P.ease = 0.35; },
+    overlay(o, g) { const x = o.st.sx, y = o.st.sy; o.glow(x, y, 14, '32,231,170', 0.9); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, 2, 0, TAU); g.fill(); o.every('t', 0.05, () => spark(o, x, y, 0, 0, 1.2, 0.5, '143,244,230')); } },
+  { id: 'A6', name: 'Espiando as bordas', about: 'Desliza até a beirada da tela e espia para fora, como quem olha pela janela, e depois volta para o centro.',
+    drive(o, T) { const P = o.p, ph = (T % 8) / 8, side = Math.floor(T / 8) % 2 ? 1 : -1, out = ph < 0.15 ? ease(ph / 0.15) : ph < 0.65 ? 1 : ph < 0.8 ? 1 - ease((ph - 0.65) / 0.15) : 0; P.bx = side * 78 * out; P.gx = side * 14 * out; P.tilt = side * 12 * out; P.size = 1 - 0.08 * out; P.gy = -2 * out; P.ease = 0.25; } },
+  { id: 'A7', name: 'Dançando de leve', about: 'Balança de um lado para o outro no compasso, de olhos felizes, com faíscas saindo a cada batida.',
+    drive(o, T) { const P = o.p, beat = T * TAU * 0.9, s = Math.sin(beat); P.bx = s * 22; P.tilt = s * 10; P.by = -Math.abs(Math.cos(beat)) * 8; P.sx = 1 + Math.abs(Math.cos(beat)) * 0.05; P.sy = 1 - Math.abs(Math.cos(beat)) * 0.05; P.happy = 0.7; P.lid = 0.3; },
+    overlay(o, g, T) { const ph = (T * 0.9) % 1; if (ph < (o.st.lp ?? 1)) for (let i = 0; i < 5; i++) spark(o, o.px + rnd(-40, 40), o.py + rnd(-30, 30), rnd(-26, 26), rnd(-40, -10), 1.4, 0.9, '143,244,230'); o.st.lp = ph; } },
+  { id: 'A8', name: 'Sacudindo a poeira', about: 'De tempos em tempos dá uma sacudida rápida e solta uma nuvem de faíscas, e depois volta à calma, como quem se ajeita.',
+    drive(o, T) { const P = o.p, ph = T % 3.6, sh = ph < 0.55 ? 1 : 0; P.bx = Math.sin(o.t * 55) * 7 * sh; P.sx = 1 + 0.06 * sh; P.sy = 1 - 0.05 * sh; P.lid = 0.45 * sh; P.size = 1 + 0.03 * Math.sin(ph * 1.7); },
+    overlay(o, g, T) { const ph = T % 3.6; if (ph < 0.55 && (o.st.lastSh ?? 9) > ph) for (let i = 0; i < 14; i++) spark(o, o.px + rnd(-50, 50), o.py + rnd(-30, 30), rnd(-60, 60), rnd(-60, 30), rnd(1, 2), 1.3, i % 2 ? '143,244,230' : '32,231,170'); o.st.lastSh = ph; } },
+].map((v) => Object.assign(v, { loop: v.id === 'A6' ? 16 : v.id === 'A3' ? 14 : 14.4, env: envA }));
+
+/* ====== Sonolenta (ends in the yawn) ====== */
+const sl = (o, e, extra) => { sleepPose(o, e); extra && extra(); };
+const B = [
+  { id: 'B1', name: 'Cabeceando', about: 'A cabeça cai devagar, ela dá um tranco, arregala os olhos e volta, e cada vez cai um pouco mais, até que o bocejo vem.',
+    drive(o, T, e) { const P = o.p, ph = (T / 2.6) % 1, dip = ph < 0.75 ? ease(ph / 0.75) : 0, jerk = ph < 0.1 ? 1 - ph / 0.1 : 0; sl(o, e); P.by += 20 * dip * e.drowsy * (1 - e.asleep); P.lid = Math.max(P.lid, (0.25 + 0.6 * dip) * e.drowsy * (1 - e.asleep)) * (1 - 0.9 * jerk * e.drowsy * (1 - e.asleep)); P.size *= 1 + 0.07 * jerk * e.drowsy * (1 - e.asleep); P.tilt = 6 * dip * e.drowsy; } },
+  { id: 'B2', name: 'Bocejos pequenos', about: 'Dá bocejinhos tímidos, cada vez mais seguidos, esticando de leve e piscando devagar, até o bocejo grande.',
+    drive(o, T, e) { const P = o.p; sl(o, e); const ys = [1.5, 3.9, 5.8, 7.2]; let y = 0; for (const s of ys) y = Math.max(y, Math.sin(clamp((T - s) / 0.9, 0, 1) * Math.PI)); P.sy *= 1 + 0.12 * y * (1 - e.asleep); P.lid = Math.max(P.lid, (0.3 * e.drowsy + 0.5 * y) * (1 - e.asleep)); P.by += -4 * y; P.gy = 3 * e.drowsy; } },
+  { id: 'B3', name: 'Luz baixando', about: 'O brilho vai diminuindo devagar, como uma lâmpada com dimmer, e a névoa se recolhe em volta dela até só restar o brilho dos olhos.',
+    drive(o, T, e) { const P = o.p; sl(o, e); P.bright *= 1 - 0.55 * e.drowsy; P.mist *= 1 - 0.3 * e.drowsy; P.spin *= 1 - 0.5 * e.drowsy; P.size *= 1 - 0.1 * e.drowsy; P.lid = Math.max(P.lid, 0.3 * e.drowsy); P.breathSpd = 1.7 - e.drowsy; } },
+  { id: 'B4', name: 'Contando ovelhinhas', about: 'Números de Fibonacci pulam uma cerca imaginária da esquerda para a direita; ela os segue com os olhos, cada vez mais devagar e mais pesados.',
+    drive(o, T, e) { const P = o.p; sl(o, e); P.gx = Math.sin(o.t * 1.1) * 10 * (1 - e.drowsy * 0.6); P.gy = -3; P.lid = Math.max(P.lid, 0.15 + 0.5 * e.drowsy * (1 - e.asleep)); },
+    overlay(o, g, T, e) { if (e.asleep > 0.5 || T > 8) return; o.every('sheep', 1.5 + e.drowsy * 0.6, () => { o.st.fi = ((o.st.fi ?? -1) + 1) % FIB.length; o.add({ kind: 'txt', txt: FIB[o.st.fi], x: 30, y: CY + 50, vx: 62, vy: -70, grav: 130, size: 15, life: 2.4, col: '#bff8f3', pop: true }); }); } },
+  { id: 'B5', name: 'Olhos vagando', about: 'Os olhos escorregam para baixo e para o lado, ela se força a abrir e volta para cima, até não aguentar mais e fechar.',
+    drive(o, T, e) { const P = o.p; sl(o, e); const ph = (T / 3.2) % 1; const slide = ph < 0.7 ? ease(ph / 0.7) : 0; P.gy = 9 * slide * e.drowsy; P.gx = Math.sin(T * 0.9) * 7 * slide; P.lid = Math.max(P.lid, (0.2 + 0.55 * slide) * e.drowsy * (1 - e.asleep)); P.ease = 0.08 + 0.2 * (1 - slide); } },
+  { id: 'B6', name: 'Embalada', about: 'Balança devagar de um lado para o outro, como ninando, enquanto uma luazinha vai surgindo no canto da tela.',
+    drive(o, T, e) { const P = o.p; sl(o, e); P.bx += Math.sin(o.t * 1.1) * 22 * e.drowsy * (1 - e.asleep); P.tilt = Math.sin(o.t * 1.1) * 9 * e.drowsy * (1 - e.asleep); P.lid = Math.max(P.lid, 0.45 * e.drowsy); P.breathSpd = 1.2; P.spin *= 1 - 0.3 * e.drowsy; },
+    overlay(o, g, T, e) { const a = e.drowsy * (1 - e.asleep * 0.4); if (a < 0.02) return; g.save(); g.globalAlpha = a; const x = 300, y = 52; o.glow(x, y, 30, '191,248,243', 0.25); g.fillStyle = '#bff8f3'; g.beginPath(); g.arc(x, y, 12, 0, TAU); g.fill(); g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(x + 6, y - 3, 11, 0, TAU); g.fill(); g.restore(); } },
+  { id: 'B7', name: 'Esfregando os olhos', about: 'Aperta os olhos e balança a cabeça como quem esfrega os olhos para espantar o sono, abre grande, e o sono volta mais forte.',
+    drive(o, T, e) { const P = o.p; sl(o, e); const ph = (T % 3.2) / 3.2, rub = ph < 0.3 ? 1 : 0, wide = ph > 0.3 && ph < 0.42 ? 1 : 0; P.lid = Math.max(P.lid, (0.8 * rub + 0.35) * e.drowsy * (1 - e.asleep)) * (1 - 0.9 * wide * e.drowsy * (1 - e.asleep)); P.tilt = Math.sin(o.t * 26) * 5 * rub * e.drowsy; P.bx += Math.sin(o.t * 26) * 4 * rub * e.drowsy; P.size *= 1 + 0.06 * wide * e.drowsy; } },
+  { id: 'B8', name: 'Pensamento esmaecendo', about: 'Uma bolhinha de pensamento com reticências aparece e vai ficando fraca, enquanto o brilho dela cai e as pálpebras pesam.',
+    drive(o, T, e) { const P = o.p; sl(o, e); P.bright *= 1 - 0.4 * e.drowsy; P.lid = Math.max(P.lid, 0.4 * e.drowsy); P.gy = -3 * (1 - e.drowsy); P.gx = 6 * (1 - e.drowsy); },
+    overlay(o, g, T, e) { if (e.asleep > 0.4) return; const a = (1 - e.drowsy * 0.85) * ramp(T, 0, 1); g.save(); g.globalAlpha = a * 0.9; const x = o.px + 56, y = o.py - 62; g.fillStyle = 'rgba(143,244,230,.12)'; g.strokeStyle = 'rgba(143,244,230,.7)'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(x, y, 26, 15, 0, 0, TAU); g.fill(); g.stroke(); for (const [dx, dy, r] of [[-22, 24, 3.6], [-30, 32, 2.2]]) { g.beginPath(); g.arc(x + dx, y + dy, r, 0, TAU); g.fill(); g.stroke(); } g.fillStyle = '#bff8f3'; for (let i = -1; i <= 1; i++) { g.globalAlpha = a * (0.5 + 0.5 * Math.max(0, Math.sin(T * 2.4 - i * 0.8))); g.beginPath(); g.arc(x + i * 9, y, 2.2, 0, TAU); g.fill(); } g.restore(); } },
+].map((v) => Object.assign(v, { loop: 17, env: envB }));
+B.forEach((v) => { const ov = v.overlay; v.overlay = (o, g, T, e, dt) => { ov && ov(o, g, T, e, dt); if (T < 0.2) { /* new cycle: clear leftovers */ o.parts.length = 0; } }; });
+
+/* ====== Acordando (starts in the deep sleep: dust and Zzzz) ====== */
+const wakeBase = (o, e) => { sleepPose(o, e); };
+const C = [
+  { id: 'C1', name: 'Juntar o pó', about: 'Os pontinhos e as letras voltam voando para o centro, o corpo se refaz de dentro para fora, e ela pisca duas vezes e abre os olhos com um pequeno brilho.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); P.lid = Math.max(P.lid * (1 - ramp(T, 4.2, 4.8)), 0); const bl = T > 5.4 && T < 5.6 || T > 5.9 && T < 6.1; if (bl) P.lid = 0.95; P.size *= 1 + 0.1 * Math.sin(ramp(T, 4.5, 5.2) * Math.PI); P.bright *= 1 + 0.5 * Math.sin(ramp(T, 4.5, 5.2) * Math.PI); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.5) for (const q of o.parts) { q.pull = 3.5; q.die = true; } } },
+  { id: 'C2', name: 'Espreguiçar e pulinho', about: 'Estica para cima, se sacode, dá dois pulinhos e olha ao redor, ainda meio sonolenta, como quem acorda de bom humor.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const st = ramp(T, 4.3, 5.2) * (1 - ramp(T, 5.2, 6.2)), hop1 = Math.max(0, Math.sin(clamp((T - 6.4) / 0.6, 0, 1) * Math.PI)), hop2 = Math.max(0, Math.sin(clamp((T - 7.2) / 0.6, 0, 1) * Math.PI)); P.sy *= 1 + 0.2 * st; P.sx *= 1 - 0.09 * st; P.lid = Math.max(P.lid, 0.8 * st); P.by += -(14 * hop1 + 12 * hop2); P.sy *= 1 + 0.06 * (hop1 + hop2); P.gx = T > 8 ? Math.sin((T - 8) * 1.6) * 12 : 0; P.bx += T > 8 ? Math.sin((T - 8) * 1.6) * 14 : 0; },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.2) for (const q of o.parts) { q.pull = 2.5; q.die = true; } } },
+  { id: 'C3', name: 'Susto', about: 'Acorda de repente, como num susto: o corpo salta, os olhos arregalam e saem faíscas para todo lado, e depois ela se acalma, aliviada.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const j = T > 3 ? Math.exp(-(T - 3) * 3.2) : 0; P.size *= 1 + 0.2 * j; P.lid = Math.max(0, P.lid * (1 - ramp(T, 3, 3.15))); P.sy *= 1 + 0.15 * j; P.by -= 16 * j; P.bright *= 1 + 0.8 * j; P.tilt = Math.sin(T * 30) * 5 * j; P.gx = Math.sin(T * 5) * 12 * (T > 3.5 ? Math.exp(-(T - 3.5)) : 0); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T >= 3 && (o.st.sc ?? 0) < 3) { o.st.sc = 3.1; for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), v = rnd(40, 130); spark(o, o.px, o.py, Math.cos(a) * v, Math.sin(a) * v, rnd(1, 2.2), 1.2, i % 2 ? '143,244,230' : '32,231,170'); } for (const q of o.parts) if (q.kind !== 'spark') o.parts.splice(o.parts.indexOf(q), 1); } if (T < 0.2) o.st.sc = 0; } },
+  { id: 'C4', name: 'Lâmpada acendendo', about: 'A luz volta como uma lâmpada fluorescente: três piscadas fracas, uma mais forte e então acende por inteiro, enquanto os olhos abrem devagar.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const fl = [[3.2, 3.4, 0.35], [3.7, 3.95, 0.55], [4.3, 4.5, 0.8]]; let on = ramp(T, 4.7, 5.4); for (const [a, b, v] of fl) if (T > a && T < b) on = Math.max(on, v); P.mist = on; P.bright = 0.7 + 0.6 * on; P.lid = Math.max(P.lid, 0.55 * (1 - ramp(T, 4.7, 6.2))) * (on > 0.2 ? 1 : 1); P.spin *= 0.4 + 0.6 * on; },
+    overlay(o, g, T, e, dt) { deepOverlay({ ...o, add: o.add.bind(o), every: o.every.bind(o), px: o.px, py: o.py, st: o.st }, { deep: e.deep }, dt); } },
+  { id: 'C5', name: 'Nasce uma estrela', about: 'Uma estrelinha brilha no centro, cresce e de dentro dela se abre o corpo, a névoa e por último os olhos, como um nascimento de estrela.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const born = ramp(T, 4, 6.4); P.mist = born * born; P.size *= 0.4 + 0.6 * ease(born); P.lid = Math.max(P.lid, 1 - ramp(T, 5.8, 6.8)); P.spin *= 0.5 + 0.5 * born; P.bright *= 0.6 + 0.6 * born; },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.5) for (const q of o.parts) { q.pull = 3; q.die = true; } const s = Math.sin(clamp((T - 3.4) / 3.2, 0, 1) * Math.PI); if (s > 0.01) { const r = 6 + 24 * s; o.glow(o.px, o.py, r * 2.2, '255,255,255', 0.55 * s); g.save(); g.globalAlpha = s; g.strokeStyle = '#fff'; g.lineWidth = 1.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(o.px - r, o.py); g.lineTo(o.px + r, o.py); g.moveTo(o.px, o.py - r); g.lineTo(o.px, o.py + r); g.stroke(); g.restore(); } } },
+  { id: 'C6', name: 'Bocejo de acordar', about: 'Acorda com um bocejo grande: os olhos se espremem, o corpo estica para os lados, e só então abre os olhos, devagar, ainda meio sem foco.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const y = Math.sin(ramp(T, 4, 6.4) * Math.PI); P.sy *= 1 + 0.22 * y; P.sx *= 1 - 0.12 * y; P.lid = Math.max(P.lid * (1 - ramp(T, 6.4, 7.6)), 0.9 * y * (1 - ramp(T, 5.6, 6.4))); P.gx = T > 7 ? Math.sin((T - 7) * 2.2) * 8 * Math.exp(-(T - 7) * 0.5) : 0; P.gy = T > 7 ? 4 * Math.exp(-(T - 7) * 0.8) : 0; },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.2) for (const q of o.parts) { q.pull = 2.5; q.die = true; } } },
+  { id: 'C7', name: 'Procurando você', about: 'Abre os olhos já olhando em volta, ansiosa, até “achar” o cursor e abrir um sorriso de olhos felizes, com faíscas de alegria.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const s = T > 4.5 && T < 8 ? Math.sin((T - 4.5) * 3.2) : 0, found = ramp(T, 8, 8.4) * (1 - ramp(T, 11, 12)); P.gx = s * 14 * (1 - found) + 12 * found; P.gy = -2 * found; P.bx += s * 14 * (1 - found) + 24 * found; P.happy = found; P.lid = Math.max(P.lid * (1 - ramp(T, 4.2, 4.7)), 0); P.size *= 1 + 0.08 * found; P.tilt = 8 * found; },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.2) for (const q of o.parts) { q.pull = 2.5; q.die = true; } if (T > 8) { const cx = o.px + 104, cy = o.py + 4; g.save(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + 5, cy + 14); g.lineTo(cx + 8, cy + 9); g.lineTo(cx + 14, cy + 9); g.closePath(); g.fill(); g.restore(); o.every('joy', 0.12, () => { if (T < 11) spark(o, o.px + rnd(-40, 40), o.py + rnd(-30, 20), rnd(-20, 20), rnd(-40, -10), 1.5, 1, '143,244,230'); }); } } },
+  { id: 'C8', name: 'Bom dia', about: 'Acorda sorrindo: os olhos viram dois arcos felizes, ela balança a cabeça de um lado para o outro como num cumprimento, e um anel de luz se abre como um “oi”.',
+    drive(o, T, e) { const P = o.p; wakeBase(o, e); const h = ramp(T, 4.6, 5.2) * (1 - ramp(T, 9.6, 10.6)); P.happy = h; P.tilt = Math.sin((T - 5) * 4.4) * 12 * h; P.bx += Math.sin((T - 5) * 4.4) * 18 * h; P.size *= 1 + 0.06 * h; P.lid = Math.max(P.lid * (1 - ramp(T, 4.2, 4.7)), 0); },
+    overlay(o, g, T, e, dt) { deepOverlay(o, e, dt); if (T > 3 && T < 4.4) for (const q of o.parts) { q.pull = 2.5; q.die = true; } for (const t0 of [5.0, 5.6]) { const s = clamp((T - t0) / 1.2, 0, 1); if (s > 0 && s < 1) { g.save(); g.strokeStyle = `rgba(32,231,170,${(1 - s) * 0.7})`; g.lineWidth = 2; g.beginPath(); g.ellipse(o.px, o.py, 60 + s * 90, 44 + s * 64, 0, 0, TAU); g.stroke(); g.restore(); } } } },
+].map((v) => Object.assign(v, { loop: 15, env: envC }));
+
+/* ---------- build the cards ---------- */
+const orbs = [];
+function build(list, gridId) {
+  const grid = document.getElementById(gridId);
+  for (const v of list) {
+    const card = document.createElement('div'); card.className = 'card';
+    card.innerHTML = `<h2><b>${v.id}</b>${v.name}</h2><div class="stage"><canvas></canvas></div><div class="bar2"><i></i></div><p>${v.about}</p>`;
+    grid.appendChild(card); const o = new Orb(card.querySelector('canvas'), v, v.loop); o.bar = card.querySelector('.bar2 i'); orbs.push(o);
+  }
+}
+build([P_VARIANT], 'gP'); build(A, 'gA'); build(B, 'gB'); build(C, 'gC');
+let last = performance.now();
+function loop(n) { requestAnimationFrame(loop); const dt = (n - last) / 1000; last = n; if (document.hidden) return; for (const o of orbs) { const before = o.T; o.frame(dt); if (o.T < before) { o.parts.length = 0; o.st = {}; } o.bar.style.width = (o.T / o.loop * 100) + '%'; } }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

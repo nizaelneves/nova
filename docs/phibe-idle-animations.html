@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phibe · Ociosidade: opções</title>
+<style>
+  :root { --bg: #070b10; --card: #0d141c; --line: rgba(255,255,255,.08); --txt: #e6edf3; --mute: #8b98a5; --mint: #20e7aa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(1200px 700px at 50% -10%, rgba(20,184,166,.12), transparent 60%), var(--bg); color: var(--txt); font: 14px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 18px 80px; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  .lead { margin: 0 0 14px; color: var(--mute); max-width: 82ch; }
+  .lead b { color: var(--txt); }
+  .bar { position: sticky; top: 0; z-index: 5; padding: 12px 14px; margin: 0 0 16px; border: 1px solid var(--line); border-radius: 14px; background: rgba(9,14,20,.94); backdrop-filter: blur(8px); color: var(--mute); display: grid; gap: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .bar button, .bar select { background: #101922; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; font: inherit; cursor: pointer; }
+  .bar button:hover { border-color: rgba(32,231,170,.5); }
+  .track { position: relative; height: 26px; border-radius: 8px; overflow: hidden; background: #0a1118; border: 1px solid var(--line); display: flex; }
+  .seg { flex: none; display: grid; place-items: center; font-size: .72rem; color: var(--mute); border-right: 1px solid var(--line); }
+  .seg.on { color: #04231a; background: linear-gradient(90deg, #10c3d3, #20e7aa); font-weight: 600; }
+  .head { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 8px #fff; pointer-events: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .card h2 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: baseline; }
+  .card h2 b { color: var(--mint); font: 700 .8rem ui-monospace, Consolas, monospace; }
+  .card p { margin: 0; color: var(--mute); font-size: .86rem; }
+  .stage { position: relative; height: 210px; border-radius: 12px; overflow: hidden; background: #02060a; border: 1px solid var(--line); display: grid; place-items: center; }
+  canvas { display: block; }
+  .ask { margin-top: 24px; padding: 16px; border: 1px dashed rgba(32,231,170,.35); border-radius: 14px; color: var(--mute); }
+  .ask b { color: var(--txt); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Phibe · animações de ociosidade</h1>
+  <p class="lead">O que ela faz quando <b>você não está na tela</b>. Todas as caixas rodam o mesmo relógio, comprimido: ociosa, sonolenta, dormindo, sono profundo e, quando você volta, acordando. Hoje ela só fica “sonolenta” depois de 20 segundos e dorme dissolvida em pixels. <b>Mexa o mouse</b> a qualquer momento para ver como cada uma acorda.</p>
+
+  <div class="bar">
+    <div class="row">
+      <button id="restart">reiniciar o ciclo</button>
+      <button id="wakebtn">acordar (como mexer o mouse)</button>
+      <label>velocidade <select id="speed"><option value="1">normal</option><option value="0.5">devagar</option><option value="2">rápido</option></select></label>
+      <span id="clock" style="margin-left:auto"></span>
+    </div>
+    <div class="track" id="track"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="ask"><b>Para decidir:</b> qual ociosidade (A a I), ou uma mistura (por exemplo, a B para dormir e a F enquanto trabalha). Também me diga em que ponto cada fase deve começar de verdade (hoje: sonolenta aos 20 s).</div>
+</div>
+
+<script>
+const W = 360, H = 280, CX = W / 2, CY = H / 2, TAU = Math.PI * 2;
+const COLS = ['32,231,170', '143,244,230', '80,190,255'], HALO = '32,231,170', C2 = '#20e7aa', TONE = '#bff8f3', DARK = '2,8,8';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const ramp = (x, a, b) => clamp((x - a) / (b - a), 0, 1);
+const ease = (x) => x * x * (3 - 2 * x);
+const FIB = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
+
+/* One compressed day: seconds on the shared clock. */
+const LOOP = 50, STAGES = [['Ociosa', 0, 8], ['Sonolenta', 8, 15], ['Dormindo', 15, 30], ['Sono profundo', 30, 42], ['Acordando', 42, 50]];
+const state = { T: 0, speed: 1 };
+const wake = () => { if (state.T > 4 && state.T < 42) state.T = 42; };
+document.getElementById('restart').onclick = () => { state.T = 0; };
+document.getElementById('wakebtn').onclick = wake;
+document.getElementById('speed').onchange = (e) => { state.speed = +e.target.value; };
+addEventListener('pointermove', wake, { passive: true });
+const track = document.getElementById('track');
+STAGES.forEach(([n, a, b]) => { const s = document.createElement('div'); s.className = 'seg'; s.style.width = ((b - a) / LOOP * 100) + '%'; s.textContent = n; s.dataset.a = a; track.appendChild(s); });
+const headEl = document.createElement('div'); headEl.className = 'head'; track.appendChild(headEl);
+
+/* Envelopes of the day, shared by every version. */
+const env = (T) => ({
+  drowsy: ramp(T, 8, 15) * (1 - ramp(T, 42, 44)),
+  asleep: ramp(T, 15, 19) * (1 - ramp(T, 42, 44.5)),
+  deep: ramp(T, 30, 34) * (1 - ramp(T, 42, 43.5)),
+  waking: ramp(T, 42, 43) * (1 - ramp(T, 46, 50)),
+});
+
+class IdleOrb {
+  constructor(canvas, v) {
+    this.v = v; this.cv = canvas; this.g = canvas.getContext('2d');
+    const dpr = Math.min(2, devicePixelRatio || 1), S = 0.62;
+    canvas.width = Math.round(W * S * dpr); canvas.height = Math.round(H * S * dpr); canvas.style.width = W * S + 'px'; canvas.style.height = H * S + 'px'; this.g.scale(dpr * S, dpr * S);
+    this.ring = Array.from({ length: 90 }, (_, i) => ({ a: Math.random() * 6.28, r: 30 + Math.random() * 70, s: (0.15 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1), z: 0.7 + Math.random() * 1.5, c: COLS[i % 3] }));
+    this.px = CX; this.py = CY; this.vx = 0; this.vy = 0; this.t = 0; this.ph = 0; this.blinkT = 3; this.fx = 0; this.fy = 0; this.parts = []; this.store = {};
+    this.p = { size: 1, bright: 1, lid: 0, gx: 0, gy: 0, bx: 0, by: 0, mist: 1, tilt: 0, sx: 1, sy: 1, breath: 1 };
+  }
+  glow(x, y, r, c, a) { const g = this.g, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  frame(dt, T) {
+    const g = this.g, v = this.v, e = env(T), P = this.p, t = (this.t += dt);
+    // defaults for an awake, attentive Phibe; each version changes what it needs
+    Object.assign(P, { size: 1, bright: 1, lid: 0, gx: 0, gy: 0, bx: 0, by: 0, mist: 1, tilt: 0, sx: 1, sy: 1, breath: 1 + Math.sin(t * 1.7) * 0.05, spin: 1 });
+    this.blinkT -= dt; if (this.blinkT < 0) this.blinkT = rnd(2.4, 5.6);
+    if (this.blinkT < 0.13) P.lid = Math.max(P.lid, 0.95);
+    v.drive(this, T, e, dt);
+    this.ph += dt * 60 * 0.016 * P.spin;
+    const k60 = dt * 60, tx = CX + P.bx + Math.sin(t * 0.7) * 5, ty = CY + P.by + Math.sin(t * 1.3) * 6;
+    for (let i = 0; i < Math.max(1, Math.round(k60)); i++) { this.vx += (tx - this.px) * 0.03; this.vy += (ty - this.py) * 0.03; this.vx *= 0.86; this.vy *= 0.86; this.px += this.vx; this.py += this.vy; }
+    this.fx += (P.gx - this.fx) * (1 - Math.pow(0.7, k60)); this.fy += (P.gy - this.fy) * (1 - Math.pow(0.7, k60));
+    const px = this.px, py = this.py, T2 = this.ph, br = P.bright * P.mist, sc = P.size * P.breath;
+    g.clearRect(0, 0, W, H);
+    const M = (fn) => { g.save(); g.translate(px, py); g.scale(P.sx * sc, P.sy * sc); fn(); g.restore(); };
+    g.globalCompositeOperation = 'lighter';
+    M(() => { this.glow(0, 0, 130, HALO, 0.3 * br); for (let i = 0; i < 10; i++) { const a = T2 * 60 * 0.35 + i * 0.628, rr = 34 + Math.sin(t * 0.7 + i * 1.7) * 16; this.glow(Math.cos(a) * rr * 1.2, Math.sin(a * 1.15) * rr * 0.85, 50 + Math.sin(t + i) * 8, COLS[i % 3], 0.27 * br); } });
+    g.globalCompositeOperation = 'source-over';
+    const lobes = [];
+    M(() => { for (let i = 0; i < 9; i++) { const a = T2 * 60 * (0.2 + i * 0.045) * (i % 2 ? 1 : -1) + i * 0.7, rr = i ? 26 + Math.sin(t * 0.6 + i * 2.1) * 14 : 0, rad = i ? 40 + Math.sin(t * 0.9 + i) * 9 : 56; const x = Math.cos(a) * rr * 1.25, y = Math.sin(a * 1.1) * rr * 0.9; lobes.push([x, y, rad, a]); const d = g.createRadialGradient(x, y, 2, x, y, rad); d.addColorStop(0, `rgba(${DARK},${0.96 * P.mist})`); d.addColorStop(0.6, `rgba(${DARK},${0.8 * P.mist})`); d.addColorStop(1, `rgba(${DARK},0)`); g.fillStyle = d; g.beginPath(); g.arc(x, y, rad, 0, TAU); g.fill(); } });
+    g.globalCompositeOperation = 'lighter';
+    M(() => lobes.forEach(([x, y, rad, a], i) => { if (!i) return; this.glow(x + Math.cos(a + 1.2) * rad * 0.8, y + Math.sin(a + 1.2) * rad * 0.7, 26, COLS[i % 3], (0.3 + Math.sin(t * 1.4 + i) * 0.09) * br); }));
+    for (const q of this.ring) { q.a += q.s * 0.008 * dt * 60 * P.spin; const x = px + Math.cos(q.a) * q.r * 1.25 * sc, y = py + Math.sin(q.a) * q.r * 0.85 * sc; this.glow(x, y, q.z * 4, q.c, 0.42 * P.mist); g.fillStyle = `rgba(255,255,255,${0.75 * P.mist})`; g.beginPath(); g.arc(x, y, q.z * 0.7, 0, TAU); g.fill(); }
+    g.globalCompositeOperation = 'source-over';
+    // the eyes: open ovals, closing into a sleeping curve
+    const open = 1 - P.lid, closedA = clamp((P.lid - 0.72) / 0.28, 0, 1);
+    g.save(); g.translate(px + this.fx, py + this.fy - 2); g.rotate(P.tilt * Math.PI / 180); g.scale(sc, sc);
+    for (const x of [-21, 21]) {
+      g.save(); g.translate(x, 0);
+      if (closedA < 1) {
+        g.save(); g.scale(1, Math.max(0.05, open)); g.globalAlpha = 1 - closedA;
+        g.save(); g.scale(11, 15); const h = g.createRadialGradient(0, 0, 0, 0, 0, 1); h.addColorStop(0, `rgba(32,231,170,${0.55 * P.bright})`); h.addColorStop(1, 'rgba(32,231,170,0)'); g.fillStyle = h; g.beginPath(); g.arc(0, 0, 1.6, 0, TAU); g.fill(); g.restore();
+        g.save(); g.scale(6.8, 10); const eg = g.createRadialGradient(-0.38, -0.5, 0, 0, 0, 1.4); eg.addColorStop(0, '#fff'); eg.addColorStop(0.5, TONE); eg.addColorStop(1, C2); g.fillStyle = eg; g.beginPath(); g.arc(0, 0, 1, 0, TAU); g.fill(); g.restore();
+        g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(-1.8, -3.2, 2, 2.8, 0, 0, TAU); g.fill(); g.restore();
+      }
+      if (closedA > 0) { g.globalAlpha = closedA * (0.55 + 0.45 * Math.min(1, P.bright)); g.strokeStyle = TONE; g.lineWidth = 3.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(-7, -1); g.quadraticCurveTo(0, 6, 7, -1); g.stroke(); g.globalAlpha = 1; }
+      g.restore();
+    }
+    g.restore();
+    v.overlay?.(this, g, T, e, dt);
+  }
+}
+
+/* ---- helpers for the overlays ---- */
+function spawnNumber(o, x, y, vx, vy, life = 3, size = 12) { o.parts.push({ n: FIB[o.store.fi = ((o.store.fi || 0) + 1) % FIB.length], x, y, vx, vy, l: 1, life, size }); }
+function drawNumbers(o, g, dt) { g.save(); g.font = '600 12px ui-monospace, Consolas, monospace'; g.textAlign = 'center'; for (let i = o.parts.length - 1; i >= 0; i--) { const q = o.parts[i]; if (!q.n) continue; q.x += q.vx * dt; q.y += q.vy * dt; q.vx += Math.sin(q.y * 0.05) * 6 * dt; q.l -= dt / q.life; if (q.l <= 0) { o.parts.splice(i, 1); continue; } g.globalAlpha = Math.min(1, q.l * 1.4) * 0.85; g.fillStyle = i % 2 ? '#bff8f3' : '#20e7aa'; g.font = `600 ${q.size}px ui-monospace, Consolas, monospace`; g.fillText(q.n, q.x, q.y); } g.restore(); }
+const tick = (o, key, every, fn) => { o.store[key] = (o.store[key] ?? every) - (o.dtNow || 0.016); if (o.store[key] <= 0) { o.store[key] += every; fn(); } };
+
+/* ---- the nine ways of being alone ---- */
+const VARIANTS = [
+  { id: 'A', name: 'Cochilo com números', about: 'Boceja, fecha os olhos devagar, desce um pouco e respira fundo. Enquanto dorme, pequenos números de Fibonacci sobem como “zzz”.',
+    drive(o, T, e) { const P = o.p; P.lid = Math.max(P.lid, e.drowsy * 0.55 + e.asleep * 0.5); P.by = 14 * e.drowsy + 8 * e.asleep; P.bright = 1 - 0.55 * e.asleep; P.size = 1 - 0.1 * e.asleep; P.spin = 1 - 0.7 * e.asleep; P.breath = 1 + Math.sin(o.t * (1.7 - e.asleep * 1.0)) * (0.05 + e.asleep * 0.04); P.tilt = 6 * e.asleep; P.gy = 3 * e.drowsy; if (e.waking) { P.lid = Math.min(P.lid, 0.1); P.size = 1 + 0.08 * Math.sin(e.waking * Math.PI); } },
+    overlay(o, g, T, e, dt) { if (e.asleep > 0.7) tick(o, 'z', 1.5, () => spawnNumber(o, o.px + 36, o.py - 36, 8, -16, 3.4, 11 + Math.floor(Math.random() * 4))); drawNumbers(o, g, dt); } },
+  { id: 'B', name: 'Sonhando com estrelas', about: 'Dorme de olhos fechados e, em volta, acende uma constelação fraquinha: estrelas ligadas por fios que piscam, como o sonho dela. Às vezes uma estrela cadente cruza.',
+    drive(o, T, e) { const P = o.p; P.lid = Math.max(P.lid, e.drowsy * 0.5 + e.asleep * 0.55); P.by = 10 * e.asleep; P.bright = 1 - 0.5 * e.asleep; P.spin = 1 - 0.6 * e.asleep; P.size = 1 - 0.08 * e.asleep; P.tilt = -5 * e.asleep; },
+    overlay(o, g, T, e, dt) { const a = e.asleep; if (a < 0.02) return; const N = o.store.n || (o.store.n = Array.from({ length: 13 }, (_, i) => { const an = i / 13 * TAU + rnd(-0.2, 0.2), r = 78 + rnd(0, 36); return { x: Math.cos(an) * r * 1.3, y: Math.sin(an) * r * 0.78, p: rnd(0, 6) }; }));
+      g.save(); g.translate(CX, CY); g.lineWidth = 0.8; for (let i = 0; i < N.length; i++) { const n = N[i], m = N[(i + 1) % N.length], al = a * (0.12 + 0.12 * Math.sin(o.t * 0.8 + n.p)); g.strokeStyle = `rgba(143,244,230,${al})`; g.beginPath(); g.moveTo(n.x, n.y); g.lineTo(m.x, m.y); g.stroke(); }
+      for (const n of N) { const tw = 0.4 + 0.6 * Math.max(0, Math.sin(o.t * 1.4 + n.p)); this_glow(o, g, n.x, n.y, 5 + tw * 4, '143,244,230', a * tw * 0.8); g.fillStyle = `rgba(255,255,255,${a * tw})`; g.beginPath(); g.arc(n.x, n.y, 1.2, 0, TAU); g.fill(); } g.restore();
+      tick(o, 'sh', 9, () => { o.store.shoot = 0.0001; }); if (o.store.shoot) { o.store.shoot += dt * 1.4; const s = o.store.shoot, x = 60 - s * 200, y = -80 + s * 90; if (s > 1) o.store.shoot = 0; else { const gr = g.createLinearGradient(x + 40, y - 20, x, y); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(255,255,255,${a})`); g.strokeStyle = gr; g.lineWidth = 1.4; g.beginPath(); g.moveTo(CX + x + 40, CY + y - 20); g.lineTo(CX + x, CY + y); g.stroke(); } } } },
+  { id: 'C', name: 'Vigia', about: 'Não dorme: fica de sentinela. Os olhos entreabertos varrem a tela devagar, da esquerda para a direita, e um feixe fraco de radar gira em volta. O corpo fica baixo e discreto.',
+    drive(o, T, e) { const P = o.p, sw = Math.sin(o.t * 0.5); P.lid = Math.max(P.lid, e.drowsy * 0.35 + e.asleep * 0.4); P.gx = sw * 12 * (0.4 + e.asleep * 0.6); P.gy = 1; P.bx = sw * 22 * e.asleep; P.by = 8 * e.asleep; P.bright = 1 - 0.4 * e.asleep; P.size = 1 - 0.14 * e.asleep; P.spin = 1 - 0.3 * e.asleep; P.tilt = sw * 6 * e.asleep; },
+    overlay(o, g, T, e) { const a = e.asleep; if (a < 0.02 || !g.createConicGradient) return; const ang = o.t * 0.9; const cg = g.createConicGradient(ang, o.px, o.py); cg.addColorStop(0, `rgba(32,231,170,${0.22 * a})`); cg.addColorStop(0.14, 'rgba(32,231,170,0)'); cg.addColorStop(1, 'rgba(32,231,170,0)'); g.save(); g.fillStyle = cg; g.beginPath(); g.arc(o.px, o.py, 120, 0, TAU); g.fill(); g.strokeStyle = `rgba(32,231,170,${0.14 * a})`; g.lineWidth = 1; for (const r of [70, 100]) { g.beginPath(); g.arc(o.px, o.py, r, 0, TAU); g.stroke(); } g.restore(); } },
+  { id: 'D', name: 'Brincando sozinha', about: 'Enquanto você não vem, ela brinca: persegue faíscas que voam em volta, olha para elas e dá pulinhos. Depois de um tempo se cansa, boceja e dorme com as faíscas pousando perto.',
+    drive(o, T, e) { const P = o.p, awake = 1 - e.drowsy; const s = (o.store.sp = o.store.sp || [{ a: 0 }, { a: 2 }, { a: 4 }]); const sp = s[0], sx = CX + Math.cos(sp.a) * 110, sy = CY + Math.sin(sp.a * 1.3) * 60; P.gx = clamp((sx - CX) / 12, -1, 1) * 10 * awake; P.gy = clamp((sy - CY) / 10, -1, 1) * 7 * awake; P.bx = (sx - CX) * 0.15 * awake; P.by = (sy - CY) * 0.15 * awake + 12 * e.asleep - Math.max(0, Math.sin(o.t * 3)) * 8 * awake * (0.5 + 0.5 * Math.sin(o.t * 0.7)); P.lid = Math.max(P.lid, e.drowsy * 0.6 + e.asleep * 0.5); P.bright = 1 - 0.45 * e.asleep; P.size = 1 - 0.1 * e.asleep; P.spin = 1 - 0.6 * e.asleep; },
+    overlay(o, g, T, e, dt) { const s = o.store.sp; if (!s) return; const awake = 1 - e.drowsy; s.forEach((q, i) => { q.a += dt * (1.1 + i * 0.4) * (0.15 + 0.85 * awake); const x = CX + Math.cos(q.a) * (110 - i * 22) * (0.3 + 0.7 * awake) + (1 - awake) * (i - 1) * 40, y = CY + Math.sin(q.a * 1.3) * (60 - i * 8) * (0.3 + 0.7 * awake) + (1 - awake) * 70; this_glow(o, g, x, y, 12, i % 2 ? '143,244,230' : '32,231,170', 0.8); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, 1.8, 0, TAU); g.fill(); }); } },
+  { id: 'E', name: 'Meditação', about: 'Fecha os olhos cedo e respira fundo em ciclos lentos de 6 segundos: o corpo incha e o brilho sobe ao inspirar, e anéis de luz se abrem e se desfazem ao expirar.',
+    drive(o, T, e) { const P = o.p, c = 0.5 - 0.5 * Math.cos(o.t * TAU / 6) , m = Math.max(e.drowsy * 0.6, e.asleep); P.lid = Math.max(P.lid, e.drowsy * 0.5 + e.asleep * 0.55); P.breath = 1 + (0.05 + 0.1 * m) * (c - 0.5) * 2; P.bright = 1 - 0.2 * m + 0.35 * c * m; P.by = -6 * m; P.spin = 1 - 0.5 * m; },
+    overlay(o, g, T, e) { const m = e.asleep; if (m < 0.02) return; for (let k = 0; k < 3; k++) { const ph = ((o.t / 6 + k / 3) % 1), r = 50 + ph * 80; g.strokeStyle = `rgba(32,231,170,${(1 - ph) * 0.35 * m})`; g.lineWidth = 1.4; g.beginPath(); g.ellipse(o.px, o.py, r * 1.25, r * 0.85, 0, 0, TAU); g.stroke(); } } },
+  { id: 'F', name: 'Organizando memórias', about: 'Não dorme: trabalha. Notinhas e pontos flutuam em volta, fios ligam os que combinam, e ela olha de um para outro enquanto “arquiva”. Mostra que a Phibe está viva e útil mesmo sem você.',
+    drive(o, T, e) { const P = o.p, N = o.store.nodes, i = Math.floor(o.t / 1.8) % 8, n = N && N[i]; if (n) { P.gx = clamp((n.x - CX) / 14, -1, 1) * 10 * Math.max(e.asleep, 0.3); P.gy = clamp((n.y - CY) / 12, -1, 1) * 7 * Math.max(e.asleep, 0.3); } P.lid = Math.max(P.lid, e.drowsy * 0.2 + e.asleep * 0.15); P.bright = 1 - 0.15 * e.asleep; P.size = 1 - 0.06 * e.asleep; P.spin = 1 - 0.2 * e.asleep; P.tilt = 3 * Math.sin(o.t * 0.9) * e.asleep; },
+    overlay(o, g, T, e, dt) { const N = o.store.nodes || (o.store.nodes = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * TAU; return { a, r: 100 + (i % 3) * 14, x: 0, y: 0, p: rnd(0, 6) }; })); const act = Math.max(0.35, e.asleep); N.forEach((n) => { n.a += dt * 0.12; n.x = CX + Math.cos(n.a) * n.r * 1.3; n.y = CY + Math.sin(n.a) * n.r * 0.72; });
+      g.save(); g.lineWidth = 0.8; for (let i = 0; i < N.length; i++) for (let j = i + 1; j < N.length; j++) { const d = Math.hypot(N[i].x - N[j].x, N[i].y - N[j].y); if (d < 120) { g.strokeStyle = `rgba(143,244,230,${(1 - d / 120) * 0.35 * act})`; g.beginPath(); g.moveTo(N[i].x, N[i].y); g.lineTo(N[j].x, N[j].y); g.stroke(); } }
+      const cur = Math.floor(o.t / 1.8) % 8, ph = (o.t % 1.8) / 1.8; N.forEach((n, i) => { const on = i === cur; this_glow(o, g, n.x, n.y, on ? 14 : 8, on ? '32,231,170' : '143,244,230', (on ? 0.9 : 0.5) * act); g.fillStyle = '#fff'; g.globalAlpha = act; g.fillRect(n.x - 2.5, n.y - 3, 5, 6); g.globalAlpha = 1; });
+      const n = N[cur], fx = n.x + (o.px - n.x) * ease(ph), fy = n.y + (o.py - n.y) * ease(ph); this_glow(o, g, fx, fy, 9, '32,231,170', 0.9 * act * (1 - ph * 0.6)); g.restore(); } },
+  { id: 'G', name: 'Bocejo e espreguiçar', about: 'Faz o ritual todo: boceja (os olhos se espremem e o corpo estica), se sacode e se encolhe numa bolinha dormindo bem baixo, bem escura e bem pequena.',
+    drive(o, T, e) { const P = o.p, y = ramp(T, 11, 12.5) * (1 - ramp(T, 12.5, 15)), sh = ramp(T, 15, 15.4) * (1 - ramp(T, 15.4, 16.5)); P.lid = Math.max(P.lid, y * 0.85 + e.drowsy * 0.4 + e.asleep * 0.5); P.sy = 1 + 0.2 * y; P.sx = 1 - 0.1 * y; P.by = -8 * y + 22 * e.asleep; P.bx = Math.sin(o.t * 40) * 5 * sh; P.size = 1 - 0.28 * e.asleep; P.bright = 1 - 0.5 * e.asleep; P.spin = 1 - 0.7 * e.asleep; P.breath = 1 + Math.sin(o.t * 1.1) * (0.03 + 0.04 * e.asleep); if (e.waking) P.size = 1 - 0.28 * (1 - e.waking * 0) + 0.3 * Math.sin(e.waking * Math.PI) * 0; } },
+  { id: 'H', name: 'Pó de Fibonacci (o de hoje, melhorado)', about: 'Ao dormir, o corpo se desfaz em pontos e números de Fibonacci que flutuam e se afastam; só os olhos fechados ficam. Ao acordar, tudo se junta de volta. Parecido com o que existe, só mais suave.',
+    drive(o, T, e) { const P = o.p; P.mist = 1 - 0.95 * e.asleep; P.lid = Math.max(P.lid, e.drowsy * 0.4 + e.asleep * 0.6); P.bright = 1 - 0.3 * e.asleep; P.spin = 1 - 0.6 * e.asleep; P.by = 4 * e.asleep; P.size = 1 - 0.05 * e.asleep; },
+    overlay(o, g, T, e, dt) { const a = e.asleep; if (a > 0.1 && a < 0.999) for (let i = 0; i < 4; i++) { const an = Math.random() * TAU, r = Math.random() * 70; o.parts.push({ px: 1, x: o.px + Math.cos(an) * r * 1.2, y: o.py + Math.sin(an) * r * 0.85, vx: rnd(5, 28), vy: rnd(-22, -4), l: 1, life: rnd(2, 4.5), size: 2 + Math.random() * 1.6 }); }
+      if (a > 0.5 && Math.random() < 0.05) spawnNumber(o, o.px + rnd(-50, 50), o.py + rnd(-30, 30), rnd(6, 20), rnd(-20, -6), 4, 10 + Math.floor(Math.random() * 4));
+      g.save(); for (let i = o.parts.length - 1; i >= 0; i--) { const q = o.parts[i]; if (!q.px) continue; q.x += q.vx * dt; q.y += q.vy * dt; q.l -= dt / q.life; if (q.l <= 0) { o.parts.splice(i, 1); continue; } g.globalAlpha = q.l * 0.9; g.fillStyle = i % 2 ? '#20e7aa' : '#10c3d3'; g.fillRect(q.x, q.y, q.size, q.size); } g.restore(); drawNumbers(o, g, dt); } },
+  { id: 'I', name: 'Vaga-lume', about: 'Quando você some, ela encolhe até virar uma luzinha e passeia devagar pela tela, piscando como um vaga-lume, em vez de ficar parada. Quando você volta, vem voando e se abre de novo.',
+    drive(o, T, e) { const P = o.p, s = e.asleep; const wx = Math.sin(o.t * 0.35) * 110 + Math.sin(o.t * 0.9) * 20, wy = Math.sin(o.t * 0.5 + 1) * 55 + Math.cos(o.t * 0.8) * 12; P.size = 1 - 0.78 * s; P.bx = wx * s; P.by = wy * s; P.mist = 1 - 0.25 * s; P.bright = 1 + 0.2 * s + 0.5 * s * Math.pow(Math.max(0, Math.sin(o.t * 2.2)), 3); P.lid = Math.max(P.lid, e.drowsy * 0.3); P.spin = 1 + s * 0.5; P.gx = Math.cos(o.t * 0.35) * 6 * s; }, } ,
+];
+function this_glow(o, g, x, y, r, c, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+
+const grid = document.getElementById('grid'), orbs = [];
+for (const v of VARIANTS) {
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2><b>${v.id}</b>${v.name}</h2><div class="stage"><canvas></canvas></div><p>${v.about}</p>`;
+  grid.appendChild(card); orbs.push(new IdleOrb(card.querySelector('canvas'), v));
+}
+const clock = document.getElementById('clock'), segs = [...track.querySelectorAll('.seg')];
+let last = performance.now();
+function loop(n) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, (n - last) / 1000); last = n; if (document.hidden) return;
+  state.T += dt * state.speed; if (state.T >= LOOP) state.T = 0;
+  for (const o of orbs) { o.dtNow = dt; o.frame(dt, state.T); }
+  headEl.style.left = (state.T / LOOP * 100) + '%';
+  const cur = STAGES.findIndex(([, a, b]) => state.T >= a && state.T < b);
+  segs.forEach((s, i) => s.classList.toggle('on', i === cur));
+  clock.textContent = `${STAGES[Math.max(0, cur)][0]} · ${state.T.toFixed(0)} s do ciclo`;
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

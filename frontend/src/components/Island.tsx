@@ -52,16 +52,27 @@ export function Island() {
   // The eyes follow the cursor over the whole window; when it rests, they glance around.
   useEffect(() => {
     if (effects === 'off') return;
+    let leftAt = 0; // when the cursor left the window (0: it is inside)
     const onMove = (e: PointerEvent) => {
       const r = faceRef.current?.getBoundingClientRect();
       if (!r) return;
+      leftAt = 0;
       gaze.current = gazeToward(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
       lastMove.current = performance.now();
     };
-    const onLeave = () => {
-      gaze.current = [0, 0.2];
+    // Leaving the window, she keeps looking where the cursor went for a few seconds, then settles; she does not lose it.
+    const onLeave = (e: PointerEvent) => {
+      const r = faceRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const x = Math.min(Math.max(e.clientX, 0), window.innerWidth), y = Math.min(Math.max(e.clientY, 0), window.innerHeight);
+      gaze.current = gazeToward(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+      leftAt = performance.now();
     };
     const wander = window.setInterval(() => {
+      if (leftAt) {
+        if (performance.now() - leftAt > 5000) gaze.current = [0, 0.1];
+        return;
+      }
       if (performance.now() - lastMove.current > 3000) {
         gaze.current = [[-1, -0.4, 0.6, 1][Math.floor(Math.random() * 4)] * 0.8, rand(-0.3, 0.3)];
       }
@@ -128,7 +139,7 @@ export function Island() {
   const text = state === 'waiting' ? `${waiting} to approve` : ''; // the only words left: approvals that wait for you
   const wide = text !== '';
   const mood: NebulaMood = state === 'done' ? 'happy' : state === 'waiting' ? 'idle' : state;
-  const orb = nebulaSize(0.39);
+  const orb = nebulaSize(0.35);
   const still = effects === 'off' || hidden;
   return (
     <div
@@ -146,7 +157,7 @@ export function Island() {
       <div className="phibe-island-inner">
         <div className="phibe-island-facebox" ref={faceRef}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', marginLeft: -orb.width / 2, marginTop: -orb.height / 2, pointerEvents: 'none' }}>
-            <PhibeNebula mood={mood} palette="mint" scale={0.36} id="isl" gaze={gaze} getLevel={getVoiceLevel} burstKey={burst} still={still} />
+            <PhibeNebula mood={mood} palette="mint" scale={0.325} id="isl" gaze={gaze} getLevel={getVoiceLevel} burstKey={burst} still={still} life={state === 'idle' && effects !== 'off'} />
           </div>
         </div>
         <span className="phibe-island-label" aria-hidden="true" style={{ opacity: wide ? 1 : 0, width: wide ? 'auto' : 0 }}>

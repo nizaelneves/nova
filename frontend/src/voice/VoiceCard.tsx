@@ -23,6 +23,7 @@ export function useVoiceEvents(): { state: VoiceState; levelRef: MutableRefObjec
   useEffect(() => {
     if (!isTauri()) return;
     const unlistenState = listen<VoiceState>('voice:state', (e) => {
+      if (e.payload.phase !== 'idle') window.dispatchEvent(new Event('phibe:activity')); // a voice recording is somebody being there
       if (e.payload.phase !== 'listening' && e.payload.phase !== 'countdown') levelRef.current = 0;
       setState(e.payload);
     });

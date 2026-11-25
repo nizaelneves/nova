@@ -9,6 +9,7 @@
     "npm": ">=11.19.0 <12"
   },
   "scripts": {
+    "gallery": "node scripts/build-gallery.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:tauri": "tsc -b && vite build --outDir dist",
